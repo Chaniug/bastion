@@ -6,6 +6,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -53,6 +54,9 @@ internal fun MonicaModalBottomSheet(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     tonalElevation: Dp = 0.dp,
     showDragHandle: Boolean = true,
+    contentWindowInsets: @Composable () -> WindowInsets = {
+        BottomSheetDefaults.modalWindowInsets
+    },
     content: @Composable ColumnScope.() -> Unit
 ) {
     ModalBottomSheet(
@@ -61,6 +65,7 @@ internal fun MonicaModalBottomSheet(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         containerColor = containerColor,
         tonalElevation = tonalElevation,
+        contentWindowInsets = contentWindowInsets,
         dragHandle = if (showDragHandle) {
             {
                 BottomSheetDefaults.DragHandle(

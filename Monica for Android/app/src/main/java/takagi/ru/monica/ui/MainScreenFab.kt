@@ -453,6 +453,7 @@ internal fun BoxScope.MainScreenFabOverlay(
         visible = showPasswordQuickAccessSheet,
         recentItems = recentOpenedPasswords,
         frequentItems = frequentOpenedPasswords,
+        iconCardsEnabled = appSettings.iconCardsEnabled && appSettings.passwordPageIconEnabled,
         onOpenPassword = onOpenPasswordFromQuickAccess,
         onDismiss = { onShowPasswordQuickAccessSheetChange(false) }
     )

@@ -163,7 +163,8 @@ import takagi.ru.monica.ui.components.QuickAddCallback
 import takagi.ru.monica.ui.components.SyncStatusIcon
 import takagi.ru.monica.ui.components.M3IdentityVerifyDialog
 import takagi.ru.monica.ui.components.PasswordQuickAccessItem
-import takagi.ru.monica.ui.components.PasswordQuickAccessSheet
+import takagi.ru.monica.ui.components.rankFrequentPasswordQuickAccessItems
+import takagi.ru.monica.ui.components.rankRecentPasswordQuickAccessItems
 import takagi.ru.monica.ui.components.CardWalletAddTypeChip
 import takagi.ru.monica.ui.components.UnifiedCategoryFilterBottomSheet
 import takagi.ru.monica.ui.components.UnifiedCategoryFilterSelection
@@ -1258,17 +1259,10 @@ fun SimpleMainScreen(
         }
     }
     val recentOpenedPasswords = remember(passwordQuickAccessItems) {
-        passwordQuickAccessItems
-            .sortedByDescending { it.lastOpenedAt }
-            .take(80)
+        rankRecentPasswordQuickAccessItems(passwordQuickAccessItems)
     }
     val frequentOpenedPasswords = remember(passwordQuickAccessItems) {
-        passwordQuickAccessItems
-            .sortedWith(
-                compareByDescending<PasswordQuickAccessItem> { it.openCount }
-                    .thenByDescending { it.lastOpenedAt }
-            )
-            .take(80)
+        rankFrequentPasswordQuickAccessItems(passwordQuickAccessItems)
     }
     val localPasskeys = if (isPasskeyDataNeeded) {
         passkeyViewModel.allPasskeys.collectAsState(initial = emptyList()).value
