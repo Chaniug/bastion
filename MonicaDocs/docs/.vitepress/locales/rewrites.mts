@@ -15,7 +15,7 @@ const rootRewrites: Array<[string, string]> = [
   ["02.配置/目录.md", "reference/index.md"],
   ["02.配置/01.文档地图.md", "reference/catalogue.md"],
   ["02.配置/02.相关文档/01.Monica-Android-WebDAV备份格式规范.md", "reference/webdav-backup-specification.md"],
-  ["02.配置/02.相关文档/02.Monica Android 本地存储与加密技术文档.md", "reference/android-storage-security.md"],
+  ["02.配置/02.相关文档/02.Monica-Android-本地存储与加密技术文档.md", "reference/android-storage-security.md"],
   ["02.配置/02.相关文档/03.Monica-Android-自动填充与保底机制.md", "reference/autofill.md"],
   ["02.配置/02.相关文档/04.Mdbx相关/00.MDBX 规范索引.md", "reference/mdbx-spec-index.md"],
   ["02.配置/02.相关文档/04.Mdbx相关/00.Monica-Pass-CLI-开发文档.md", "reference/monica-pass-cli-development.md"],
