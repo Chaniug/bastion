@@ -12,7 +12,8 @@ android {
     compileSdk 35
 
     def previewVersionSuffix = project.findProperty('previewVersionSuffix')?.toString()?.trim()
-    def appVersionCode = 10
+    // versionCode 取当前 epoch 秒以保证每次构建严格大于上次（覆盖安装必须）
+    def appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
     def baseVersionName = previewVersionSuffix ? "1.0.297-${previewVersionSuffix}" : "1.0.297"
     def normalizeTwoDigits = { raw ->
         def value = raw?.toString()?.trim()?.replaceAll('\\D', '')
