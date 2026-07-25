@@ -414,7 +414,6 @@ class BiometricUnlockRegressionGuardTest {
             "app/src/main/java/takagi/ru/monica/ui/components/TotpCodeCard.kt",
             "app/src/main/java/takagi/ru/monica/service/NotificationValidatorService.kt",
             "app/src/main/java/takagi/ru/monica/autofill_ng/AutofillPickerActivityV2.kt",
-            "app/src/main/java/takagi/ru/monica/ime/MonicaInputMethodService.kt",
             "app/src/main/java/takagi/ru/monica/ui/components/QrCodeDialog.kt",
             "app/src/main/java/takagi/ru/monica/ui/AuthenticatorTabPane.kt",
             "app/src/main/java/takagi/ru/monica/ui/totp/TotpListContent.kt",
