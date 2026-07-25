@@ -170,10 +170,6 @@ fun AutofillSettingsV2Screen(
         }
     }
 
-    fun openSystemKeyboardSettings() {
-        context.startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
-    }
-
     LaunchedEffect(Unit) {
         preferences.ensureBitwardenV2EngineMode()
         refreshStatus()
@@ -506,20 +502,6 @@ fun AutofillSettingsV2Screen(
                     subtitle = stringResource(R.string.autofill_system_passkey_settings_desc),
                     onClick = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
                 )
-            }
-
-            SectionCard(
-                title = stringResource(R.string.ime_settings_title),
-                icon = Icons.Outlined.Keyboard,
-                iconTint = MaterialTheme.colorScheme.tertiary,
-            ) {
-                AutofillSettingItem(
-                    icon = Icons.Outlined.Settings,
-                    title = stringResource(R.string.ime_manage_input_methods),
-                    subtitle = stringResource(R.string.ime_manage_input_methods_desc),
-                    onClick = ::openSystemKeyboardSettings,
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             }
 
             SectionCard(
