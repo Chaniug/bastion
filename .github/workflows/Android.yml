@@ -58,13 +58,17 @@ jobs:
 
       - name: Build Release APK (signed & obfuscated)
         run: |
-          ./gradlew :app:assembleRelease --no-daemon --build-cache --stacktrace \
+          ./gradlew :app:assembleRelease --build-cache --stacktrace \
             -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/release.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.DEBUG_STORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.DEBUG_KEY_ALIAS }} \
             -Pandroid.injected.signing.key.password=${{ secrets.DEBUG_KEY_PASSWORD }}
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - name: Stop Gradle Daemon
+        if: always()
+        run: ./gradlew --stop || true
 
       - name: Generate checksums
         run: |

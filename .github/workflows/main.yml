@@ -63,11 +63,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run lint
-        run: ./gradlew :app:lintDebug --stacktrace --no-daemon
+        run: ./gradlew :app:lintDebug --stacktrace
 
       - name: Run unit tests (diagnostic)
         continue-on-error: true
-        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
 
       - name: Upload unit test reports
         if: always()
@@ -81,7 +81,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build Debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: List debug APK outputs
         run: find app/build/outputs/apk/debug -maxdepth 1 -type f -print || true

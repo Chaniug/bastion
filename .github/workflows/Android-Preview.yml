@@ -139,9 +139,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --stop
           ./gradlew :app:assembleRelease \
-            --no-daemon \
             --build-cache \
             --stacktrace \
             -PpreviewMinify=false \
@@ -152,6 +150,11 @@ jobs:
             -PpreviewVersionSuffix=$PREVIEW_VERSION_SUFFIX
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - name: Stop Gradle Daemon
+        if: always()
+        shell: bash
+        run: ./gradlew --stop || true
 
       - name: Collect generated APK metadata
         id: preview_apk_meta

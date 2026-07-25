@@ -67,7 +67,7 @@ jobs:
           queries: security-extended
 
       - name: Build for CodeQL
-        run: ./gradlew :app:assembleDebug --console=plain --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDebug --console=plain --stacktrace
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
