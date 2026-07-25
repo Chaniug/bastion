@@ -32,9 +32,14 @@ jobs:
   build-preview:
     name: Build & Publish Preview
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: "Monica for Android"
+    env:
+      # 启用 Gradle 构建缓存与并行，缩短重复构建耗时
+      GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     
     steps:
       - uses: actions/checkout@v4
@@ -45,13 +50,30 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
+      - name: Cache Android SDK
+        # 缓存 SDK 平台/构建工具/平台工具，避免 compileSdk 35 等每次重新下载。
+        # 首次运行会下载缺失组件并写入缓存，后续运行直接命中缓存。
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/platforms
+            /usr/local/lib/android/sdk/build-tools
+            /usr/local/lib/android/sdk/platform-tools
+            /usr/local/lib/android/sdk/cmdline-tools
+            /usr/local/lib/android/sdk/licenses
+          key: ${{ runner.os }}-android-sdk-35-v1
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('Monica for Android/**/*.gradle*', 'Monica for Android/**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('Monica for Android/**/*.gradle*', 'Monica for Android/gradle/libs.versions.toml', 'Monica for Android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
           
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -120,10 +142,11 @@ jobs:
           ./gradlew --stop
           ./gradlew :app:assembleRelease \
             --no-daemon \
+            --build-cache \
             --stacktrace \
-            --info \
             -Pkotlin.incremental=false \
             -Dkotlin.compiler.execution.strategy=in-process \
+            -PpreviewMinify=false \
             -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/release.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.DEBUG_STORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.DEBUG_KEY_ALIAS }} \

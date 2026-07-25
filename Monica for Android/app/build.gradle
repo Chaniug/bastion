@@ -125,8 +125,12 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            // 默认开启混淆与资源压缩（Stable 正式构建走此路径）。
+            // CI 的 Preview 构建通过 -PpreviewMinify=false 关闭混淆以大幅加速，
+            // 不影响发布产物的安全性与体积。
+            def disableMinify = project.findProperty('previewMinify')?.toString()?.trim()?.equalsIgnoreCase('false')
+            minifyEnabled !disableMinify
+            shrinkResources !disableMinify
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
