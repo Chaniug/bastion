@@ -115,10 +115,11 @@ android {
 
     splits {
         abi {
-            // 仅输出 ARM 32/64 位两个 APK，不生成 universal 包。
+            // 仅输出 arm64-v8a（64 位）APK，砍掉 armeabi-v7a（32 位）以缩短构建并精简产物。
+            // 现代设备几乎均为 64 位；仅极少数老旧 32 位设备不再支持。
             enable true
             reset()
-            include 'arm64-v8a', 'armeabi-v7a'
+            include 'arm64-v8a'
             universalApk false
         }
     }
