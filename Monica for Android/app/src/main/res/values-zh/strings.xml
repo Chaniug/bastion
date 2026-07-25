@@ -1,6 +1,6 @@
     <resources>
-    <string name="app_name">Monica</string>
-    <string name="app_label">Monica Pass</string>
+    <string name="app_name">monicapass</string>
+    <string name="app_label">monicapass</string>
     
     <!-- General -->
     <string name="press_back_again_to_exit">再按一次退出应用</string>
@@ -2063,8 +2063,8 @@
     <string name="developer_disable_password_verification_desc">跳过应用启动时的密码验证（仅用于开发测试）</string>
     <string name="developer_passkey_hyperos_biometric_bypass">Passkey HyperOS 兼容</string>
     <string name="developer_passkey_hyperos_biometric_bypass_desc">在 HyperOS 设备上跳过通行密钥生物识别，并回退到主密码。除非该设备生物识别弹窗异常，否则保持关闭。</string>
-    <string name="developer_launcher_name_use_pass">主应用名称显示 Monica Pass</string>
-    <string name="developer_launcher_name_use_pass_desc">开启后桌面主入口显示 Monica Pass，关闭后显示 Monica。只影响主入口名称。</string>
+    <string name="developer_launcher_name_use_pass">主应用名称显示 monicapass</string>
+    <string name="developer_launcher_name_use_pass_desc">开启后桌面主入口显示 monicapass，关闭后显示 monicapass。只影响主入口名称。</string>
     <string name="developer_bitwarden_forensics_toggle">启用 Bitwarden 同步取证</string>
     <string name="developer_bitwarden_forensics_toggle_desc">记录脱敏同步快照（仅长度与计数，不记录明文）</string>
     <string name="developer_bitwarden_forensics_raw_toggle">记录 Bitwarden 原始请求/响应</string>

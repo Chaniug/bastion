@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Monica</string>
-    <string name="app_label">Monica Pass</string>
+    <string name="app_name">monicapass</string>
+    <string name="app_label">monicapass</string>
     
     <!-- General -->
     <string name="press_back_again_to_exit">Press back again to exit</string>
@@ -2215,8 +2215,8 @@
     <string name="developer_disable_password_verification_desc">Skip password verification on app startup (for development testing only)</string>
     <string name="developer_passkey_hyperos_biometric_bypass">Passkey HyperOS Compatibility</string>
     <string name="developer_passkey_hyperos_biometric_bypass_desc">On HyperOS devices, skip passkey biometric verification and fall back to master password. Keep this off unless biometric prompts fail on that device.</string>
-    <string name="developer_launcher_name_use_pass">Use Monica Pass as launcher name</string>
-    <string name="developer_launcher_name_use_pass_desc">On: Monica Pass. Off: Monica. This only changes the main launcher entry name.</string>
+    <string name="developer_launcher_name_use_pass">Use monicapass as launcher name</string>
+    <string name="developer_launcher_name_use_pass_desc">On: monicapass. Off: monicapass. This only changes the main launcher entry name.</string>
     <string name="developer_bitwarden_forensics_toggle">Enable Bitwarden Sync Forensics</string>
     <string name="developer_bitwarden_forensics_toggle_desc">Record redacted sync snapshots (lengths and counters only, no plaintext)</string>
     <string name="developer_bitwarden_forensics_raw_toggle">Capture Raw Bitwarden Request/Response</string>
