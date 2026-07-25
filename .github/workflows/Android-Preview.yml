@@ -144,8 +144,6 @@ jobs:
             --no-daemon \
             --build-cache \
             --stacktrace \
-            -Pkotlin.incremental=false \
-            -Dkotlin.compiler.execution.strategy=in-process \
             -PpreviewMinify=false \
             -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/release.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.DEBUG_STORE_PASSWORD }} \
