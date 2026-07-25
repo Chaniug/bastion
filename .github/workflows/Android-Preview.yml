@@ -151,18 +151,9 @@ jobs:
             -Pandroid.injected.signing.store.password=${{ secrets.DEBUG_STORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.DEBUG_KEY_ALIAS }} \
             -Pandroid.injected.signing.key.password=${{ secrets.DEBUG_KEY_PASSWORD }} \
-            -PpreviewVersionSuffix=$PREVIEW_VERSION_SUFFIX \
-            2>&1 | tee "$RUNNER_TEMP/preview-build.log"
+            -PpreviewVersionSuffix=$PREVIEW_VERSION_SUFFIX
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
-
-      - name: Upload preview build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-build-log
-          path: ${{ runner.temp }}/preview-build.log
-          if-no-files-found: ignore
 
       - name: Collect generated APK metadata
         id: preview_apk_meta
