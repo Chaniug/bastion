@@ -3953,14 +3953,14 @@ class PasswordViewModel(
                     skipCategoryBinding = true
                 )
 
-                    if (initialId == null) {
-                        Log.e(
-                            "PasswordViewModel",
-                            "savePasswordsAcrossTargets failed current target=${currentTarget.stableKey} originalIds=$originalIds targets=$requestedTargetKeys"
-                        )
-                        return@withContext PasswordSaveAcrossTargetsResult(null, emptyList())
-                    }
-                    val savedTargetFirstIds = mutableListOf(initialId)
+                if (initialId == null) {
+                    Log.e(
+                        "PasswordViewModel",
+                        "savePasswordsAcrossTargets failed current target=${currentTarget.stableKey} originalIds=$originalIds targets=$requestedTargetKeys"
+                    )
+                    return@withContext PasswordSaveAcrossTargetsResult(null, emptyList())
+                }
+                val savedTargetFirstIds = mutableListOf(initialId)
 
                 distinctTargets
                     .filter { target ->
