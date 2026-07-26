@@ -45,6 +45,9 @@ class MonicaApplication : Application() {
 
         SessionManager.attachAppContext(this)
 
+        // 「重启后锁定」(-2)：主进程冷启动时清空已持久化解锁会话，强制重新验证
+        SessionManager.enforceLockOnRestartIfNeeded(this)
+
         AppUpdateSecurityGuard.enforceLockIfAppUpdated(
             context = this,
             reason = "application_on_create"

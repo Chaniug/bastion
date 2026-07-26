@@ -732,6 +732,12 @@
     <string name="auto_lock_5_hours">5小时</string>
     <string name="auto_lock_1_day">1天</string>
     <string name="auto_lock_never">从不</string>
+    <string name="auto_lock_on_restart">重启后锁定</string>
+    <string name="auto_lock_custom">自定义时间…</string>
+    <string name="auto_lock_custom_title">自定义自动锁定时间</string>
+    <string name="auto_lock_custom_hint">分钟（1–100000）</string>
+    <string name="auto_lock_custom_invalid">请输入 1 到 100000 之间的数字</string>
+    <string name="auto_lock_minutes">%1$d 分钟</string>
     
     <!-- Reset Password Screen -->
     <string name="reset_password_title">重设密码</string>

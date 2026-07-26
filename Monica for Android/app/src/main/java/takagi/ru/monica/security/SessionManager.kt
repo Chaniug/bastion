@@ -43,7 +43,8 @@ object SessionManager {
     // 解锁时间戳（基于 SystemClock.elapsedRealtime，不受系统时间修改影响）
     private var unlockTimestamp: Long = 0L
     
-    // 自动锁定超时（分钟），从 SettingsManager 同步；-1 表示永不过期/不锁定
+    // 自动锁定超时（分钟），从 SettingsManager 同步。
+    // -1 = 永不过期/不锁定；-2 = 重启后锁定（运行期不空闲超时，但进程冷启动即清锁）；>0 = 对应分钟空闲超时；0 = 立即
     private var autoLockMinutes: Int = 5
     
     // 进程标识（用于检测进程重启）
@@ -105,6 +106,39 @@ object SessionManager {
         prefs?.edit()?.putInt(KEY_AUTO_LOCK, minutes)?.apply()
         android.util.Log.d(TAG, "Auto-lock timeout updated to $minutes minutes")
     }
+
+    /**
+     * 「重启后锁定」(-2) 的冷启动清锁。
+     *
+     * 语义：应用（主进程）被系统回收 / 用户手动杀死 / 设备重启后再次冷启动时必须重新验证，
+     * 但在同一运行会话内不触发空闲超时（表现同 -1「从不」）。
+     *
+     * 实现：仅读取持久化的自动锁定模式；若其等于 -2，则清空已持久化的解锁会话。
+     * 该调用必须在【主进程】的 Application.onCreate 中执行，并通过 [isMainProcess] 守卫，
+     * 避免自动填充 / 无障碍等独立进程在自身启动时误清主进程会话（否则会破坏同源会话共享）。
+     */
+    fun enforceLockOnRestartIfNeeded(context: Context) {
+        if (!isMainProcess(context)) return
+        val mode = prefs?.getInt(KEY_AUTO_LOCK, -99) ?: -99
+        if (mode == -2) {
+            android.util.Log.d(TAG, "enforceLockOnRestartIfNeeded: mode=-2 -> 清除持久化会话（重启即锁定）")
+            markLocked(clearSecondarySession = false)
+        }
+    }
+
+    /**
+     * 判断当前是否为主进程（包名进程）。自动填充 / 无障碍服务运行在 :autofill / :accessibility
+     * 等独立进程，其 Application 也会 onCreate，但「重启后锁定」的清锁只应在主进程发生。
+     */
+    private fun isMainProcess(context: Context): Boolean {
+        val pkg = context.packageName
+        val procName = try {
+            val clazz = Class.forName("android.app.ActivityThread")
+            val method = clazz.getMethod("currentProcessName")
+            method.invoke(null) as? String
+        } catch (_: Throwable) { null }
+        return procName == pkg
+    }
     
     /**
      * 检查是否可以跳过验证
@@ -142,9 +176,9 @@ object SessionManager {
             return false
         }
         
-        // 检查是否超时
+        // 检查是否超时（仅 >0 的空闲超时模式会锁；-1 从不 / -2 重启后锁定 均不在此处锁）
         val elapsedMinutes = (SystemClock.elapsedRealtime() - unlockTimestamp) / 60000
-        if (autoLockMinutes != -1 && elapsedMinutes >= autoLockMinutes) {
+        if (autoLockMinutes > 0 && elapsedMinutes >= autoLockMinutes) {
             android.util.Log.d(TAG, "canSkipVerification: false (session expired, elapsed=$elapsedMinutes min)")
             markLocked(clearSecondarySession = false)
             return false
@@ -178,7 +212,7 @@ object SessionManager {
     fun isSessionExpired(): Boolean {
         if (!_isUnlocked.value) return true
         val elapsedMinutes = (SystemClock.elapsedRealtime() - unlockTimestamp) / 60000
-        return autoLockMinutes != -1 && elapsedMinutes >= autoLockMinutes
+        return autoLockMinutes > 0 && elapsedMinutes >= autoLockMinutes
     }
     
     /**
@@ -186,7 +220,7 @@ object SessionManager {
      */
     fun getRemainingMinutes(): Int {
         if (!_isUnlocked.value) return 0
-        if (autoLockMinutes == -1) return -1
+        if (autoLockMinutes <= 0) return -1  // -1 从不 / -2 重启后锁定：均无空闲倒计时
         val elapsedMinutes = (SystemClock.elapsedRealtime() - unlockTimestamp) / 60000
         return maxOf(0, autoLockMinutes - elapsedMinutes.toInt())
     }

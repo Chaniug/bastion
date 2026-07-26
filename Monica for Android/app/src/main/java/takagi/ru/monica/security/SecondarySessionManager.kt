@@ -74,6 +74,7 @@ object SecondarySessionManager {
     private fun isExpired(elapsedMillis: Long): Boolean {
         return when {
             autoLockMinutes == -1 -> false
+            autoLockMinutes == -2 -> false  // 重启后锁定：运行期内不空闲超时（同 -1）
             autoLockMinutes <= 0 -> elapsedMillis >= IMMEDIATE_LOCK_SECONDARY_GRACE_MS
             else -> elapsedMillis >= autoLockMinutes * 60_000L
         }

@@ -2558,8 +2558,59 @@ fun AutoLockSelectionSheet(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val options = listOf(0, 1, 5, 10, 60, 300, 1440, -1) // 0=立即, 1/5/10分钟, 60=1小时, 300=5小时, 1440=1天, -1=从不
+    // 预设选项：0=立即, 1/5/10/15/30/60分钟, 300=5小时, 1440=1天, -1=从不, -2=重启后锁定
+    val presetOptions = listOf(0, 1, 5, 10, 15, 30, 60, 300, 1440, -1, -2)
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 自定义时间对话框状态
+    var showCustomDialog by remember { mutableStateOf(false) }
+    var customText by remember { mutableStateOf("") }
+    var customError by remember { mutableStateOf(false) }
+
+    if (showCustomDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val value = customText.toIntOrNull()
+                    if (value == null || value < 1 || value > 100000) {
+                        customError = true
+                    } else {
+                        customError = false
+                        showCustomDialog = false
+                        onMinutesSelected(value)
+                    }
+                }) {
+                    Text(context.getString(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomDialog = false }) {
+                    Text(context.getString(R.string.cancel))
+                }
+            },
+            title = { Text(context.getString(R.string.auto_lock_custom_title)) },
+            text = {
+                OutlinedTextField(
+                    value = customText,
+                    onValueChange = {
+                        // 仅保留数字，最多 6 位（上限 100000）
+                        customText = it.filter { ch -> ch.isDigit() }.take(6)
+                        customError = false
+                    },
+                    label = { Text(context.getString(R.string.auto_lock_custom_hint)) },
+                    isError = customError,
+                    supportingText = if (customError) {
+                        { Text(context.getString(R.string.auto_lock_custom_invalid)) }
+                    } else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -2578,21 +2629,21 @@ fun AutoLockSelectionSheet(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
-            options.forEach { minutes ->
+
+            presetOptions.forEach { minutes ->
                 val isSelected = minutes == currentMinutes
                 val containerColor = if (isSelected) {
                     MaterialTheme.colorScheme.secondaryContainer
                 } else {
                     androidx.compose.ui.graphics.Color.Transparent
                 }
-                
+
                 val contentColor = if (isSelected) {
                     MaterialTheme.colorScheme.onSecondaryContainer
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 }
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2607,6 +2658,7 @@ fun AutoLockSelectionSheet(
                         imageVector = when {
                             minutes == 0 -> Icons.Default.LockOpen
                             minutes == -1 -> Icons.Default.Lock
+                            minutes == -2 -> Icons.Default.Refresh
                             minutes >= 1440 -> Icons.Default.Bedtime
                             else -> Icons.Default.Timer
                         },
@@ -2614,16 +2666,16 @@ fun AutoLockSelectionSheet(
                         tint = contentColor,
                         modifier = Modifier.size(24.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Text(
                         text = getAutoLockDisplayName(minutes, context),
                         style = MaterialTheme.typography.bodyLarge,
                         color = contentColor,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
@@ -2631,6 +2683,61 @@ fun AutoLockSelectionSheet(
                             tint = contentColor
                         )
                     }
+                }
+            }
+
+            // 自定义时间行：选择任意非预设正值时高亮，点击弹出数字输入框
+            val customSelected = currentMinutes > 0 && currentMinutes !in presetOptions
+            val customContainer = if (customSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                androidx.compose.ui.graphics.Color.Transparent
+            }
+            val customContent = if (customSelected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(customContainer)
+                    .clickable {
+                        customText = if (customSelected) currentMinutes.toString() else ""
+                        customError = false
+                        showCustomDialog = true
+                    }
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = customContent,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Text(
+                    text = if (customSelected) {
+                        context.getString(R.string.auto_lock_minutes, currentMinutes)
+                    } else {
+                        context.getString(R.string.auto_lock_custom)
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = customContent,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (customSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = customContent
+                    )
                 }
             }
         }
@@ -2682,7 +2789,12 @@ internal fun getAutoLockDisplayName(minutes: Int, context: android.content.Conte
         300 -> context.getString(R.string.auto_lock_5_hours)
         1440 -> context.getString(R.string.auto_lock_1_day)
         -1 -> context.getString(R.string.auto_lock_never)
-        else -> "$minutes ${context.getString(R.string.auto_lock_5_minutes).substringAfter("5")}"
+        -2 -> context.getString(R.string.auto_lock_on_restart)
+        else -> if (minutes > 0) {
+            context.getString(R.string.auto_lock_minutes, minutes)
+        } else {
+            context.getString(R.string.auto_lock_never)
+        }
     }
 }
 
