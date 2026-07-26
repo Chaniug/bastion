@@ -298,10 +298,14 @@
         </service>
 
         <!-- Accessibility Service -->
+        <!-- 运行在独立进程(:accessibility)，避免与主应用进程同生共死：
+             主进程切后台被系统回收时，无障碍服务进程依然常驻，
+             防止“开启无障碍权限后一切后台，权限就被系统判为关闭”的问题。 -->
         <service
             android:name=".service.MonicaAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:process=":accessibility">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
