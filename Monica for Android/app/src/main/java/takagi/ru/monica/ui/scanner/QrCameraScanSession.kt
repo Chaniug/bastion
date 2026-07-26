@@ -1,11 +1,11 @@
 package takagi.ru.monica.ui.scanner
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
 import android.util.Size
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -25,9 +25,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.OptIn
 
-@OptIn(ExperimentalGetImage::class)
+@SuppressLint("UnsafeOptInUsageError")
 internal class QrCameraScanSession(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
