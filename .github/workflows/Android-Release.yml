@@ -1,0 +1,216 @@
+name: Android Stable Release
+
+# 稳定版发布流程：
+# - 手动触发（workflow_dispatch，可填版本号，默认 1.0.297）
+# - 或推送 v* 标签时自动触发
+# 与 Android-Preview.yml 的区别：
+#   1. 不附加 previewVersionSuffix（版本名即为 1.0.297，而非 1.0.297-build.xxx）
+#   2. 默认开启混淆与资源压缩（minifyEnabled=true）
+#   3. 发布的 Release 不标记 prerelease，且设为 Latest
+# 签名复用仓库已有的 DEBUG_KEYSTORE_* Secrets（preview 同款 keystore）。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (no v prefix), e.g. 1.0.297'
+        required: true
+        default: '1.0.297'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-stable-release
+  cancel-in-progress: false
+
+jobs:
+  build-stable:
+    name: Build & Publish Stable Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: "Monica for Android"
+    env:
+      GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/platforms
+            /usr/local/lib/android/sdk/build-tools
+            /usr/local/lib/android/sdk/platform-tools
+            /usr/local/lib/android/sdk/cmdline-tools
+            /usr/local/lib/android/sdk/licenses
+          key: ${{ runner.os }}-android-sdk-35-v1
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('Monica for Android/**/*.gradle*', 'Monica for Android/gradle/libs.versions.toml', 'Monica for Android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Validate signing secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in DEBUG_KEYSTORE_BASE64 DEBUG_STORE_PASSWORD DEBUG_KEY_ALIAS DEBUG_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing signing secret::$name is empty or unavailable."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+          DEBUG_STORE_PASSWORD: ${{ secrets.DEBUG_STORE_PASSWORD }}
+          DEBUG_KEY_ALIAS: ${{ secrets.DEBUG_KEY_ALIAS }}
+          DEBUG_KEY_PASSWORD: ${{ secrets.DEBUG_KEY_PASSWORD }}
+
+      - name: Decode keystore
+        shell: bash
+        run: |
+          printf '%s' "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/release.jks"
+          if [ ! -s "$GITHUB_WORKSPACE/release.jks" ]; then
+            echo "::error title=Keystore decode failed::release.jks was not created or is empty."
+            exit 1
+          fi
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - name: Verify keystore credentials
+        shell: bash
+        run: |
+          keytool -list \
+            -keystore "$GITHUB_WORKSPACE/release.jks" \
+            -storepass "${{ secrets.DEBUG_STORE_PASSWORD }}" \
+            -alias "${{ secrets.DEBUG_KEY_ALIAS }}" >/dev/null
+          echo "Keystore, password, and alias validated successfully."
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - name: Resolve release version & tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${{ github.ref_name }}"
+            version="${tag#v}"
+          else
+            version="${{ github.event.inputs.version }}"
+            tag="v${version}"
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build Release APK (stable, minified)
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease \
+            --build-cache \
+            --stacktrace \
+            -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/release.jks \
+            -Pandroid.injected.signing.store.password=${{ secrets.DEBUG_STORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.DEBUG_KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.DEBUG_KEY_PASSWORD }}
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - name: Stop Gradle Daemon
+        if: always()
+        shell: bash
+        run: ./gradlew --stop || true
+
+      - name: Collect generated APK metadata
+        id: apk_meta
+        shell: bash
+        run: |
+          cd app/build/outputs/apk/release
+
+          apk_list="$(find . -maxdepth 1 -type f \( -iname '*.apk' \) -printf '%f\n' | sort)"
+          apk_count="$(printf '%s\n' "$apk_list" | sed '/^$/d' | wc -l | tr -d ' ')"
+
+          if [ "$apk_count" = "0" ]; then
+            echo "No release APK found"
+            ls -la
+            exit 1
+          fi
+
+          apk_markdown="$(printf '%s\n' "$apk_list" | sed '/^$/d' | sed 's/^/> *   `/; s/$/`/')"
+
+          echo "Detected release APKs:"
+          printf '%s\n' "$apk_list" | sed '/^$/d' | sed 's/^/ - /'
+          echo "STABLE_APK_COUNT=${apk_count}" >> "$GITHUB_ENV"
+          {
+            echo "apk_list<<EOF"
+            printf '%s\n' "$apk_markdown"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Remove existing release/tag for this version (idempotent re-run)
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.meta.outputs.tag }}"
+          rid="$(gh api repos/${{ github.repository }}/releases/tags/$tag --jq '.id' 2>/dev/null || true)"
+          if [ -n "$rid" ]; then
+            echo "Deleting existing release id=${rid} for tag ${tag}"
+            gh api -X DELETE repos/${{ github.repository }}/releases/${rid}
+          fi
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$tag 2>/dev/null || true
+
+      - name: Publish Stable Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "Monica v${{ steps.meta.outputs.version }} (Stable)"
+          body: |
+            > **✅ 正式稳定版 (Stable Release)**
+            >
+            > 本版本为正式发布版本，已开启代码混淆与资源压缩，建议使用此版本。
+            > 版本更新请通过「设置 → 检查更新」获取（指向本仓库 Release）。
+            > ---
+            > **构建信息：**
+            > * **Version**: `${{ steps.meta.outputs.version }}`
+            > * **Commit**: `${{ github.sha }}`
+            > * **Ref**: `${{ github.ref }}`
+            > **Generated APKs:**
+            ${{ steps.apk_meta.outputs.apk_list }}
+          files: |
+            Monica for Android/app/build/outputs/apk/release/*.APK
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
