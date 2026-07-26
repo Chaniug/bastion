@@ -1,7 +1,7 @@
 # monicpass
 
 <p align="center">
-  <img src="image/monicpass-hero.svg" alt="monicpass 主视觉" width="100%" />
+  <img src="image/monica-hero.svg" alt="monicpass 主视觉" width="100%" />
 </p>
 
 <p align="center">
