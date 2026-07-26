@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.Size
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.OptIn
 
 internal class QrCameraScanSession(
     context: Context,
@@ -119,6 +121,7 @@ internal class QrCameraScanSession(
 
     fun isProcessingFrame(): Boolean = processingFrame.get()
 
+    @OptIn(ExperimentalGetImage::class)
     private fun analyzeFrame(imageProxy: ImageProxy) {
         if (!active.get()) {
             imageProxy.close()
