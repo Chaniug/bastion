@@ -58,9 +58,9 @@ data class SteamQrChallenge(
             val unsigned = runCatching { BigInteger(value) }.getOrNull() ?: return null
             if (unsigned <= BigInteger.ZERO || unsigned > UNSIGNED_LONG_MAX) return null
             return if (unsigned <= SIGNED_LONG_MAX) {
-                unsigned.longValue()
+                unsigned.toLong()
             } else {
-                unsigned.subtract(UNSIGNED_LONG_BASE).longValue()
+                unsigned.subtract(UNSIGNED_LONG_BASE).toLong()
             }
         }
 
