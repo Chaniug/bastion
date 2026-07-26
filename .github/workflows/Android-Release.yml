@@ -181,13 +181,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e
           tag="${{ steps.meta.outputs.tag }}"
-          rid="$(gh api repos/${{ github.repository }}/releases/tags/$tag --jq '.id' 2>/dev/null || true)"
-          if [ -n "$rid" ]; then
+          # 取已存在 release 的数字 id；404 / 错误响应不会被当作有效 id
+          rid="$(gh api "repos/${{ github.repository }}/releases/tags/$tag" --jq '.id' 2>/dev/null)"
+          if [[ "$rid" =~ ^[0-9]+$ ]]; then
             echo "Deleting existing release id=${rid} for tag ${tag}"
-            gh api -X DELETE repos/${{ github.repository }}/releases/${rid}
+            gh api -X DELETE "repos/${{ github.repository }}/releases/${rid}" 2>/dev/null
           fi
-          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$tag 2>/dev/null || true
+          # 删除已存在的 tag ref（不存在则忽略）
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$tag" 2>/dev/null
+          true
 
       - name: Publish Stable Release
         uses: softprops/action-gh-release@v2
