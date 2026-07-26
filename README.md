@@ -2,9 +2,7 @@
 
 <div align="center">
 
-**中文** | [English](README_EN.md)
-
-<img src="image/themepng.png" alt="monicpass App Icon" width="360" />
+<img src="image/newicon.png" alt="monicpass App Icon" width="180" />
 
 **基于 Monica 的二次开发独立分支 —— 本地优先密码管理，持续优化**
 
