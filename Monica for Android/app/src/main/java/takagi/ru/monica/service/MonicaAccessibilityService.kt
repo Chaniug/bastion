@@ -157,17 +157,28 @@ class MonicaAccessibilityService : AccessibilityService() {
         }
 
         fun isCredentialFillAvailable(context: Context): Boolean {
-            return isServiceEnabled(context) && activeInstance != null
+            // 服务运行在独立进程(:accessibility)，进程内的 activeInstance 对主进程不可见，
+            // 因此只能用系统级 isServiceEnabled 判定可用性，不能依赖 activeInstance != null。
+            return isServiceEnabled(context)
         }
 
         fun isServiceEnabled(context: Context): Boolean {
             val manager = context.getSystemService(AccessibilityManager::class.java) ?: return false
+            val expectedClass = MonicaAccessibilityService::class.java.name
             return manager
                 .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
                 .any { info ->
                     val serviceInfo = info.resolveInfo?.serviceInfo ?: return@any false
-                    serviceInfo.packageName == context.packageName &&
-                        serviceInfo.name == MonicaAccessibilityService::class.java.name
+                    if (serviceInfo.packageName != context.packageName) return@any false
+                    // serviceInfo.name 在不同 Android 版本/解析路径下可能是相对名(以"."开头，
+                    // 例如 ".service.MonicaAccessibilityService")，也可能是完整类名(FQN)。
+                    // 统一归一成完整类名再比对，避免“系统已开启无障碍但 App 判定为未开启”。
+                    val resolvedName = if (serviceInfo.name.startsWith(".")) {
+                        serviceInfo.packageName + serviceInfo.name
+                    } else {
+                        serviceInfo.name
+                    }
+                    resolvedName == expectedClass
                 }
         }
     }
