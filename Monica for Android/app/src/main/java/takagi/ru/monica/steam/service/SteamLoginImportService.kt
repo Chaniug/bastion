@@ -1342,9 +1342,9 @@ class SteamLoginImportService(
         val big = runCatching { BigInteger(value.trim()) }.getOrNull() ?: return null
         if (big < BigInteger.ZERO || big > UNSIGNED_LONG_MAX) return null
         return if (big > SIGNED_LONG_MAX) {
-            big.subtract(UNSIGNED_LONG_BASE).longValueExact()
+            big.subtract(UNSIGNED_LONG_BASE).longValue()
         } else {
-            big.longValueExact()
+            big.longValue()
         }
     }
 

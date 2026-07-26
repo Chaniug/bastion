@@ -86,9 +86,9 @@ data class SteamProtoField(
         get() {
             val value = fixed64BigInteger()
             return if (value > SIGNED_LONG_MAX) {
-                value.subtract(UNSIGNED_LONG_BASE).longValueExact()
+                value.subtract(UNSIGNED_LONG_BASE).longValue()
             } else {
-                value.longValueExact()
+                value.longValue()
             }
         }
 
@@ -147,7 +147,7 @@ class SteamProtoReader(private val data: ByteArray) {
             if ((byte and 0x80) == 0) break
             shift += 7
         }
-        return if (result > SIGNED_LONG_MAX) result.toLong() else result.longValueExact()
+        return if (result > SIGNED_LONG_MAX) result.toLong() else result.longValue()
     }
 
     private fun readBytes(length: Int): ByteArray {
