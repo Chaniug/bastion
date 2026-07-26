@@ -3773,401 +3773,41 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_monica_label&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_monica_label&quot;>Monica Keyboard&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="43"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_monica_subtype_label&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_monica_subtype_label&quot;>Monica Secure Keyboard&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="44"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_toolbar_monica&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_monica&quot;>Monica&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="45"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_toolbar_autofill&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_autofill&quot;>Autofill&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="46"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_toolbar_hide_autofill&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_hide_autofill&quot;>Hide Autofill&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="47"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_toolbar_more&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_more&quot;>More&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="48"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_toolbar_keyboard&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_keyboard&quot;>Keyboard&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="49"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_state_locked&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_state_locked&quot;>Locked&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="50"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_state_unlocked&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_state_unlocked&quot;>Unlocked&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="51"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_title&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_title&quot;>Unlock in Monica&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="52"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_message&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_message&quot;>Monica secure keyboard follows the main app lock state.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="53"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_password_label&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_password_label&quot;>Master password&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="54"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_error&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_error&quot;>Master password is incorrect.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="55"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_required&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_required&quot;>Vault locked. Unlock to continue.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="56"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_in_app_message&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_in_app_message&quot;>Verify with biometrics or your master password to continue filling.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="57"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_open_app&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_open_app&quot;>Unlock&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="58"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_unlock_open_app_error&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_unlock_open_app_error&quot;>Could not open the unlock screen.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="59"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_search_accounts&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_search_accounts&quot;>Search accounts&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="60"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_picker_title&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_picker_title&quot;>Password picker&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="61"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_picker_subtitle&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_picker_subtitle&quot;>Pick a database, then tap an item to fill the current field.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="62"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_quick_fill&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_quick_fill&quot;>Quick fill&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="63"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_authenticator_panel_placeholder&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_authenticator_panel_placeholder&quot;>Authenticator view is reserved here. I can wire the real TOTP list in next.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="64"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_documents_panel_placeholder&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_documents_panel_placeholder&quot;>Document view is reserved here. I can wire the real document picker in next.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="65"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_empty_title&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_empty_title&quot;>No autofill entries yet&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="66"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_empty_message&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_empty_message&quot;>Open Autofill to show accounts that match the current app.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="67"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_no_matches_title&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_no_matches_title&quot;>No matches&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="68"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_no_matches_message&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_no_matches_message&quot;>Try another keyword such as app name, username, or website.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="69"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_untitled_account&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_untitled_account&quot;>Untitled account&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="70"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_favorite_badge&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_favorite_badge&quot;>Fav&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="71"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_key_shift&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_key_shift&quot;>Shift&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="72"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_key_delete&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_key_delete&quot;>Delete&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="73"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_key_mode&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_key_mode&quot;>Keyboard mode&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="74"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_key_space&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_key_space&quot;>Space&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="75"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_key_enter&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_key_enter&quot;>Enter&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="76"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_show&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_show&quot;>Show&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="77"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ime_hide&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;ime_hide&quot;>Hide&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="78"
-            column="13"/>
-    </issue>
 
     <issue
         id="MissingTranslation"
@@ -16159,16 +15799,6 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;local_keepass_decrypt_time_value&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;local_keepass_decrypt_time_value&quot;>%1$d ms&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="2904"
-            column="13"/>
-    </issue>
 
     <issue
         id="MissingTranslation"
@@ -18238,38 +17868,8 @@
             column="5"/>
     </issue>
 
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;minutes&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;time_minutes_ago&quot;>%1$d minutes ago&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="2287"
-            column="5"/>
-    </issue>
 
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;hours&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;time_hours_ago&quot;>%1$d hours ago&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="2288"
-            column="5"/>
-    </issue>
 
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;time_days_ago&quot;>%1$d days ago&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="2289"
-            column="5"/>
-    </issue>
 
     <issue
         id="PluralsCandidate"
@@ -19040,16 +18640,6 @@
             column="17"/>
     </issue>
 
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; SDK_INT is always >= 26"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/takagi/ru/monica/ime/ImeUnlockActivity.kt"
-            line="31"
-            column="13"/>
-    </issue>
 
     <issue
         id="ObsoleteSdkInt"
@@ -19895,82 +19485,12 @@
             column="13"/>
     </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_toolbar_monica` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_monica&quot;>Monica&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="45"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_toolbar_hide_autofill` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_hide_autofill&quot;>Hide Autofill&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="47"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_toolbar_more` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_toolbar_more&quot;>More&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="48"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_state_locked` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_state_locked&quot;>Locked&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="50"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_state_unlocked` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_state_unlocked&quot;>Unlocked&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="51"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_show` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_show&quot;>Show&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="77"
-            column="13"/>
-    </issue>
 
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.ime_hide` appears to be unused"
-        errorLine1="    &lt;string name=&quot;ime_hide&quot;>Hide&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="78"
-            column="13"/>
-    </issue>
 
     <issue
         id="UnusedResources"

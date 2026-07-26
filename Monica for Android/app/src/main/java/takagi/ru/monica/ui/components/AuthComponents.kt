@@ -114,7 +114,7 @@ fun PasswordVerificationContent(
                 context.getString(R.string.biometric_requires_password_reentry)
             }
             PasswordVerificationBiometricAccessResult.LOCKED -> {
-                context.getString(R.string.ime_unlock_required)
+                context.getString(R.string.vault_locked_message)
             }
             PasswordVerificationBiometricAccessResult.PROCEED -> {
                 ""
