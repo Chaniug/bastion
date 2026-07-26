@@ -207,6 +207,9 @@ class MonicaAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         activeInstance = this
+        // 提供应用上下文，使 BrowserAutofillContextStore 能跨进程(:accessibility 写、
+        // :autofill 读)共享同一 filesDir 文件中的浏览器填充上下文。
+        BrowserAutofillContextStore.attach(applicationContext)
         serviceScope.launch {
             autofillPreferences.isActiveFillNotificationEnabled.collectLatest { enabled ->
                 activeFillNotificationEnabled = enabled
