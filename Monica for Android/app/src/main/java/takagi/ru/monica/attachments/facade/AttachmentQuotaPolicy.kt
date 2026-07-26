@@ -23,7 +23,7 @@ object AttachmentQuotaPolicy {
      * @return null 表示允许新增；否则返回应抛出的错误。
      */
     fun check(existingActiveCount: Int, isPlusActivated: Boolean): AttachmentError? {
-        if (isPlusActivated) return null
-        return if (existingActiveCount >= FREE_ATTACHMENT_QUOTA) AttachmentError.QuotaExceeded else null
+        // 全部免费，不限制附件数量
+        return null
     }
 }

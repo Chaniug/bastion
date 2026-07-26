@@ -1655,7 +1655,7 @@ fun AddEditPasswordScreen(
                                 context = context,
                                 passwordId = firstPasswordId,
                                 pendingDrafts = pendingAttachmentDrafts,
-                                isPlusActivated = settings.isPlusActivated,
+                                isPlusActivated = true,
                                 attachmentSource = if (draftKeePassContext != null) {
                                     takagi.ru.monica.attachments.model.AttachmentSource.KEEPASS
                                 } else {
@@ -2827,7 +2827,7 @@ fun AddEditPasswordScreen(
                     }
                     takagi.ru.monica.attachments.ui.AttachmentsEditSection(
                         passwordId = passwordId ?: -1L,
-                        isPlusActivated = settings.isPlusActivated,
+                        isPlusActivated = true,
                         attachmentSource = if (editKeePassContext != null) {
                             takagi.ru.monica.attachments.model.AttachmentSource.KEEPASS
                         } else {

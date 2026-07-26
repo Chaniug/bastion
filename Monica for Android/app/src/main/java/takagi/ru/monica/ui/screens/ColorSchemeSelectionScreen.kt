@@ -239,9 +239,8 @@ fun ColorSchemeSelectionScreen(
                 }
             )
 
-            // Monet Impressionist Schemes
-            if (settings.isPlusActivated) {
-                ColorSchemeOption(
+            // Monet Impressionist Schemes (全部免费开放)
+            ColorSchemeOption(
                     colorScheme = ColorScheme.WATER_LILIES,
                     name = stringResource(R.string.water_lilies_scheme),
                     primaryColor = Color(0xFF00796B),
@@ -391,7 +390,6 @@ fun ColorSchemeSelectionScreen(
                         }
                     }
                 )
-            }
             
             ColorSchemeOption(
                 colorScheme = ColorScheme.CUSTOM,

@@ -401,7 +401,7 @@ fun QuickSetupScreen(
                         )
 
                         QuickSetupStep.MONICA_PLUS -> MonicaPlusStep(
-                            isPlusActivated = settings.isPlusActivated,
+                            isPlusActivated = true,
                             onOpenMonicaPlus = onOpenMonicaPlus
                         )
                     }
@@ -1072,25 +1072,15 @@ private fun MonicaPlusStep(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(
-            text = stringResource(if (isPlusActivated) R.string.qs_plus_activated else R.string.qs_plus_prompt),
+            text = stringResource(R.string.qs_plus_activated),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = stringResource(if (isPlusActivated) R.string.qs_plus_activated_desc else R.string.qs_plus_prompt_desc),
+            text = stringResource(R.string.qs_plus_activated_desc),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (!isPlusActivated) {
-            Button(
-                onClick = onOpenMonicaPlus,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.qs_open_monica_plus))
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(Icons.Default.ChevronRight, contentDescription = null)
-            }
-        }
     }
 }
 

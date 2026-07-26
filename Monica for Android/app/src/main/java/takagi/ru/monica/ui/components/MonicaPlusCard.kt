@@ -17,16 +17,14 @@ import androidx.compose.ui.unit.dp
 import takagi.ru.monica.R
 
 /**
- * Monica Plus入口卡片
+ * Monica Plus入口卡片（已全面免费）
  * 显示在设置页面顶部的Plus功能入口
  * 
- * @param isPlusActivated Plus是否已激活
  * @param onClick 点击回调
  * @param modifier Modifier
  */
 @Composable
 fun MonicaPlusCard(
-    isPlusActivated: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,7 +64,7 @@ fun MonicaPlusCard(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f)
                 ) {
                     Icon(
-                        imageVector = if (isPlusActivated) Icons.Default.CheckCircle else Icons.Default.Star,
+                        imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
                         modifier = Modifier
                             .padding(12.dp)
@@ -89,10 +87,7 @@ fun MonicaPlusCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(
-                            if (isPlusActivated) R.string.plus_subtitle_active 
-                            else R.string.plus_subtitle_inactive
-                        ),
+                        text = stringResource(R.string.plus_subtitle_active),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                     )

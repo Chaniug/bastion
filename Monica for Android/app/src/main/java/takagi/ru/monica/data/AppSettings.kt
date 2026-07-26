@@ -527,7 +527,7 @@ data class AppSettings(
     val notificationValidatorEnabled: Boolean = false, // 通知栏验证器开关
     val notificationValidatorAutoMatch: Boolean = false, // 通知栏验证器自动匹配
     val notificationValidatorId: Long = -1L, // 通知栏显示的验证器ID
-    val isPlusActivated: Boolean = false, // Plus是否已激活
+    val isPlusActivated: Boolean = true, // Plus是否已激活（默认免费激活）
     val stackCardMode: String = "AUTO", // 堆叠卡片模式
     val passwordGroupMode: String = "smart", // 密码分组模式
     val passwordWebsiteStackMatchMode: String = "strict", // 网站自动堆叠匹配模式：strict/relaxed

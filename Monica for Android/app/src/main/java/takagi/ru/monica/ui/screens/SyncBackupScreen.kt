@@ -33,8 +33,7 @@ fun SyncBackupScreen(
     onNavigateToDedupEngine: () -> Unit = {},
     onNavigateToLocalKeePass: () -> Unit = {},  // 本地 KeePass 数据库管理
     onNavigateToMdbx: () -> Unit = {},
-    onNavigateToBitwarden: () -> Unit = {},  // Bitwarden 集成入口
-    isPlusActivated: Boolean = false
+    onNavigateToBitwarden: () -> Unit = {}  // Bitwarden 集成入口
 ) {
     val scrollState = rememberScrollState()
 
@@ -146,8 +145,8 @@ fun SyncBackupScreen(
                     title = stringResource(R.string.sync_backup_bitwarden_sync_title),
                     description = stringResource(R.string.sync_backup_bitwarden_sync_desc),
                     onClick = onNavigateToBitwarden,
-                    enabled = isPlusActivated,
-                    badge = if (!isPlusActivated) "Plus" else null
+                    enabled = true,
+                    badge = null
                 )
             }
 
@@ -207,38 +206,6 @@ fun SyncBackupScreen(
                     description = stringResource(R.string.import_data_description),
                     onClick = onNavigateToImportData
                 )
-            }
-            
-            // 提示卡片
-            if (!isPlusActivated) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            stringResource(R.string.sync_backup_plus_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
             }
             
             Spacer(modifier = Modifier.height(32.dp))

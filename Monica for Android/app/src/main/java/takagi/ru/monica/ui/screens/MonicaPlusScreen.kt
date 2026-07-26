@@ -21,10 +21,7 @@ import takagi.ru.monica.ui.components.PlusFeatureCard
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun MonicaPlusScreen(
-    isPlusActivated: Boolean,
-    onNavigateBack: () -> Unit,
-    onNavigateToPayment: () -> Unit,
-    onDeactivatePlus: () -> Unit = {}
+    onNavigateBack: () -> Unit
 ) {
     val features = PlusFeatures.getPlaceholderFeatures()
 
@@ -67,16 +64,12 @@ fun MonicaPlusScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // Header - Plus Status
+            // Header - Plus Status（已免费激活）
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isPlusActivated) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        }
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
                 ) {
                     Column(
@@ -93,67 +86,36 @@ fun MonicaPlusScreen(
                                 text = stringResource(R.string.monica_plus_title),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isPlusActivated) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = stringResource(R.string.monica_plus_card_desc),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (isPlusActivated) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                }
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Plus Switch - Only show when activated
-                        if (isPlusActivated) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.plus_activation_title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.plus_status_activated),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                    )
-                                }
-                                
-                                Switch(
-                                    checked = true,
-                                    onCheckedChange = { checked ->
-                                        if (!checked) {
-                                            onDeactivatePlus()
-                                        }
-                                    }
+                        // 已激活状态（全部免费）
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.plus_activation_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                            }
-                        } else {
-                            // Use a filled action button to keep CTA contrast strong in M3.
-                            Button(
-                                onClick = onNavigateToPayment,
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                Text(
+                                    text = stringResource(R.string.plus_status_activated),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 )
-                            ) {
-                                Text(stringResource(R.string.click_to_pay))
                             }
                         }
                     }
@@ -174,7 +136,7 @@ fun MonicaPlusScreen(
             items(features) { feature ->
                 PlusFeatureCard(
                     feature = feature,
-                    isUnlocked = isPlusActivated
+                    isUnlocked = true
                 )
             }
             
@@ -185,5 +147,4 @@ fun MonicaPlusScreen(
         }
     }
 }
-
 

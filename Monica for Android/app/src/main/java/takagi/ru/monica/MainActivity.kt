@@ -3422,7 +3422,6 @@ fun MonicaContent(
                 onNavigateToQuickSetup = {
                     navController.navigate(Screen.QuickSetup.route)
                 },
-                isPlusActivated = settings.isPlusActivated,
                 validatorVibrationEnabled = settings.validatorVibrationEnabled,
                 onValidatorVibrationChange = { enabled ->
                     settingsViewModel.updateValidatorVibrationEnabled(enabled)
@@ -3655,8 +3654,7 @@ fun MonicaContent(
                 },
                 onNavigateToBitwarden = {
                     navController.navigate(Screen.BitwardenSettings.route)
-                },
-                isPlusActivated = settingsViewModel.settings.collectAsState().value.isPlusActivated
+                }
             )
             }
         }
@@ -3831,15 +3829,8 @@ fun MonicaContent(
                 takagi.ru.monica.ui.LocalAnimatedVisibilityScope provides this
             ) {
             MonicaPlusScreen(
-                isPlusActivated = settings.isPlusActivated,
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onNavigateToPayment = {
-                    navController.navigate(Screen.Payment.route)
-                },
-                onDeactivatePlus = {
-                    settingsViewModel.updatePlusActivated(false)
                 }
             )
         }
@@ -3856,9 +3847,6 @@ fun MonicaContent(
             PaymentScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onActivatePlus = {
-                    settingsViewModel.updatePlusActivated(true)
                 }
             )
         }

@@ -2122,8 +2122,8 @@ fun AuthenticatorCardAdjustmentScreen(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                     )
 
-                    if (settings.isPlusActivated) {
-                        HorizontalDivider(
+                    // 验证器震动和复制下一验证码（全部免费开放）
+                    HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
                         )
@@ -2176,7 +2176,6 @@ fun AuthenticatorCardAdjustmentScreen(
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                         )
-                    }
                 }
             }
 

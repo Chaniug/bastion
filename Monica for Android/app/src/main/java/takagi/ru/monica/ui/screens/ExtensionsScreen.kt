@@ -32,7 +32,6 @@ fun ExtensionsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToMonicaPlus: () -> Unit = {},
     onNavigateToQuickSetup: () -> Unit = {},
-    isPlusActivated: Boolean = false,
     validatorVibrationEnabled: Boolean = false,
     onValidatorVibrationChange: (Boolean) -> Unit = {},
     copyNextCodeWhenExpiring: Boolean = false,
@@ -189,13 +188,6 @@ fun ExtensionsScreen(
                 .padding(padding)
                 .verticalScroll(scrollState)
         ) {
-            if (isPlusActivated) {
-                takagi.ru.monica.ui.components.MonicaPlusCard(
-                    isPlusActivated = true,
-                    onClick = onNavigateToMonicaPlus
-                )
-            }
-
             // 顶部说明卡片
             ElevatedCard(
                 modifier = Modifier
@@ -327,27 +319,24 @@ fun ExtensionsScreen(
                 )
             }
              
-            // 验证器设置（需要 Plus）
-            if (isPlusActivated) {
-                Spacer(modifier = Modifier.height(8.dp))
-                ExtensionSection(title = stringResource(R.string.extensions_totp_settings)) {
-                    ExtensionSwitchItem(
-                        icon = Icons.Default.Vibration,
-                        title = stringResource(R.string.validator_vibration),
-                        description = stringResource(R.string.validator_vibration_description),
-                        checked = validatorVibrationEnabled,
-                        onCheckedChange = onValidatorVibrationChange
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ExtensionSwitchItem(
-                        icon = Icons.Default.Update,
-                        title = stringResource(R.string.copy_next_code_when_expiring),
-                        description = stringResource(R.string.copy_next_code_when_expiring_description),
-                        checked = copyNextCodeWhenExpiring,
-                        onCheckedChange = onCopyNextCodeWhenExpiringChange
-                    )
-                }
-                
+            // 验证器设置（全部免费开放）
+            Spacer(modifier = Modifier.height(8.dp))
+            ExtensionSection(title = stringResource(R.string.extensions_totp_settings)) {
+                ExtensionSwitchItem(
+                    icon = Icons.Default.Vibration,
+                    title = stringResource(R.string.validator_vibration),
+                    description = stringResource(R.string.validator_vibration_description),
+                    checked = validatorVibrationEnabled,
+                    onCheckedChange = onValidatorVibrationChange
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ExtensionSwitchItem(
+                    icon = Icons.Default.Update,
+                    title = stringResource(R.string.copy_next_code_when_expiring),
+                    description = stringResource(R.string.copy_next_code_when_expiring_description),
+                    checked = copyNextCodeWhenExpiring,
+                    onCheckedChange = onCopyNextCodeWhenExpiringChange
+                )
             }
             
             // 更多功能即将推出提示

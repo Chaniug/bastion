@@ -609,6 +609,12 @@ class EnhancedAutofillStructureParserV2 {
             it.hint == InternalHint.USERNAME ||
                 it.hint == InternalHint.EMAIL_ADDRESS ||
                 it.hint == InternalHint.PHONE_NUMBER
+        } || confidenceFilteredItems.any {
+            // promotePasswordTermCandidates 可能将 USERNAME 提升为 PASSWORD，
+            // 但原始候选中存在 Login 类型字段本身说明当前是登录场景，应放行。
+            it.hint == InternalHint.USERNAME ||
+                it.hint == InternalHint.EMAIL_ADDRESS ||
+                it.hint == InternalHint.PHONE_NUMBER
         }
         val weakLoginContext = allowWeakTargets && !hasPasswordInItems && hasLoginTypeField
         val loginFilteredItems = when {
@@ -651,9 +657,24 @@ class EnhancedAutofillStructureParserV2 {
                     // （如 EMAIL/PHONE/PASSWORD），应保留这些非 OFF 候选而非整组跳过。
                     // 否则电影猎手等 App 的重要ForAutofill=NO 节点会连带丢弃同组的有效字段。
                     val nonOff = groupedById.value.filter { it.hint != InternalHint.OFF }
-                    if (nonOff.isNotEmpty()) nonOff else return@forEach
+                    if (nonOff.isEmpty()) {
+                        AutofillLogger.d("PARSING",
+                            "Group skipped: forceAutofillOff (OFF:HIGHEST) with no non-OFF candidates",
+                            metadata = mapOf(
+                                "groupId" to groupedById.key.toString(),
+                                "groupHints" to groupHints,
+                            ))
+                        return@forEach
+                    }
+                    nonOff
                 } else if (respectAutofillOff) {
                     if (groupedById.value.any { it.hint == InternalHint.OFF }) {
+                        AutofillLogger.d("PARSING",
+                            "Group skipped: respectAutofillOff (has OFF candidate)",
+                            metadata = mapOf(
+                                "groupId" to groupedById.key.toString(),
+                                "groupHints" to groupHints,
+                            ))
                         return@forEach
                     }
                     groupedById.value
@@ -715,7 +736,17 @@ class EnhancedAutofillStructureParserV2 {
                         )
                     }
                 )
-                    ?: return@forEach
+                    ?: run {
+                        AutofillLogger.d("PARSING",
+                            "Group skipped: AutofillFieldRolePolicy.selectWithDiagnostics returned null",
+                            metadata = mapOf(
+                                "groupId" to groupedById.key.toString(),
+                                "groupHints" to groupHints,
+                                "rankedHintCount" to rankedItems.size,
+                                "rankedHints" to rankedItems.joinToString { "${it.hint}:${it.accuracy.name}" },
+                            ))
+                        return@forEach
+                    }
                 val selectedItem = fieldRoleSelection.value
                 if (fieldRoleSelection.resolvedExplicitAccountPasswordConflict) {
                     AutofillLogger.w(
@@ -739,11 +770,28 @@ class EnhancedAutofillStructureParserV2 {
                             it.accuracy.score > Accuracy.LOWEST.score
                     }
                     if (shouldSkip) {
+                        AutofillLogger.d("PARSING",
+                            "Group skipped: low score (<=LOWEST+0.1) with higher-accuracy same-hint candidate in rawStructure",
+                            metadata = mapOf(
+                                "groupId" to groupedById.key.toString(),
+                                "groupHints" to groupHints,
+                                "selectedHint" to selectedItem.hint.name,
+                                "selectedScore" to selectedItem.score.toString(),
+                            ))
                         return@forEach
                     }
                 }
 
-                val mappedHint = mapHint(selectedItem.hint) ?: return@forEach
+                val mappedHint = mapHint(selectedItem.hint) ?: run {
+                    AutofillLogger.d("PARSING",
+                        "Group skipped: mapHint returned null for selected hint",
+                        metadata = mapOf(
+                            "groupId" to groupedById.key.toString(),
+                            "groupHints" to groupHints,
+                            "selectedHint" to selectedItem.hint.name,
+                        ))
+                    return@forEach
+                }
                 items += ParsedItem(
                     id = groupedById.key,
                     hint = mappedHint,
@@ -766,7 +814,7 @@ class EnhancedAutofillStructureParserV2 {
                     val mappedHints = group.mapNotNull { mapHint(it.hint) }
                     "id=$id hints=[$hints] hasOff=$hasOff mappedCount=${mappedHints.size}"
                 }
-            AutofillLogger.w(
+            AutofillLogger.d(
                 "PARSING",
                 "All groups skipped after groupBy despite non-empty loginFilteredItems",
                 metadata = mapOf(

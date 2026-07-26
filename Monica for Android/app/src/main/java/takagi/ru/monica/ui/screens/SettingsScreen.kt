@@ -576,7 +576,7 @@ fun SettingsScreen(
         *extraSearchTexts
     )
 
-    val showMonicaPlusCard = !settings.isPlusActivated && matchesSettingsSearch(
+    val showMonicaPlusCard = false && matchesSettingsSearch(
         settingsSearchQuery,
         context.getString(R.string.monica_plus_title),
         context.getString(R.string.monica_plus_card_desc)
@@ -792,7 +792,6 @@ fun SettingsScreen(
             // Monica Plus card is moved to Extensions page after activation.
             if (showMonicaPlusCard) {
                 takagi.ru.monica.ui.components.MonicaPlusCard(
-                    isPlusActivated = settings.isPlusActivated,
                     onClick = {
                         android.util.Log.d("SettingsScreen", "Monica Plus card clicked")
                         onNavigateToMonicaPlus()

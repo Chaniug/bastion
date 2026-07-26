@@ -492,7 +492,7 @@ class SettingsManager(private val context: Context) {
             preferences[PASSWORD_PAGE_VISIBLE_CONTENT_TYPES_KEY]
         ) ?: PasswordPageContentType.DEFAULT_VISIBLE_TYPES
 
-        val isPlusActivated = preferences[IS_PLUS_ACTIVATED_KEY] ?: false
+        val isPlusActivated = preferences[IS_PLUS_ACTIVATED_KEY] ?: true
 
         return AppSettings(
             themeMode = ThemeMode.valueOf(
