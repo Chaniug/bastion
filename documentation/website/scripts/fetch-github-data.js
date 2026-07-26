@@ -7,8 +7,8 @@ const OUTPUT_DIR = path.resolve(__dirname, '../public/data');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'github-data.json');
 
 // Using the provided repo info or env vars
-const REPO_OWNER = 'JoyinJoester';
-const REPO_NAME = 'Monica';
+const REPO_OWNER = 'Chaniug';
+const REPO_NAME = 'monicpass';
 
 async function fetchData() {
     try {

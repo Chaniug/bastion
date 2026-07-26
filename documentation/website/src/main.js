@@ -213,8 +213,8 @@ function renderChart(commits) {
 }
 
 // 4. Github Data Render
-const GITHUB_REPO_OWNER = 'JoyinJoester';
-const GITHUB_REPO_NAME = 'Monica';
+const GITHUB_REPO_OWNER = 'Chaniug';
+const GITHUB_REPO_NAME = 'monicpass';
 
 async function fetchLiveGithubData() {
     const headers = {

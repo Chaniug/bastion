@@ -1,91 +1,209 @@
 # monicpass
 
-<div align="center">
+<p align="center">
+  <img src="image/monicpass-hero.svg" alt="monicpass ä¸»è§†è§‰" width="100%" />
+</p>
 
-<img src="image/newicon.png" alt="monicpass App Icon" width="180" />
+<p align="center">
+  <b>æœ¬åœ°ä¼˜å…ˆ Â· å¼€æº Â· å®‰å…¨å¯†ç ç®¡ç†</b><br/>
+  åŸºäº <a href="https://github.com/Monica-Pass/Monica">Monica</a> çš„äºŒæ¬¡å¼€å‘ç‹¬ç«‹åˆ†æ”¯ï¼ŒæŒç»­ä¼˜åŒ–
+</p>
 
-**»ùÓÚ Monica µÄ¶ş´Î¿ª·¢¶ÀÁ¢·ÖÖ§ ¡ª¡ª ±¾µØÓÅÏÈÃÜÂë¹ÜÀí£¬³ÖĞøÓÅ»¯**
-
-[![Release](https://img.shields.io/github/v/release/Chaniug/monicpass?style=flat-square)](https://github.com/Chaniug/monicpass/releases)
-[![Downloads](https://img.shields.io/github/downloads/Chaniug/monicpass/total?style=flat-square)](https://github.com/Chaniug/monicpass/releases)
-[![Last Commit](https://img.shields.io/github/last-commit/Chaniug/monicpass?style=flat-square)](https://github.com/Chaniug/monicpass/commits)
-
-</div>
-
----
-
-## ¹ØÓÚ monicpass
-
-monicpass ÊÇ [Monica Pass](https://github.com/Monica-Pass/Monica) µÄ¶ÀÁ¢¶ş´Î¿ª·¢·ÖÖ§£¨fork£©£¬ÔÚ±£³ÖÉÏÓÎºËĞÄÄÜÁ¦µÄ»ù´¡ÉÏ½øĞĞÕë¶ÔĞÔÓÅ»¯Óë¹¦ÄÜÔöÇ¿¡£
-
-±¾·ÖÖ§µÄ¿ª·¢Ô­Ôò£º
-- **ÓëÉÏÓÎ¸Ä¶¯±£³Ö´óÌåÒ»ÖÂ**£¬²»×öÎŞÒâÒåµÄÖØ¸´ÔìÂÖ×Ó
-- **ÔÚÏ¸½Ú²¿·Ö½øÒ»²½¿ª·¢ÓëÓÅ»¯**£¬ĞŞ¸´Êµ¼ÊÊ¹ÓÃÖĞÓöµ½µÄÎÊÌâ
-- **¶ÀÁ¢Î¬»¤**£¬²»ÒÀÀµÉÏÓÎµÄ·¢²¼½Ú×à
+<p align="center">
+  <a href="https://github.com/Chaniug/monicpass/releases"><img src="https://img.shields.io/github/v/release/Chaniug/monicpass?style=flat-square" alt="Release" /></a>
+  <a href="https://github.com/Chaniug/monicpass/releases"><img src="https://img.shields.io/github/downloads/Chaniug/monicpass/total?style=flat-square" alt="Downloads" /></a>
+  <a href="https://github.com/Chaniug/monicpass/commits"><img src="https://img.shields.io/github/last-commit/Chaniug/monicpass?style=flat-square" alt="Last Commit" /></a>
+  <img src="https://img.shields.io/badge/platform-Android%208.0%2B-green?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/license-GPLv3-blue?style=flat-square" alt="License" />
+</p>
 
 ---
 
-## ºËĞÄ¹¦ÄÜ
+## âœ¨ å…³äº monicpass
 
-- **±¾µØ Vault**£ºËùÓĞºËĞÄÆ¾¾İ±¾µØ¼ÓÃÜ´æ´¢£¬Êı¾İ²»ÍĞ¸¶¸øµÚÈı·½ÔÆ
-- **Ë«ÉúÌ¬¾ÛºÏ**£º¼æÈİ Bitwarden API/Í¬²½ÄÜÁ¦Óë KeePass (`.kdbx`) ¶ÁĞ´ÄÜÁ¦
-- **ÖÇÄÜ¼ìË÷**£º°´±êÌâ¡¢ÓòÃû¡¢±êÇ©¿ìËÙ¶¨Î»Æ¾¾İ
-- **ÉúÎïÊ¶±ğ½âËø**£ºÊ¹ÓÃÏµÍ³¼¶ÉúÎïÊ¶±ğÄÜÁ¦ÌáÉı°²È«Óë¿ÉÓÃĞÔ
-- **TOTP ¹ÜÀí**£ºÍ³Ò»´æ´¢²¢Éú³É¶¯Ì¬ÑéÖ¤Âë
-- **Android Autofill**£ºAndroid ×Ô¶¯Ìî³ä·şÎñ£¬Ö§³ÖÓ¦ÓÃÓëä¯ÀÀÆ÷ÃÜÂë/ÕËºÅ×Ô¶¯ÌîÈë
-- **WebDAV ±¸·İÓëÍ¬²½**£ºÍ¨¹ı×ÔÓĞ WebDAV »ù´¡ÉèÊ©ÊµÏÖ¿çÉè±¸Êı¾İÁ÷×ª
-- **µ¼ÈëÖ§³Ö**£ºÖ§³Ö KeePass Êı¾İÇ¨ÒÆÓë Bitwarden ¼æÈİ½ÓÈë
+**monicpass** æ˜¯ [Monica Pass](https://github.com/Monica-Pass/Monica) çš„ç‹¬ç«‹äºŒæ¬¡å¼€å‘åˆ†æ”¯ï¼ˆforkï¼‰ï¼Œåœ¨ä¿æŒä¸Šæ¸¸æ ¸å¿ƒèƒ½åŠ›çš„åŸºç¡€ä¸Šè¿›è¡Œé’ˆå¯¹æ€§ä¼˜åŒ–ä¸åŠŸèƒ½å¢å¼ºã€‚
+
+æœ¬åˆ†æ”¯çš„å¼€å‘åŸåˆ™ï¼š
+
+- **ä¸ä¸Šæ¸¸æ”¹åŠ¨ä¿æŒå¤§ä½“ä¸€è‡´**ï¼Œä¸åšæ— æ„ä¹‰çš„é‡å¤é€ è½®å­
+- **åœ¨ç»†èŠ‚éƒ¨åˆ†è¿›ä¸€æ­¥å¼€å‘ä¸ä¼˜åŒ–**ï¼Œä¿®å¤å®é™…ä½¿ç”¨ä¸­é‡åˆ°çš„é—®é¢˜
+- **ç‹¬ç«‹ç»´æŠ¤**ï¼Œä¸ä¾èµ–ä¸Šæ¸¸çš„å‘å¸ƒèŠ‚å¥
 
 ---
 
-## ¿ìËÙ°²×°
+## ğŸ–¼ï¸ ç•Œé¢é¢„è§ˆ
+
+> å¤šå¥—ä¸»é¢˜éšå¿ƒåˆ‡æ¢ â€”â€” è‡ªç„¶ä¸»é¢˜ã€Material You åŠ¨æ€å–è‰²ï¼ˆMonetï¼‰ã€æš—è‰²ã€çº¯é»‘ã€RG æŠ¤çœ¼ï¼Œä»¥åŠè‡ªåŠ¨å¡«å……ä¸ TOTP éªŒè¯å™¨ç•Œé¢ã€‚
+
+<p align="center">
+  <img src="documentation/website/public/images/natural_theme.jpg" width="30%" alt="è‡ªç„¶ä¸»é¢˜" />
+  <img src="documentation/website/public/images/monet_theme.jpg" width="30%" alt="Monet ä¸»é¢˜" />
+  <img src="documentation/website/public/images/language_dark_mode.jpg" width="30%" alt="æš—è‰²ä¸»é¢˜" />
+</p>
+<p align="center">
+  <img src="documentation/website/public/images/autofill_categories.jpg" width="30%" alt="è‡ªåŠ¨å¡«å……" />
+  <img src="documentation/website/public/images/authenticator_page.jpg" width="30%" alt="TOTP éªŒè¯å™¨" />
+  <img src="documentation/website/public/images/sync_and_backup.jpg" width="30%" alt="WebDAV åŒæ­¥" />
+</p>
+
+---
+
+## ğŸš€ æ ¸å¿ƒåŠŸèƒ½
+
+| åŠŸèƒ½ | è¯´æ˜ |
+| :--- | :--- |
+| ğŸ” **æœ¬åœ° Vault** | æ‰€æœ‰å‡­æ®æœ¬åœ°åŠ å¯†å­˜å‚¨ï¼Œæ•°æ®ä¸æ‰˜ä»˜ç»™ä»»ä½•ç¬¬ä¸‰æ–¹äº‘ |
+| ğŸ”„ **åŒç”Ÿæ€èšåˆ** | å…¼å®¹ Bitwarden åŒæ­¥èƒ½åŠ›ä¸ KeePassï¼ˆ`.kdbx`ï¼‰è¯»å†™ |
+| ğŸ” **æ™ºèƒ½æ£€ç´¢** | æŒ‰æ ‡é¢˜ã€åŸŸåã€æ ‡ç­¾æ¯«ç§’çº§å®šä½å‡­æ® |
+| ğŸ‘† **ç”Ÿç‰©è¯†åˆ«è§£é”** | ç³»ç»Ÿçº§æŒ‡çº¹ / é¢å®¹ï¼Œå…¼é¡¾å®‰å…¨ä¸ä¾¿æ· |
+| â±ï¸ **TOTP ç®¡ç†** | ç»Ÿä¸€å­˜å‚¨å¹¶ç”Ÿæˆ 30 ç§’åŠ¨æ€éªŒè¯ç ï¼Œä¸´è¿‘è¿‡æœŸé«˜äº® |
+| ğŸ“² **Android Autofill** | ç³»ç»Ÿè‡ªåŠ¨å¡«å……æœåŠ¡ï¼Œè¦†ç›–åº”ç”¨ä¸æµè§ˆå™¨è´¦å·å¯†ç  |
+| â˜ï¸ **WebDAV åŒæ­¥** | é€šè¿‡è‡ªæœ‰ WebDAV åŸºç¡€è®¾æ–½å®ç°è·¨è®¾å¤‡æ•°æ®æµè½¬ |
+| ğŸ“¥ **å¯¼å…¥æ”¯æŒ** | ä¸€é”®è¿ç§» KeePassã€Bitwarden ç­‰æ—¢æœ‰æ•°æ® |
+
+---
+
+## ğŸ—ï¸ æ¶æ„ä¸æ•°æ®æµå‘
+
+```mermaid
+flowchart TB
+    U["ç”¨æˆ· Â· ä¸»å¯†ç "] --> K["Android Keystore (TEE)"]
+    Bio["ç”Ÿç‰©è¯†åˆ«"] --> K
+    K -->|æ´¾ç”Ÿå¯†é’¥| DB[("æœ¬åœ°åŠ å¯† Vault\nAES-256-GCM")]
+    DB --> AF["Android Autofill æœåŠ¡"]
+    DB --> TOTP["TOTP éªŒè¯å™¨"]
+    DB --> Search["æ™ºèƒ½æ£€ç´¢"]
+    DB --> Import["å¯¼å…¥ Â· KeePass / Bitwarden"]
+    DB --> Sync["WebDAV åŒæ­¥"]
+    Sync --> Cloud[("è‡ªæœ‰æœåŠ¡å™¨")]
+
+    classDef secure fill:#1a0b2e,stroke:#7C4DFF,color:#fff;
+    classDef store fill:#0A1437,stroke:#18FFFF,color:#fff;
+    class K,DB secure;
+    class Cloud store;
+```
+
+**æŠ€æœ¯æ ˆä¸€è§ˆ**
+
+```mermaid
+mindmap
+  root((monicpass))
+    Android App
+      Kotlin
+      Jetpack Compose
+      Room
+    Crypto
+      AES-256-GCM
+      Android Keystore
+    Sync
+      WebDAV
+      Bitwarden API
+    Import
+      KeePass kdbx
+    Auth
+      TOTP
+      Biometric
+```
+
+---
+
+## ğŸ“¦ å¿«é€Ÿå®‰è£…
 
 ### Android
-1. ´Ó [Releases](https://github.com/Chaniug/monicpass/releases) ÏÂÔØ×îĞÂ APK£¨º¬ Development Preview£©
-2. ÔÚ Android 8.0+ Éè±¸°²×°²¢³õÊ¼»¯Ö÷ÃÜÂë
 
-### ä¯ÀÀÆ÷À©Õ¹
-´ÓÉÏÓÎ [Monica Pass](https://github.com/Monica-Pass/Monica) »ñÈ¡ä¯ÀÀÆ÷À©Õ¹£¬Óë±¾·ÖÖ§µÄ Android ¶ËÅäºÏÊ¹ÓÃ¡£
+1. ä» [Releases](https://github.com/Chaniug/monicpass/releases) ä¸‹è½½æœ€æ–° APKï¼ˆå« Development Previewï¼‰
+2. åœ¨ Android 8.0+ è®¾å¤‡å®‰è£…å¹¶åˆå§‹åŒ–ä¸»å¯†ç 
+3. ï¼ˆå¯é€‰ï¼‰åœ¨ç³»ç»Ÿè®¾ç½®ä¸­å¯ç”¨ **monicpass è‡ªåŠ¨å¡«å……æœåŠ¡**
+
+### æµè§ˆå™¨æ‰©å±•
+
+ä»ä¸Šæ¸¸ [Monica Pass](https://github.com/Monica-Pass/Monica) è·å–æµè§ˆå™¨æ‰©å±•ï¼Œä¸æœ¬åˆ†æ”¯çš„ Android ç«¯é…åˆä½¿ç”¨ã€‚
 
 ---
 
-## ÓëÉÏÓÎµÄÖ÷Òª²îÒì
+## ğŸ” å®‰å…¨æ¨¡å‹
 
-| ·½Ãæ | ÉÏÓÎ (Monica-Pass/Monica) | monicpass (±¾·ÖÖ§) |
+- æ‰€æœ‰æ•°æ®**é»˜è®¤å®Œå…¨ç¦»çº¿**ï¼Œæ— éœ€ä»»ä½•ç½‘ç»œæƒé™
+- æ•°æ®åº“é‡‡ç”¨ **AES-256-GCM** åŠ å¯†ï¼Œå¯†é’¥ç”± Android Keystoreï¼ˆTEEï¼‰ä¿æŠ¤
+- ä¸»å¯†ç æœ¬åœ°å‚ä¸å¯†é’¥æ´¾ç”Ÿï¼Œ**æœåŠ¡ç«¯é›¶çŸ¥è¯†**ï¼Œæ— æ³•æ‰¾å›ã€æ— æ³•é‡ç½®
+- WebDAV åŒæ­¥å…¨ç¨‹åŠ å¯†ï¼Œä»…ä½ ä¸è‡ªæœ‰æœåŠ¡å™¨å¯è§æ˜æ–‡
+
+---
+
+## ğŸ”„ ä¸ä¸Šæ¸¸çš„ä¸»è¦å·®å¼‚
+
+| æ–¹é¢ | ä¸Šæ¸¸ (Monica-Pass/Monica) | monicpassï¼ˆæœ¬åˆ†æ”¯ï¼‰ |
 |------|---------------------------|---------------------|
-| ×Ô¶¯Ìî³ä | Ô­Ê¼ÊµÏÖ | ÔöÇ¿¼æÈİ£¨µçÓ°ÁÔÊÖµÈĞ¡ÖÚ App£©£¬ĞŞ¸´ÆÕÍ¨ÊäÈë¿òÎóµ¯ÃÜÂë |
-| °æ±¾ºÅ²ßÂÔ | ¹Ì¶¨ versionCode | epoch Ãë×ÔÔö£¬Ã¿´Î¹¹½¨Ö§³Ö¸²¸Ç°²×° |
-| ¹¹½¨·½Ê½ | Ğè×ÔĞĞÅäÖÃÇ©ÃûÃÜÔ¿ | CI ÄÚÖÃÇ©Ãû + Preview Release ×Ô¶¯·¢²¼ |
-| ¸üĞÂÆµÂÊ | °´ÉÏÓÎ½Ú×à | ³ÖĞøµü´ú£¬¶ÀÁ¢·¢²¼ |
+| è‡ªåŠ¨å¡«å…… | åŸå§‹å®ç° | å¢å¼ºå…¼å®¹ï¼ˆç”µå½±çŒæ‰‹ç­‰å°ä¼— Appï¼‰ï¼Œä¿®å¤æ™®é€šè¾“å…¥æ¡†è¯¯å¼¹å¯†ç  |
+| ç‰ˆæœ¬å·ç­–ç•¥ | å›ºå®š versionCode | epoch ç§’è‡ªå¢ï¼Œæ¯æ¬¡æ„å»ºæ”¯æŒè¦†ç›–å®‰è£… |
+| æ„å»ºæ–¹å¼ | éœ€è‡ªè¡Œé…ç½®ç­¾åå¯†é’¥ | CI å†…ç½®ç­¾å + Preview Release è‡ªåŠ¨å‘å¸ƒ |
+| æ›´æ–°é¢‘ç‡ | æŒ‰ä¸Šæ¸¸èŠ‚å¥ | æŒç»­è¿­ä»£ï¼Œç‹¬ç«‹å‘å¸ƒ |
 
 ---
 
-## ¹¹½¨
+## ğŸ—ºï¸ è·¯çº¿å›¾
+
+- [x] è‡ªåŠ¨å¡«å……å…¼å®¹æ€§å¢å¼ºï¼ˆå°ä¼— App / æ™®é€šè¾“å…¥æ¡†è¯¯å¼¹ä¿®å¤ï¼‰
+- [x] å¤šä¸»é¢˜ä½“ç³»ï¼ˆè‡ªç„¶ / Monet / æš—è‰² / çº¯é»‘ / RGï¼‰
+- [x] CI å†…ç½®ç­¾åä¸ Preview Release è‡ªåŠ¨å‘å¸ƒ
+- [ ] æ›´å¤šå¯¼å…¥æ ¼å¼æ”¯æŒ
+- [ ] è·¨å¹³å°æ¡Œé¢ç«¯æ¢ç´¢
+- [ ] ç«¯åˆ°ç«¯åŠ å¯†åŒæ­¥æ–¹æ¡ˆå‡çº§
+
+---
+
+## ğŸ› ï¸ æ„å»º
 
 ```bash
-# ¿ËÂ¡
+# å…‹éš†
 git clone https://github.com/Chaniug/monicpass.git
 
-# ½øÈë Android Ä¿Â¼
+# è¿›å…¥ Android ç›®å½•
 cd monicpass/Monica\ for\ Android
 
-# ¹¹½¨
+# æ„å»º
 ./gradlew :app:assembleRelease
 ```
 
-GitHub Actions ÔÚÃ¿´ÎÍÆËÍ `main` ·ÖÖ§Ê±×Ô¶¯¹¹½¨²¢·¢²¼ Development Preview£¬¿ÉÔÚ [Releases](https://github.com/Chaniug/monicpass/releases) Ò³ÃæÏÂÔØ¡£
+GitHub Actions åœ¨æ¯æ¬¡æ¨é€ `main` åˆ†æ”¯æ—¶è‡ªåŠ¨æ„å»ºå¹¶å‘å¸ƒ Development Previewï¼Œå¯åœ¨ [Releases](https://github.com/Chaniug/monicpass/releases) é¡µé¢ä¸‹è½½ã€‚
+
+### é™æ€å®˜ç½‘ï¼ˆæœ¬é¡¹ç›®æ–‡æ¡£ç«™ï¼‰
+
+```bash
+cd documentation/website
+npm install
+npm run build      # è¾“å‡ºè‡³ dist/ï¼Œéƒ¨ç½²åˆ° GitHub Pages
+```
+
+> ç«™ç‚¹ `base` å·²é…ç½®ä¸º `/monicpass/`ï¼Œå¯ç›´æ¥ä½œä¸º `chaniug.github.io/monicpass` çš„ Project Pages å‘å¸ƒã€‚
 
 ---
 
-## Ğí¿É
+## ğŸ“‚ é¡¹ç›®ç»“æ„
 
-±¾ÏîÄ¿»ùÓÚÉÏÓÎ [Monica Pass](https://github.com/Monica-Pass/Monica) ¶ş´Î¿ª·¢£¬¼Ì³ĞÆä [GNU General Public License v3.0](LICENSE) ¿ªÔ´Ğí¿É¡£
+```
+monicpass/
+â”œâ”€â”€ Monica for Android/   # Android å®¢æˆ·ç«¯ï¼ˆKotlin / Composeï¼‰
+â”œâ”€â”€ documentation/
+â”‚   â””â”€â”€ website/          # é™æ€å®˜ç½‘ï¼ˆVite + GitHub Pagesï¼‰
+â”‚       â”œâ”€â”€ src/          # ç«™ç‚¹æºç ï¼ˆHTML / JS / CSSï¼‰
+â”‚       â”œâ”€â”€ public/       # é™æ€èµ„æºä¸æˆªå›¾
+â”‚       â””â”€â”€ dist/         # æ„å»ºäº§ç‰©
+â”œâ”€â”€ image/                # README é…å›¾ä¸å›¾æ ‡
+â””â”€â”€ LICENSE
+```
 
 ---
 
-## ÖÂĞ»
+## ğŸ“„ è®¸å¯
 
-¸ĞĞ» [Monica Pass](https://github.com/Monica-Pass/Monica) Ô­×÷ÕßÌá¹©µÄÓÅĞã»ù´¡£¬ÒÔ¼°ÒÔÏÂ¿ªÔ´ÏîÄ¿µÄÆô·¢Óë°ïÖú£º
+æœ¬é¡¹ç›®åŸºäºä¸Šæ¸¸ [Monica Pass](https://github.com/Monica-Pass/Monica) äºŒæ¬¡å¼€å‘ï¼Œç»§æ‰¿å…¶ [GNU General Public License v3.0](LICENSE) å¼€æºè®¸å¯ã€‚
 
-- [Bitwarden](https://bitwarden.com/) ¡ª ¿ªÔ´ÃÜÂë¹ÜÀíÉúÌ¬¡¢Vault Ä£ĞÍÓëÍ¬²½ÄÜÁ¦
-- [KeePass](https://keepass.info/) ¡ª ±¾µØÃÜÂë¿âÀíÄîÓë `.kdbx` ÉúÌ¬¼æÈİ
+---
+
+## ğŸ™ è‡´è°¢
+
+æ„Ÿè°¢ [Monica Pass](https://github.com/Monica-Pass/Monica) åŸä½œè€…æä¾›çš„ä¼˜ç§€åŸºç¡€ï¼Œä»¥åŠä»¥ä¸‹å¼€æºé¡¹ç›®çš„å¯å‘ä¸å¸®åŠ©ï¼š
+
+- [Bitwarden](https://bitwarden.com/) â€” å¼€æºå¯†ç ç®¡ç†ç”Ÿæ€ã€Vault æ¨¡å‹ä¸åŒæ­¥èƒ½åŠ›
+- [KeePass](https://keepass.info/) â€” æœ¬åœ°å¯†ç åº“ç†å¿µä¸ `.kdbx` ç”Ÿæ€å…¼å®¹
