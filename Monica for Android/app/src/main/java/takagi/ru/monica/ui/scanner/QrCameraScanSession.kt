@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.OptIn
 
+@OptIn(ExperimentalGetImage::class)
 internal class QrCameraScanSession(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
