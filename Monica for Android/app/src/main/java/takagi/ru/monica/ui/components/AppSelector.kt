@@ -904,7 +904,7 @@ private suspend fun exportAppListToFile(context: Context, currentList: List<AppI
         sb.appendLine("当前黑名单规则数量: ${getBlacklistPatterns().size}")
         sb.appendLine()
         sb.appendLine("如需调整黑名单，请访问:")
-        sb.appendLine("https://github.com/Monica-Pass/Monica-for-Android/issues")
+        sb.appendLine("https://github.com/Chaniug/monicpass/issues")
         sb.appendLine()
         sb.appendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         sb.appendLine()

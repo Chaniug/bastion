@@ -41,7 +41,7 @@ data class UpdateDownloadProgress(
 
 object UpdateChecker {
     private const val RELEASE_API_URL =
-        "https://api.github.com/repos/Monica-Pass/Monica/releases/latest"
+        "https://api.github.com/repos/Chaniug/monicpass/releases/latest"
 
     private val json = Json {
         ignoreUnknownKeys = true

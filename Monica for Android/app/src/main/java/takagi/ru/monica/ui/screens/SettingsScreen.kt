@@ -1328,8 +1328,8 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.version_info_dialog_title)) },
             text = {
                 Column {
-                    val githubUrl = "https://github.com/Monica-Pass/Monica"
-                    val websiteUrl = "https://joyinjoester.github.io/Monica/"
+                    val githubUrl = "https://github.com/Chaniug/monicpass"
+                    val websiteUrl = "https://github.com/Chaniug/monicpass"
                     val iconSourceUrl = "https://github.com/stratumauth/app/tree/v1.4.0/icons"
                     val iconReleaseUrl = "https://github.com/stratumauth/app/releases/tag/v1.4.0"
                     val fullVersion = BuildConfig.FULL_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
