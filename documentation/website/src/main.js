@@ -47,7 +47,7 @@ function initScrollEffect() {
 
 // 3. I18n Logic
 const LangManager = {
-    currentLang: localStorage.getItem('monica_lang') || 'zh',
+    currentLang: localStorage.getItem('monicpass_lang') || 'zh',
     locales: {},
 
     async init() {
@@ -336,5 +336,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGithubData(); // Try to render if data exists (it might not in dev until script run)
 
     // Greeting Console
-    console.log('%c Monica ', 'background: #006495; color: #fff; border-radius: 4px; padding: 4px;', 'Welcome to the safe zone.');
+    console.log('%c monicpass ', 'background: #006495; color: #fff; border-radius: 4px; padding: 4px;', 'Welcome to the safe zone.');
 });

@@ -4,7 +4,7 @@
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/JoyinJoester/Monica/releases) 下载并安装 Android 应用。
+1. 从 [Releases](https://github.com/Chaniug/monicpass/releases) 下载并安装 Android 应用。
 2. 首次启动设置主密码（Master Password），它将用于加密本地保险库。
 3. 主密码无法找回，请务必牢记。
 

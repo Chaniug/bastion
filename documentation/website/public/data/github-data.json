@@ -1,11 +1,18 @@
 {
-  "generated_at": "2026-07-26T11:47:18.284Z",
+  "generated_at": "2026-07-26T11:54:39.151Z",
   "stats": {
     "stars": 1,
     "forks": 0,
     "issues": 0
   },
   "commits": [
+    {
+      "sha": "8f58fad",
+      "message": "docs(readme): 重写 README 图文并茂排版 + 修复静态官网显示异常\n\n- 修复 vite base 路径 /Monica/ -> /monicpass/（部署 404 根因）\n- 更新运行时/预构建 GitHub 仓库引用为 Chaniug/monicpass\n- 新增 SVG 主视觉 banner（image/monica-hero.svg）\n- 新增界面截图画廊与 Mermaid 架构图\n- 补充 docs/usage.md 修复文档页加载",
+      "date": "2026-07-26T11:50:47Z",
+      "author": "Chaniug",
+      "url": "https://github.com/Chaniug/monicpass/commit/8f58fad8b6c86af98732b00a3f8b22d89cb38d16"
+    },
     {
       "sha": "2cf0e7e",
       "message": "fix(lint): 将 @OptIn(ExperimentalGetImage) 提升到 QrCameraScanSession 类级，彻底消除 UnsafeOptInUsageError",
@@ -698,13 +705,6 @@
       "date": "2026-07-15T21:14:37Z",
       "author": "github-actions[bot]",
       "url": "https://github.com/Chaniug/monicpass/commit/4d3df55f7584e8c027de31032d533ed148025f47"
-    },
-    {
-      "sha": "69e5b2b",
-      "message": "chore: update github commit data",
-      "date": "2026-07-14T21:14:14Z",
-      "author": "github-actions[bot]",
-      "url": "https://github.com/Chaniug/monicpass/commit/69e5b2b19c01509f91fd9879e0df0e3a4f88cc37"
     }
   ],
   "contributors": [

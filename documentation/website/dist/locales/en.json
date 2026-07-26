@@ -5,7 +5,7 @@
     },
     "hero": {
         "title": "Secure.<br>Local.<br>Open Source.",
-        "subtitle": "Monica is an open-source, local-first password manager.<br>Credentials, 2FA, and secure notes, all stored strictly on your device.",
+        "subtitle": "A focused fork of Monica — local-first password management.<br>Credentials, TOTP codes, and secure notes, all stored strictly on your device.",
         "download_android": "Download for Android",
         "browser_extension": "Browser Extension",
         "view_source": "View Source Code"
@@ -37,12 +37,12 @@
         "activity_chart": "30-Day Activity",
         "stats": "Project Stats",
         "platforms": "Supported Platforms",
-        "support": "Support Author",
-        "support_desc": "Your support encourages continuous project maintenance and new feature development.",
+        "support": "Support Project",
+        "support_desc": "If monicpass helps you, give it a Star on GitHub or submit an Issue.",
         "wechat_alipay": "WeChat & Alipay"
     },
     "footer": {
-        "copyright": "© 2026 JoyinJoester. Open Source under GNU GPLv3.",
+        "copyright": "© 2026 Chaniug. Open Source under GNU GPLv3, derived from Monica Pass.",
         "credits": "Designed with ❤️ for Android."
     }
 }

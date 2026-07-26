@@ -5,7 +5,7 @@
     },
     "hero": {
         "title": "安全。<br>本地。<br>开源。",
-        "subtitle": "Monica 是一个开源的本地密码管理器。<br>密码管理、2FA 验证、安全笔记，所有数据完全本地存储。",
+        "subtitle": "基于 Monica 二次开发，专注本地优先与持续优化。<br>密码管理、TOTP 验证、安全笔记，所有数据完全本地存储。",
         "download_android": "下载 Android 版",
         "browser_extension": "浏览器插件",
         "view_source": "查看源码"
@@ -38,11 +38,11 @@
         "stats": "项目数据",
         "Platforms": "支持平台",
         "support": "支持作者",
-        "support_desc": "您的支持将激励我持续完善项目与开发新功能。",
+        "support_desc": "如果你觉得 monicpass 有帮助，欢迎在 GitHub 上 Star 或提交 Issue。",
         "wechat_alipay": "微信 & 支付宝"
     },
     "footer": {
-        "copyright": "© 2026 JoyinJoester. 基于 GNU GPLv3 协议开源。",
+        "copyright": "© 2026 Chaniug. 基于 GNU GPLv3 协议开源，衍生自 Monica Pass。",
         "credits": "Designed with ❤️ for Android."
     }
 }
