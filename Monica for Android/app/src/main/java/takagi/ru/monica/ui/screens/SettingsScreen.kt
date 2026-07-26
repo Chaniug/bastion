@@ -2558,8 +2558,8 @@ fun AutoLockSelectionSheet(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    // 预设选项：0=立即, 1/5/10/15/30/60分钟, 300=5小时, 1440=1天, -1=从不, -2=重启后锁定
-    val presetOptions = listOf(0, 1, 5, 10, 15, 30, 60, 300, 1440, -1, -2)
+    // 预设选项：0=立即, 1/5/15/60分钟, -1=从不, -2=重启后锁定（精简预设，因已支持自定义时间）
+    val presetOptions = listOf(0, 1, 5, 15, 60, -1, -2)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
