@@ -3,6 +3,6 @@
     <item>
         <bitmap
             android:gravity="fill"
-            android:src="@drawable/monica_launcher" />
+            android:src="@drawable/monica_launcher_fg" />
     </item>
 </layer-list>
