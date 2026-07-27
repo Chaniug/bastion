@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -296,6 +297,23 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
                 putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, dataset)
             }
         )
+
+        // 回归修复：认证填充主路径此前缺少 OTP 自动复制副作用（仅挂在 Picker Activity 上，
+        // 而 vault 锁定时框架直接走 AutofillCipherCallbackActivity 完成填充，绕过 Picker）。
+        // 用 GlobalScope 脱离 Activity 生命周期，避免 finish 取消协程。
+        Log.d(
+            "BastionOtpCopy",
+            "trigger: completeCipherAutofill reached, passwordId=${passwordEntry.id}, " +
+                "hints=${callbackArgs.autofillHints}, autoCopyEnabledPathPending"
+        )
+        GlobalScope.launch(Dispatchers.Default) {
+            performOtpAutofillSideEffects(
+                context = applicationContext,
+                password = passwordEntry,
+                autofillHints = callbackArgs.autofillHints,
+            )
+        }
+
         finishWithoutAnimation()
     }
 

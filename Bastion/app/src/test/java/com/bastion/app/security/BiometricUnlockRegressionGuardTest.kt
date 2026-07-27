@@ -802,6 +802,9 @@ class BiometricUnlockRegressionGuardTest {
         val pickerSource = projectFile(
             "app/src/main/java/com/bastion/app/autofill_ng/AutofillPickerActivityV2.kt"
         ).readText()
+        val otpSource = projectFile(
+            "app/src/main/java/com/bastion/app/autofill_ng/OtpAutofillSideEffects.kt"
+        ).readText()
         val listItemSource = projectFile(
             "app/src/main/java/com/bastion/app/autofill_ng/ui/PasswordListItem.kt"
         ).readText()
@@ -809,8 +812,8 @@ class BiometricUnlockRegressionGuardTest {
             .substringBefore("private suspend fun preparePasswordAutofill(")
         val prepareBody = pickerSource.substringAfter("private suspend fun preparePasswordAutofill(")
             .substringBefore("private fun handleGeneratedPasswordFill(")
-        val otpActionBody = pickerSource.substringAfter("private suspend fun processSelectedOtpActions(password: PasswordEntry) {")
-            .substringBefore("private suspend fun generateOtpCodeForPassword")
+        val otpActionBody = otpSource.substringAfter("suspend fun performOtpAutofillSideEffects(")
+            .substringBefore("suspend fun generateOtpCodeForPassword(")
 
         assertFalse(
             "Autofill button confirmation must not decrypt passwords directly on the main-thread return path.",
