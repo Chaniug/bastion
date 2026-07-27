@@ -102,6 +102,9 @@ import com.bastion.app.repository.CustomFieldRepository
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.steam.core.SteamTotp
+import com.bastion.app.steam.data.SteamAccountRepository
+import com.bastion.app.steam.data.SteamDatabase
 import com.bastion.app.ui.theme.BastionTheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.bastion.app.data.model.TotpData
@@ -1289,6 +1292,23 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             }
             if (!showNotification && !autoCopy) return
 
+            // Steam Guard 快捷通道：Steam 验证码独立于常规 TOTP 存储（独立 Room 表），
+            // resolveOtpDataForPassword 查不到，需要单独解析并复制。
+            val steamCode = resolveSteamGuardCodeForPassword(password)
+            if (steamCode != null) {
+                if (autoCopy) {
+                    withContext(Dispatchers.Main) {
+                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("OTP Code", steamCode))
+                    }
+                    AutofillLogger.d("OTP", "Auto-copied Steam Guard code for passwordId=${password.id}")
+                }
+                if (showNotification) {
+                    AutofillLogger.d("OTP", "Steam Guard: live notification refresh not supported, skipped")
+                }
+                return
+            }
+
             val totpData = resolveOtpDataForPassword(password)
             if (totpData == null) {
                 AutofillLogger.w(
@@ -1331,6 +1351,8 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
     }
 
     private suspend fun generateOtpCodeForPassword(password: PasswordEntry): String? {
+        // Steam Guard 优先：直接返回 Steam 码，避免走常规 TOTP 生成
+        resolveSteamGuardCodeForPassword(password)?.let { return it }
         val totpData = resolveOtpDataForPassword(password)
         if (totpData == null) {
             AutofillLogger.w(
@@ -1367,6 +1389,41 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             .takeIf { it.isNotBlank() }
             ?.let(::parsePasswordAuthenticatorTotpData)
         return resolveOtpFromExistingValidators(password, passwordTotpData) ?: passwordTotpData
+    }
+
+    /**
+     * 解析 Steam Guard 验证码：Steam 的共享密钥存储在独立的 steam_accounts 表，
+     * 与常规 TOTP 存储隔离，resolveOtpDataForPassword 无法覆盖。
+     * 仅当密码条目与 Steam 相关（包名/网址/名称含 steam）时尝试匹配，
+     * 优先按用户名/标题匹配 Steam 账户，否则取选中账户。
+     */
+    private suspend fun resolveSteamGuardCodeForPassword(password: PasswordEntry): String? {
+        val isSteamEntry = password.appPackageName.contains("steam", ignoreCase = true)
+            || password.website.contains("steam", ignoreCase = true)
+            || password.appName.contains("steam", ignoreCase = true)
+            || password.title.contains("steam", ignoreCase = true)
+        if (!isSteamEntry) return null
+
+        return runCatching {
+            val securityManager = SecurityManager(applicationContext)
+            val steamRepo = SteamAccountRepository(
+                SteamDatabase.getDatabase(applicationContext).steamAccountDao(),
+                securityManager
+            )
+            val accounts = steamRepo.getAccounts()
+            if (accounts.isEmpty()) return@runCatching null
+            val matched = accounts.firstOrNull { acct ->
+                acct.accountName.equals(password.username, ignoreCase = true)
+                    || acct.displayName.equals(password.username, ignoreCase = true)
+                    || acct.accountName.equals(password.title, ignoreCase = true)
+                    || acct.displayName.equals(password.title, ignoreCase = true)
+            } ?: accounts.firstOrNull { it.selected } ?: accounts.firstOrNull()
+            matched?.let {
+                SteamTotp.generateAuthCode(it.sharedSecret, System.currentTimeMillis() / 1000)
+            }
+        }.onFailure { e ->
+            AutofillLogger.e("OTP", "Failed to resolve Steam Guard code", e)
+        }.getOrNull()
     }
 
     private suspend fun resolveOtpFromExistingValidators(
