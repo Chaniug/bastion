@@ -4,15 +4,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- shackle (stroked, no fill) -->
+    <!-- 盾牌描边 -->
     <path
-        android:pathData="M40 42 V32 Q40 26 54 26 Q68 26 68 32 V42"
+        android:pathData="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z"
         android:fillColor="#00000000"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="5"
-        android:strokeLineCap="round" />
-    <!-- body (filled rounded rectangle) -->
+        android:strokeLineJoin="round" />
+    <!-- 锁孔描边（圆 + 锁芯） -->
+    <circle
+        android:cx="54"
+        android:cy="50"
+        android:r="7"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5" />
     <path
-        android:pathData="M41 42 L67 42 Q76 42 76 51 L76 73 Q76 82 67 82 L41 82 Q32 82 32 73 L32 51 Q32 42 41 42 Z"
-        android:fillColor="#FFFFFF" />
+        android:pathData="M49 57 L59 57 L63 72 L45 72 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineJoin="round" />
 </vector>
