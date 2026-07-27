@@ -10,9 +10,6 @@
     <!-- 系统 Splash 使用 Material 3 浅色低层容器色，降低冷启动亮度 -->
     <color name="monica_startup_background">#F7F2FA</color>
     
-    <!-- 应用图标背景色 - 默认蓝色,Android 12+ 会自动适配 Material You -->
-    <color name="ic_launcher_background">#1976D2</color>
-    
     <!-- 自动填充相关颜色 - 日间模式 -->
     <color name="autofill_icon_tint">#6750A4</color>
     <color name="autofill_icon_background">#E8DEF8</color>

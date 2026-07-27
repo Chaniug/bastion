@@ -41,6 +41,7 @@ import takagi.ru.monica.utils.PasswordGenerator
 import takagi.ru.monica.utils.PasswordStrengthCalculator
 import takagi.ru.monica.R
 import takagi.ru.monica.data.PasswordHistoryManager
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 /**
  * 密码建议对话框 Activity
@@ -135,7 +136,7 @@ class PasswordSuggestionActivity : ComponentActivity() {
                     val presentation = android.widget.RemoteViews(this@PasswordSuggestionActivity.packageName, R.layout.autofill_dataset_card)
                     presentation.setTextViewText(R.id.text_title, getString(R.string.password_suggestion_accept))
                     presentation.setTextViewText(R.id.text_username, getString(R.string.password_suggestion_title))
-                    presentation.setImageViewResource(R.id.icon_app, R.drawable.ic_key_24dp)
+                    presentation.setImageViewResource(R.id.icon_app, AppLauncherIconManager.resolveBrandingIconRes(this@PasswordSuggestionActivity))
                     
                     // 为每个密码字段设置生成的密码值
                     passwordFieldIds!!.forEach { autofillId ->

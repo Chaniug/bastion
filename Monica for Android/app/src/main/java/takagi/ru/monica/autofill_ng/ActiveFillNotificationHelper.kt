@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import takagi.ru.monica.R
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 /**
  * AccessibilityService 检测到当前应用已绑定密码条目时显示主动填充通知。
@@ -75,7 +76,7 @@ object ActiveFillNotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(context.getString(R.string.autofill_active_fill_notification_content_title))
             .setContentText(
                 context.getString(R.string.autofill_active_fill_notification_content_text, appName)

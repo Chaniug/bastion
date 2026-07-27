@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import takagi.ru.monica.R
+import takagi.ru.monica.utils.AppLauncherIconManager
 import takagi.ru.monica.utils.ClipboardUtils
 
 /**
@@ -78,7 +79,7 @@ object SmartCopyNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(context.getString(R.string.smart_copy_notification_title))
             .setContentText(notificationText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

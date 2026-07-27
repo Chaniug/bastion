@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import takagi.ru.monica.MainActivity
 import takagi.ru.monica.R
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 object BitwardenSyncNotificationHelper {
 
@@ -37,7 +38,7 @@ object BitwardenSyncNotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(summary.buildHeadline(context))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import takagi.ru.monica.MainActivity
 import takagi.ru.monica.R
 import takagi.ru.monica.ui.components.UnifiedMoveAction
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 internal object PasswordBatchTransferNotificationHelper {
 
@@ -48,7 +49,7 @@ internal object PasswordBatchTransferNotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(notificationTitle(context, action))
             .setContentText(contentText)
             .setStyle(NotificationCompat.BigTextStyle().bigText("$progressText\n$contentText"))
@@ -97,7 +98,7 @@ internal object PasswordBatchTransferNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(completedTitle(context, action))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

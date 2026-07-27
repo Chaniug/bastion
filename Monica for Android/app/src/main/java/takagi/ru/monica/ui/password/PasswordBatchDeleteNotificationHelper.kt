@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import takagi.ru.monica.MainActivity
 import takagi.ru.monica.R
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 internal object PasswordBatchDeleteNotificationHelper {
 
@@ -41,7 +42,7 @@ internal object PasswordBatchDeleteNotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(context.getString(R.string.batch_delete_settings_card_title))
             .setContentText(progressText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(progressText))
@@ -89,7 +90,7 @@ internal object PasswordBatchDeleteNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(context.getString(R.string.batch_delete_notification_done))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import takagi.ru.monica.MainActivity
 import takagi.ru.monica.R
 import takagi.ru.monica.steam.network.SteamPendingLogin
+import takagi.ru.monica.utils.AppLauncherIconManager
 
 object SteamLoginNotificationHelper {
     private const val CHANNEL_ID = "steam_login_requests"
@@ -43,7 +44,7 @@ object SteamLoginNotificationHelper {
         }
         val location = login.location.ifBlank { "-" }
         val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_key_24dp)
+            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
             .setContentTitle(appContext.getString(R.string.steam_login_request_title))
             .setContentText("$device - $location")
             .setStyle(

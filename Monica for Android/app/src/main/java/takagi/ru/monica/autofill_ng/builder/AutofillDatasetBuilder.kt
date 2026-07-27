@@ -242,7 +242,7 @@ object AutofillDatasetBuilder {
             context: Context,
             title: String,
             username: String,
-            iconResId: Int = R.drawable.ic_key
+            iconResId: Int = AppLauncherIconManager.resolveBrandingIconRes(context)
         ): RemoteViews {
             return RemoteViews(context.packageName, R.layout.autofill_dataset_card).apply {
                 setTextViewText(R.id.text_title, title)
@@ -277,7 +277,7 @@ object AutofillDatasetBuilder {
                 val displayMessage = message ?: context.getString(R.string.autofill_manual_entry_title)
                 setTextViewText(R.id.text_title, displayMessage)
                 setViewVisibility(R.id.text_username, android.view.View.GONE)
-                setImageViewResource(R.id.icon_app, R.drawable.ic_key)
+                setImageViewResource(R.id.icon_app, AppLauncherIconManager.resolveBrandingIconRes(context))
             }
         }
 
@@ -285,7 +285,7 @@ object AutofillDatasetBuilder {
             return RemoteViews(context.packageName, R.layout.autofill_dataset_card).apply {
                 setTextViewText(R.id.text_title, context.getString(R.string.password_suggestion_title))
                 setTextViewText(R.id.text_username, context.getString(R.string.password_suggestion_subtitle))
-                setImageViewResource(R.id.icon_app, R.drawable.ic_key_24dp)
+                setImageViewResource(R.id.icon_app, AppLauncherIconManager.resolveBrandingIconRes(context))
             }
         }
     }
