@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>本地优先 · 开源 · 安全密码管理</b><br/>
-  基于 <a href="https://github.com/Bastion-Pass/Bastion">Bastion</a> 的二次开发独立分支，持续优化
+  基于开源 <a href="https://github.com/Bastion-Pass/Bastion">Bastion</a> 代码库二次开发的独立分支，持续优化自动填充、主题与同步体验
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## ✨ 关于 bastion
 
-**bastion** 是 [Bastion](https://github.com/Bastion-Pass/Bastion) 的独立二次开发分支（fork），在保持上游核心能力的基础上进行针对性优化与功能增强。
+**bastion** 是在开源 [Bastion](https://github.com/Bastion-Pass/Bastion) 基础上独立维护的本地优先密码管理器分支，在保持上游核心能力的基础上进行针对性优化与功能增强。
 
 本分支的开发原则：
 
@@ -159,7 +159,7 @@ mindmap
 git clone https://github.com/Chaniug/bastion.git
 
 # 进入 Android 目录
-cd bastion/Bastion\ for\ Android
+cd bastion/Bastion
 
 # 构建
 ./gradlew :app:assembleRelease

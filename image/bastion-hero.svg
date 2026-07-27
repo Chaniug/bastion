@@ -1,25 +1,26 @@
-<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="monicpass 数字保险箱主视觉">
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="bastion 数字保险箱主视觉">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0B1020"/>
-      <stop offset="0.45" stop-color="#160B2E"/>
-      <stop offset="1" stop-color="#0A1437"/>
+      <stop offset="0" stop-color="#0A1437"/>
+      <stop offset="0.5" stop-color="#0B2E52"/>
+      <stop offset="1" stop-color="#061026"/>
     </linearGradient>
-    <radialGradient id="glowPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(380 250) rotate(140) scale(420)">
-      <stop offset="0" stop-color="#7C4DFF" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#7C4DFF" stop-opacity="0"/>
+    <radialGradient id="glowBlue" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(420 250) rotate(140) scale(460)">
+      <stop offset="0" stop-color="#185FA5" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#185FA5" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="glowTeal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 430) rotate(120) scale(380)">
-      <stop offset="0" stop-color="#18FFFF" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#18FFFF" stop-opacity="0"/>
+    <radialGradient id="glowGold" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 430) rotate(120) scale(360)">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="shieldStroke" x1="640" y1="150" x2="640" y2="500" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#B388FF"/>
-      <stop offset="1" stop-color="#18FFFF"/>
+      <stop offset="0" stop-color="#7CC4FF"/>
+      <stop offset="1" stop-color="#F5B942"/>
     </linearGradient>
-    <linearGradient id="shieldFill" x1="640" y1="150" x2="640" y2="500" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7C4DFF" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#18FFFF" stop-opacity="0.06"/>
+    <linearGradient id="shieldFill" x1="520" y1="150" x2="760" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A9BE8"/>
+      <stop offset="0.5" stop-color="#185FA5"/>
+      <stop offset="1" stop-color="#0A2A4D"/>
     </linearGradient>
     <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="6"/>
@@ -28,17 +29,17 @@
 
   <!-- Background -->
   <rect width="1280" height="640" fill="url(#bg)"/>
-  <rect width="1280" height="640" fill="url(#glowPurple)"/>
-  <rect width="1280" height="640" fill="url(#glowTeal)"/>
+  <rect width="1280" height="640" fill="url(#glowBlue)"/>
+  <rect width="1280" height="640" fill="url(#glowGold)"/>
 
   <!-- Faint grid -->
-  <g stroke="#9D8CFF" stroke-opacity="0.06" stroke-width="1">
+  <g stroke="#5B8FD6" stroke-opacity="0.06" stroke-width="1">
     <path d="M0 160 H1280 M0 320 H1280 M0 480 H1280"/>
     <path d="M320 0 V640 M640 0 V640 M960 0 V640"/>
   </g>
 
   <!-- Encrypted particle network -->
-  <g stroke="#7C4DFF" stroke-opacity="0.35" stroke-width="1.2">
+  <g stroke="#185FA5" stroke-opacity="0.40" stroke-width="1.2">
     <path d="M150 140 L300 230 L210 360 L120 300 Z"/>
     <path d="M300 230 L470 180"/>
     <path d="M470 180 L560 300 L470 420 L300 360"/>
@@ -52,20 +53,20 @@
   </g>
   <g fill="#FFFFFF">
     <circle cx="150" cy="140" r="3" fill-opacity="0.85"/>
-    <circle cx="300" cy="230" r="4" fill="#B388FF" fill-opacity="0.95"/>
+    <circle cx="300" cy="230" r="4" fill="#7CC4FF" fill-opacity="0.95"/>
     <circle cx="210" cy="360" r="3" fill-opacity="0.8"/>
     <circle cx="120" cy="300" r="2.5" fill-opacity="0.7"/>
-    <circle cx="470" cy="180" r="3.5" fill="#18FFFF" fill-opacity="0.9"/>
+    <circle cx="470" cy="180" r="3.5" fill="#F5B942" fill-opacity="0.9"/>
     <circle cx="560" cy="300" r="3" fill-opacity="0.8"/>
     <circle cx="470" cy="420" r="3" fill-opacity="0.75"/>
     <circle cx="300" cy="360" r="3" fill-opacity="0.8"/>
     <circle cx="430" cy="470" r="2.5" fill-opacity="0.7"/>
-    <circle cx="1040" cy="200" r="3.5" fill="#18FFFF" fill-opacity="0.9"/>
-    <circle cx="940" cy="320" r="4" fill="#B388FF" fill-opacity="0.95"/>
+    <circle cx="1040" cy="200" r="3.5" fill="#F5B942" fill-opacity="0.9"/>
+    <circle cx="940" cy="320" r="4" fill="#7CC4FF" fill-opacity="0.95"/>
     <circle cx="1060" cy="430" r="3" fill-opacity="0.8"/>
     <circle cx="1150" cy="330" r="2.5" fill-opacity="0.7"/>
     <circle cx="820" cy="250" r="3" fill-opacity="0.8"/>
-    <circle cx="760" cy="380" r="3.5" fill="#18FFFF" fill-opacity="0.85"/>
+    <circle cx="760" cy="380" r="3.5" fill="#F5B942" fill-opacity="0.85"/>
     <circle cx="880" cy="470" r="2.5" fill-opacity="0.7"/>
     <circle cx="660" cy="360" r="2.5" fill-opacity="0.65"/>
   </g>
@@ -76,28 +77,28 @@
           fill="url(#shieldFill)" stroke="url(#shieldStroke)" stroke-width="4"/>
     <g filter="url(#soft)" opacity="0.5">
       <path d="M0 -150 C70 -150 120 -110 120 -50 L120 40 C120 120 60 175 0 195 C-60 175 -120 120 -120 40 L-120 -50 C-120 -110 -70 -150 0 -150 Z"
-            fill="none" stroke="#18FFFF" stroke-width="3"/>
+            fill="none" stroke="#7CC4FF" stroke-width="3"/>
     </g>
     <!-- Lock body -->
-    <rect x="-42" y="-18" width="84" height="74" rx="14" fill="#0B1020" stroke="#B388FF" stroke-width="3"/>
-    <!-- Keyhole -->
-    <circle cx="0" cy="14" r="13" fill="#18FFFF"/>
-    <rect x="-5" y="14" width="10" height="34" rx="5" fill="#18FFFF"/>
-    <!-- Shackle -->
-    <path d="M-26 -18 V-34 C-26 -58 26 -58 26 -34 V-18" fill="none" stroke="#B388FF" stroke-width="9" stroke-linecap="round"/>
+    <rect x="-42" y="-18" width="84" height="74" rx="14" fill="#0A1437" stroke="#F5B942" stroke-width="3"/>
+    <!-- Keyhole (gold) -->
+    <circle cx="0" cy="14" r="13" fill="#F5B942"/>
+    <rect x="-5" y="14" width="10" height="34" rx="5" fill="#F5B942"/>
+    <!-- Shackle (gold) -->
+    <path d="M-26 -18 V-34 C-26 -58 26 -58 26 -34 V-18" fill="none" stroke="#F5B942" stroke-width="9" stroke-linecap="round"/>
   </g>
 
   <!-- Floating key (accent) -->
   <g transform="translate(905 250) rotate(35)" opacity="0.92">
-    <circle cx="0" cy="0" r="20" fill="none" stroke="#18FFFF" stroke-width="6"/>
-    <rect x="16" y="-5" width="70" height="10" rx="5" fill="#18FFFF"/>
-    <rect x="70" y="-5" width="10" height="22" rx="3" fill="#18FFFF"/>
-    <rect x="86" y="-5" width="10" height="16" rx="3" fill="#18FFFF"/>
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#F5B942" stroke-width="6"/>
+    <rect x="16" y="-5" width="70" height="10" rx="5" fill="#F5B942"/>
+    <rect x="70" y="-5" width="10" height="22" rx="3" fill="#F5B942"/>
+    <rect x="86" y="-5" width="10" height="16" rx="3" fill="#F5B942"/>
   </g>
 
   <!-- Wordmark -->
   <text x="640" y="560" text-anchor="middle" font-family="'Outfit','Segoe UI',sans-serif" font-size="56" font-weight="800" fill="#FFFFFF" letter-spacing="2">
-    monic<tspan fill="#B388FF">pass</tspan>
+    bas<tspan fill="#F5B942">tion</tspan>
   </text>
   <text x="640" y="596" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="20" font-weight="500" fill="#A9B4D0" letter-spacing="6">
     本地优先 · 开源 · 安全密码管理
