@@ -50,8 +50,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
-        with:
-          cache: gradle
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
