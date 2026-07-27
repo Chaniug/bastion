@@ -180,7 +180,7 @@ jobs:
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: "Monicpass v${{ steps.meta.outputs.version }} (Stable)"
+          name: "Bastion v${{ steps.meta.outputs.version }} (Stable)"
           body: |
             > **✅ 正式稳定版 (Stable Release)**
             >
