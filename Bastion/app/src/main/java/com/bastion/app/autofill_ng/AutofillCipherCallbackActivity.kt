@@ -352,6 +352,35 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
 
     private fun resolveAutofillTargets(callbackArgs: Args): ResolvedAutofillTargets {
         val assistStructure = getAssistStructureOrNull()
+        val callbackIds = callbackArgs.autofillIds?.distinct().orEmpty()
+        val callbackHints = callbackArgs.autofillHints.orEmpty()
+
+        // 优先采用 FillResponse 构建时烘焙进 PendingIntent 的目标（callback_args）：
+        // 构建期流水线（selectFillableTargets + buildFocusedSyntheticItems）能恢复
+        // 原始 re-parse 找不到的账号框——例如 Edge WebView 不暴露 username 的 autofill
+        // hint，只有“聚焦文本域 + 密码上下文”合成才能定位账号框。直接 re-parse assist
+        // structure 会漏掉合成出的账号框，导致只填充密码、不填充用户名。
+        // 这里信任 callback_args，并仅对当前结构做有效性校验，避免注入已销毁的 id。
+        if (callbackIds.isNotEmpty()) {
+            val idHintPairs = callbackIds.mapIndexed { index, id ->
+                id to callbackHints.getOrNull(index).orEmpty()
+            }
+            val validPairs = if (assistStructure != null) {
+                val liveIds = collectAutofillIds(assistStructure)
+                idHintPairs.filter { liveIds.contains(it.first) }
+            } else {
+                idHintPairs
+            }
+            if (validPairs.isNotEmpty()) {
+                return ResolvedAutofillTargets(
+                    ids = validPairs.map { it.first },
+                    hints = validPairs.map { it.second },
+                    source = "callback_args",
+                )
+            }
+        }
+
+        // 回退：当 PendingIntent 未携带可用目标时，才 re-parse 当前结构。
         if (assistStructure != null) {
             val parsedTargets = runCatching {
                 val parser = EnhancedAutofillStructureParserV2()
@@ -368,11 +397,22 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
             }
         }
 
-        return ResolvedAutofillTargets(
-            ids = callbackArgs.autofillIds?.distinct().orEmpty(),
-            hints = callbackArgs.autofillHints.orEmpty(),
-            source = "callback_args",
-        )
+        return ResolvedAutofillTargets(emptyList(), emptyList(), "none")
+    }
+
+    private fun collectAutofillIds(structure: AssistStructure): Set<AutofillId> {
+        val ids = mutableSetOf<AutofillId>()
+        for (i in 0 until structure.windowNodeCount) {
+            collectAutofillIds(structure.getWindowNodeAt(i).rootViewNode, ids)
+        }
+        return ids
+    }
+
+    private fun collectAutofillIds(node: AssistStructure.ViewNode, ids: MutableSet<AutofillId>) {
+        node.autofillId?.let { ids.add(it) }
+        for (i in 0 until node.childCount) {
+            node.getChildAt(i)?.let { collectAutofillIds(it, ids) }
+        }
     }
 
     private fun getAssistStructureOrNull(): AssistStructure? {
