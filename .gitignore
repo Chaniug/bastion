@@ -28,13 +28,13 @@ docs/.vitepress/cache/
 .gradle-user-home/
 .gradle-user-home-codeql/
 .android-user-home/
-Monica for Android/.gradle-user-home/
-Monica for Android/.gradle-user-home-codeql/
-Monica for Android/.android-user-home/
-Monica for Android/.kotlin/
-Monica for Android/.gradle/
-Monica for Android/app/build/
-Monica for Android/build/
+Bastion/.gradle-user-home/
+Bastion/.gradle-user-home-codeql/
+Bastion/.android-user-home/
+Bastion/.kotlin/
+Bastion/.gradle/
+Bastion/app/build/
+Bastion/build/
 
 # User specific
 *.user
@@ -58,8 +58,8 @@ yarn-debug.log*
 pnpm-debug.log*
 monica_logs_*.txt
 [work]_*.md
-Monica for Android/build_errors.txt
-Monica for Android/build_log.txt
+Bastion/build_errors.txt
+Bastion/build_log.txt
 
 # TRAE / AI tool files
 .trae/
@@ -93,8 +93,8 @@ SteamTools-develop/
 EasyNotes-master/
 Android-浏览器插件功能差异排查报告.md
 bitwarden/
-!Monica for Android/app/src/main/java/takagi/ru/monica/bitwarden/
-!Monica for Android/app/src/main/java/takagi/ru/monica/bitwarden/**
+!Bastion/app/src/main/java/com/bastion/app/bitwarden/
+!Bastion/app/src/main/java/com/bastion/app/bitwarden/**
 fdroiddata/
 CLI-WeChat-Bridge-main/
 
