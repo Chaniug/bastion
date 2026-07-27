@@ -13,7 +13,7 @@ permalink: /ecosystem/WindowsReadme
 ```yaml
 - name: Bastion by Avalonia
   desc: Avalonia + .NET + MDBX 本地密码库
-  link: https://github.com/Bastion/Bastion-by-Avalonia
+  link: https://github.com/Monica-Pass/Monica-by-Avalonia
   img: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
   badge: 仓库
   badgeType: tip
