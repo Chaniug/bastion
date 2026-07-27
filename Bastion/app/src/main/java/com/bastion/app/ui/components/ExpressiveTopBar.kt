@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
@@ -30,7 +31,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -81,7 +81,6 @@ fun ExpressiveTopBar(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
     val searchInteractionSource = remember { MutableInteractionSource() }
     var searchFieldValueState by remember {
         mutableStateOf(initialSearchTextFieldValue(searchQuery))
@@ -99,7 +98,6 @@ fun ExpressiveTopBar(
         searchInteractionSource.interactions.collect { interaction ->
             if (interaction is PressInteraction.Press) {
                 focusRequester.requestFocus()
-                keyboardController?.show()
             }
         }
     }
@@ -241,6 +239,7 @@ fun ExpressiveTopBar(
                                         color = MaterialTheme.colorScheme.onSurface
                                     ),
                                     singleLine = true,
+                                    keyboardOptions = KeyboardOptions(showKeyboardOnFocus = true),
                                     interactionSource = searchInteractionSource,
                                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                     modifier = Modifier.focusRequester(focusRequester)
@@ -275,7 +274,6 @@ fun ExpressiveTopBar(
                         
                          LaunchedEffect(Unit) {
                             focusRequester.requestFocus()
-                            keyboardController?.show()
                         }
                     } else {
                         // 折叠状态：Action Buttons

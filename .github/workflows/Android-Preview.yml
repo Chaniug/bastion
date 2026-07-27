@@ -2,7 +2,7 @@ name: Android Preview Build
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
     paths:
       - 'Bastion/**/*.kt'
       - 'Bastion/**/*.java'
@@ -11,7 +11,7 @@ on:
       - 'Bastion/**/*.kts'
       - 'Bastion/gradle/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
     paths:
       - 'Bastion/**/*.kt'
       - 'Bastion/**/*.java'

@@ -102,6 +102,9 @@ import com.bastion.app.repository.CustomFieldRepository
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.steam.core.SteamTotp
+import com.bastion.app.steam.data.SteamAccountRepository
+import com.bastion.app.steam.data.SteamDatabase
 import com.bastion.app.ui.theme.BastionTheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.bastion.app.data.model.TotpData
@@ -772,8 +775,8 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         val filledValues = linkedMapOf<AutofillId, String>()
         val normalizedHints = hints.orEmpty().map { it.trim().lowercase() }
         val hasOtpHint = normalizedHints.any { isOtpHint(it) }
-        val selectedOtpCode = if (hasOtpHint) {
-            generateOtpCodeForPassword(password)
+            val selectedOtpCode = if (hasOtpHint) {
+            generateOtpCodeForPassword(applicationContext, password)
         } else {
             null
         }
@@ -1241,19 +1244,6 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         finish()
     }
 
-    private fun isOtpHint(normalizedHint: String): Boolean {
-        if (normalizedHint.isBlank()) return false
-        return normalizedHint == EnhancedAutofillStructureParserV2.FieldHint.OTP_CODE.name.lowercase() ||
-            normalizedHint.contains("totp") ||
-            normalizedHint.contains("otp") ||
-            normalizedHint.contains("2fa") ||
-            normalizedHint.contains("twofactor") ||
-            normalizedHint.contains("two_factor") ||
-            normalizedHint.contains("verification") ||
-            normalizedHint.contains("验证码") ||
-            normalizedHint.contains("驗證碼") ||
-            normalizedHint.contains("一次性")
-    }
 
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun launchPasswordAutofillSideEffects(password: PasswordEntry, forceAddUri: Boolean) {
@@ -1266,167 +1256,10 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
                 rememberLastFilledCredential(password.id)
             }
             rememberLearnedFieldSignature()
-            processSelectedOtpActions(password)
+            performOtpAutofillSideEffects(applicationContext, password, args.autofillHints)
         }
     }
 
-    private suspend fun processSelectedOtpActions(password: PasswordEntry) {
-        val isOtpTarget = args.autofillHints
-            ?.map { it.trim().lowercase() }
-            ?.any(::isOtpHint) == true
-        if (isOtpTarget) {
-            AutofillLogger.d("OTP", "Skip OTP auto action for OTP-target fill request")
-            return
-        }
-
-        runCatching {
-            val preferences = AutofillPreferences(applicationContext)
-            val showNotification = withContext(Dispatchers.IO) {
-                preferences.isOtpNotificationEnabled.first()
-            }
-            val autoCopy = withContext(Dispatchers.IO) {
-                preferences.isAutoCopyOtpEnabled.first()
-            }
-            if (!showNotification && !autoCopy) return
-
-            val totpData = resolveOtpDataForPassword(password)
-            if (totpData == null) {
-                AutofillLogger.w(
-                    "OTP",
-                    "Skip OTP notify/copy: no authenticator key or bound validator entry found for passwordId=${password.id}"
-                )
-                return
-            }
-            AutofillLogger.i(
-                "OTP",
-                "Resolved OTP source: passwordId=${password.id}, otpType=${totpData.otpType}, secretLen=${totpData.secret.length}, boundPasswordId=${totpData.boundPasswordId}"
-            )
-            val resolvedTotpData = resolveTotpDataForGeneration(totpData)
-            val code = TotpGenerator.generateOtp(resolvedTotpData)
-            AutofillLogger.i(
-                "OTP",
-                "Selected OTP generated: passwordId=${password.id}, type=${resolvedTotpData.otpType}, codeLen=${code.length}"
-            )
-            if (autoCopy) {
-                withContext(Dispatchers.Main) {
-                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("OTP Code", code))
-                }
-                AutofillLogger.d("OTP", "Auto-copied selected credential OTP")
-            }
-            if (showNotification) {
-                val durationSeconds = withContext(Dispatchers.IO) {
-                    preferences.otpNotificationDuration.first()
-                }
-                com.bastion.app.autofill_ng.service.AutofillOtpNotificationService.start(
-                    context = applicationContext,
-                    totpData = resolvedTotpData,
-                    label = password.title,
-                    durationSeconds = durationSeconds
-                )
-            }
-        }.onFailure { e ->
-            AutofillLogger.e("OTP", "Failed selected OTP action", e)
-        }
-    }
-
-    private suspend fun generateOtpCodeForPassword(password: PasswordEntry): String? {
-        val totpData = resolveOtpDataForPassword(password)
-        if (totpData == null) {
-            AutofillLogger.w(
-                "OTP",
-                "Skip OTP fill: no authenticator key or bound validator entry found for passwordId=${password.id}"
-            )
-            return null
-        }
-        return runCatching {
-            val resolvedTotpData = resolveTotpDataForGeneration(totpData)
-            val code = TotpGenerator.generateOtp(resolvedTotpData)
-            AutofillLogger.i(
-                "OTP",
-                "Generated OTP for fill: passwordId=${password.id}, type=${resolvedTotpData.otpType}, codeLen=${code.length}"
-            )
-            code.takeIf { it.isNotBlank() }
-        }.onFailure { e ->
-            AutofillLogger.e("OTP", "Failed OTP fill generation", e)
-        }.getOrNull()
-    }
-
-    private fun parsePasswordAuthenticatorTotpData(authenticatorKey: String): TotpData? {
-        val securityManager = SecurityManager(applicationContext)
-        return TotpDataResolver.fromAuthenticatorKey(
-            rawKey = runCatching {
-                securityManager.decryptDataIfBastionCiphertext(authenticatorKey)
-            }.getOrDefault(authenticatorKey)
-        )
-    }
-
-    private suspend fun resolveOtpDataForPassword(password: PasswordEntry): TotpData? {
-        val passwordTotpData = password.authenticatorKey
-            .trim()
-            .takeIf { it.isNotBlank() }
-            ?.let(::parsePasswordAuthenticatorTotpData)
-        return resolveOtpFromExistingValidators(password, passwordTotpData) ?: passwordTotpData
-    }
-
-    private suspend fun resolveOtpFromExistingValidators(
-        password: PasswordEntry,
-        passwordTotpData: TotpData?
-    ): TotpData? {
-        val validatorTotpList = withContext(Dispatchers.IO) {
-            val securityManager = SecurityManager(applicationContext)
-            val dao = PasswordDatabase.getDatabase(applicationContext).secureItemDao()
-            dao.getActiveItemsByTypeSync(ItemType.TOTP)
-                .mapNotNull { item ->
-                    TotpDataResolver.parseStoredItemData(
-                        itemData = item.itemData,
-                        fallbackIssuer = item.title,
-                        decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
-                    )
-                }
-        }
-
-        if (validatorTotpList.isEmpty()) return null
-
-        validatorTotpList.firstOrNull { it.boundPasswordId == password.id }?.let { return it }
-
-        val identityKey = buildTotpIdentityKey(passwordTotpData)
-        if (identityKey.isNotEmpty()) {
-            validatorTotpList.firstOrNull { buildTotpIdentityKey(it) == identityKey }?.let { return it }
-        }
-
-        return null
-    }
-
-    private fun buildTotpIdentityKey(data: TotpData?): String {
-        val normalized = data?.let { TotpDataResolver.normalizeTotpData(it) } ?: return ""
-        val normalizedSecret = TotpDataResolver.normalizeBase32Secret(normalized.secret)
-        return listOf(
-            normalized.otpType.name,
-            normalizedSecret,
-            normalized.digits.toString(),
-            normalized.period.toString(),
-            normalized.algorithm.uppercase(),
-            normalized.counter.toString()
-        ).joinToString("|")
-    }
-
-    private fun resolveTotpDataForGeneration(totpData: TotpData): TotpData {
-        val securityManager = SecurityManager(applicationContext)
-        val decryptResult = runCatching { securityManager.decryptData(totpData.secret) }
-        val decryptedSecret = decryptResult.getOrNull()
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-        AutofillLogger.i(
-            "OTP",
-            "OTP secret resolve: otpType=${totpData.otpType}, rawLen=${totpData.secret.length}, decryptSuccess=${decryptResult.isSuccess && !decryptedSecret.isNullOrEmpty()}, resolvedLen=${decryptedSecret?.length ?: totpData.secret.length}"
-        )
-        return if (!decryptedSecret.isNullOrEmpty()) {
-            totpData.copy(secret = decryptedSecret)
-        } else {
-            totpData
-        }
-    }
 
     private suspend fun rememberLastFilledCredential(passwordId: Long) {
         val normalizedIdentifiers = buildList {

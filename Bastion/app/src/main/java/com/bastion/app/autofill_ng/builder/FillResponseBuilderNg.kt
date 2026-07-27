@@ -284,16 +284,19 @@ class FillResponseBuilderNg(
         val hasInlinePresentation = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             partition.inlinePresentationSpec != null
         val callbackTargets = buildLoginCallbackTargets(request.partition.views)
-        val authPendingIntent = if (partition.requiresAuthentication || hasInlinePresentation) {
-            createCipherAuthPendingIntent(
-                request = request,
-                partition = partition,
-                callbackTargets = callbackTargets,
-                requireAuthentication = partition.requiresAuthentication,
-            )
-        } else {
-            null
-        }
+        // 回归修复：原本仅在 requiresAuthentication || hasInlinePresentation 时才给数据集挂
+        // AutofillCipherCallbackActivity。但 partition.requiresAuthentication 在 vault 解锁时
+        // 恒为 false（requiresAuthentication && isVaultLocked），于是 vault 解锁后的常规填充
+        // 会被框架“直接填充”而不经过任何 Activity，OTP 自动复制副作用永远无法触发。
+        // 这里让所有凭据数据集都挂上 cipher callback；当 requireAuthentication=false 时，
+        // callback 内部会跳过二次认证、直接完成填充并触发 OTP 复制，恢复旧架构
+        // “菜单/inline 点选 → Activity → 填充 + OTP”的预期行为。
+        val authPendingIntent = createCipherAuthPendingIntent(
+            request = request,
+            partition = partition,
+            callbackTargets = callbackTargets,
+            requireAuthentication = partition.requiresAuthentication,
+        )
         if (partition.requiresAuthentication && authPendingIntent == null) {
             throw IllegalStateException("Authentication required but cipher callback pending intent is unavailable")
         }
@@ -330,8 +333,16 @@ class FillResponseBuilderNg(
                 null
             }
         }
-        if (partition.requiresAuthentication && authPendingIntent != null) {
+        // 关键修复：原先要求 requiresAuthentication 才挂认证，导致 vault 解锁后的常规填充
+        // 走“直接填充”而绕开 OTP 复制。现改为：只要有 cipher callback PendingIntent 就挂上，
+        // 由 callback 内部按 requireAuthentication 决定是否二次认证。
+        if (authPendingIntent != null) {
             datasetBuilder.setAuthentication(authPendingIntent.intentSender)
+            android.util.Log.d(
+                "BastionOtpCopy",
+                "dataset auth attached: cipherId=${partition.autofillCipher.cipherId}, " +
+                    "requiredAuth=${partition.requiresAuthentication}, inline=$hasInlinePresentation"
+            )
         }
         return datasetBuilder.build()
     }

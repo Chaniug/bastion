@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 品牌蓝盾牌 -->
+    <!-- 品牌蓝盾牌（对角线性渐变：亮蓝→品牌蓝→深蓝） -->
     <path
-        android:pathData="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z"
-        android:fillColor="#185FA5" />
+        android:pathData="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28" android:startY="26"
+                android:endX="80" android:endY="86"
+                android:startColor="#4A9BE8"
+                android:centerColor="#185FA5"
+                android:endColor="#0A2A4D" />
+        </aapt:attr>
+    </path>
     <!-- 金色锁孔：圆 + 锁芯 -->
     <path
         android:pathData="M46 50 a8 8 0 1 0 16 0 a8 8 0 1 0 -16 0 Z"

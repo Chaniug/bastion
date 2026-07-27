@@ -1,105 +1,92 @@
-<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="monicpass 数字保险箱主视觉">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="bastion 本地优先 开源 安全密码管理">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0B1020"/>
-      <stop offset="0.45" stop-color="#160B2E"/>
-      <stop offset="1" stop-color="#0A1437"/>
+    <!-- 背景：上 #0A1437 → 中 #0B2E52 → 下 #061026（竖向） -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A1437"/>
+      <stop offset="0.5" stop-color="#0B2E52"/>
+      <stop offset="1" stop-color="#061026"/>
     </linearGradient>
-    <radialGradient id="glowPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(380 250) rotate(140) scale(420)">
-      <stop offset="0" stop-color="#7C4DFF" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#7C4DFF" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowTeal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 430) rotate(120) scale(380)">
-      <stop offset="0" stop-color="#18FFFF" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#18FFFF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="shieldStroke" x1="640" y1="150" x2="640" y2="500" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#B388FF"/>
-      <stop offset="1" stop-color="#18FFFF"/>
+    <!-- 盾牌填充：对角 135°（0,0 → 1,1），0% #4A9BE8 → 55% #185FA5 → 100% #0A2A4D -->
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4A9BE8"/>
+      <stop offset="0.55" stop-color="#185FA5"/>
+      <stop offset="1" stop-color="#0A2A4D"/>
     </linearGradient>
-    <linearGradient id="shieldFill" x1="640" y1="150" x2="640" y2="500" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7C4DFF" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#18FFFF" stop-opacity="0.06"/>
-    </linearGradient>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="6"/>
-    </filter>
+    <clipPath id="shieldClip">
+      <path d="M30 34 Q100 14 170 34 L170 112 C170 168 138 200 100 226 C62 200 30 168 30 112 Z"/>
+    </clipPath>
   </defs>
 
-  <!-- Background -->
-  <rect width="1280" height="640" fill="url(#bg)"/>
-  <rect width="1280" height="640" fill="url(#glowPurple)"/>
-  <rect width="1280" height="640" fill="url(#glowTeal)"/>
+  <!-- 背景 -->
+  <rect x="0" y="0" width="1280" height="640" fill="url(#bgGrad)"/>
 
-  <!-- Faint grid -->
-  <g stroke="#9D8CFF" stroke-opacity="0.06" stroke-width="1">
-    <path d="M0 160 H1280 M0 320 H1280 M0 480 H1280"/>
-    <path d="M320 0 V640 M640 0 V640 M960 0 V640"/>
+  <!-- 粒子 / 网络点缀：#4A9BE8，散布左上留白，≤12 点，opacity 0.3，全实色 -->
+  <g fill="#4A9BE8" stroke="#4A9BE8" stroke-width="1" opacity="0.3">
+    <line x1="90" y1="95" x2="160" y2="72"/>
+    <line x1="160" y1="72" x2="225" y2="125"/>
+    <line x1="225" y1="125" x2="285" y2="95"/>
+    <line x1="160" y1="72" x2="130" y2="175"/>
+    <line x1="130" y1="175" x2="65" y2="210"/>
+    <line x1="225" y1="125" x2="330" y2="165"/>
+    <line x1="285" y1="95" x2="330" y2="165"/>
+    <line x1="330" y1="165" x2="360" y2="120"/>
+    <line x1="130" y1="175" x2="195" y2="225"/>
+    <line x1="195" y1="225" x2="255" y2="210"/>
+    <line x1="255" y1="210" x2="360" y2="120"/>
+    <circle cx="90" cy="95" r="2.5"/>
+    <circle cx="160" cy="72" r="3"/>
+    <circle cx="225" cy="125" r="2.5"/>
+    <circle cx="130" cy="175" r="2.5"/>
+    <circle cx="285" cy="95" r="3"/>
+    <circle cx="330" cy="165" r="2.5"/>
+    <circle cx="65" cy="210" r="2"/>
+    <circle cx="195" cy="225" r="2.5"/>
+    <circle cx="360" cy="120" r="2.5"/>
+    <circle cx="255" cy="210" r="2.5"/>
   </g>
 
-  <!-- Encrypted particle network -->
-  <g stroke="#7C4DFF" stroke-opacity="0.35" stroke-width="1.2">
-    <path d="M150 140 L300 230 L210 360 L120 300 Z"/>
-    <path d="M300 230 L470 180"/>
-    <path d="M470 180 L560 300 L470 420 L300 360"/>
-    <path d="M210 360 L300 460 L430 470"/>
-    <path d="M430 470 L560 300"/>
-    <path d="M1040 200 L940 320 L1060 430 L1150 330 Z"/>
-    <path d="M940 320 L820 250"/>
-    <path d="M820 250 L760 380 L880 470 L940 320"/>
-    <path d="M760 380 L660 360"/>
-    <path d="M1060 430 L940 470"/>
-  </g>
-  <g fill="#FFFFFF">
-    <circle cx="150" cy="140" r="3" fill-opacity="0.85"/>
-    <circle cx="300" cy="230" r="4" fill="#B388FF" fill-opacity="0.95"/>
-    <circle cx="210" cy="360" r="3" fill-opacity="0.8"/>
-    <circle cx="120" cy="300" r="2.5" fill-opacity="0.7"/>
-    <circle cx="470" cy="180" r="3.5" fill="#18FFFF" fill-opacity="0.9"/>
-    <circle cx="560" cy="300" r="3" fill-opacity="0.8"/>
-    <circle cx="470" cy="420" r="3" fill-opacity="0.75"/>
-    <circle cx="300" cy="360" r="3" fill-opacity="0.8"/>
-    <circle cx="430" cy="470" r="2.5" fill-opacity="0.7"/>
-    <circle cx="1040" cy="200" r="3.5" fill="#18FFFF" fill-opacity="0.9"/>
-    <circle cx="940" cy="320" r="4" fill="#B388FF" fill-opacity="0.95"/>
-    <circle cx="1060" cy="430" r="3" fill-opacity="0.8"/>
-    <circle cx="1150" cy="330" r="2.5" fill-opacity="0.7"/>
-    <circle cx="820" cy="250" r="3" fill-opacity="0.8"/>
-    <circle cx="760" cy="380" r="3.5" fill="#18FFFF" fill-opacity="0.85"/>
-    <circle cx="880" cy="470" r="2.5" fill-opacity="0.7"/>
-    <circle cx="660" cy="360" r="2.5" fill-opacity="0.65"/>
-  </g>
+  <!-- 中央盾牌：参考 path 等比放大（scale 1.7）并居中到画布 (640,300) -->
+  <g transform="translate(470 87.5) scale(1.7)">
+    <!-- 实色填充 + 清晰外描边（无模糊） -->
+    <path d="M30 34 Q100 14 170 34 L170 112 C170 168 138 200 100 226 C62 200 30 168 30 112 Z"
+          fill="url(#shieldGrad)" stroke="#7CC4FF" stroke-width="1.7" stroke-linejoin="round"/>
 
-  <!-- Central shield-lock -->
-  <g transform="translate(640 320)">
-    <path d="M0 -150 C70 -150 120 -110 120 -50 L120 40 C120 120 60 175 0 195 C-60 175 -120 120 -120 40 L-120 -50 C-120 -110 -70 -150 0 -150 Z"
-          fill="url(#shieldFill)" stroke="url(#shieldStroke)" stroke-width="4"/>
-    <g filter="url(#soft)" opacity="0.5">
-      <path d="M0 -150 C70 -150 120 -110 120 -50 L120 40 C120 120 60 175 0 195 C-60 175 -120 120 -120 40 L-120 -50 C-120 -110 -70 -150 0 -150 Z"
-            fill="none" stroke="#18FFFF" stroke-width="3"/>
+    <!-- 体积感：左侧白色窄高光 + 右侧暗层，clip 限制在盾内（无滤镜） -->
+    <g clip-path="url(#shieldClip)">
+      <rect x="30" y="6" width="34" height="228" fill="#FFFFFF" opacity="0.12"/>
+      <rect x="116" y="6" width="54" height="228" fill="#061026" opacity="0.18"/>
     </g>
-    <!-- Lock body -->
-    <rect x="-42" y="-18" width="84" height="74" rx="14" fill="#0B1020" stroke="#B388FF" stroke-width="3"/>
-    <!-- Keyhole -->
-    <circle cx="0" cy="14" r="13" fill="#18FFFF"/>
-    <rect x="-5" y="14" width="10" height="34" rx="5" fill="#18FFFF"/>
-    <!-- Shackle -->
-    <path d="M-26 -18 V-34 C-26 -58 26 -58 26 -34 V-18" fill="none" stroke="#B388FF" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- 金锁（盾心，居中） -->
+    <g>
+      <!-- 锁梁：暗底 + 金弧（描边无填充） -->
+      <path d="M82 99 C82 75 118 75 118 99" fill="none" stroke="#C98A1E" stroke-width="8" stroke-linecap="round"/>
+      <path d="M82 99 C82 75 118 75 118 99" fill="none" stroke="#F5B942" stroke-width="6" stroke-linecap="round"/>
+      <!-- 锁体 -->
+      <rect x="72" y="99" width="56" height="52" rx="9" fill="#F5B942" stroke="#C98A1E" stroke-width="1.5"/>
+      <!-- 锁孔：深色圆 + 矩形 -->
+      <circle cx="100" cy="118" r="6" fill="#0A2A4D"/>
+      <rect x="97" y="118" width="6" height="15" fill="#0A2A4D"/>
+    </g>
+
+    <!-- 金钥匙（右下，盾内，≤盾 1/4，避开锁） -->
+    <g transform="translate(124 166) rotate(35)">
+      <circle cx="0" cy="0" r="8" fill="#F5B942" stroke="#C98A1E" stroke-width="2"/>
+      <circle cx="0" cy="0" r="3.2" fill="#0A2A4D"/>
+      <rect x="6" y="-2.5" width="16" height="5" fill="#F5B942" stroke="#C98A1E" stroke-width="1.5"/>
+      <rect x="20" y="-2.5" width="3.5" height="9" fill="#F5B942" stroke="#C98A1E" stroke-width="1.5"/>
+      <rect x="14" y="-2.5" width="3.5" height="7" fill="#F5B942" stroke="#C98A1E" stroke-width="1.5"/>
+    </g>
   </g>
 
-  <!-- Floating key (accent) -->
-  <g transform="translate(905 250) rotate(35)" opacity="0.92">
-    <circle cx="0" cy="0" r="20" fill="none" stroke="#18FFFF" stroke-width="6"/>
-    <rect x="16" y="-5" width="70" height="10" rx="5" fill="#18FFFF"/>
-    <rect x="70" y="-5" width="10" height="22" rx="3" fill="#18FFFF"/>
-    <rect x="86" y="-5" width="10" height="16" rx="3" fill="#18FFFF"/>
-  </g>
-
-  <!-- Wordmark -->
-  <text x="640" y="560" text-anchor="middle" font-family="'Outfit','Segoe UI',sans-serif" font-size="56" font-weight="800" fill="#FFFFFF" letter-spacing="2">
-    monic<tspan fill="#B388FF">pass</tspan>
+  <!-- 字标 bastion（白 bas + 金 tion）+ 2px 金线收尾 -->
+  <text x="640" y="566" text-anchor="middle" font-family="'Outfit','Segoe UI',sans-serif" font-size="56" font-weight="800" letter-spacing="1">
+    <tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan>
   </text>
-  <text x="640" y="596" text-anchor="middle" font-family="'Inter','Segoe UI',sans-serif" font-size="20" font-weight="500" fill="#A9B4D0" letter-spacing="6">
+  <rect x="588" y="584" width="104" height="2" fill="#F5B942"/>
+
+  <!-- 副标 -->
+  <text x="640" y="616" text-anchor="middle" font-family="'Outfit','Segoe UI',sans-serif" font-size="19" font-weight="500" fill="#A9B4D0" letter-spacing="4">
     本地优先 · 开源 · 安全密码管理
   </text>
 </svg>

@@ -67,6 +67,11 @@ class SecurityManager(private val context: Context) {
     // Secure Data Key Alias and Prefix
     private val KEY_ALIAS_DATA = "bastion_data_key_v2"
     private val KEY_ALIAS_DATA_COMPAT = "bastion_data_key_v2_compat"
+    // Legacy aliases from pre-rebrand (Monica Pass). Used as decryption fallback so that
+    // data encrypted before the rebrand remains readable after the applicationId/key-alias
+    // rename. Encryption always uses the new aliases; only decryption tries the legacy ones.
+    private val LEGACY_KEY_ALIAS_DATA = "monica_data_key_v2"
+    private val LEGACY_KEY_ALIAS_DATA_COMPAT = "monica_data_key_v2_compat"
     private val DATA_PREFIX_V2 = "V2|"
     private val DATA_PREFIX_COMPAT = "C2|"
     private val WRAPPER_PREFIX_AUTH = "AU|"
@@ -1216,14 +1221,29 @@ class SecurityManager(private val context: Context) {
         val iv = combined.copyOfRange(0, 12) // GCM IV is 12 bytes
         val encrypted = combined.copyOfRange(12, combined.size)
 
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val secretKey = getOrGenerateSecureKey()
-        
         val gcmSpec = GCMParameterSpec(128, iv)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
-        
-        val decryptedBytes = cipher.doFinal(encrypted)
-        return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+
+        // Try current key first
+        try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val secretKey = getOrGenerateSecureKey()
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+            val decryptedBytes = cipher.doFinal(encrypted)
+            return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+        } catch (e: Exception) {
+            // Fallback: try legacy key alias (pre-rebrand "monica_data_key_v2")
+            tryGetLegacyKey(LEGACY_KEY_ALIAS_DATA)?.let { legacyKey ->
+                try {
+                    val legacyCipher = Cipher.getInstance("AES/GCM/NoPadding")
+                    legacyCipher.init(Cipher.DECRYPT_MODE, legacyKey, gcmSpec)
+                    val decryptedBytes = legacyCipher.doFinal(encrypted)
+                    return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+                } catch (_: Exception) {
+                    // Legacy key also failed, fall through to rethrow original error
+                }
+            }
+            throw e
+        }
     }
 
     private fun decryptDataCompat(encryptedData: String): String {
@@ -1234,13 +1254,48 @@ class SecurityManager(private val context: Context) {
         val iv = combined.copyOfRange(0, 12)
         val encrypted = combined.copyOfRange(12, combined.size)
 
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val secretKey = getOrGenerateCompatSecureKey()
         val gcmSpec = GCMParameterSpec(128, iv)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
 
-        val decryptedBytes = cipher.doFinal(encrypted)
-        return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+        // Try current compat key first
+        try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val secretKey = getOrGenerateCompatSecureKey()
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+            val decryptedBytes = cipher.doFinal(encrypted)
+            return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+        } catch (e: Exception) {
+            // Fallback: try legacy compat key alias (pre-rebrand "monica_data_key_v2_compat")
+            tryGetLegacyKey(LEGACY_KEY_ALIAS_DATA_COMPAT)?.let { legacyKey ->
+                try {
+                    val legacyCipher = Cipher.getInstance("AES/GCM/NoPadding")
+                    legacyCipher.init(Cipher.DECRYPT_MODE, legacyKey, gcmSpec)
+                    val decryptedBytes = legacyCipher.doFinal(encrypted)
+                    return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
+                } catch (_: Exception) {
+                    // Legacy key also failed, fall through to rethrow original error
+                }
+            }
+            throw e
+        }
+    }
+
+    /**
+     * Attempt to retrieve a legacy Keystore key by alias WITHOUT generating a new key.
+     * Returns null if the alias doesn't exist or can't be accessed.
+     * Used for backward-compatible decryption of data encrypted before the rebrand.
+     */
+    private fun tryGetLegacyKey(alias: String): SecretKey? {
+        return try {
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            if (keyStore.containsAlias(alias)) {
+                (keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry)?.secretKey
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun decryptLegacyV1OrPlainText(encryptedData: String): String {
