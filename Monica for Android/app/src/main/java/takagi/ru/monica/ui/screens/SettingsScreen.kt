@@ -691,10 +691,11 @@ fun SettingsScreen(
         showPageCustomizationItem
     ).any { it }
 
+    val currentVersionText = "V${BuildConfig.VERSION_NAME}"
     val showVersionItem = matchesSettingsItem(
         aboutTitle,
         context.getString(R.string.version),
-        context.getString(R.string.settings_version_number)
+        currentVersionText
     )
     val showUpdateCheckItem = matchesSettingsItem(
         aboutTitle,
@@ -995,7 +996,7 @@ fun SettingsScreen(
                         SettingsItem(
                             icon = Icons.Default.Info,
                             title = context.getString(R.string.version),
-                            subtitle = context.getString(R.string.settings_version_number),
+                            subtitle = currentVersionText,
                             onClick = { showVersionInfoDialog = true }
                         )
                     }
