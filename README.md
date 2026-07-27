@@ -1,27 +1,27 @@
-# monicpass
+# bastion
 
 <p align="center">
-  <img src="image/monica-hero.svg" alt="monicpass 主视觉" width="100%" />
+  <img src="image/bastion-hero.svg" alt="bastion 主视觉" width="100%" />
 </p>
 
 <p align="center">
   <b>本地优先 · 开源 · 安全密码管理</b><br/>
-  基于 <a href="https://github.com/Monica-Pass/Monica">Monica</a> 的二次开发独立分支，持续优化
+  基于 <a href="https://github.com/Bastion-Pass/Bastion">Bastion</a> 的二次开发独立分支，持续优化
 </p>
 
 <p align="center">
-  <a href="https://github.com/Chaniug/monicpass/releases"><img src="https://img.shields.io/github/v/release/Chaniug/monicpass?style=flat-square" alt="Release" /></a>
-  <a href="https://github.com/Chaniug/monicpass/releases"><img src="https://img.shields.io/github/downloads/Chaniug/monicpass/total?style=flat-square" alt="Downloads" /></a>
-  <a href="https://github.com/Chaniug/monicpass/commits"><img src="https://img.shields.io/github/last-commit/Chaniug/monicpass?style=flat-square" alt="Last Commit" /></a>
+  <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/v/release/Chaniug/bastion?style=flat-square" alt="Release" /></a>
+  <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/downloads/Chaniug/bastion/total?style=flat-square" alt="Downloads" /></a>
+  <a href="https://github.com/Chaniug/bastion/commits"><img src="https://img.shields.io/github/last-commit/Chaniug/bastion?style=flat-square" alt="Last Commit" /></a>
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-green?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/license-GPLv3-blue?style=flat-square" alt="License" />
 </p>
 
 ---
 
-## ✨ 关于 monicpass
+## ✨ 关于 bastion
 
-**monicpass** 是 [Monica Pass](https://github.com/Monica-Pass/Monica) 的独立二次开发分支（fork），在保持上游核心能力的基础上进行针对性优化与功能增强。
+**bastion** 是 [Bastion](https://github.com/Bastion-Pass/Bastion) 的独立二次开发分支（fork），在保持上游核心能力的基础上进行针对性优化与功能增强。
 
 本分支的开发原则：
 
@@ -87,7 +87,7 @@ flowchart TB
 
 ```mermaid
 mindmap
-  root((monicpass))
+  root((bastion))
     Android App
       Kotlin
       Jetpack Compose
@@ -111,13 +111,13 @@ mindmap
 
 ### Android
 
-1. 从 [Releases](https://github.com/Chaniug/monicpass/releases) 下载最新 APK（含 Development Preview）
+1. 从 [Releases](https://github.com/Chaniug/bastion/releases) 下载最新 APK（含 Development Preview）
 2. 在 Android 8.0+ 设备安装并初始化主密码
-3. （可选）在系统设置中启用 **monicpass 自动填充服务**
+3. （可选）在系统设置中启用 **bastion 自动填充服务**
 
 ### 浏览器扩展
 
-从上游 [Monica Pass](https://github.com/Monica-Pass/Monica) 获取浏览器扩展，与本分支的 Android 端配合使用。
+从上游 [Bastion](https://github.com/Bastion-Pass/Bastion) 获取浏览器扩展，与本分支的 Android 端配合使用。
 
 ---
 
@@ -132,7 +132,7 @@ mindmap
 
 ## 🔄 与上游的主要差异
 
-| 方面 | 上游 (Monica-Pass/Monica) | monicpass（本分支） |
+| 方面 | 上游 (Bastion-Pass/Bastion) | bastion（本分支） |
 |------|---------------------------|---------------------|
 | 自动填充 | 原始实现 | 增强兼容（电影猎手等小众 App），修复普通输入框误弹密码 |
 | 版本号策略 | 固定 versionCode | epoch 秒自增，每次构建支持覆盖安装 |
@@ -156,16 +156,16 @@ mindmap
 
 ```bash
 # 克隆
-git clone https://github.com/Chaniug/monicpass.git
+git clone https://github.com/Chaniug/bastion.git
 
 # 进入 Android 目录
-cd monicpass/Monica\ for\ Android
+cd bastion/Bastion\ for\ Android
 
 # 构建
 ./gradlew :app:assembleRelease
 ```
 
-GitHub Actions 在每次推送 `main` 分支时自动构建并发布 Development Preview，可在 [Releases](https://github.com/Chaniug/monicpass/releases) 页面下载。
+GitHub Actions 在每次推送 `main` 分支时自动构建并发布 Development Preview，可在 [Releases](https://github.com/Chaniug/bastion/releases) 页面下载。
 
 ### 静态官网（本项目文档站）
 
@@ -175,15 +175,15 @@ npm install
 npm run build      # 输出至 dist/，部署到 GitHub Pages
 ```
 
-> 站点 `base` 已配置为 `/monicpass/`，可直接作为 `chaniug.github.io/monicpass` 的 Project Pages 发布。
+> 站点 `base` 已配置为 `/bastion/`，可直接作为 `chaniug.github.io/bastion` 的 Project Pages 发布。
 
 ---
 
 ## 📂 项目结构
 
 ```
-monicpass/
-├── Monica for Android/   # Android 客户端（Kotlin / Compose）
+bastion/
+├── Bastion/   # Android 客户端（Kotlin / Compose）
 ├── documentation/
 │   └── website/          # 静态官网（Vite + GitHub Pages）
 │       ├── src/          # 站点源码（HTML / JS / CSS）
@@ -197,13 +197,13 @@ monicpass/
 
 ## 📄 许可
 
-本项目基于上游 [Monica Pass](https://github.com/Monica-Pass/Monica) 二次开发，继承其 [GNU General Public License v3.0](LICENSE) 开源许可。
+本项目基于上游 [Bastion](https://github.com/Bastion-Pass/Bastion) 二次开发，继承其 [GNU General Public License v3.0](LICENSE) 开源许可。
 
 ---
 
 ## 🙏 致谢
 
-感谢 [Monica Pass](https://github.com/Monica-Pass/Monica) 原作者提供的优秀基础，以及以下开源项目的启发与帮助：
+感谢 [Bastion](https://github.com/Bastion-Pass/Bastion) 原作者提供的优秀基础，以及以下开源项目的启发与帮助：
 
 - [Bitwarden](https://bitwarden.com/) — 开源密码管理生态、Vault 模型与同步能力
 - [KeePass](https://keepass.info/) — 本地密码库理念与 `.kdbx` 生态兼容

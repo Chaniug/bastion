@@ -4,28 +4,28 @@ on:
   push:
     branches: [ main, dev ]
     paths:
-      - 'Monica for Android/**/*.kt'
-      - 'Monica for Android/**/*.java'
-      - 'Monica for Android/**/*.xml'
-      - 'Monica for Android/**/*.gradle'
-      - 'Monica for Android/**/*.gradle.kts'
-      - 'Monica for Android/**/*.kts'
-      - 'Monica for Android/gradle/**'
-      - 'Monica for Android/gradlew'
-      - 'Monica for Android/gradlew.bat'
+      - 'Bastion/**/*.kt'
+      - 'Bastion/**/*.java'
+      - 'Bastion/**/*.xml'
+      - 'Bastion/**/*.gradle'
+      - 'Bastion/**/*.gradle.kts'
+      - 'Bastion/**/*.kts'
+      - 'Bastion/gradle/**'
+      - 'Bastion/gradlew'
+      - 'Bastion/gradlew.bat'
       - '.github/workflows/main.yml'
   pull_request:
     branches: [ main, dev ]
     paths:
-      - 'Monica for Android/**/*.kt'
-      - 'Monica for Android/**/*.java'
-      - 'Monica for Android/**/*.xml'
-      - 'Monica for Android/**/*.gradle'
-      - 'Monica for Android/**/*.gradle.kts'
-      - 'Monica for Android/**/*.kts'
-      - 'Monica for Android/gradle/**'
-      - 'Monica for Android/gradlew'
-      - 'Monica for Android/gradlew.bat'
+      - 'Bastion/**/*.kt'
+      - 'Bastion/**/*.java'
+      - 'Bastion/**/*.xml'
+      - 'Bastion/**/*.gradle'
+      - 'Bastion/**/*.gradle.kts'
+      - 'Bastion/**/*.kts'
+      - 'Bastion/gradle/**'
+      - 'Bastion/gradlew'
+      - 'Bastion/gradlew.bat'
       - '.github/workflows/main.yml'
   workflow_dispatch:
 
@@ -43,7 +43,7 @@ jobs:
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: "Monica for Android"
+        working-directory: "Bastion"
 
     steps:
       - uses: actions/checkout@v6
@@ -75,8 +75,8 @@ jobs:
         with:
           name: debug-unit-test-reports
           path: |
-            Monica for Android/app/build/reports/tests/testDebugUnitTest
-            Monica for Android/app/build/test-results/testDebugUnitTest
+            Bastion/app/build/reports/tests/testDebugUnitTest
+            Bastion/app/build/test-results/testDebugUnitTest
           retention-days: 7
           if-no-files-found: ignore
 
@@ -91,7 +91,7 @@ jobs:
         with:
           name: debug-apk
           path: |
-            Monica for Android/app/build/outputs/apk/debug/*.apk
-            Monica for Android/app/build/outputs/apk/debug/*.APK
+            Bastion/app/build/outputs/apk/debug/*.apk
+            Bastion/app/build/outputs/apk/debug/*.APK
           retention-days: 7
           if-no-files-found: error

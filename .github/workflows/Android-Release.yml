@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 40
     defaults:
       run:
-        working-directory: "Monica for Android"
+        working-directory: "Bastion"
     env:
       GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -194,7 +194,7 @@ jobs:
             > **Generated APKs:**
             ${{ steps.apk_meta.outputs.apk_list }}
           files: |
-            Monica for Android/app/build/outputs/apk/release/*.APK
+            Bastion/app/build/outputs/apk/release/*.APK
           draft: false
           prerelease: false
           make_latest: true

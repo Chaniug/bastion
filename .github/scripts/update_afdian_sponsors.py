@@ -52,7 +52,7 @@ def api_call(token: str, user_id: str, endpoint: str, page: int, per_page: int =
     request = urllib.request.Request(
         f"{API_URL}/{endpoint}",
         data=urllib.parse.urlencode(fields).encode("utf-8"),
-        headers={"User-Agent": "Monica-Afdian-README-Updater/1.0"},
+        headers={"User-Agent": "Bastion-Afdian-README-Updater/1.0"},
     )
     payload = None
     for attempt in range(3):
@@ -114,7 +114,7 @@ def render(sponsors: list[dict], month_total: Decimal) -> str:
         body = "<table>\n" + "\n".join(rows) + "\n</table>"
     else:
         body = "<div align=\"center\"><sub>名单将在收到首笔公开打赏后自动更新。</sub></div>"
-    return f"{START}\n### 爱发电鸣谢\n\n感谢每一位支持 Monica 的朋友！\n\n**本月打赏金额：¥{month_total:.2f}**\n\n{body}\n{END}"
+    return f"{START}\n### 爱发电鸣谢\n\n感谢每一位支持 Bastion 的朋友！\n\n**本月打赏金额：¥{month_total:.2f}**\n\n{body}\n{END}"
 
 
 def update_readme(path: Path, block: str) -> None:

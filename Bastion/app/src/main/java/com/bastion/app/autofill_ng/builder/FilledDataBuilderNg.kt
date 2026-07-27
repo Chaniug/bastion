@@ -1,0 +1,209 @@
+package com.bastion.app.autofill_ng.builder
+
+import android.content.Context
+import android.view.autofill.AutofillValue
+import android.widget.inline.InlinePresentationSpec
+import com.bastion.app.autofill_ng.AccountFillPolicy
+import com.bastion.app.autofill_ng.model.AutofillCipher
+import com.bastion.app.autofill_ng.model.AutofillRequest
+import com.bastion.app.autofill_ng.model.AutofillPartition
+import com.bastion.app.autofill_ng.model.AutofillView
+import com.bastion.app.autofill_ng.model.FilledData
+import com.bastion.app.autofill_ng.model.FilledItem
+import com.bastion.app.autofill_ng.model.FilledPartition
+import com.bastion.app.autofill_ng.model.toAutofillCipherLogin
+import com.bastion.app.autofill_ng.AutofillSecretResolver
+import com.bastion.app.data.PasswordEntry
+import com.bastion.app.security.SecurityManager
+import com.bastion.app.security.SessionManager
+import com.bastion.app.utils.SettingsManager
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+
+// 不在此处截断条目数量，让系统键盘自行控制横向滚动显示所有条目。
+private const val MAX_FILLED_PARTITIONS_COUNT = Int.MAX_VALUE
+private const val MAX_INLINE_SUGGESTION_COUNT = Int.MAX_VALUE
+
+class FilledDataBuilderNg(
+    private val context: Context,
+    private val securityManager: SecurityManager,
+) {
+
+    private fun resolveAutoLockTimeoutForAutofill(): Int {
+        return runCatching {
+            val settingsManager = SettingsManager(context.applicationContext)
+            val autoLockMinutes = runBlocking {
+                settingsManager.settingsFlow.first().autoLockMinutes
+            }
+            SessionManager.updateAutoLockTimeout(autoLockMinutes)
+            autoLockMinutes
+        }.onFailure { error ->
+            android.util.Log.w(
+                "FilledDataBuilderNg",
+                "Failed to sync auto-lock timeout for autofill: ${error.message}"
+            )
+        }.getOrDefault(5)
+    }
+
+    fun build(
+        request: AutofillRequest.Fillable,
+        passwords: List<PasswordEntry>,
+        requireAuthentication: Boolean = true,
+    ): FilledData {
+        val autoLockMinutes = resolveAutoLockTimeoutForAutofill()
+        // 用户设置“永不过期/不锁定”(autoLockMinutes == -1)时，只要密钥材料当前可读即视为已解锁，
+        // 避免自动填充独立进程因会话状态不可见而每次填充都强制二次解锁。
+        val isVaultLocked = if (autoLockMinutes == -1) {
+            !securityManager.canAccessVaultMaterialNow()
+        } else {
+            !securityManager.canAccessVaultNowStrict(context, autoLockMinutes)
+        }
+        val maxCipherInlineSuggestionsCount = (request.maxInlineSuggestionsCount - 1)
+            .coerceAtMost(MAX_INLINE_SUGGESTION_COUNT)
+
+        var inlineSuggestionsAdded = 0
+
+        fun getCipherInlinePresentationOrNull(): InlinePresentationSpec? =
+            if (inlineSuggestionsAdded < maxCipherInlineSuggestionsCount) {
+                request.inlinePresentationSpecs?.getOrLastOrNull(inlineSuggestionsAdded)
+            } else {
+                null
+            }?.also { inlineSuggestionsAdded += 1 }
+
+        val loginViews = when (val partition = request.partition) {
+            is AutofillPartition.Login -> partition.views
+            is AutofillPartition.Generic -> partition.views.filterIsInstance<AutofillView.Login>()
+        }
+
+        val filledPartitions = if (loginViews.isEmpty()) {
+            emptyList()
+        } else {
+            val ciphers = passwords.mapNotNull { entry ->
+                buildCipherForResponse(
+                    entry = entry,
+                    fallbackWebsite = request.uri.orEmpty(),
+                    requireAuthentication = requireAuthentication,
+                    isVaultLocked = isVaultLocked
+                )
+            }
+
+            ciphers
+                .map { autofillCipher ->
+                    fillLoginPartition(
+                        autofillCipher = autofillCipher,
+                        autofillViews = loginViews,
+                        inlinePresentationSpec = getCipherInlinePresentationOrNull(),
+                        requiresAuthentication = requireAuthentication && isVaultLocked
+                    )
+                }
+                .filter { it.filledItems.isNotEmpty() }
+                .take(MAX_FILLED_PARTITIONS_COUNT)
+        }
+
+        val vaultItemInlinePresentationSpec = request
+            .inlinePresentationSpecs
+            ?.getOrLastOrNull(inlineSuggestionsAdded)
+
+        return FilledData(
+            filledPartitions = filledPartitions,
+            ignoreAutofillIds = request.ignoreAutofillIds,
+            originalPartition = request.partition,
+            uri = request.uri,
+            vaultItemInlinePresentationSpec = vaultItemInlinePresentationSpec,
+            isVaultLocked = isVaultLocked
+        )
+    }
+
+    private fun fillLoginPartition(
+        autofillCipher: AutofillCipher.Login,
+        autofillViews: List<AutofillView.Login>,
+        inlinePresentationSpec: InlinePresentationSpec?,
+        requiresAuthentication: Boolean,
+    ): FilledPartition {
+        val filledItems = if (requiresAuthentication) {
+            autofillViews.map { autofillView ->
+                FilledItem(
+                    autofillId = autofillView.data.autofillId,
+                    value = null
+                )
+            }
+        } else {
+            autofillViews.mapNotNull { autofillView ->
+                val value = when (autofillView) {
+                    is AutofillView.Login.Username -> autofillCipher.username
+                    is AutofillView.Login.Password -> autofillCipher.password
+                }
+                autofillView.buildFilledItemOrNull(value = value)
+            }
+        }
+
+        return FilledPartition(
+            autofillCipher = autofillCipher,
+            filledItems = filledItems,
+            inlinePresentationSpec = inlinePresentationSpec,
+            requiresAuthentication = requiresAuthentication
+        )
+    }
+
+    private fun AutofillView.Login.buildFilledItemOrNull(value: String?): FilledItem? {
+        if (value.isNullOrBlank()) return null
+        return FilledItem(
+            autofillId = data.autofillId,
+            value = AutofillValue.forText(value)
+        )
+    }
+
+    private fun buildCipherForResponse(
+        entry: PasswordEntry,
+        fallbackWebsite: String,
+        requireAuthentication: Boolean,
+        isVaultLocked: Boolean,
+    ): AutofillCipher.Login? {
+        if (requireAuthentication && isVaultLocked) {
+            val subtitleValue = AccountFillPolicy
+                .resolveAccountIdentifierForDisplay(entry)
+                .takeIf { it.isNotBlank() }
+                ?: entry.website.takeIf { it.isNotBlank() }
+                ?: fallbackWebsite.takeIf { it.isNotBlank() }
+                ?: entry.title
+            val websiteValue = entry.website.takeIf { it.isNotBlank() } ?: fallbackWebsite
+            val titleValue = entry.title
+                .takeIf { it.isNotBlank() }
+                ?: subtitleValue.takeIf { it.isNotBlank() }
+                ?: websiteValue.takeIf { it.isNotBlank() }
+                ?: "Credential"
+            return AutofillCipher.Login(
+                cipherId = entry.id.toString(),
+                name = titleValue,
+                subtitle = subtitleValue,
+                username = "",
+                password = "",
+                website = websiteValue,
+                appPackageName = entry.appPackageName.takeIf { it.isNotBlank() }
+            )
+        }
+
+        val usernameValue = decryptForAutofill(entry.username)
+        val passwordValue = decryptForAutofill(entry.password)
+        if (usernameValue.isNullOrBlank() && passwordValue.isNullOrBlank()) {
+            return null
+        }
+        return entry.toAutofillCipherLogin(
+            fallbackWebsite = fallbackWebsite,
+            usernameValue = usernameValue.orEmpty(),
+            passwordValue = passwordValue.orEmpty()
+        )
+    }
+
+    private fun decryptForAutofill(value: String): String? {
+        if (value.isBlank()) return ""
+        return AutofillSecretResolver.decryptPasswordOrNull(
+            securityManager = securityManager,
+            encryptedOrPlain = value,
+            logTag = "FilledDataBuilderNg",
+        )
+    }
+}
+
+private fun <T> List<T>.getOrLastOrNull(index: Int): T? =
+    getOrNull(index) ?: lastOrNull()

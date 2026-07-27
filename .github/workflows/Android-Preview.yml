@@ -4,21 +4,21 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'Monica for Android/**/*.kt'
-      - 'Monica for Android/**/*.java'
-      - 'Monica for Android/**/*.xml'
-      - 'Monica for Android/**/*.gradle'
-      - 'Monica for Android/**/*.kts'
-      - 'Monica for Android/gradle/**'
+      - 'Bastion/**/*.kt'
+      - 'Bastion/**/*.java'
+      - 'Bastion/**/*.xml'
+      - 'Bastion/**/*.gradle'
+      - 'Bastion/**/*.kts'
+      - 'Bastion/gradle/**'
   pull_request:
     branches: [ main, develop ]
     paths:
-      - 'Monica for Android/**/*.kt'
-      - 'Monica for Android/**/*.java'
-      - 'Monica for Android/**/*.xml'
-      - 'Monica for Android/**/*.gradle'
-      - 'Monica for Android/**/*.kts'
-      - 'Monica for Android/gradle/**'
+      - 'Bastion/**/*.kt'
+      - 'Bastion/**/*.java'
+      - 'Bastion/**/*.xml'
+      - 'Bastion/**/*.gradle'
+      - 'Bastion/**/*.kts'
+      - 'Bastion/gradle/**'
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: "Monica for Android"
+        working-directory: "Bastion"
     env:
       # 启用 Gradle 构建缓存与并行，缩短重复构建耗时
       GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
@@ -238,7 +238,7 @@ jobs:
             > *   **Commit SHA**: `${{ github.sha }}`
             > *   **Ref**: `${{ github.ref }}`
           files: |
-            Monica for Android/app/build/outputs/apk/release/*.APK
+            Bastion/app/build/outputs/apk/release/*.APK
           draft: false
           prerelease: true
           make_latest: false

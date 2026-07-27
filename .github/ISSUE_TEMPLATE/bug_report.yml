@@ -1,5 +1,5 @@
 name: "Bug 报告 (Bug Report)"
-description: "提交你在使用 Monica 过程中遇到的程序崩溃、异常或错误"
+description: "提交你在使用 Bastion 过程中遇到的程序崩溃、异常或错误"
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: "错误描述 (Description)"
       description: "请清晰且简短地描述这个 Bug 是什么，在什么操作下触发的。"
-      placeholder: "例如：使用 Monica 连接自托管 Vaultwarden 时，如果账户 KDF 设置为 Argon2id 且内存参数较高，应用会在登录/解锁/同步前后直接崩溃。"
+      placeholder: "例如：使用 Bastion 连接自托管 Vaultwarden 时，如果账户 KDF 设置为 Argon2id 且内存参数较高，应用会在登录/解锁/同步前后直接崩溃。"
     validations:
       required: true
 
