@@ -57,15 +57,15 @@
 ### 下载安装
 
 #### 方式一: 从 Release 下载
-1. 前往 [Releases](https://github.com/Bastion-Pass/Bastion-for-Android/releases) 页面
+1. 前往 [Releases](https://github.com/Chaniug/bastion/releases) 页面
 2. 下载最新版本的 APK 文件
 3. 在 Android 设备上安装 APK
 
 #### 方式二: 从源码编译
 ```bash
 # 克隆仓库
-git clone https://github.com/Bastion-Pass/Bastion-for-Android.git
-cd Bastion-for-Android
+git clone https://github.com/Chaniug/bastion.git
+cd bastion/Bastion
 
 # 使用 Gradle 构建
 ./gradlew assembleDebug
@@ -275,7 +275,7 @@ cd Bastion-for-Android
 ### 报告问题
 
 如果您发现 Bug 或有功能建议:
-1. 前往 [Issues](https://github.com/Bastion-Pass/Bastion-for-Android/issues) 页面
+1. 前往 [Issues](https://github.com/Chaniug/bastion/issues) 页面
 2. 搜索是否已有相关问题
 3. 创建新 Issue 并详细描述
 
@@ -344,7 +344,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 有问题或建议?
 - 📧 Email: lichaoran8@gmail.com
-- 💬 Issues: [GitHub Issues](https://github.com/Bastion-Pass/Bastion-for-Android/issues)
+- 💬 Issues: [GitHub Issues](https://github.com/Chaniug/bastion/issues)
 
 ---
 

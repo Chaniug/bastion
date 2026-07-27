@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>本地优先 · 开源 · 安全密码管理</b><br/>
-  基于开源 <a href="https://github.com/Bastion-Pass/Bastion">Bastion</a> 代码库二次开发的独立分支，持续优化自动填充、主题与同步体验
+  基于开源 <a href="https://github.com/Monica-Pass/Monica">Monica</a> 代码库二次开发、并更名为 Bastion 的独立分支，持续优化自动填充、主题与同步体验
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## ✨ 关于 bastion
 
-**bastion** 是在开源 [Bastion](https://github.com/Bastion-Pass/Bastion) 基础上独立维护的本地优先密码管理器分支，在保持上游核心能力的基础上进行针对性优化与功能增强。
+**bastion**（本仓库 [Chaniug/bastion](https://github.com/Chaniug/bastion)）是在开源 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维护、并更名而来的本地优先密码管理器分支，在保持上游核心能力的基础上进行针对性优化与功能增强。
 
 本分支的开发原则：
 
@@ -117,7 +117,7 @@ mindmap
 
 ### 浏览器扩展
 
-从上游 [Bastion](https://github.com/Bastion-Pass/Bastion) 获取浏览器扩展，与本分支的 Android 端配合使用。
+从上游 [Monica](https://github.com/Monica-Pass/Monica) 获取浏览器扩展，与本分支的 Android 端配合使用。
 
 ---
 
@@ -132,7 +132,7 @@ mindmap
 
 ## 🔄 与上游的主要差异
 
-| 方面 | 上游 (Bastion-Pass/Bastion) | bastion（本分支） |
+| 方面 | 上游 (Monica-Pass/Monica) | bastion（本分支） |
 |------|---------------------------|---------------------|
 | 自动填充 | 原始实现 | 增强兼容（电影猎手等小众 App），修复普通输入框误弹密码 |
 | 版本号策略 | 固定 versionCode | epoch 秒自增，每次构建支持覆盖安装 |
@@ -197,13 +197,13 @@ bastion/
 
 ## 📄 许可
 
-本项目基于上游 [Bastion](https://github.com/Bastion-Pass/Bastion) 二次开发，继承其 [GNU General Public License v3.0](LICENSE) 开源许可。
+本项目基于上游 [Monica](https://github.com/Monica-Pass/Monica) 二次开发，继承其 [GNU General Public License v3.0](LICENSE) 开源许可。
 
 ---
 
 ## 🙏 致谢
 
-感谢 [Bastion](https://github.com/Bastion-Pass/Bastion) 原作者提供的优秀基础，以及以下开源项目的启发与帮助：
+感谢 [Monica](https://github.com/Monica-Pass/Monica) 原作者提供的优秀基础，以及以下开源项目的启发与帮助：
 
 - [Bitwarden](https://bitwarden.com/) — 开源密码管理生态、Vault 模型与同步能力
 - [KeePass](https://keepass.info/) — 本地密码库理念与 `.kdbx` 生态兼容
