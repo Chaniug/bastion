@@ -45,7 +45,7 @@
 - `06-sqlite-schema-v1.zh-CN.md`
 - `07-low-end-model-task-breakdown.zh-CN.md`
 - `08-implementation-completion-plan.zh-CN.md`
-- `11-monica-pass-cli-development.zh-CN.md`
+- `11-bastion-pass-cli-development.zh-CN.md`
 
 实现指导层定义：
 
@@ -157,7 +157,7 @@ MDBX 文档使用三种等级：
 - `10`
   - 预留：状态总结
 - `11`
-  - Monica Pass CLI 开发与接入说明
+  - Bastion CLI 开发与接入说明
 
 后续新增文档时：
 

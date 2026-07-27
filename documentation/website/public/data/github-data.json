@@ -8,7 +8,7 @@
   "commits": [
     {
       "sha": "8f58fad",
-      "message": "docs(readme): 重写 README 图文并茂排版 + 修复静态官网显示异常\n\n- 修复 vite base 路径 /Monica/ -> /monicpass/（部署 404 根因）\n- 更新运行时/预构建 GitHub 仓库引用为 Chaniug/monicpass\n- 新增 SVG 主视觉 banner（image/monica-hero.svg）\n- 新增界面截图画廊与 Mermaid 架构图\n- 补充 docs/usage.md 修复文档页加载",
+      "message": "docs(readme): 重写 README 图文并茂排版 + 修复静态官网显示异常\n\n- 修复 vite base 路径 /Bastion/ -> /monicpass/（部署 404 根因）\n- 更新运行时/预构建 GitHub 仓库引用为 Chaniug/monicpass\n- 新增 SVG 主视觉 banner（image/bastion-hero.svg）\n- 新增界面截图画廊与 Mermaid 架构图\n- 补充 docs/usage.md 修复文档页加载",
       "date": "2026-07-26T11:50:47Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/8f58fad8b6c86af98732b00a3f8b22d89cb38d16"
@@ -57,14 +57,14 @@
     },
     {
       "sha": "e78a52a",
-      "message": "refactor(android): 彻底移除 Monica 自定义 IME（安全键盘）模块\n\nautofill 已优化，绝大多数场景可直接填充密码，IME 模块不再需要。\n- 删除 ime/ 包（主源码 + 测试）与 monica_input_method.xml 资源\n- 移除全部 ime_* 字符串（ime_unlock_required 改名为 vault_locked_message，由 AuthComponents 复用）\n- 移除 Theme.ImeBiometricAuth 主题与 SecondarySession 测试中的 IME 专项用例\n- 清理 lint-baseline 中 48 条 IME 相关条目",
+      "message": "refactor(android): 彻底移除 Bastion 自定义 IME（安全键盘）模块\n\nautofill 已优化，绝大多数场景可直接填充密码，IME 模块不再需要。\n- 删除 ime/ 包（主源码 + 测试）与 bastion_input_method.xml 资源\n- 移除全部 ime_* 字符串（ime_unlock_required 改名为 vault_locked_message，由 AuthComponents 复用）\n- 移除 Theme.ImeBiometricAuth 主题与 SecondarySession 测试中的 IME 专项用例\n- 清理 lint-baseline 中 48 条 IME 相关条目",
       "date": "2026-07-26T08:22:12Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/e78a52a149c059120db7cb0fd4438b0ac5c94469"
     },
     {
       "sha": "5f55a4a",
-      "message": "style(icon): 换成现代扁平几何风自适应图标\n\n- 背景由紫粉橙渐变换为深蓝纯色 #185FA5，对比更强、更现代\n- 新建矢量前景 ic_monica_lock_foreground：白色几何锁 + 青色钥匙孔\n- 新建矢量单色层 ic_monica_lock_monochrome：白色锁轮廓(Android13+ 主题图标)\n- 4 个 launcher 入口(modern/modern_round/标准/round)统一引用新矢量层\n- 全程采用 VectorDrawable，无需位图工具且任意分辨率清晰\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
+      "message": "style(icon): 换成现代扁平几何风自适应图标\n\n- 背景由紫粉橙渐变换为深蓝纯色 #185FA5，对比更强、更现代\n- 新建矢量前景 ic_bastion_lock_foreground：白色几何锁 + 青色钥匙孔\n- 新建矢量单色层 ic_bastion_lock_monochrome：白色锁轮廓(Android13+ 主题图标)\n- 4 个 launcher 入口(modern/modern_round/标准/round)统一引用新矢量层\n- 全程采用 VectorDrawable，无需位图工具且任意分辨率清晰\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
       "date": "2026-07-26T08:16:03Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/5f55a4ae6f9f22b14d08c1f3163ace954a520dd6"
@@ -106,21 +106,21 @@
     },
     {
       "sha": "3f0c9f2",
-      "message": "chore(branding): 更新地址/关于软件/反馈入口指向本 fork (Chaniug/monicpass)\n\n- UpdateChecker: 检查更新仓库由 Monica-Pass/Monica 改为 Chaniug/monicpass\n- SettingsScreen 关于软件: GitHub 与官网占位改为本 fork 仓库\n- AppSelector: 黑名单反馈 issue 链接改为本 fork issues\n- 打赏链接与二维码暂保留原作者署名，后续按需替换",
+      "message": "chore(branding): 更新地址/关于软件/反馈入口指向本 fork (Chaniug/monicpass)\n\n- UpdateChecker: 检查更新仓库由 Bastion/Bastion 改为 Chaniug/monicpass\n- SettingsScreen 关于软件: GitHub 与官网占位改为本 fork 仓库\n- AppSelector: 黑名单反馈 issue 链接改为本 fork issues\n- 打赏链接与二维码暂保留原作者署名，后续按需替换",
       "date": "2026-07-26T03:29:31Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/3f0c9f29f9f40e1be96b427ead4e7506c7fefdc3"
     },
     {
       "sha": "f9040f2",
-      "message": "redesign: 重新设计 APK 图标并清理多语言 README\n\n- 使用 AI 生成新的 monicpass 应用图标（透明背景的可爱锁+钥匙）\n- 替换 Android 自适应图标的前景资源 monica_launcher.png\n- 更新 image/newicon.png 展示图\n- 删除英语/日语/俄语/越南语/Nya README 文件\n- 将 Monica for Android/README_ZH.md 改名为 README.md（仅保留中文）\n- 主 README 仅保留中文并展示新图标",
+      "message": "redesign: 重新设计 APK 图标并清理多语言 README\n\n- 使用 AI 生成新的 monicpass 应用图标（透明背景的可爱锁+钥匙）\n- 替换 Android 自适应图标的前景资源 bastion_launcher.png\n- 更新 image/newicon.png 展示图\n- 删除英语/日语/俄语/越南语/Nya README 文件\n- 将 Bastion for Android/README_ZH.md 改名为 README.md（仅保留中文）\n- 主 README 仅保留中文并展示新图标",
       "date": "2026-07-26T03:01:15Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/f9040f2d1f32e3c38b9c890829ed9e5bdccf3d40"
     },
     {
       "sha": "2f424e6",
-      "message": "fix: 付费功能全部免费 + autofill 跳过原因诊断增强\n\nTask B - 付费功能全部免费:\n- AppSettings.isPlusActivated 默认值改为 true\n- SettingsManager 读取默认值改为 true\n- 移除所有 isPlusActivated 门控条件\n- MonicaPlusScreen 始终显示已激活状态\n- PaymentScreen 简化为已激活提示页\n- MonicaPlusCard 始终显示已激活\n- AttachmentQuotaPolicy 不再限制附件数量\n- SyncBackupScreen 移除 Plus 限制和提示卡片\n- ColorSchemeSelectionScreen 高级配色始终显示\n- PageAdjustmentCustomizationScreen 验证器震动始终显示\n- ExtensionsScreen 验证器设置始终显示\n- QuickSetupScreen 始终显示已激活状态\n\nTask A - Autofill 修复:\n- hasLoginTypeField 回退检查 confidenceFilteredItems 防止 promotePasswordTermCandidates 后丢失\n- groupBy 每个跳过分支添加 DEBUG 级别诊断日志\n- All groups skipped 从 WARN 改为 DEBUG 级别",
+      "message": "fix: 付费功能全部免费 + autofill 跳过原因诊断增强\n\nTask B - 付费功能全部免费:\n- AppSettings.isPlusActivated 默认值改为 true\n- SettingsManager 读取默认值改为 true\n- 移除所有 isPlusActivated 门控条件\n- BastionPlusScreen 始终显示已激活状态\n- PaymentScreen 简化为已激活提示页\n- BastionPlusCard 始终显示已激活\n- AttachmentQuotaPolicy 不再限制附件数量\n- SyncBackupScreen 移除 Plus 限制和提示卡片\n- ColorSchemeSelectionScreen 高级配色始终显示\n- PageAdjustmentCustomizationScreen 验证器震动始终显示\n- ExtensionsScreen 验证器设置始终显示\n- QuickSetupScreen 始终显示已激活状态\n\nTask A - Autofill 修复:\n- hasLoginTypeField 回退检查 confidenceFilteredItems 防止 promotePasswordTermCandidates 后丢失\n- groupBy 每个跳过分支添加 DEBUG 级别诊断日志\n- All groups skipped 从 WARN 改为 DEBUG 级别",
       "date": "2026-07-26T02:53:14Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/2f424e6cd48809ee0fe06c3a7429532a347d832c"
@@ -134,14 +134,14 @@
     },
     {
       "sha": "24dd73d",
-      "message": "fix(autofill): 收紧 TYPE_TEXT_VARIATION_NORMAL fallback，修复 QQ 搜索框误弹\n\n问题：放开 weakLoginContext（hasLoginTypeField）后 QQ 搜索框又误弹，\n因为 Monica 的 parseNodeByAndroidInput 对 TYPE_TEXT_VARIATION_NORMAL\n无条件 fallback 为 USERNAME:LOWEST，比 bitwarden 宽松（bitwarden 的\ntoAutofillView 对纯 text 返回 Unused）。\n\n修复：对齐 bitwarden，TYPE_TEXT_VARIATION_NORMAL / PERSON_NAME 变体不再\n无条件产出 USERNAME:LOWEST fallback，仅保留 extractOfId/extractOfType\n按术语定 MEDIUM 精度。WEB_EDIT_TEXT 变体（WebView 登录框）保留 LOWEST\nfallback，因 WebView 登录框常用该变体且无标准 hint。\n\n效果：纯 text 搜索框/备注不再被误判为 USERNAME，QQ 搜索框误弹修复；\n有 username 术语的账号框（idEntry 含 username/account 等）仍被\nextractOfId 识别为 MEDIUM 精度；密码框已能填充的行为不受影响。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
+      "message": "fix(autofill): 收紧 TYPE_TEXT_VARIATION_NORMAL fallback，修复 QQ 搜索框误弹\n\n问题：放开 weakLoginContext（hasLoginTypeField）后 QQ 搜索框又误弹，\n因为 Bastion 的 parseNodeByAndroidInput 对 TYPE_TEXT_VARIATION_NORMAL\n无条件 fallback 为 USERNAME:LOWEST，比 bitwarden 宽松（bitwarden 的\ntoAutofillView 对纯 text 返回 Unused）。\n\n修复：对齐 bitwarden，TYPE_TEXT_VARIATION_NORMAL / PERSON_NAME 变体不再\n无条件产出 USERNAME:LOWEST fallback，仅保留 extractOfId/extractOfType\n按术语定 MEDIUM 精度。WEB_EDIT_TEXT 变体（WebView 登录框）保留 LOWEST\nfallback，因 WebView 登录框常用该变体且无标准 hint。\n\n效果：纯 text 搜索框/备注不再被误判为 USERNAME，QQ 搜索框误弹修复；\n有 username 术语的账号框（idEntry 含 username/account 等）仍被\nextractOfId 识别为 MEDIUM 精度；密码框已能填充的行为不受影响。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
       "date": "2026-07-26T01:56:07Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/24dd73d67fd6eac199a4d6acff4d3df089d64eab"
     },
     {
       "sha": "ee662d4",
-      "message": "fix(autofill): 弱目标模式放行条件改为「有 Login 类型字段就弹」+ 节点信号诊断\n\n上一版 weakLoginContext 用 login 术语门（hasPasswordTerm||hasLoginTerm），\n但电影猎手账号框 weakLoginContext=false 证明它无任何 login 术语，\n术语门无法救。\n\n参考 bitwarden AutofillParserImpl：它不在弹窗决策层做「无密码框时过滤\n低精度账号」的二次保险，而是靠前置 toAutofillView 阶段把搜索框判为 Unused。\n只要字段被识别为 Login.Username 就 Fillable。\n\n改动：\n1. weakLoginContext 改为 hasLoginTypeField（候选中有 USERNAME/EMAIL/PHONE\n   即放行），不再要求 login 术语。对齐 bitwarden「有 Login 字段就 Fillable」。\n2. 新增「LOWEST username node signals」诊断日志：当节点被识别为\n   USERNAME:LOWEST（纯 text fallback 路径）时，记录其 className/inputType/\n   autofillHints/idEntry/hintLabel/htmlAttrs/hasPasswordTerm/hasLoginTerm 等\n   原始信号，用于排查电影猎手账号框的真实识别信号（对比 bitwarden）。\n\n注：Monica 的 TYPE_TEXT_VARIATION_NORMAL fallback 比 bitwarden 宽松\n（会把纯 text 判为 USERNAME:LOWEST），理论上可能误弹纯搜索框；但电影猎手\n等真登录场景的确定 bug 优先于假设性的搜索框误弹（后者可用黑名单兜底）。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
+      "message": "fix(autofill): 弱目标模式放行条件改为「有 Login 类型字段就弹」+ 节点信号诊断\n\n上一版 weakLoginContext 用 login 术语门（hasPasswordTerm||hasLoginTerm），\n但电影猎手账号框 weakLoginContext=false 证明它无任何 login 术语，\n术语门无法救。\n\n参考 bitwarden AutofillParserImpl：它不在弹窗决策层做「无密码框时过滤\n低精度账号」的二次保险，而是靠前置 toAutofillView 阶段把搜索框判为 Unused。\n只要字段被识别为 Login.Username 就 Fillable。\n\n改动：\n1. weakLoginContext 改为 hasLoginTypeField（候选中有 USERNAME/EMAIL/PHONE\n   即放行），不再要求 login 术语。对齐 bitwarden「有 Login 字段就 Fillable」。\n2. 新增「LOWEST username node signals」诊断日志：当节点被识别为\n   USERNAME:LOWEST（纯 text fallback 路径）时，记录其 className/inputType/\n   autofillHints/idEntry/hintLabel/htmlAttrs/hasPasswordTerm/hasLoginTerm 等\n   原始信号，用于排查电影猎手账号框的真实识别信号（对比 bitwarden）。\n\n注：Bastion 的 TYPE_TEXT_VARIATION_NORMAL fallback 比 bitwarden 宽松\n（会把纯 text 判为 USERNAME:LOWEST），理论上可能误弹纯搜索框；但电影猎手\n等真登录场景的确定 bug 优先于假设性的搜索框误弹（后者可用黑名单兜底）。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
       "date": "2026-07-26T01:34:22Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/ee662d4588339e344b6574527c83ac2388bd16d6"
@@ -155,14 +155,14 @@
     },
     {
       "sha": "2b1df4d",
-      "message": "fix: 删除弱重解析回退处重复的代码块，修复编译失败\n\n回退 knownLoginPackage 改动时残留了重复的 parsed=weakParsed /\nusedWeakReparse=true / } 三行，导致 Kotlin 编译报\n「Function declaration must have a name」「Expecting member declaration」\n（MonicaAutofillServiceNg.kt:311），Preview Build 失败。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
+      "message": "fix: 删除弱重解析回退处重复的代码块，修复编译失败\n\n回退 knownLoginPackage 改动时残留了重复的 parsed=weakParsed /\nusedWeakReparse=true / } 三行，导致 Kotlin 编译报\n「Function declaration must have a name」「Expecting member declaration」\n（BastionAutofillServiceNg.kt:311），Preview Build 失败。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
       "date": "2026-07-26T00:43:37Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/2b1df4d549f902dddb258f00b05cb4e02d82f51d"
     },
     {
       "sha": "73af932",
-      "message": "fix(autofill): 对齐 bitwarden 弹窗门槛，修复电影猎手密码框不在结构时不弹\n\n问题：电影猎手聚焦账号框、密码框不在 AssistStructure 时（requestId=5），\n弱目标重解析后仍 loginFilteredCount=0，面板不弹。而 bitwarden/keepassDX\n在此场景能弹账号面板。根因是 Monica 的 loginFilteredItems 在「无密码框时\n过滤低精度账号」，比 bitwarden 的「有 Login 字段就 Fillable」门槛更严。\n\n参考 bitwarden AutofillParserImpl 的两条核心逻辑重写修复：\n\n1. promotePasswordTermCandidates（借鉴 updateForMissingPasswordFields）：\n   弱目标模式下，若候选无 PASSWORD，扫描含 password 术语（idEntry/label/\n   placeholder/autofillHints）但被识别为其它 hint 的候选，提升为 PASSWORD:LOW。\n   救「密码框在结构里但因非标准 inputType 被误识别为 USERNAME」的情况。\n\n2. weakLoginContext 术语门（对齐「有 Login 字段就 Fillable」门槛）：\n   弱目标模式下，若提升后仍无密码框，但屏幕上任意节点含 login 术语\n   （username/login/账号/用户名/密码 等），放行低精度账号字段，弹账号面板。\n   纯搜索/备注场景无 login 术语不放行，保留 QQ 搜索框防误弹。\n\n回退上一版的 knownLoginPackage 会话记忆方案（onDisconnected 频繁清空记忆\n导致不可靠）。新增 hasPasswordTerm/hasLoginTerm 字段记录节点文本信号，\n诊断日志补充 promotedPasswordCount/hasPasswordInItems/weakLoginContext 字段。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
+      "message": "fix(autofill): 对齐 bitwarden 弹窗门槛，修复电影猎手密码框不在结构时不弹\n\n问题：电影猎手聚焦账号框、密码框不在 AssistStructure 时（requestId=5），\n弱目标重解析后仍 loginFilteredCount=0，面板不弹。而 bitwarden/keepassDX\n在此场景能弹账号面板。根因是 Bastion 的 loginFilteredItems 在「无密码框时\n过滤低精度账号」，比 bitwarden 的「有 Login 字段就 Fillable」门槛更严。\n\n参考 bitwarden AutofillParserImpl 的两条核心逻辑重写修复：\n\n1. promotePasswordTermCandidates（借鉴 updateForMissingPasswordFields）：\n   弱目标模式下，若候选无 PASSWORD，扫描含 password 术语（idEntry/label/\n   placeholder/autofillHints）但被识别为其它 hint 的候选，提升为 PASSWORD:LOW。\n   救「密码框在结构里但因非标准 inputType 被误识别为 USERNAME」的情况。\n\n2. weakLoginContext 术语门（对齐「有 Login 字段就 Fillable」门槛）：\n   弱目标模式下，若提升后仍无密码框，但屏幕上任意节点含 login 术语\n   （username/login/账号/用户名/密码 等），放行低精度账号字段，弹账号面板。\n   纯搜索/备注场景无 login 术语不放行，保留 QQ 搜索框防误弹。\n\n回退上一版的 knownLoginPackage 会话记忆方案（onDisconnected 频繁清空记忆\n导致不可靠）。新增 hasPasswordTerm/hasLoginTerm 字段记录节点文本信号，\n诊断日志补充 promotedPasswordCount/hasPasswordInItems/weakLoginContext 字段。\n\nCo-Authored-By: WorkBuddy <workbuddy@tencent.com>",
       "date": "2026-07-26T00:39:45Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/73af932559368468d29714428f905a0b4995ed6f"
@@ -183,7 +183,7 @@
     },
     {
       "sha": "21972f3",
-      "message": "feat(branding): 显示名改为 monicapass 以区别于上游 monicpass\n\n- @string/app_name 与 @string/app_label 在 5 个语言(en/zh/ja/ru/vi)\n  均由 Monica / Monica Pass 改为 monicapass（启动器、设置、自动填充\n  服务标签均引用这两个字符串，随之生效）\n- 同步更新隐藏开发者选项中点名启动名的文案，避免残留旧名\n- 包名 applicationId 保持 takagi.ru.monica 不变（已与上游 com.monica.app\n  不同，改动会影响已安装身份与保险库数据）",
+      "message": "feat(branding): 显示名改为 bastionpass 以区别于上游 monicpass\n\n- @string/app_name 与 @string/app_label 在 5 个语言(en/zh/ja/ru/vi)\n  均由 Bastion / Bastion 改为 bastionpass（启动器、设置、自动填充\n  服务标签均引用这两个字符串，随之生效）\n- 同步更新隐藏开发者选项中点名启动名的文案，避免残留旧名\n- 包名 applicationId 保持 com.bastion.app 不变（已与上游 com.bastion.app\n  不同，改动会影响已安装身份与保险库数据）",
       "date": "2026-07-25T23:03:37Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/21972f38451618c0ffc85418fe2efdb5417a00e7"
@@ -309,28 +309,28 @@
     },
     {
       "sha": "5609c84",
-      "message": "清理 IME 移除残留：删除失效测试引用 + 同步三语文档\n\n- BiometricUnlockRegressionGuardTest: 移除已删除的 MonicaInputMethodService.kt 断言项（否则该测试在 IME 文件移除后会失败）\n- 文档(en/ru/vi): 自动填充方式由三种调整为两种，删除 Monica Custom Keyboard 章节并重排编号",
+      "message": "清理 IME 移除残留：删除失效测试引用 + 同步三语文档\n\n- BiometricUnlockRegressionGuardTest: 移除已删除的 BastionInputMethodService.kt 断言项（否则该测试在 IME 文件移除后会失败）\n- 文档(en/ru/vi): 自动填充方式由三种调整为两种，删除 Bastion Custom Keyboard 章节并重排编号",
       "date": "2026-07-25T13:13:42Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/5609c84df9c6dc5d021c45a77a71356fad7510e7"
     },
     {
       "sha": "46d469e",
-      "message": "移除 Monica 键盘（自定义 IME）模块\n\n- AndroidManifest: 删除 MonicaInputMethodService 及 Ime*Activity 的 :ime 进程声明\n- AutofillSettingsV2Screen: 拆除「Monica 键盘」设置专区\n- 文档: 自动填充方式由三种调整为两种，删除 Monica 键盘章节（仅中文，其他语言待同步）",
+      "message": "移除 Bastion 键盘（自定义 IME）模块\n\n- AndroidManifest: 删除 BastionInputMethodService 及 Ime*Activity 的 :ime 进程声明\n- AutofillSettingsV2Screen: 拆除「Bastion 键盘」设置专区\n- 文档: 自动填充方式由三种调整为两种，删除 Bastion 键盘章节（仅中文，其他语言待同步）",
       "date": "2026-07-25T13:07:40Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/46d469ec78f2cb5d878d05d2a3154b5e8bfbfee0"
     },
     {
       "sha": "064abd5",
-      "message": "fix(autofill): 解锁会话跨进程共享, 消除每次填充强制二次解锁\n\n- SessionManager: 将解锁状态(_isUnlocked/unlockTimestamp/autoLockMinutes)持久化到跨进程\n  SharedPreferences(MODE_MULTI_PROCESS)。原实现仅存内存, 自动填充服务独立进程永远\n  读不到主进程的\"已解锁\"状态, 导致即使设置\"永不过期/不锁定\"仍每次填充弹解锁。\n- FilledDataBuilderNg: autoLockMinutes==-1(不过期)时改用 canAccessVaultMaterialNow()\n  判定锁态, 只要密钥材料可读即视为已解锁, 直接填充不二次解锁。\n- MonicaApplication: onCreate 注入 attachAppContext 供 SessionManager 跨进程持久化。",
+      "message": "fix(autofill): 解锁会话跨进程共享, 消除每次填充强制二次解锁\n\n- SessionManager: 将解锁状态(_isUnlocked/unlockTimestamp/autoLockMinutes)持久化到跨进程\n  SharedPreferences(MODE_MULTI_PROCESS)。原实现仅存内存, 自动填充服务独立进程永远\n  读不到主进程的\"已解锁\"状态, 导致即使设置\"永不过期/不锁定\"仍每次填充弹解锁。\n- FilledDataBuilderNg: autoLockMinutes==-1(不过期)时改用 canAccessVaultMaterialNow()\n  判定锁态, 只要密钥材料可读即视为已解锁, 直接填充不二次解锁。\n- BastionApplication: onCreate 注入 attachAppContext 供 SessionManager 跨进程持久化。",
       "date": "2026-07-25T12:31:32Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/064abd5b0be631dabb1d9ff0d12a78876d02f382"
     },
     {
       "sha": "d4eb665",
-      "message": "fix(autofill): 增强填充框架以兼容小众App(电影猎手)\n\n- BitwardenLikeAutofillMatcherNg: 包名令牌集合匹配 + 严格模式强信号\n- AutofillPickerActivityV2: 手动填充改走剪贴板兜底, 移除无障碍注入依赖\n- MonicaAutofillServiceNg: 弱目标字段双层回退(解析期+选择期)以兼容 lone USERNAME\n- EnhancedAutofillStructureParserV2: VISIBLE_PASSWORD 直接判定为 PASSWORD (电影猎手根因修复)\n  其密码框使用 TYPE_TEXT_VARIATION_VISIBLE_PASSWORD, 原逻辑误判为 USERNAME 导致响应不覆盖密码框",
+      "message": "fix(autofill): 增强填充框架以兼容小众App(电影猎手)\n\n- BitwardenLikeAutofillMatcherNg: 包名令牌集合匹配 + 严格模式强信号\n- AutofillPickerActivityV2: 手动填充改走剪贴板兜底, 移除无障碍注入依赖\n- BastionAutofillServiceNg: 弱目标字段双层回退(解析期+选择期)以兼容 lone USERNAME\n- EnhancedAutofillStructureParserV2: VISIBLE_PASSWORD 直接判定为 PASSWORD (电影猎手根因修复)\n  其密码框使用 TYPE_TEXT_VARIATION_VISIBLE_PASSWORD, 原逻辑误判为 USERNAME 导致响应不覆盖密码框",
       "date": "2026-07-25T11:54:23Z",
       "author": "Chaniug",
       "url": "https://github.com/Chaniug/monicpass/commit/d4eb66570c51c42827120000e6e62c242dbd5f55"
@@ -372,7 +372,7 @@
     },
     {
       "sha": "f22c068",
-      "message": "feat(android): improve timeline history and Monica keyboard",
+      "message": "feat(android): improve timeline history and Bastion keyboard",
       "date": "2026-07-24T01:04:04Z",
       "author": "JoyinJoester",
       "url": "https://github.com/Chaniug/monicpass/commit/f22c068c3086cbc95013e9ea019518806dd81c63"
@@ -694,7 +694,7 @@
     },
     {
       "sha": "8e4c91e",
-      "message": "feat(android): add secure autofill session unlock\n\nUse response-level authentication to unlock Monica before showing autofill datasets. Add a scoped 30-second in-memory grant with screen-off invalidation, keep disabled-auth behavior unchanged, and remove automatic Build bak snapshots.",
+      "message": "feat(android): add secure autofill session unlock\n\nUse response-level authentication to unlock Bastion before showing autofill datasets. Add a scoped 30-second in-memory grant with screen-off invalidation, keep disabled-auth behavior unchanged, and remove automatic Build bak snapshots.",
       "date": "2026-07-16T05:01:04Z",
       "author": "JoyinJoester",
       "url": "https://github.com/Chaniug/monicpass/commit/8e4c91e3009c51e1646b6a27dcb9e1e379fb4d83"

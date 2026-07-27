@@ -5,7 +5,7 @@
     },
     "hero": {
         "title": "Secure.<br>Local.<br>Open Source.",
-        "subtitle": "A focused fork of Monica — local-first password management.<br>Credentials, TOTP codes, and secure notes, all stored strictly on your device.",
+        "subtitle": "A focused fork of Bastion — local-first password management.<br>Credentials, TOTP codes, and secure notes, all stored strictly on your device.",
         "download_android": "Download for Android",
         "browser_extension": "Browser Extension",
         "view_source": "View Source Code"
@@ -42,7 +42,7 @@
         "wechat_alipay": "WeChat & Alipay"
     },
     "footer": {
-        "copyright": "© 2026 Chaniug. Open Source under GNU GPLv3, derived from Monica Pass.",
+        "copyright": "© 2026 Chaniug. Open Source under GNU GPLv3, derived from Bastion.",
         "credits": "Designed with ❤️ for Android."
     }
 }

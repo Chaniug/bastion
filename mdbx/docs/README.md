@@ -28,7 +28,7 @@ Chinese versions are provided for direct review and planning:
 - `06-sqlite-schema-v1.zh-CN.md`
 - `07-low-end-model-task-breakdown.zh-CN.md`
 - `08-implementation-completion-plan.zh-CN.md`
-- `11-monica-pass-cli-development.zh-CN.md`
+- `11-bastion-pass-cli-development.zh-CN.md`
 
 ## Reading Order
 
@@ -51,7 +51,7 @@ If you are a Chinese-speaking reviewer, read these files in order:
 7. `06-sqlite-schema-v1.zh-CN.md`
 8. `07-low-end-model-task-breakdown.zh-CN.md`
 9. `08-implementation-completion-plan.zh-CN.md`
-10. `11-monica-pass-cli-development.zh-CN.md`
+10. `11-bastion-pass-cli-development.zh-CN.md`
 
 ## Document Roles
 
@@ -83,8 +83,8 @@ If you are a Chinese-speaking reviewer, read these files in order:
 - `08-implementation-completion-plan.zh-CN.md`
   - Current implementation completion plan and status-oriented work list.
 
-- `11-monica-pass-cli-development.zh-CN.md`
-  - Monica Pass CLI development and integration notes.
+- `11-bastion-pass-cli-development.zh-CN.md`
+  - Bastion CLI development and integration notes.
 
 ## Non-Negotiable Principles
 

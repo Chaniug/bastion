@@ -2,9 +2,9 @@
 
 Language: [简体中文](README.md) | [English](README.en.md)
 
-This directory contains the Rust workspace and implementation notes for Monica MDBX.
+This directory contains the Rust workspace and implementation notes for Bastion MDBX.
 
-MDBX is Monica's local-first encrypted vault format. It is designed around stable long-term storage, Git-like logical history, sync conflict handling, native attachments, snapshots, and Tiga security modes.
+MDBX is Bastion's local-first encrypted vault format. It is designed around stable long-term storage, Git-like logical history, sync conflict handling, native attachments, snapshots, and Tiga security modes.
 
 For the normative format documents, see `docs/`.
 
@@ -57,7 +57,7 @@ MDBX support should be labeled honestly:
   - Preserve commits, object versions, tombstones, snapshots, branch heads, and device heads.
 - **Sync support**
   - Merge commit DAGs, preserve tombstones, detect conflicts, and apply sync state safely.
-- **Full Monica-compatible support**
+- **Full Bastion-compatible support**
   - Provide the required management screens, diagnostics, snapshot structure preview, field-level history, and folder-aware move/copy/create flows.
 
 See `CLIENT_INTEGRATION_GUIDE.md` for the complete checklist.
@@ -119,7 +119,7 @@ Batch user operations should normally produce one user-level commit, not one com
 
 Before claiming full support, a client should verify:
 
-- Monica-created MDBX vaults open correctly.
+- Bastion-created MDBX vaults open correctly.
 - Nested folders can be created and selected as targets.
 - Batch move/copy/delete creates coalesced commits.
 - Tombstones prevent deleted objects from reappearing.

@@ -1,6 +1,6 @@
 # MDBX 客户端接入指南
 
-本文面向准备在其他客户端接入 Monica MDBX 的实现者。
+本文面向准备在其他客户端接入 Bastion MDBX 的实现者。
 
 目标不是重复完整 schema 规范，而是回答三个问题：
 
@@ -93,11 +93,11 @@ MDBX 不是“把密码表塞进一个 SQLite 文件”。
 
 同步客户端 MUST NOT 只按更新时间覆盖整库。
 
-### 2.4 L3：完整 Monica 兼容客户端
+### 2.4 L3：完整 Bastion 兼容客户端
 
 完整客户端 SHOULD 实现：
 
-- Monica 本地分类 / 快捷文件夹语义映射
+- Bastion 本地分类 / 快捷文件夹语义映射
 - 嵌套文件夹创建、移动、复制
 - 快照结构预览
 - 当前版本与快照版本结构对比
@@ -150,7 +150,7 @@ MUST 合并成单个 commit 的典型操作：
 - 批量复制
 - 批量导入
 - 从 KDBX 导入一个文件夹
-- 从 Monica 本地迁移一组条目
+- 从 Bastion 本地迁移一组条目
 - 文件夹及其子项一起移动
 
 MAY 拆成多个 commit 的操作：
@@ -604,9 +604,9 @@ Tiga 模式的解锁策略 SHOULD 按以下语义呈现：
 
 ## 10. 接入完成标准
 
-一个客户端可以宣称“支持 Monica MDBX”，至少必须满足：
+一个客户端可以宣称“支持 Bastion MDBX”，至少必须满足：
 
-- 可以打开 Monica 创建的 MDBX vault。
+- 可以打开 Bastion 创建的 MDBX vault。
 - 可以正确显示文件夹、条目、附件元数据。
 - 可以在嵌套文件夹中新建、移动、复制条目。
 - 可以写入 commit、object version、tombstone。

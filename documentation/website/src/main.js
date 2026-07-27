@@ -88,7 +88,7 @@ const LangManager = {
                 const newLang = this.currentLang === 'zh' ? 'en' : 'zh';
                 await this.loadLocale(newLang);
                 this.currentLang = newLang;
-                localStorage.setItem('monica_lang', newLang);
+                localStorage.setItem('bastion_lang', newLang);
                 this.updateUI();
             };
         }

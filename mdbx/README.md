@@ -2,9 +2,9 @@
 
 语言：[简体中文](README.md) | [English](README.en.md)
 
-这个目录包含 Monica MDBX 的 Rust workspace 和实现接入说明。
+这个目录包含 Bastion MDBX 的 Rust workspace 和实现接入说明。
 
-MDBX 是 Monica 的本地优先加密 vault 格式。它的目标不是简单替代某张密码表，而是提供长期可维护的本地数据库、类 Git 的逻辑历史、同步冲突处理、原生附件、快照恢复和 Tiga 安全模式。
+MDBX 是 Bastion 的本地优先加密 vault 格式。它的目标不是简单替代某张密码表，而是提供长期可维护的本地数据库、类 Git 的逻辑历史、同步冲突处理、原生附件、快照恢复和 Tiga 安全模式。
 
 规范性文档在 `docs/`。
 
@@ -57,7 +57,7 @@ MDBX 支持需要明确标注：
   - 正确维护 commit、object version、tombstone、snapshot、branch head、device head。
 - **同步支持**
   - 合并 commit DAG，保留 tombstone，检测 conflict，安全应用 sync state。
-- **完整 Monica 兼容支持**
+- **完整 Bastion 兼容支持**
   - 提供必备管理面板、诊断、快照结构预览、字段级历史、支持 MDBX 文件夹的新建/移动/复制流程。
 
 完整清单见 `CLIENT_INTEGRATION_GUIDE.zh-CN.md`。
@@ -119,7 +119,7 @@ cargo run -p mdbx-cli -- --help
 
 宣称完整支持前，客户端至少应该确认：
 
-- 能打开 Monica 创建的 MDBX vault。
+- 能打开 Bastion 创建的 MDBX vault。
 - 能创建嵌套文件夹，并把嵌套文件夹作为目标。
 - 批量移动、复制、删除会合并成用户级 commit。
 - tombstone 能防止删除对象被复活。

@@ -13,7 +13,7 @@ const REPO_NAME = 'monicpass';
 async function fetchData() {
     try {
         const headers = {
-            'User-Agent': 'Monica-Website-Builder',
+            'User-Agent': 'Bastion-Website-Builder',
             'Accept': 'application/vnd.github.v3+json'
         };
 

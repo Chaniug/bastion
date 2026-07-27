@@ -2,7 +2,7 @@
 
 版本：`MDBX-1-DRAFT`
 
-本文是执行文档。它把原始设计清单、现有 `mdbx/` Rust 实现、后续 Monica Android 接入放到同一张路线图里。后续开发应优先更新本文，再按本文推进代码。
+本文是执行文档。它把原始设计清单、现有 `mdbx/` Rust 实现、后续 Bastion Android 接入放到同一张路线图里。后续开发应优先更新本文，再按本文推进代码。
 
 ## 1. 不可妥协原则
 
@@ -190,7 +190,7 @@ MDBX 必须坚持：
 - 旧 vault 打开测试。
 - 未知非关键扩展保留测试。
 
-### P5：Monica Android 接入
+### P5：Bastion Android 接入
 
 目标：Android 对 MDBX 的所有用户操作直接落到 MDBX 文件和 MDBX 历史。
 

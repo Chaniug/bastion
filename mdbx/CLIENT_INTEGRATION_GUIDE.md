@@ -1,6 +1,6 @@
 # MDBX Client Integration Guide
 
-This document is for implementers who want to support Monica MDBX in another client.
+This document is for implementers who want to support Bastion MDBX in another client.
 
 It does not replace the full format specifications. It answers three practical questions:
 
@@ -93,11 +93,11 @@ A sync client must additionally implement:
 
 A sync client must not overwrite the whole vault by timestamp alone.
 
-### 2.4 L3: Full Monica-Compatible Client
+### 2.4 L3: Full Bastion-Compatible Client
 
 A full client should implement:
 
-- Monica local category / quick-folder mapping
+- Bastion local category / quick-folder mapping
 - nested folder create, move, and copy
 - snapshot structure preview
 - current-vs-snapshot structure comparison
@@ -150,7 +150,7 @@ These operations must be coalesced into one commit:
 - batch copy
 - batch import
 - importing a KDBX folder
-- migrating a group of entries from Monica local storage
+- migrating a group of entries from Bastion local storage
 - moving a folder together with its children
 
 These operations may become multiple commits:
@@ -604,9 +604,9 @@ Correct behavior:
 
 ## 10. Completion Standard
 
-A client may claim "Monica MDBX support" only when it can at least:
+A client may claim "Bastion MDBX support" only when it can at least:
 
-- open an MDBX vault created by Monica
+- open an MDBX vault created by Bastion
 - display folders, entries, and attachment metadata correctly
 - create, move, and copy entries inside nested folders
 - write commits, object versions, and tombstones
