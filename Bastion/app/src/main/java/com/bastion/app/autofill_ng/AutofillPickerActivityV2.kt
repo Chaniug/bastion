@@ -1396,13 +1396,28 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
      * 与常规 TOTP 存储隔离，resolveOtpDataForPassword 无法覆盖。
      * 仅当密码条目与 Steam 相关（包名/网址/名称含 steam）时尝试匹配，
      * 优先按用户名/标题匹配 Steam 账户，否则取选中账户。
+     *
+     * 注意：Steam 解析仅作为「条目自身无可解析 TOTP」时的兜底通道。若条目已经能
+     * 解析出常规 TOTP（authenticatorKey 或绑定的 TOTP 条目），一律走标准 TOTP 路径，
+     * 避免 substring 误判（标题/网址含 "steam" 字样）遮蔽真实 2FA 验证码，从而
+     * 导致普通 2FA 验证码无法自动复制到剪贴板。
      */
     private suspend fun resolveSteamGuardCodeForPassword(password: PasswordEntry): String? {
-        val isSteamEntry = password.appPackageName.contains("steam", ignoreCase = true)
-            || password.website.contains("steam", ignoreCase = true)
-            || password.appName.contains("steam", ignoreCase = true)
-            || password.title.contains("steam", ignoreCase = true)
+        // 防御性空安全：杜绝任何未来 Room 空值回归导致的 NPE。
+        val isSteamEntry = password.appPackageName?.contains("steam", ignoreCase = true) ?: false
+            || password.website?.contains("steam", ignoreCase = true) ?: false
+            || password.appName?.contains("steam", ignoreCase = true) ?: false
+            || password.title?.contains("steam", ignoreCase = true) ?: false
         if (!isSteamEntry) return null
+
+        // Steam Guard 仅作为「无常规 TOTP」时的兜底：条目自身已能解析出 TOTP 时，
+        // 直接走标准 TOTP 路径（不抛异常，DB 查询失败也视为无可解析 TOTP）。
+        val hasResolvableTotp = try {
+            resolveOtpDataForPassword(password) != null
+        } catch (_: Throwable) {
+            false
+        }
+        if (hasResolvableTotp) return null
 
         return runCatching {
             val securityManager = SecurityManager(applicationContext)
