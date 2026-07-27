@@ -262,7 +262,7 @@
         <service
             android:name=".autofill_ng.service.AutofillTileService"
             android:label="@string/tile_autofill_label"
-            android:icon="@drawable/ic_key"
+            android:icon="@mipmap/ic_launcher_modern"
             android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

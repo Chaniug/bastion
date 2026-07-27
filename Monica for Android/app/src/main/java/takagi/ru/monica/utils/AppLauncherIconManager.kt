@@ -42,7 +42,12 @@ object AppLauncherIconManager {
     }
 
     fun resolveBrandingIconRes(context: Context): Int {
-        return R.drawable.monica_launcher
+        // 与桌面启动器图标保持一致：使用当前启用的 launcher mipmap。
+        // 此前返回 R.drawable.monica_launcher（drawable-nodpi/monica_launcher.png），
+        // 该 png 是未随品牌更新换掉的旧图标，导致通知/生物识别等位置仍显示旧图标。
+        return when (getCurrentSelection(context)) {
+            AppLauncherIcon.MODERN -> R.mipmap.ic_launcher_modern
+        }
     }
 
     fun applyBiometricPromptBranding(context: Context, promptInfoBuilder: Any) {
