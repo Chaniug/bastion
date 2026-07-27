@@ -44,6 +44,10 @@ jobs:
     defaults:
       run:
         working-directory: "Bastion"
+    env:
+      # 启用 Gradle 构建缓存与并行，缩短重复构建耗时（与 Preview/Release 流水线共享同一份缓存）
+      GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
       - uses: actions/checkout@v6
@@ -57,12 +61,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
+          cache: gradle
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
+        if: github.event_name != 'push'
         run: ./gradlew :app:lintDebug --stacktrace
 
       - name: Run unit tests (diagnostic)
