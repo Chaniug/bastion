@@ -132,12 +132,35 @@ object SessionManager {
      */
     private fun isMainProcess(context: Context): Boolean {
         val pkg = context.packageName
-        val procName = try {
-            val clazz = Class.forName("android.app.ActivityThread")
-            val method = clazz.getMethod("currentProcessName")
-            method.invoke(null) as? String
-        } catch (_: Throwable) { null }
+        val procName = resolveCurrentProcessName()
+        // 仅当能可靠确认是「主进程（包名进程）」时才执行清锁；
+        // 子进程（:autofill / :accessibility）必须排除，否则其共享的持久化会话会被误清，
+        // 进而破坏主进程的同源会话共享。无法判明时保守返回 false，不清锁。
         return procName == pkg
+    }
+
+    /**
+     * 解析当前进程名，优先用 [android.app.ActivityThread.currentProcessName]，
+     * 个别 ROM 上该反射路径可能失效，回退到读取 /proc/self/cmdline（内容即进程名）。
+     * 两者都失败时返回 null，交由调用方保守处理。
+     */
+    private fun resolveCurrentProcessName(): String? {
+        runCatching {
+            val clazz = Class.forName("android.app.ActivityThread")
+            val name = clazz.getMethod("currentProcessName").invoke(null) as? String
+            if (!name.isNullOrEmpty()) return name
+        }
+
+        // 兜底：/proc/self/cmdline 以 \u0000 分隔，第一段即进程名（主进程=包名，子进程=包名:xxx）
+        runCatching {
+            val bytes = java.io.File("/proc/self/cmdline").readBytes()
+            val end = bytes.indexOf(0)
+            val slice = if (end >= 0) bytes.copyOfRange(0, end) else bytes
+            val text = slice.toString(Charsets.UTF_8).trim()
+            if (text.isNotEmpty()) return text
+        }
+
+        return null
     }
     
     /**
