@@ -9,10 +9,8 @@
         android:pathData="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z"
         android:fillColor="#185FA5" />
     <!-- 金色锁孔：圆 + 锁芯 -->
-    <circle
-        android:cx="54"
-        android:cy="50"
-        android:r="8"
+    <path
+        android:pathData="M46 50 a8 8 0 1 0 16 0 a8 8 0 1 0 -16 0 Z"
         android:fillColor="#F5B942" />
     <path
         android:pathData="M49 57 L59 57 L63 72 L45 72 Z"
