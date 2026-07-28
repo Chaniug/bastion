@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.first
 import com.bastion.app.autofill_ng.ActiveFillPromptThrottle
 import com.bastion.app.autofill_ng.AutofillPreferences
 import com.bastion.app.data.PasswordDatabase
-import com.bastion.app.data.isLinkedToApp
 import com.bastion.app.data.linkedAppBindings
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.autofill_ng.ActiveFillNotificationHelper
@@ -153,7 +152,9 @@ class BastionAccessibilityService : AccessibilityService() {
         }
 
         fun getActiveWindowPackageName(): String? {
-            return activeInstance?.rootInActiveWindow?.packageName?.toString()
+            // P6: rootInActiveWindow 是 Binder IPC，目标窗口所属进程已死亡时会抛 DeadObjectException，安全降级
+            return activeInstance?.let { runCatching { it.rootInActiveWindow }.getOrNull() }
+                ?.packageName?.toString()
         }
 
         fun isCredentialFillAvailable(context: Context): Boolean {
@@ -247,7 +248,8 @@ class BastionAccessibilityService : AccessibilityService() {
                 // 后台仅做只读遍历；拿到 URL 后回到主线程写上下文，保持与原实现一致线程模型。
                 serviceScope.launch(Dispatchers.Default) {
                     runCatching {
-                        val root = rootInActiveWindow ?: return@launch
+                        // P6: rootInActiveWindow 是 Binder IPC，目标窗口进程死亡时抛 DeadObjectException，安全降级
+                        val root = runCatching { rootInActiveWindow }.getOrNull() ?: return@launch
                         val url = findBrowserUrl(root, browserSpec) ?: return@launch
                         if (packageName == lastPackageName && url == lastUrl) return@launch
                         withContext(Dispatchers.Main.immediate) {
@@ -369,8 +371,8 @@ class BastionAccessibilityService : AccessibilityService() {
 
         serviceScope.launch {
             try {
-                val entries = passwordRepository.getAllPasswordEntries().first()
-                val match = entries.firstOrNull { entry -> entry.isLinkedToApp(packageName) }
+                // P4: 按包名定向查询，避免每次登录字段聚焦都加载全库（后台高频热点）
+                val match = passwordRepository.findByPackageName(packageName).firstOrNull()
                 if (match != null && activeFillNotificationEnabled) {
                     val linkedAppName = match.linkedAppBindings()
                         .firstOrNull { binding ->
@@ -669,9 +671,10 @@ class BastionAccessibilityService : AccessibilityService() {
     private fun setNodeText(node: AccessibilityNodeInfo?, text: String): Boolean {
         if (node == null || text.isBlank()) return false
         if (!node.isFocused) {
-            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            // P6: performAction 是 Binder IPC，目标节点所属进程已死亡时抛 DeadObjectException，忽略即可
+            runCatching { node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) }.getOrDefault(false)
         }
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        runCatching { node.performAction(AccessibilityNodeInfo.ACTION_CLICK) }.getOrDefault(false)
 
         val existingText = runCatching { node.text?.toString().orEmpty() }.getOrDefault("")
         val canPasteWithoutAppending = if (existingText.isEmpty()) {
