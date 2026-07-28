@@ -44,6 +44,23 @@ class BitwardenOfflineSecretCache(
         }
     }
 
+    /**
+     * 仅把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences）。
+     * 用于启动预热：让 recall() 命中内存即秒回，且不产生 N 次 apply()
+     * 引发的 QueuedWork.waitToFinish() 主线程反堵。磁盘离线兜底仍由常规
+     * remember() 在真实查看/复制时写入。
+     */
+    fun warmMemory(entry: PasswordEntry, plainSecret: String) {
+        if (!entry.hasBitwardenCipherBinding() || plainSecret.isBlank()) return
+        val entryId = entry.id
+        val cipherId = entry.bitwardenCipherId.orEmpty()
+        val existing = memoryCache[entryId]
+        if (existing != null && existing.cipherId == cipherId && existing.secret == plainSecret) return
+        memoryCache = memoryCache.toMutableMap().also {
+            it[entryId] = CachedSecret(cipherId = cipherId, secret = plainSecret)
+        }
+    }
+
     fun recall(entry: PasswordEntry): String? {
         if (!entry.hasBitwardenCipherBinding()) return null
 
