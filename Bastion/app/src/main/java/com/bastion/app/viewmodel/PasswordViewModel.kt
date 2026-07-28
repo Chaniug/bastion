@@ -69,6 +69,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Date
@@ -151,6 +152,17 @@ private data class KeePassCustomFieldFingerprint(
     val sortOrder: Int
 )
 private const val PASSWORD_SCROLL_DEBUG_LOGS_ENABLED = false
+
+/**
+ * 冷启动后延迟多久再预热 Bitwarden 离线密钥缓存。
+ *
+ * 预热会对全部 Bitwarden 条目逐一执行「同步解密 + 兼容重加密 + SharedPreferences.apply()」，
+ * 而这些 AES-GCM（V2/Compat 走 Keystore）操作与首页密码列表的全量解密共用同一把
+ * `decryptLock` 与 `Dispatchers.Default` 线程池。若与首屏渲染同拍发生，会把 1-2s 的
+ * 冷启动窗口全部吃掉，并可能因 `apply()` 经 QueuedWork 在首笔偏好提交时 `waitToFinish()`
+ * 反堵主线程。延迟到首帧之后执行即可把该重活移出冷启动关键路径，且不影响离线可用性。
+ */
+private const val STARTUP_OFFLINE_CACHE_WARMUP_DEFER_MS = 1_500L
 
 /**
  * ViewModel for password management
@@ -365,8 +377,20 @@ class PasswordViewModel(
                 Log.w("PasswordViewModel", "Password startup maintenance failed", error)
             }
         }
-        viewModelScope.launch(Dispatchers.Default) {
-            warmupBitwardenOfflineSecretCache()
+        // 离线密钥缓存预热：刻意延迟到首帧渲染之后，并放在 Dispatchers.IO（而非与首页
+        // 密码列表共用 Dispatchers.Default 的线程池）执行。原因是预热会对全部 Bitwarden
+        // 条目逐一做「同步解密 + 兼容重加密 + SharedPreferences.apply()」写盘，而这些
+        // AES-GCM 操作与首页列表的全量解密都串行于同一把 decryptLock。若与首屏同拍发生，
+        // 会抢锁、抢线程，把冷启动 1-2s 窗口全部吃掉；且每条目的 apply() 会触发 QueuedWork
+        // 在首帧首笔偏好提交时 waitToFinish() 反堵主线程。延迟 + 错峰即可把该重活移出冷启动
+        // 关键路径，且预热本身仍会完整执行（离线可用性、任何加密逻辑均不受影响）。
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                kotlinx.coroutines.delay(STARTUP_OFFLINE_CACHE_WARMUP_DEFER_MS)
+                warmupBitwardenOfflineSecretCache()
+            }.onFailure { error ->
+                Log.w("PasswordViewModel", "Offline secret cache warmup skipped", error)
+            }
         }
     }
     
