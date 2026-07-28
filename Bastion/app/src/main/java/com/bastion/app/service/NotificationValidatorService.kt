@@ -8,6 +8,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -47,6 +49,16 @@ class NotificationValidatorService : Service() {
     private var hasStartedForeground = false
     @Volatile private var latestIndex: TotpIndex? = null
     @Volatile private var latestSettings: AppSettings? = null
+    // P5: 息屏时暂停持续 TOTP 通知刷新，避免后台无意义地每秒生成/推送通知（省电）
+    @Volatile private var screenOn = true
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> screenOn = false
+                Intent.ACTION_SCREEN_ON -> screenOn = true
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "NotificationValidator"
@@ -66,6 +78,16 @@ class NotificationValidatorService : Service() {
         createNotificationChannel()
         startPlaceholderNotification()
         startObserving()
+        // P5: 监听息屏/亮屏，息屏时暂停 TOTP 通知刷新
+        val screenFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenStateReceiver, screenFilter)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -94,6 +116,7 @@ class NotificationValidatorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        runCatching { unregisterReceiver(screenStateReceiver) }
         updateJob?.cancel()
         serviceScope.cancel()
     }
@@ -192,13 +215,16 @@ class NotificationValidatorService : Service() {
                 "resolvedEntryData: id=${entry.id}, otpType=${resolvedEntryData.otpType}, secretLen=${resolvedEntryData.secret.length}"
             )
             while (isActive) {
-                val code = TotpGenerator.generateOtp(resolvedEntryData)
-                val remaining = TotpGenerator.getRemainingSeconds(resolvedEntryData.period)
-                Log.v(
-                    TAG,
-                    "tick: id=${entry.id}, otpType=${resolvedEntryData.otpType}, codeLen=${code.length}, remaining=$remaining"
-                )
-                updateNotification(entry.title, code, remaining)
+                // P5: 息屏时跳过生成与通知刷新（用户不可见，纯属后台耗电），亮屏后下一拍自动恢复
+                if (screenOn) {
+                    val code = TotpGenerator.generateOtp(resolvedEntryData)
+                    val remaining = TotpGenerator.getRemainingSeconds(resolvedEntryData.period)
+                    Log.v(
+                        TAG,
+                        "tick: id=${entry.id}, otpType=${resolvedEntryData.otpType}, codeLen=${code.length}, remaining=$remaining"
+                    )
+                    updateNotification(entry.title, code, remaining)
+                }
                 delay(1000)
             }
         }
