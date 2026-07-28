@@ -231,20 +231,34 @@ class BastionAccessibilityService : AccessibilityService() {
             val packageName = event.packageName?.toString().orEmpty()
             val browserSpec = browserSpecsByPackage[packageName]
             if (browserSpec != null) {
+                // P1: URL 基本只在窗口切换(TYPE_WINDOW_STATE_CHANGED)时变化；
+                // TYPE_WINDOW_CONTENT_CHANGED 在浏览时极频繁且通常不改 URL，
+                // 仅在尚未拿到 URL(lastUrl 为空)时补扫一次，避免主线程高频遍历节点树。
+                val et = event.eventType
+                val shouldScan = et == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    (et == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && lastUrl.isBlank())
+                if (!shouldScan) return
+
                 val now = System.currentTimeMillis()
                 if (packageName == lastPackageName && now - lastScanTime < SCAN_THROTTLE_MS) return
                 lastScanTime = now
 
-                val root = rootInActiveWindow ?: event.source ?: return
-                val url = findBrowserUrl(root, browserSpec) ?: return
-
-                if (packageName == lastPackageName && url == lastUrl) return
-
-                lastPackageName = packageName
-                lastUrl = url
-                BrowserAutofillContextStore.update(packageName, url)
-                ValidatorContextManager.updateContext(packageName, url)
-                Log.d(TAG, "Updated browser context: pkg=$packageName, hasUrl=${url.isNotBlank()}")
+                // P2: 节点遍历移到后台线程，避免阻塞无障碍服务主线程(消除 ANR/卡顿风险)。
+                // 后台仅做只读遍历；拿到 URL 后回到主线程写上下文，保持与原实现一致线程模型。
+                serviceScope.launch(Dispatchers.Default) {
+                    runCatching {
+                        val root = rootInActiveWindow ?: return@launch
+                        val url = findBrowserUrl(root, browserSpec) ?: return@launch
+                        if (packageName == lastPackageName && url == lastUrl) return@launch
+                        withContext(Dispatchers.Main.immediate) {
+                            lastPackageName = packageName
+                            lastUrl = url
+                            BrowserAutofillContextStore.update(packageName, url)
+                            ValidatorContextManager.updateContext(packageName, url)
+                            Log.d(TAG, "Updated browser context: pkg=$packageName, hasUrl=${url.isNotBlank()}")
+                        }
+                    }.onFailure { e -> Log.w(TAG, "browser context scan failed", e) }
+                }
                 return
             }
 
