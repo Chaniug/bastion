@@ -499,6 +499,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         
         viewModelScope.launch {
             repository.lock(vaultId)
+            bitwardenOfflineSecretCache.clearMemoryCache()
             syncOrchestrator.clearVault(vaultId)
             setUnlockState(vaultId, currentRepositoryUnlockState(vaultId))
             if (isActiveVault) {
