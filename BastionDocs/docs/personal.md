@@ -21,4 +21,4 @@ outline: false
 
 ❤️ 感谢支持这个项目的朋友，您的每一份帮助都让这个项目变得更好！
 
-❤️ 感谢为这个项目贡献代码的朋友 → [Contributors](https://github.com/Bastion/Bastion/graphs/contributors)
+❤️ 感谢为这个项目贡献代码的朋友 → [Contributors](https://github.com/Monica-Pass/Monica/graphs/contributors)

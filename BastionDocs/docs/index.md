@@ -12,10 +12,10 @@ hero:
   actions:
     - theme: brand
       text: 下载 Android 版
-      link: https://github.com/Bastion/Bastion/releases
+      link: https://github.com/Chaniug/bastion/releases
     - theme: alt
       text: Windows 版
-      link: https://github.com/Bastion/Bastion-for-Windows
+      link: https://github.com/Monica-Pass/Monica-by-Avalonia
     - theme: alt
       text: 项目文档
       link: /reference/catalogue

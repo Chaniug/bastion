@@ -12,10 +12,10 @@ hero:
   actions:
     - theme: brand
       text: Tải về cho Android
-      link: https://github.com/Bastion/Bastion/releases
+      link: https://github.com/Chaniug/bastion/releases
     - theme: alt
       text: Tiện ích mở rộng trình duyệt
-      link: https://github.com/Bastion/Bastion/tree/main/Bastion%20for%20Browser
+      link: https://github.com/Chaniug/bastion/tree/main/Bastion%20for%20Browser
     - theme: alt
       text: Tài liệu dự án
       link: /vi/reference/catalogue
