@@ -43,17 +43,32 @@ class BastionApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // —— 所有进程（含独立进程 :accessibility）都需要的轻量初始化 ——
         SessionManager.attachAppContext(this)
 
-        // 「重启后锁定」(-2)：主进程冷启动时清空已持久化解锁会话，强制重新验证
+        // 「重启后锁定」(-2)：内部已按进程守卫，子进程为 no-op
         SessionManager.enforceLockOnRestartIfNeeded(this)
 
+        // 版本变更强制锁定：安全守卫，无版本变更时仅是一次轻量 SharedPreferences 读写
         AppUpdateSecurityGuard.enforceLockIfAppUpdated(
             context = this,
             reason = "application_on_create"
         )
-        
+
+        // Koin 启动：本仓库 startKoin 未注册任何 module，成本极低；
+        // 全进程保留以兼容可能依赖 Koin 的组件（:accessibility 实际不使用，但保留无副作用）。
         initKoin()
+
+        // —— 以下为主进程专属的「重度」初始化 ——
+        // :accessibility 等独立进程常驻后台，不应承担这些与主业务相关的开销
+        // （主线程卡顿监控、诊断日志、附件清理、启动器入口同步、WebDAV 退避持久化、
+        // KeePass 上传恢复、同步网络门），以降低常驻进程内存与后台 CPU 占用。
+        // 仅在「确定」是非主进程时才跳过；进程名判不明时回退到完整初始化，
+        // 保证主进程逻辑绝不漏跑。
+        if (SessionManager.isNonMainProcess(this)) {
+            return
+        }
+
         SyncTaskRunner.installNetworkGate(AndroidSyncNetworkGate(this))
         MainThreadStallMonitor.start()
         MdbxDiagLogger.initialize(this)
