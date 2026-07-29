@@ -32,9 +32,11 @@ on:
 permissions:
   contents: read
 
+# 取消策略：false = 连续推送时新 run 排队而非取消旧 run。
+# 旧 run 跑完会把构建/配置缓存暖热，后续 run 命中缓存更快（公开仓库 CI 分钟无限，无成本顾虑）。
 concurrency:
   group: android-ci-debug-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   android-ci:
@@ -45,7 +47,7 @@ jobs:
       run:
         working-directory: "Bastion"
     env:
-      # 启用 Gradle 构建缓存 + 并行 + 配置缓存，缩短重复构建耗时（与 Preview/Release 流水线共享同一份缓存）
+      # 构建缓存 + 并行 + 配置缓存，缩短重复构建耗时（与 Preview/Release 流水线共享同一份缓存）
       # configuration-cache.problems=warn：不兼容的任务仅告警并自动回退，不会让构建失败
       GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.configuration-cache=true -Dorg.gradle.configuration-cache.problems=warn
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -74,9 +76,25 @@ jobs:
         if: github.event_name != 'push'
         run: ./gradlew :app:lintDebug --stacktrace
 
+      # 1) 门禁：仅编译并产出 Debug APK（最快出包路径，不跑测试）
       - name: Build Debug APK (build gate)
         run: ./gradlew :app:assembleDebug --stacktrace
 
+      # 2) 立即上传 APK —— 在跑测试之前，push 场景最快拿到包用于真机验证
+      - name: List debug APK outputs
+        run: find app/build/outputs/apk/debug -maxdepth 1 -type f -print || true
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: debug-apk
+          path: |
+            Bastion/app/build/outputs/apk/debug/*.apk
+            Bastion/app/build/outputs/apk/debug/*.APK
+          retention-days: 7
+          if-no-files-found: error
+
+      # 3) 单测（非阻塞，门禁已过不拖慢出包；保留排错信号）
       - name: Run unit tests (non-blocking)
         continue-on-error: true
         run: ./gradlew :app:testDebugUnitTest --continue --stacktrace
@@ -92,15 +110,25 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: List debug APK outputs
-        run: find app/build/outputs/apk/debug -maxdepth 1 -type f -print || true
+      # 4) 排错辅助：测试摘要写入 run summary，一眼看清通过/失败数
+      - name: Summarize test results
+        if: always()
+        run: |
+          res_dir="app/build/test-results/testDebugUnitTest"
+          echo "### Unit test summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d "$res_dir" ] && ls "$res_dir"/*.xml >/dev/null 2>&1; then
+            grep -h 'testsuite ' "$res_dir"/*.xml \
+              | sed -E 's/.*tests="([0-9]+)".*failures="([0-9]+)".*errors="([0-9]+)".*/- tests: \1 | failures: \2 | errors: \3/' \
+              >> "$GITHUB_STEP_SUMMARY" || true
+          else
+            echo "- no results" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v7
-        with:
-          name: debug-apk
-          path: |
-            Bastion/app/build/outputs/apk/debug/*.apk
-            Bastion/app/build/outputs/apk/debug/*.APK
-          retention-days: 7
-          if-no-files-found: error
+      # 5) 排错辅助：打印环境/缓存信息，验证缓存生效与定位慢点
+      - name: Diagnostics - cache & environment
+        if: always()
+        run: |
+          echo "Gradle wrapper:"; grep distributionUrl gradle/wrapper/gradle-wrapper.properties || true
+          echo "Build cache dir size:"; du -sh ~/.gradle/caches/build-cache-1 2>/dev/null || echo "n/a"
+          echo "Gradle home size:"; du -sh ~/.gradle 2>/dev/null || echo "n/a"
+          echo "Java:"; java -version 2>&1 | head -1 || true
