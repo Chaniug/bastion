@@ -26,22 +26,25 @@ private val lastLogCount: ConcurrentHashMap<String, AtomicLong> = ConcurrentHash
 private val windowStart: ConcurrentHashMap<String, AtomicLong> = ConcurrentHashMap()
 
 /**
- * 语义与 [kotlin.runCatching] 对齐：`block` 在前、`tag` 置后带默认值；保留非局部返回。
+ * 语义与 [kotlin.runCatching] 对齐：保留非局部返回。
+ *
+ * `tag` / `priority` 置前带默认值，`block` 置末以支持 trailing-lambda 调用语法
+ * （`runCatchingObserved { ... }`），与原 [kotlin.runCatching] 的调用习惯一致。
  *
  * 区别：原 [kotlin.runCatching] 会静默吞掉异常，本函数会在 DEBUG 构建下把异常上报到
  * [swallowedExceptionSink]（默认写 logcat），从而让“被吞掉的异常”变得可观测。
  * release 构建下 [logSwallowed] 直接返回，零开销、绝不外泄异常栈。
  *
  * @param T 返回值类型
- * @param block 可能抛异常的代码块（lambda，支持非局部返回）
  * @param tag 自定义 logcat tag；为 null 时回落到 [DEFAULT_TAG]
  * @param priority logcat 优先级，默认 [Log.WARN]
+ * @param block 可能抛异常的代码块（lambda，支持非局部返回）
  * @return 与 [kotlin.runCatching] 完全一致的 [kotlin.Result]
  */
 inline fun <T> runCatchingObserved(
-    block: () -> T,
     tag: String? = null,
-    priority: Int = Log.WARN
+    priority: Int = Log.WARN,
+    block: () -> T
 ): kotlin.Result<T> =
     kotlin.runCatching(block).onFailure { logSwallowed(tag, priority, it) }
 
