@@ -36,14 +36,14 @@
 > 多套主题随心切换 —— 自然主题、Material You 动态取色（Monet）、暗色、纯黑、RG 护眼，以及自动填充与 TOTP 验证器界面。
 
 <p align="center">
-  <img src="documentation/website/public/images/natural_theme.jpg" width="30%" alt="自然主题" />
-  <img src="documentation/website/public/images/monet_theme.jpg" width="30%" alt="Monet 主题" />
-  <img src="documentation/website/public/images/language_dark_mode.jpg" width="30%" alt="暗色主题" />
+  <img src="image/screenshots/natural_theme.jpg" width="30%" alt="自然主题" />
+  <img src="image/screenshots/monet_theme.jpg" width="30%" alt="Monet 主题" />
+  <img src="image/screenshots/language_dark_mode.jpg" width="30%" alt="暗色主题" />
 </p>
 <p align="center">
-  <img src="documentation/website/public/images/autofill_categories.jpg" width="30%" alt="自动填充" />
-  <img src="documentation/website/public/images/authenticator_page.jpg" width="30%" alt="TOTP 验证器" />
-  <img src="documentation/website/public/images/sync_and_backup.jpg" width="30%" alt="WebDAV 同步" />
+  <img src="image/screenshots/autofill_categories.jpg" width="30%" alt="自动填充" />
+  <img src="image/screenshots/authenticator_page.jpg" width="30%" alt="TOTP 验证器" />
+  <img src="image/screenshots/sync_and_backup.jpg" width="30%" alt="WebDAV 同步" />
 </p>
 
 ---
@@ -180,7 +180,7 @@ cd pages && python3 -m http.server 4173
 
 > ⚠️ 首次生效需在仓库 **Settings → Pages → Source** 选择 **"GitHub Actions"**（旧的手工分支部署已失效）。
 
-> 旧的 `documentation/website`（Vite 站点，仍带 Monica 旧品牌）已不再作为项目 Pages 使用，后续可清理。
+> 旧的历史 Vite 文档站 `documentation/website`（带 Monica 旧品牌）已从仓库移除，相关截图已迁至 `image/screenshots/`。
 
 ---
 
@@ -193,9 +193,7 @@ bastion/
 │   ├── index.html
 │   ├── privacy.html / terms.html
 │   └── assets/   # style.css / main.js / shield.svg / lock.svg
-├── documentation/
-│   └── website/          # 历史 Vite 文档站（待清理）
-├── image/                # README 配图与图标
+├── image/                # README 配图与图标（含 screenshots/）
 └── LICENSE
 ```
 
