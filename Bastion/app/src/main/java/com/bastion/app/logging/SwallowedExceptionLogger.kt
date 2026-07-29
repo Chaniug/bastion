@@ -17,7 +17,9 @@ private const val RATE_MAX = 50
  * 默认实现走 [Log.println]；未来接监控 / 上报只需改这一处（见 [setSwallowedExceptionSink]）。
  */
 private var swallowedExceptionSink: (tag: String, priority: Int, throwable: Throwable?) -> Unit =
-    { tag, priority, throwable -> Log.println(priority, tag, "Swallowed exception", throwable) }
+    { tag, priority, throwable ->
+        Log.println(priority, tag, "Swallowed exception: " + Log.getStackTraceString(throwable))
+    }
 
 /** 每个 tag 的限频状态。 */
 private val lastLogCount: ConcurrentHashMap<String, AtomicLong> = ConcurrentHashMap()
