@@ -167,15 +167,20 @@ cd bastion/Bastion
 
 GitHub Actions 在每次推送 `main` 分支时自动构建并发布 Development Preview，可在 [Releases](https://github.com/Chaniug/bastion/releases) 页面下载。
 
-### 静态官网（本项目文档站）
+### 静态官网（项目 Pages）
+
+项目主页 `chaniug.github.io/bastion/` 的源码位于 `pages/`，是一套零构建的静态站点（HTML + CSS + 内联 SVG，与 App 图标同源：玻璃盾牌 + 金色锁孔）。
 
 ```bash
-cd documentation/website
-npm install
-npm run build      # 输出至 dist/，部署到 GitHub Pages
+# 本地预览（需 Python）
+cd pages && python3 -m http.server 4173
 ```
 
-> 站点 `base` 已配置为 `/bastion/`，可直接作为 `chaniug.github.io/bastion` 的 Project Pages 发布。
+部署通过 GitHub Actions 自动完成：推送 `main` 或 `dev` 会触发 `.github/workflows/deploy-pages.yml`，将 `pages/` 发布到 Pages。
+
+> ⚠️ 首次生效需在仓库 **Settings → Pages → Source** 选择 **"GitHub Actions"**（旧的手工分支部署已失效）。
+
+> 旧的 `documentation/website`（Vite 站点，仍带 Monica 旧品牌）已不再作为项目 Pages 使用，后续可清理。
 
 ---
 
@@ -184,11 +189,12 @@ npm run build      # 输出至 dist/，部署到 GitHub Pages
 ```
 bastion/
 ├── Bastion/   # Android 客户端（Kotlin / Compose）
+├── pages/     # 项目 Pages 静态站点（GitHub Pages 源）
+│   ├── index.html
+│   ├── privacy.html / terms.html
+│   └── assets/   # style.css / main.js / shield.svg / lock.svg
 ├── documentation/
-│   └── website/          # 静态官网（Vite + GitHub Pages）
-│       ├── src/          # 站点源码（HTML / JS / CSS）
-│       ├── public/       # 静态资源与截图
-│       └── dist/         # 构建产物
+│   └── website/          # 历史 Vite 文档站（待清理）
 ├── image/                # README 配图与图标
 └── LICENSE
 ```

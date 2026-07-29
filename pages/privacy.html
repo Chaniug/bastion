@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隐私政策 — Bastion</title>
+  <meta name="description" content="Bastion 隐私政策：本地优先、零知识、默认离线，不收集任何个人数据。" />
+  <meta name="theme-color" content="#0B2E52" />
+  <link rel="icon" type="image/svg+xml" href="./assets/shield.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <style>
+    .doc { max-width: 760px; margin-inline: auto; }
+    .doc h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 8px; }
+    .doc h2 { font-size: 1.3rem; margin-top: 38px; color: var(--blue-300); }
+    .doc p, .doc li { color: var(--text-dim); }
+    .doc a { color: var(--blue-300); }
+    .doc .updated { color: var(--text-faint); font-size: 0.9rem; margin-bottom: 30px; }
+    .back { display: inline-flex; align-items: center; gap: 8px; margin-top: 40px; color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="./index.html">
+        <img class="shield-mini" src="./assets/shield.svg" alt="" width="34" height="34" /> Bastion
+      </a>
+      <a class="btn btn-ghost" href="./index.html">返回首页</a>
+    </div>
+  </header>
+  <main class="wrap doc" style="padding-block: clamp(48px,8vw,84px);">
+    <h1>隐私政策</h1>
+    <p class="updated">最后更新：2026 年</p>
+
+    <p>Bastion 是一款<strong style="color:var(--text)">本地优先、零知识</strong>的密码管理器。我们用最少的代价保护你的隐私——核心原则就是：<strong style="color:var(--text)">我们拿不到你的任何数据</strong>。</p>
+
+    <h2>我们收集什么</h2>
+    <p>什么都没有。Bastion 默认<strong style="color:var(--text)">完全离线运行，不申请网络权限</strong>。你的密码、验证码、便签与附件全部以 AES-256 加密后仅存储在你自己的设备上。</p>
+
+    <h2>数据存放在哪里</h2>
+    <ul>
+      <li>所有 vault 数据保存在本机私有存储，受系统 Keystore（TEE）保护的密钥加密。</li>
+      <li>若你启用 WebDAV 同步，数据会在<strong style="color:var(--text)">你指定的私有存储</strong>之间以加密形式传输，密钥不离开你的设备。</li>
+      <li>我们（开发者）不运营任何服务器来接收、中转或留存你的凭据。</li>
+    </ul>
+
+    <h2>分析与会话</h2>
+    <p>我们不使用第三方分析 SDK，不埋点、不追踪、不投放广告。应用内不含任何会外发行为数据的代码。</p>
+
+    <h2>你的权利</h2>
+    <p>由于数据从不离开你的设备，你随时可以卸载应用并清除全部本地数据；启用同步时，也请自行管理你的 WebDAV 凭据与备份。</p>
+
+    <h2>开源与可审计</h2>
+    <p>本项目基于 <a href="https://github.com/Monica-Pass/Monica" target="_blank" rel="noopener">Monica-Pass/Monica</a> 二次开发，全部源码以 GPL-3.0 公开。欢迎审查我们是否言行一致。</p>
+
+    <a class="back" href="./index.html">← 返回 Bastion 首页</a>
+  </main>
+  <footer class="footer">
+    <div class="wrap footer-bottom">
+      <span>© 2026 Bastion · 基于 Monica-Pass/Monica 二次开发</span>
+      <span><a href="./terms.html" style="color:var(--text-faint)">服务条款</a> · <a href="./index.html" style="color:var(--text-faint)">首页</a></span>
+    </div>
+  </footer>
+</body>
+</html>
