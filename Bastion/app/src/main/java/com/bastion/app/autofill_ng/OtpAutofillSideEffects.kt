@@ -203,29 +203,36 @@ private suspend fun resolveOtpFromExistingValidators(
     password: PasswordEntry,
     passwordTotpData: TotpData?,
 ): TotpData? {
-    val validatorTotpList = withContext(Dispatchers.IO) {
+    val result = withContext(Dispatchers.IO) {
         val securityManager = SecurityManager(context)
         val dao = PasswordDatabase.getDatabase(context).secureItemDao()
-        dao.getActiveItemsByTypeSync(ItemType.TOTP)
-            .mapNotNull { item ->
-                TotpDataResolver.parseStoredItemData(
-                    itemData = item.itemData,
-                    fallbackIssuer = item.title,
-                    decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
-                )
-            }
+        val items = dao.getActiveItemsByTypeSync(ItemType.TOTP)
+        if (items.isEmpty()) return@withContext null
+
+        // 按需解密 + 早退：先按 boundPasswordId 匹配，命中即返回，不再解密剩余条目。
+        // 原实现用 mapNotNull 先全量解密所有 TOTP 条目再匹配，大 vault（大量 TOTP 校验器）
+        // 下每次密码填充都做 O(N) 次 AES-GCM 解密；改为逐条解密、命中即退，
+        // 常见情形从 O(N) 降到约 O(1) 次解密。匹配优先级（先 boundPasswordId 后 identityKey）
+        // 与原逻辑完全一致，行为零变化。
+        val parsed = mutableListOf<TotpData>()
+        for (item in items) {
+            val totp = TotpDataResolver.parseStoredItemData(
+                itemData = item.itemData,
+                fallbackIssuer = item.title,
+                decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+            ) ?: continue
+            if (totp.boundPasswordId == password.id) return@withContext totp
+            parsed.add(totp)
+        }
+
+        val identityKey = buildTotpIdentityKey(passwordTotpData)
+        if (identityKey.isNotEmpty()) {
+            parsed.firstOrNull { buildTotpIdentityKey(it) == identityKey }
+        } else {
+            null
+        }
     }
-
-    if (validatorTotpList.isEmpty()) return null
-
-    validatorTotpList.firstOrNull { it.boundPasswordId == password.id }?.let { return it }
-
-    val identityKey = buildTotpIdentityKey(passwordTotpData)
-    if (identityKey.isNotEmpty()) {
-        validatorTotpList.firstOrNull { buildTotpIdentityKey(it) == identityKey }?.let { return it }
-    }
-
-    return null
+    return result
 }
 
 private fun buildTotpIdentityKey(data: TotpData?): String {
