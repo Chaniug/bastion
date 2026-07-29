@@ -147,11 +147,24 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-500); box-shadow: 0 0 10px var(--gold-500); }
 
 /* shield hero visual */
-.shield-stage { position: relative; display: grid; place-items: center; min-height: 340px; }
+.shield-stage {
+  position: relative; display: grid; place-items: center; min-height: 360px;
+  border-radius: var(--radius-lg); overflow: hidden;
+  background:
+    radial-gradient(60% 60% at 50% 42%, rgba(31, 111, 192, 0.20), transparent 70%),
+    radial-gradient(40% 40% at 72% 78%, rgba(245, 185, 66, 0.12), transparent 70%);
+}
+.shield-stage::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background-image: radial-gradient(rgba(159, 212, 255, 0.10) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 45%, #000 30%, transparent 75%);
+          mask-image: radial-gradient(70% 70% at 50% 45%, #000 30%, transparent 75%);
+}
 .shield-glow {
-  position: absolute; width: 78%; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle, rgba(31, 111, 192, 0.55), transparent 62%);
-  filter: blur(26px); animation: pulse 6s ease-in-out infinite;
+  position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(46, 124, 200, 0.55), transparent 62%);
+  filter: blur(30px); animation: pulse 6s ease-in-out infinite;
 }
 .shield-art {
   position: relative; width: min(330px, 78%); filter: drop-shadow(0 30px 60px rgba(3, 14, 28, 0.6));
@@ -165,6 +178,11 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 .shield-art .ring::after {
   content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%;
   background: var(--gold-500); box-shadow: 0 0 12px var(--gold-500); transform: translateX(-50%);
+}
+.shield-art .ring2 {
+  position: absolute; inset: -17%; border-radius: 50%;
+  border: 1px dashed rgba(245, 185, 66, 0.30);
+  animation: spin 40s linear infinite reverse;
 }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @keyframes pulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }

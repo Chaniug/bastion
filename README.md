@@ -21,13 +21,44 @@
 
 ## ✨ 关于 bastion
 
-**bastion**（本仓库 [Chaniug/bastion](https://github.com/Chaniug/bastion)）是在开源 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维护、并更名而来的本地优先密码管理器分支，在保持上游核心能力的基础上进行针对性优化与功能增强。
+**bastion**（本仓库 [Chaniug/bastion](https://github.com/Chaniug/bastion)）是在开源 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维护、并更名而来的本地优先密码管理器分支。我们在保持上游核心能力的同时，针对**性能、内存、无障碍、自动填充与构建发布**做了大量工程级优化——这不是小幅修补，而是一次偏底层的"大改"。
 
 本分支的开发原则：
 
 - **与上游改动保持大体一致**，不做无意义的重复造轮子
 - **在细节部分进一步开发与优化**，修复实际使用中遇到的问题
 - **独立维护**，不依赖上游的发布节奏
+
+---
+
+## ⚡ 本分支的优化与改进
+
+相比上游原项目，bastion 在以下方向做了实质性工程投入：
+
+### 🚀 性能与流畅度
+- **结构化并发收口**：将散落的 `GlobalScope` 协程统一改为 `ProcessLifecycleOwner.get().lifecycleScope`，绑定进程生命周期、结构化取消，消除后台协程泄漏。
+- **密钥操作移出主线程**：`SecurityManager` 改为进程级单例 + `prewarm`，Keystore 重操作从主线程卸载；冷启动时 `MainActivity` 命中缓存近乎零开销。
+- **即时查看 Bitwarden 密钥**：去掉 1.5s 预热延迟、改为内存预热，打开即见、无卡顿。
+
+### 🧠 内存与安全
+- **有界离线密钥缓存**：Bitwarden 离线密钥缓存改为**有界内存缓存**，并在锁仓（vault lock）时主动清空，降低常驻内存与泄露面。
+
+### ♿ 无障碍体验
+- **浏览器 URL 扫描移出主线程**：收敛无障碍浏览器的 URL 扫描触发事件，节点遍历移到后台线程，降低主线程阻塞与电量消耗。
+- **进程级初始化守卫**：`Application.onCreate` 按进程守卫，常驻的 `:accessibility` 进程跳过主进程专属的重初始化，降低后台负载。
+
+### 🔎 自动填充
+- **修复"只填密码、不填用户名"**：回调重新解析 `AssistStructure` 时不再覆盖构建期烘焙的 `autofillIds`（含合成用户名），改为优先信任 `callbackArgs`。
+- **增强兼容性**：修复普通输入框误弹密码的问题，提升对电影猎手等小众 App 的填充适配。
+
+### 🛠️ 构建与发布
+- **CI 内置签名 + 自动发布**：推送即产出可安装的 Preview / Release 包，无需自行配置签名密钥。
+- **epoch 秒版本号**：`versionCode` 改用 epoch 秒自增，每次构建支持干净覆盖安装（侧载 / OTA 不冲突）。
+- **CI 提速**：开启 Gradle 构建缓存与并行、`dev` 跳过 `lint`、合并 test+assemble 为单次调用——冷缓存首跑约 **5.5 分钟**（较早期 ~14.5 分钟提速约 2.5–3 倍）。
+
+### 🎨 视觉与品牌
+- **通透图标重设计**：全新玻璃质感、背景透明（跟随壁纸）的盾牌 + 金色锁孔启动图标，提升品牌辨识度。
+- **多主题体系**：自然 / Material You 动态取色（Monet）/ 暗色 / 纯黑 / RG 护眼。
 
 ---
 
@@ -130,22 +161,33 @@ mindmap
 
 ---
 
-## 🔄 与上游的主要差异
+## 🔄 与上游的主要差异（速览）
 
 | 方面 | 上游 (Monica-Pass/Monica) | bastion（本分支） |
 |------|---------------------------|---------------------|
-| 自动填充 | 原始实现 | 增强兼容（电影猎手等小众 App），修复普通输入框误弹密码 |
-| 版本号策略 | 固定 versionCode | epoch 秒自增，每次构建支持覆盖安装 |
-| 构建方式 | 需自行配置签名密钥 | CI 内置签名 + Preview Release 自动发布 |
-| 更新频率 | 按上游节奏 | 持续迭代，独立发布 |
+| 协程管理 | 散落 `GlobalScope` | 统一 `lifecycleScope`，结构化取消、无泄漏 |
+| 密钥操作 | 主线程 Keystore 调用 | 进程级单例 + `prewarm`，移出主线程 |
+| Bitwarden 密钥查看 | 1.5s 预热延迟 | 内存预热，即时打开 |
+| 离线密钥缓存 | 无界 | 有界缓存，锁仓即清空 |
+| 无障碍 URL 扫描 | 主线程遍历 | 事件收敛 + 后台线程遍历 |
+| 进程初始化 | 全进程重初始化 | 按进程守卫，`:accessibility` 跳过重初始化 |
+| 自动填充 | 原始实现 | 修复"只填密码不填用户名"、增强小众 App 兼容 |
+| 版本号策略 | 固定 `versionCode` | epoch 秒自增，干净覆盖安装 |
+| 构建与发布 | 需自行配置签名密钥 | CI 内置签名 + Preview / Release 自动发布 |
+| CI 构建耗时 | 基线 ~14.5 min | 缓存 + 并行 + 跳过 lint，冷缓存 ~5.5 min |
+| 启动图标 | 原品牌图标 | 通透玻璃盾牌 + 金色锁孔（背景透明） |
+| 主题体系 | 基础主题 | 自然 / Monet / 暗色 / 纯黑 / RG 护眼 |
 
 ---
 
 ## 🗺️ 路线图
 
-- [x] 自动填充兼容性增强（小众 App / 普通输入框误弹修复）
+- [x] 自动填充兼容性增强（小众 App / 普通输入框误弹 / 用户名回填修复）
 - [x] 多主题体系（自然 / Monet / 暗色 / 纯黑 / RG）
-- [x] CI 内置签名与 Preview Release 自动发布
+- [x] CI 内置签名与 Preview Release 自动发布 + 构建提速（~14.5min → ~5.5min）
+- [x] 性能与内存工程（结构化并发、Keystore 移出主线程、有界离线密钥缓存）
+- [x] 无障碍优化（URL 扫描移出主线程、进程级初始化守卫）
+- [x] 通透玻璃图标重设计
 - [ ] 更多导入格式支持
 - [ ] 跨平台桌面端探索
 - [ ] 端到端加密同步方案升级
@@ -176,7 +218,7 @@ GitHub Actions 在每次推送 `main` 分支时自动构建并发布 Development
 cd pages && python3 -m http.server 4173
 ```
 
-部署通过 GitHub Actions 自动完成：推送 `main` 或 `dev` 会触发 `.github/workflows/deploy-pages.yml`，将 `pages/` 发布到 Pages。
+部署通过 GitHub Actions 自动完成：仅当 `pages/` 目录内容变动时触发 `.github/workflows/deploy-pages.yml`，将 `pages/` 发布到 Pages（普通 app 推送不再重部署官网）。也可在 Actions 页手动 `Run workflow` 触发一次性部署。
 
 > ⚠️ 首次生效需在仓库 **Settings → Pages → Source** 选择 **"GitHub Actions"**（旧的手工分支部署已失效）。
 

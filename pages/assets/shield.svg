@@ -1,34 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="Bastion 盾牌图标">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Bastion 盾牌图标">
   <defs>
-    <linearGradient id="shield" x1="30" y1="26" x2="78" y2="86" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#5FB0F2"/>
-      <stop offset="0.55" stop-color="#1E6FC0"/>
+    <linearGradient id="shield" x1="32" y1="22" x2="84" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#86C6F7"/>
+      <stop offset="0.5" stop-color="#2E7FC8"/>
       <stop offset="1" stop-color="#0A2A4D"/>
     </linearGradient>
-    <radialGradient id="key" cx="52" cy="47" r="13" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFEFC4"/>
+    <linearGradient id="topHi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="54" cy="40" r="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3E96E6" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#3E96E6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="key" cx="52" cy="44" r="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF0CC"/>
       <stop offset="0.55" stop-color="#F5B942"/>
       <stop offset="1" stop-color="#B9760F"/>
     </radialGradient>
-    <radialGradient id="key2" cx="52" cy="60" r="16" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFE6A8"/>
-      <stop offset="0.55" stop-color="#F5B942"/>
-      <stop offset="1" stop-color="#B9760F"/>
+    <radialGradient id="keyGlow" cx="52" cy="52" r="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
+  <!-- soft outer glow -->
+  <circle cx="54" cy="50" r="52" fill="url(#halo)"/>
+
   <!-- contact shadow -->
-  <path d="M54 28 L80 38 L80 56 Q80 75 54 88 Q28 75 28 56 L28 38 Z" fill="#08233F" fill-opacity="0.16"/>
+  <path d="M54 28 L80 38 L80 56 Q80 75 54 88 Q28 75 28 56 L28 38 Z" fill="#08233F" fill-opacity="0.18"/>
+
   <!-- shield body -->
   <path d="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z" fill="url(#shield)"/>
-  <!-- top highlight -->
-  <path d="M54 26 L80 36 L80 47 Q54 41 28 47 L28 36 Z" fill="#FFFFFF" fill-opacity="0.20"/>
+  <clipPath id="sc"><path d="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z"/></clipPath>
+  <g clip-path="url(#sc)">
+    <rect x="28" y="26" width="52" height="30" fill="url(#topHi)"/>
+    <rect x="28" y="26" width="11" height="62" fill="#FFFFFF" fill-opacity="0.12"/>
+    <rect x="28" y="62" width="52" height="26" fill="#061026" fill-opacity="0.20"/>
+  </g>
   <!-- rim light -->
-  <path d="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z" fill="none" stroke="#9FD4FF" stroke-opacity="0.85" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- keyhole circle (SVG supports <circle>) -->
-  <circle cx="54" cy="50" r="8.5" fill="url(#key)"/>
-  <!-- keyhole shackle -->
-  <path d="M49 57 L59 57 L63 72 L45 72 Z" fill="url(#key2)"/>
-  <!-- keyhole specular -->
-  <ellipse cx="51.8" cy="46.5" rx="2.6" ry="1.8" fill="#FFFFFF" fill-opacity="0.6"/>
+  <path d="M54 26 L80 36 L80 56 Q80 74 54 86 Q28 74 28 56 L28 36 Z" fill="none" stroke="#A9D8FF" stroke-opacity="0.9" stroke-width="1.6" stroke-linejoin="round"/>
+
+  <!-- gold keyhole -->
+  <circle cx="52" cy="52" r="30" fill="url(#keyGlow)"/>
+  <circle cx="52" cy="50" r="9" fill="url(#key)" stroke="#C98A1E" stroke-width="1.2"/>
+  <circle cx="52" cy="46.5" r="3.4" fill="#0A2A4D"/>
+  <path d="M49.5 50 L54.5 50 L56.5 63 L48.5 63 Z" fill="#0A2A4D"/>
+  <ellipse cx="49.4" cy="46.2" rx="2.4" ry="1.6" fill="#FFFFFF" fill-opacity="0.7"/>
 </svg>
