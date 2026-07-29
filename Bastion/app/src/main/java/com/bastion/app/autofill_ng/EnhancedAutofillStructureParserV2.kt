@@ -1746,7 +1746,35 @@ class EnhancedAutofillStructureParserV2 {
             == android.text.InputType.TYPE_TEXT_VARIATION_FILTER
         ) return true
 
-        // 3) HTML 属性（WebView）
+        // 3) 文本信号（Android 级 hint 优先，不依赖 htmlInfo 是否非空）。
+        //    关键修复：GitHub 等站点的「Find a user...」输入框在 autofill 结构里常无 htmlInfo，
+        //    仅靠 node.hint 暴露占位文案；若在此之后才检查，会因 htmlInfo 为 null 提前 return，
+        //    导致搜索框被当成 USERNAME 候选而弹出密码条目。
+        //    注意：不能加入裸 "user"（会误伤真正的 username 登录框），仅匹配明确的「查找/搜索用户」短语。
+        val searchTerms = listOf(
+            "search", "searchbox", "filter", "find", "query", "jump", "lookup",
+            "combobox", "find a user", "find user", "search user", "search for user",
+            "invite user", "add user", "lookup user",
+            "搜索", "查询", "查找", "筛选", "过滤", "搜索框", "找用户", "搜索用户",
+            "recherche", "buscar", "suche",
+        )
+        val textPieces = mutableListOf<String>().apply {
+            add(node.hint?.toString().orEmpty())
+            val html = node.htmlInfo
+            if (html != null) {
+                val attrs = html.attributes
+                    ?.map { it.first.lowercase(Locale.ENGLISH) to (it.second ?: "") }
+                    ?.toMap().orEmpty()
+                add(attrs["aria-label"].orEmpty())
+                add(attrs["placeholder"].orEmpty())
+                add(attrs["title"].orEmpty())
+                add(attrs["name"].orEmpty())
+                add(attrs["id"].orEmpty())
+            }
+        }.map { it.lowercase(Locale.ENGLISH) }
+        if (textPieces.any { t -> searchTerms.any { term -> term in t } }) return true
+
+        // 4) HTML 属性（仅当 htmlInfo 存在；type=search / role / inputmode 等）
         val html = node.htmlInfo ?: return false
         val tag = html.tag?.lowercase(Locale.ENGLISH).orEmpty()
         if (tag != "input" && tag != "search" && tag != "textarea") return false
@@ -1767,21 +1795,6 @@ class EnhancedAutofillStructureParserV2 {
         if (inputMode == "search") return true
         // role=searchbox / combobox（筛选下拉也是非登录语义）视为搜索/筛选
         if (role.contains("searchbox") || role.contains("combobox")) return true
-
-        val searchTerms = listOf(
-            "search", "searchbox", "filter", "find", "query", "jump", "lookup",
-            "combobox", "搜索", "查询", "查找", "筛选", "过滤", "搜索框",
-            "recherche", "buscar", "suche",
-        )
-        val textSignals = listOf(
-            attrs["aria-label"].orEmpty(),
-            attrs["placeholder"].orEmpty(),
-            attrs["title"].orEmpty(),
-            attrs["name"].orEmpty(),
-            attrs["id"].orEmpty(),
-            node.hint?.toString().orEmpty(),
-        ).map { it.lowercase(Locale.ENGLISH) }
-        if (textSignals.any { t -> searchTerms.any { term -> term in t } }) return true
 
         return false
     }
