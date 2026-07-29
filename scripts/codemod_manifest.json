@@ -1,0 +1,10 @@
+{
+  "filesChanged": 201,
+  "occurrencesReplaced": 831,
+  "kotlinFqnConverted": 1,
+  "labelReferencesRenamed": 57,
+  "skippedBlacklist": 1,
+  "injectFailed": [],
+  "dryRun": false,
+  "scanRoot": "Bastion\\app\\src\\main\\java\\com\\bastion\\app"
+}
