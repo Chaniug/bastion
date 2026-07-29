@@ -3662,7 +3662,6 @@
     <string name="autofill_v2_set_system_service_desc">打开系统设置并将 Bastion 设为默认自动填充提供方。</string>
     <string name="autofill_v2_privileged_apps">特权 App</string>
     <string name="autofill_v2_privileged_apps_desc">打开 Android 凭据提供方权限相关设置。</string>
-    <string name="autofill_v2_freeze_notice">旧自动填充逻辑和旧设置页已冻结。后续行为仅由本 V2 页面控制。</string>
     <string name="autofill_v2_default_scope_title">默认列表范围</string>
     <string name="autofill_v2_default_scope_desc">设置自动填充列表默认展示的数据来源范围。</string>
     <string name="autofill_v2_default_keepass_title">默认 KeePass 数据库</string>

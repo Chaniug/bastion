@@ -17298,17 +17298,6 @@
 
     <issue
         id="MissingTranslation"
-        message="&quot;autofill_v2_freeze_notice&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
-        errorLine1="    &lt;string name=&quot;autofill_v2_freeze_notice&quot;>Legacy autofill and its old settings are frozen. New behavior is controlled only by this V2 page.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="3067"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="MissingTranslation"
         message="&quot;autofill_v2_default_scope_title&quot; is not translated in &quot;vi&quot; (Vietnamese) or &quot;ja&quot; (Japanese)"
         errorLine1="    &lt;string name=&quot;autofill_v2_default_scope_title&quot;>Default picker scope&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">

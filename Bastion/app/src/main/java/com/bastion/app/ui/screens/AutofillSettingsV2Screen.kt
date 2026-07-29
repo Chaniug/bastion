@@ -760,20 +760,6 @@ fun AutofillSettingsV2Screen(
                     onClick = onNavigateToBlockedFields,
                 )
             }
-
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                ),
-            ) {
-                Text(
-                    text = stringResource(R.string.autofill_v2_freeze_notice),
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
         }
 
         if (showDomainStrategyDialog) {
