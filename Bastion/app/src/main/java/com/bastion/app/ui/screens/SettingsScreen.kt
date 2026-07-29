@@ -40,6 +40,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
@@ -52,6 +53,7 @@ import com.bastion.app.data.ItemType
 import com.bastion.app.ui.components.TrashSettingsSheet
 import com.bastion.app.data.ThemeMode
 import com.bastion.app.ui.components.M3IdentityVerifyDialog
+import com.bastion.app.ui.components.MarkdownPreviewText
 import com.bastion.app.ui.components.UnifiedMoveAction
 import com.bastion.app.ui.main.navigation.SteamDockIcon
 import com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState
@@ -1493,10 +1495,10 @@ fun SettingsScreen(
                                 }
                                 result.releaseNotes?.let { notes ->
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = notes,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    MarkdownPreviewText(
+                                        markdown = notes,
+                                        imageBitmaps = emptyMap(),
+                                        modifier = Modifier.fillMaxWidth(),
                                     )
                                 }
                             }

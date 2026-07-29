@@ -74,9 +74,12 @@ jobs:
         if: github.event_name != 'push'
         run: ./gradlew :app:lintDebug --stacktrace
 
-      - name: Build Debug APK & run unit tests (tests non-blocking)
+      - name: Build Debug APK (build gate)
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Run unit tests (non-blocking)
         continue-on-error: true
-        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --continue --stacktrace
+        run: ./gradlew :app:testDebugUnitTest --continue --stacktrace
 
       - name: Upload unit test reports
         if: always()

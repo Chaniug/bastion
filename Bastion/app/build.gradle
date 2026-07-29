@@ -108,6 +108,11 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        // 单测中 android.util.Log 等未 mock 框架方法返回默认值而非抛异常，
+        // 避免历史单测因 "Method ... not mocked" 失败导致 CI 假绿（exit code 1 误导标注）。
+        testOptions {
+            unitTests.returnDefaultValues = true
+        }
 
         def gitSha = 'unknown'
         try {

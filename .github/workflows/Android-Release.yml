@@ -175,6 +175,38 @@ jobs:
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$tag" 2>/dev/null
           true
 
+      - name: Generate changelog since last release
+        id: changelog
+        shell: bash
+        run: |
+          set +e
+          if [ "${{ github.event_name }}" = "push" ]; then
+            cur="${{ steps.meta.outputs.tag }}"
+            prev="$(git describe --tags --abbrev=0 "${cur}^" 2>/dev/null || true)"
+          else
+            prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          fi
+          if [ -n "$prev" ]; then
+            range="${prev}..HEAD"
+          else
+            range=""
+          fi
+          if [ -n "$range" ]; then
+            log="$(git log $range --pretty=format:'- %s (%h)')"
+          else
+            log="$(git log --pretty=format:'- %s (%h)')"
+          fi
+          if [ -z "$log" ]; then
+            log="- 无变更记录"
+          fi
+          {
+            echo "notes<<EOF"
+            echo "$log"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Previous tag: ${prev:-none}"
+          echo "Commit count: $(printf '%s\n' "$log" | grep -c '^- ')"
+
       - name: Publish Stable Release
         uses: softprops/action-gh-release@v3
         with:
@@ -193,6 +225,9 @@ jobs:
             > * **Ref**: `${{ github.ref }}`
             > **Generated APKs:**
             ${{ steps.apk_meta.outputs.apk_list }}
+
+            ## 更新内容 (What's Changed)
+            ${{ steps.changelog.outputs.notes }}
           files: |
             Bastion/app/build/outputs/apk/release/*.APK
           draft: false

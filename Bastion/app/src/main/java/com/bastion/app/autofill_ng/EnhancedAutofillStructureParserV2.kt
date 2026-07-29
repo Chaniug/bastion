@@ -1736,6 +1736,17 @@ class EnhancedAutofillStructureParserV2 {
      *   （search / 搜索 / 查询 / 查找 / recherche / buscar / suche 等）
      */
     private fun isSearchField(node: AssistStructure.ViewNode): Boolean {
+        // 1) Android 标准 autofillHints（系统 / WebView 可能直接给出语义提示）
+        val autofillHints = node.autofillHints?.map { it.lowercase(Locale.ENGLISH) }.orEmpty()
+        val hintSearchTerms = listOf("search", "filter", "find", "query")
+        if (autofillHints.any { h -> hintSearchTerms.any { t -> t in h } }) return true
+
+        // 2) inputType：筛选变体（TYPE_TEXT_VARIATION_FILTER = 0x000000B0，列表筛选框常见）
+        if (node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_FILTER
+            == android.text.InputType.TYPE_TEXT_VARIATION_FILTER
+        ) return true
+
+        // 3) HTML 属性（WebView）
         val html = node.htmlInfo ?: return false
         val tag = html.tag?.lowercase(Locale.ENGLISH).orEmpty()
         if (tag != "input" && tag != "search" && tag != "textarea") return false
@@ -1754,10 +1765,13 @@ class EnhancedAutofillStructureParserV2 {
         if ("search" in autocomplete) return true
         if ("search" in role) return true
         if (inputMode == "search") return true
+        // role=searchbox / combobox（筛选下拉也是非登录语义）视为搜索/筛选
+        if (role.contains("searchbox") || role.contains("combobox")) return true
 
         val searchTerms = listOf(
-            "search", "搜索", "查询", "查找",
-            "recherche", "buscar", "suche", "searchbox",
+            "search", "searchbox", "filter", "find", "query", "jump", "lookup",
+            "combobox", "搜索", "查询", "查找", "筛选", "过滤", "搜索框",
+            "recherche", "buscar", "suche",
         )
         val textSignals = listOf(
             attrs["aria-label"].orEmpty(),
