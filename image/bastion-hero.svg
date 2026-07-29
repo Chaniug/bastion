@@ -1,122 +1,111 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bastion — 本地优先 · 零知识 · 开源的 Android 密码管理器">
   <defs>
-    <!-- 背景：深海军蓝竖向渐变 -->
     <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#06122A"/>
       <stop offset="0.52" stop-color="#0B2E52"/>
       <stop offset="1" stop-color="#050E1F"/>
     </linearGradient>
-
-    <!-- 光晕（径向渐变，安全可渲染；不依赖滤镜） -->
     <radialGradient id="glowBlue" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.55"/>
-      <stop offset="55%" stop-color="#2E7CC8" stop-opacity="0.14"/>
-      <stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.34"/>
-      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#3E96E6" stop-opacity="0.5"/>
-      <stop offset="70%" stop-color="#1E5FA8" stop-opacity="0.16"/>
+      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#1E5FA8" stop-opacity="0.12"/>
       <stop offset="100%" stop-color="#1E5FA8" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#9FD4FF" fill-opacity="0.10"/>
+    </pattern>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
 
-    <!-- 盾牌玻璃渐变 -->
-    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0.25" y2="1">
-      <stop offset="0" stop-color="#86C6F7"/>
+    <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#1E5FA8" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#1E5FA8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="120" y1="90" x2="300" y2="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9FD4FF"/>
       <stop offset="0.5" stop-color="#2E7FC8"/>
       <stop offset="1" stop-color="#0A2A4D"/>
     </linearGradient>
-    <linearGradient id="shieldTopHi" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.42"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- 金色锁孔径向 -->
-    <radialGradient id="keyGrad" cx="50%" cy="36%" r="62%">
+    <radialGradient id="core" cx="50%" cy="38%" r="62%">
       <stop offset="0" stop-color="#FFF0CC"/>
       <stop offset="0.5" stop-color="#F5B942"/>
       <stop offset="1" stop-color="#B9760F"/>
     </radialGradient>
+    <linearGradient id="ray" x1="0" y1="60" x2="0" y2="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </linearGradient>
 
-    <!-- 细点阵纹理 -->
-    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.1" fill="#9FD4FF" fill-opacity="0.12"/>
-    </pattern>
+    <path id="ray" d="M204 60 L210 5 L216 60 Z" fill="url(#ray)"/>
+    <line id="tick" x1="210" y1="46" x2="210" y2="60" stroke="#9FD4FF" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+    <line id="spoke" x1="210" y1="152" x2="210" y2="104" stroke="#9FD4FF" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
 
-    <!-- 可选柔化（被剥离也不影响：光晕已由径向渐变提供） -->
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="16"/>
-    </filter>
-
-    <!-- 盾牌轮廓（用于裁剪内部高光/阴影） -->
-    <path id="shieldPath" d="M -100 -95 Q 0 -120 100 -95 L 100 30 C 100 95 60 135 0 165 C -60 135 -100 95 -100 30 Z"/>
-    <clipPath id="shieldClip"><use href="#shieldPath"/></clipPath>
+    <!-- 保险库徽标（右侧复用） -->
+    <g id="vault">
+      <circle cx="210" cy="210" r="200" fill="url(#blueGlow)" filter="url(#soft)"/>
+      <g>
+        <use href="#ray"/><use href="#ray" transform="rotate(30 210 210)"/><use href="#ray" transform="rotate(60 210 210)"/>
+        <use href="#ray" transform="rotate(90 210 210)"/><use href="#ray" transform="rotate(120 210 210)"/><use href="#ray" transform="rotate(150 210 210)"/>
+        <use href="#ray" transform="rotate(180 210 210)"/><use href="#ray" transform="rotate(210 210 210)"/><use href="#ray" transform="rotate(240 210 210)"/>
+        <use href="#ray" transform="rotate(270 210 210)"/><use href="#ray" transform="rotate(300 210 210)"/><use href="#ray" transform="rotate(330 210 210)"/>
+      </g>
+      <circle cx="210" cy="210" r="178" fill="none" stroke="#F5B942" stroke-opacity="0.42" stroke-width="2" stroke-dasharray="2 22"/>
+      <circle cx="392" cy="392" r="5" fill="#F5B942"/>
+      <circle cx="392" cy="392" r="10" fill="#F5B942" fill-opacity="0.25"/>
+      <circle cx="210" cy="210" r="150" fill="none" stroke="url(#ringGrad)" stroke-width="20"/>
+      <g>
+        <use href="#tick"/><use href="#tick" transform="rotate(15 210 210)"/><use href="#tick" transform="rotate(30 210 210)"/>
+        <use href="#tick" transform="rotate(45 210 210)"/><use href="#tick" transform="rotate(60 210 210)"/><use href="#tick" transform="rotate(75 210 210)"/>
+        <use href="#tick" transform="rotate(90 210 210)"/><use href="#tick" transform="rotate(105 210 210)"/><use href="#tick" transform="rotate(120 210 210)"/>
+        <use href="#tick" transform="rotate(135 210 210)"/><use href="#tick" transform="rotate(150 210 210)"/><use href="#tick" transform="rotate(165 210 210)"/>
+        <use href="#tick" transform="rotate(180 210 210)"/><use href="#tick" transform="rotate(195 210 210)"/><use href="#tick" transform="rotate(210 210 210)"/>
+        <use href="#tick" transform="rotate(225 210 210)"/><use href="#tick" transform="rotate(240 210 210)"/><use href="#tick" transform="rotate(255 210 210)"/>
+        <use href="#tick" transform="rotate(270 210 210)"/><use href="#tick" transform="rotate(285 210 210)"/><use href="#tick" transform="rotate(300 210 210)"/>
+        <use href="#tick" transform="rotate(315 210 210)"/><use href="#tick" transform="rotate(330 210 210)"/><use href="#tick" transform="rotate(345 210 210)"/>
+      </g>
+      <circle cx="210" cy="210" r="112" fill="none" stroke="#9FD4FF" stroke-opacity="0.30" stroke-width="2"/>
+      <g>
+        <use href="#spoke"/><use href="#spoke" transform="rotate(30 210 210)"/><use href="#spoke" transform="rotate(60 210 210)"/>
+        <use href="#spoke" transform="rotate(90 210 210)"/><use href="#spoke" transform="rotate(120 210 210)"/><use href="#spoke" transform="rotate(150 210 210)"/>
+        <use href="#spoke" transform="rotate(180 210 210)"/><use href="#spoke" transform="rotate(210 210 210)"/><use href="#spoke" transform="rotate(240 210 210)"/>
+        <use href="#spoke" transform="rotate(270 210 210)"/><use href="#spoke" transform="rotate(300 210 210)"/><use href="#spoke" transform="rotate(330 210 210)"/>
+      </g>
+      <circle cx="210" cy="210" r="74" fill="url(#coreGlow)" filter="url(#soft)"/>
+      <circle cx="210" cy="210" r="50" fill="url(#core)" stroke="#C98A1E" stroke-width="1.5"/>
+      <circle cx="210" cy="202" r="12" fill="#0A2A4D"/>
+      <path d="M204 209 L216 209 L219 234 L201 234 Z" fill="#0A2A4D"/>
+      <ellipse cx="200" cy="197" rx="5" ry="3.4" fill="#FFFFFF" fill-opacity="0.7"/>
+    </g>
   </defs>
 
   <!-- ===== 背景 ===== -->
   <rect x="0" y="0" width="1280" height="640" fill="url(#bgGrad)"/>
-  <circle cx="1010" cy="70" r="560" fill="url(#glowBlue)"/>
-  <circle cx="150" cy="560" r="460" fill="url(#glowGold)"/>
+  <circle cx="980" cy="300" r="540" fill="url(#glowBlue)"/>
+  <circle cx="180" cy="430" r="420" fill="url(#glowGold)"/>
   <rect x="0" y="0" width="1280" height="640" fill="url(#dots)"/>
 
-  <!-- ===== 防御轨道（克制） ===== -->
-  <g fill="none" stroke-linecap="round">
-    <circle cx="640" cy="250" r="300" stroke="#7CC4FF" stroke-opacity="0.10" stroke-width="1"/>
-    <circle cx="640" cy="250" r="248" stroke="#7CC4FF" stroke-opacity="0.14" stroke-width="1"/>
-    <circle cx="640" cy="250" r="300" stroke="#F5B942" stroke-opacity="0.30" stroke-width="1.4" stroke-dasharray="2 26"/>
-  </g>
+  <!-- ===== 右侧保险库徽标 ===== -->
+  <use href="#vault" transform="translate(637.5 57.5) scale(1.25)"/>
 
-  <!-- 漂浮光点 -->
-  <g>
-    <circle cx="300" cy="150" r="3" fill="#9FD4FF" fill-opacity="0.8"/>
-    <circle cx="980" cy="200" r="2.4" fill="#F5B942" fill-opacity="0.85"/>
-    <circle cx="1040" cy="430" r="3.2" fill="#9FD4FF" fill-opacity="0.7"/>
-    <circle cx="240" cy="420" r="2.4" fill="#9FD4FF" fill-opacity="0.6"/>
-    <circle cx="520" cy="120" r="2" fill="#F5B942" fill-opacity="0.7"/>
-  </g>
-
-  <!-- ===== 中央盾牌徽标 ===== -->
-  <g transform="translate(640 250)">
-    <!-- 外发光 -->
-    <circle cx="0" cy="20" r="180" fill="url(#halo)" filter="url(#soft)"/>
-
-    <!-- 接触阴影（悬浮感） -->
-    <use href="#shieldPath" transform="translate(0 12)" fill="#030E1C" fill-opacity="0.45" filter="url(#soft)"/>
-
-    <!-- 盾牌主体 -->
-    <use href="#shieldPath" fill="url(#shieldGrad)" stroke="#A9D8FF" stroke-opacity="0.92" stroke-width="2" stroke-linejoin="round"/>
-
-    <!-- 内部体积：顶部高光 + 左侧亮边 + 底部暗层 -->
-    <g clip-path="url(#shieldClip)">
-      <rect x="-110" y="-120" width="220" height="120" fill="url(#shieldTopHi)"/>
-      <rect x="-100" y="-120" width="26" height="300" fill="#FFFFFF" fill-opacity="0.12"/>
-      <rect x="-110" y="60" width="220" height="120" fill="#061026" fill-opacity="0.20"/>
-    </g>
-
-    <!-- 金色锁孔 -->
-    <g>
-      <circle cx="0" cy="6" r="46" fill="url(#glowGold)"/>
-      <circle cx="0" cy="6" r="30" fill="url(#keyGrad)" stroke="#C98A1E" stroke-width="1.5"/>
-      <circle cx="0" cy="-2" r="11" fill="#0A2A4D"/>
-      <path d="M -5 4 L 5 4 L 7 30 L -7 30 Z" fill="#0A2A4D"/>
-      <ellipse cx="-9" cy="-9" rx="4.4" ry="3" fill="#FFFFFF" fill-opacity="0.7"/>
-    </g>
-
-    <!-- 金色轨道点（暗示转动） -->
-    <circle cx="212" cy="-212" r="4.5" fill="#F5B942"/>
-    <circle cx="212" cy="-212" r="9" fill="#F5B942" fill-opacity="0.25"/>
-  </g>
-
-  <!-- ===== 字标 + 副标 ===== -->
-  <text x="640" y="512" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="800" letter-spacing="2">
+  <!-- ===== 左侧文字 ===== -->
+  <text x="92" y="288" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'Helvetica Neue',Arial,sans-serif" font-size="92" font-weight="800" letter-spacing="1">
     <tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan>
   </text>
-  <rect x="588" y="530" width="104" height="3" rx="1.5" fill="#F5B942"/>
-
-  <text x="640" y="572" text-anchor="middle" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="19" font-weight="500" fill="#A9BBD0" letter-spacing="4">
+  <rect x="96" y="312" width="128" height="4" rx="2" fill="#F5B942"/>
+  <text x="94" y="362" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="23" font-weight="500" fill="#A9BBD0" letter-spacing="2">
     本地优先 · 零知识 · 开源的 Android 密码管理器
+  </text>
+  <text x="94" y="416" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="30" font-weight="700" fill="#EAF2FB">
+    你的密码，只属于你。
+  </text>
+  <text x="94" y="456" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400" fill="#8FA6C0" letter-spacing="1">
+    AES-256 加密 · 硬件 Keystore · 完全离线运行
   </text>
 </svg>

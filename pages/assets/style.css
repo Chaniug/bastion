@@ -148,7 +148,7 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 
 /* shield hero visual */
 .shield-stage {
-  position: relative; display: grid; place-items: center; min-height: 360px;
+  position: relative; display: grid; place-items: center; min-height: 440px;
   border-radius: var(--radius-lg); overflow: hidden;
   background:
     radial-gradient(60% 60% at 50% 42%, rgba(31, 111, 192, 0.20), transparent 70%),
@@ -167,22 +167,8 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
   filter: blur(30px); animation: pulse 6s ease-in-out infinite;
 }
 .shield-art {
-  position: relative; width: min(330px, 78%); filter: drop-shadow(0 30px 60px rgba(3, 14, 28, 0.6));
+  position: relative; width: min(420px, 86%); filter: drop-shadow(0 30px 60px rgba(3, 14, 28, 0.6));
   animation: float 7s ease-in-out infinite;
-}
-.shield-art .ring {
-  position: absolute; inset: -9%; border-radius: 50%;
-  border: 1px solid rgba(159, 212, 255, 0.22);
-  animation: spin 26s linear infinite;
-}
-.shield-art .ring::after {
-  content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold-500); box-shadow: 0 0 12px var(--gold-500); transform: translateX(-50%);
-}
-.shield-art .ring2 {
-  position: absolute; inset: -17%; border-radius: 50%;
-  border: 1px dashed rgba(245, 185, 66, 0.30);
-  animation: spin 40s linear infinite reverse;
 }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @keyframes pulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
@@ -269,7 +255,7 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .shield-stage { order: -1; min-height: 280px; }
+  .shield-stage { order: -1; min-height: 320px; }
   .split { grid-template-columns: 1fr; }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
