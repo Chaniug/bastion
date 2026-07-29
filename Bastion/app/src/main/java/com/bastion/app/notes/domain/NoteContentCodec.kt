@@ -1,5 +1,6 @@
 package com.bastion.app.notes.domain
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -66,7 +67,7 @@ object NoteContentCodec {
 
     fun decodeImagePaths(imagePaths: String): List<String> {
         if (imagePaths.isBlank()) return emptyList()
-        return runCatching { Json.decodeFromString<List<String>>(imagePaths) }
+        return runCatchingObserved { Json.decodeFromString<List<String>>(imagePaths) }
             .getOrElse {
                 if (imagePaths.startsWith("[")) emptyList() else listOf(imagePaths)
             }
@@ -204,7 +205,7 @@ object NoteContentCodec {
         }
 
         if (raw.startsWith("{")) {
-            runCatching { Json.decodeFromString<NoteData>(raw) }
+            runCatchingObserved { Json.decodeFromString<NoteData>(raw) }
                 .getOrNull()
                 ?.let { noteData ->
                     return DecodedNoteContent(
@@ -222,7 +223,7 @@ object NoteContentCodec {
             return DecodedNoteContent(content = raw)
         }
 
-        return runCatching {
+        return runCatchingObserved {
             when (val parsed = JSONTokener(raw).nextValue()) {
                 is JSONObject -> parsed.toDecodedNoteContent(fallbackNotes)
                 is String -> DecodedNoteContent(content = parsed.ifBlank { fallbackNotes })

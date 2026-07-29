@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -60,7 +61,7 @@ object UpdateChecker {
 
     suspend fun checkLatestRelease(currentVersion: String): Result<UpdateCheckResult> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 val request = Request.Builder()
                     .url(RELEASE_API_URL)
                     .header("Accept", "application/vnd.github+json")
@@ -101,7 +102,7 @@ object UpdateChecker {
         onProgress: suspend (UpdateDownloadProgress) -> Unit = {}
     ): Result<File> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 outputDir.mkdirs()
                 outputDir.listFiles()
                     ?.filter { it.isFile && it.name.endsWith(".apk", ignoreCase = true) }
@@ -158,7 +159,7 @@ object UpdateChecker {
         }
 
     fun validateDownloadedApk(context: Context, apkFile: File): Result<Unit> =
-        runCatching {
+        runCatchingObserved {
             val packageManager = context.packageManager
             val downloadedPackage = packageManager.getArchivePackageInfo(apkFile)
                 ?: throw IOException("Downloaded APK package info is unreadable")

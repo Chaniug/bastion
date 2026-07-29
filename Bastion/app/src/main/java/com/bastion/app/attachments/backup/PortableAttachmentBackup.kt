@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.backup
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +79,7 @@ object PortableAttachmentBackup {
 
     fun decodeManifest(text: String): Manifest {
         if (text.isBlank()) return Manifest()
-        return runCatching { json.decodeFromString<Manifest>(text) }
+        return runCatchingObserved { json.decodeFromString<Manifest>(text) }
             .getOrElse { Manifest() }
     }
 
@@ -132,7 +133,7 @@ object PortableAttachmentBackup {
         val wrapped = payload.attachment.wrappedCek ?: return@withContext false
         val storage = AttachmentStorage(app)
         val keyVault = AttachmentKeyVault(SecurityManager(app))
-        val cek = runCatching { keyVault.unwrap(wrapped) }.getOrNull() ?: return@withContext false
+        val cek = runCatchingObserved { keyVault.unwrap(wrapped) }.getOrNull() ?: return@withContext false
         try {
             storage.openDecryptedStream(path, cek).use { input ->
                 input.copyTo(output)
@@ -159,7 +160,7 @@ object PortableAttachmentBackup {
         val wrapped = try {
             keyVault.wrap(blob.cek)
         } catch (e: Throwable) {
-            runCatching { storage.delete(blob.relativePath) }
+            runCatchingObserved { storage.delete(blob.relativePath) }
             throw e
         } finally {
             blob.cek.fill(0)

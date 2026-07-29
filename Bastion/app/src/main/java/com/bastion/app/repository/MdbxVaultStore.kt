@@ -1,5 +1,6 @@
 package com.bastion.app.repository
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.net.Uri
@@ -469,7 +470,7 @@ class MdbxVaultStore(
             val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext emptyList()
             val file = resolveWritableFile(dbInfo) ?: return@withContext emptyList()
             if (!file.exists()) return@withContext emptyList()
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     if (missingRequiredTables(db).isNotEmpty()) return@withContext emptyList()
                     val epochKey = readEpochKeyOrNull(db, dbInfo)
@@ -637,7 +638,7 @@ class MdbxVaultStore(
         val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext 0
         val file = resolveWritableFile(dbInfo) ?: return@withContext 0
         if (!file.exists()) return@withContext 0
-        runCatching {
+        runCatchingObserved {
             openReadOnly(file).use { db ->
                 if (!tableExists(db, "conflicts")) return@withContext 0
                 db.rawQuery(
@@ -836,7 +837,7 @@ class MdbxVaultStore(
                 )
             }
 
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     readDiagnostics(db, databaseId, dbInfo, file)
                 }
@@ -853,13 +854,13 @@ class MdbxVaultStore(
 
     override suspend fun getPendingSyncCount(databaseId: Long): Int = withContext(Dispatchers.IO) {
         val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext 0
-        val status = runCatching { MdbxSyncStatus.valueOf(dbInfo.lastSyncStatus) }.getOrNull()
+        val status = runCatchingObserved { MdbxSyncStatus.valueOf(dbInfo.lastSyncStatus) }.getOrNull()
         if (status == MdbxSyncStatus.LOCAL_ONLY || status == MdbxSyncStatus.IN_SYNC) {
             return@withContext 0
         }
         val file = resolveWritableFile(dbInfo) ?: return@withContext 1
         if (!file.exists()) return@withContext 1
-        runCatching {
+        runCatchingObserved {
             openReadOnly(file).use { db ->
                 calculatePendingSyncCount(db, dbInfo)
             }
@@ -1033,7 +1034,7 @@ class MdbxVaultStore(
             val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext emptyList()
             val file = resolveWritableFile(dbInfo) ?: return@withContext emptyList()
             if (!file.exists()) return@withContext emptyList()
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     if (missingRequiredTables(db).isNotEmpty()) return@withContext emptyList()
                     val epochKey = readEpochKeyOrNull(db, dbInfo)
@@ -1080,7 +1081,7 @@ class MdbxVaultStore(
             val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext emptyList()
             val file = resolveWritableFile(dbInfo) ?: return@withContext emptyList()
             if (!file.exists()) return@withContext emptyList()
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     if (missingRequiredTables(db).isNotEmpty() || !tableExists(db, "object_versions")) {
                         return@withContext emptyList()
@@ -1154,7 +1155,7 @@ class MdbxVaultStore(
             val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext emptyList()
             val file = resolveWritableFile(dbInfo) ?: return@withContext emptyList()
             if (!file.exists()) return@withContext emptyList()
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     if (missingRequiredTables(db).isNotEmpty() || !tableExists(db, "snapshots")) {
                         return@withContext emptyList()
@@ -1632,7 +1633,7 @@ class MdbxVaultStore(
             val dbInfo = databaseDao.getDatabaseById(databaseId) ?: return@withContext emptyList()
             val file = resolveWritableFile(dbInfo) ?: return@withContext emptyList()
             if (!file.exists()) return@withContext emptyList()
-            runCatching {
+            runCatchingObserved {
                 openReadOnly(file).use { db ->
                     if (missingRequiredTables(db).isNotEmpty()) return@withContext emptyList()
                     db.rawQuery(
@@ -1934,7 +1935,7 @@ class MdbxVaultStore(
             .put("app_name", entry.appName)
             .put(
                 "password_plain",
-                runCatching { securityManager.decryptData(entry.password) }.getOrDefault(entry.password)
+                runCatchingObserved { securityManager.decryptData(entry.password) }.getOrDefault(entry.password)
             )
             .put("notes", entry.notes)
             .put("category_id", entry.categoryId)
@@ -2026,7 +2027,7 @@ class MdbxVaultStore(
             return value
         }
 
-        return runCatching { securityManager.decryptData(value) }.getOrElse { error ->
+        return runCatchingObserved { securityManager.decryptData(value) }.getOrElse { error ->
             throw IllegalStateException(
                 "Cannot write encrypted $fieldName for Room item $roomId into MDBX without decrypting it",
                 error
@@ -2607,7 +2608,7 @@ class MdbxVaultStore(
                 normalized += entry
                 return@forEach
             }
-            val credentialId = runCatching {
+            val credentialId = runCatchingObserved {
                 JSONObject(entry.payloadJson).optString("credential_id")
             }.getOrDefault("")
             if (credentialId.isBlank()) {
@@ -2630,7 +2631,7 @@ class MdbxVaultStore(
                 databaseDao.updateSyncStatus(database.id, MdbxSyncStatus.LOCAL_ONLY.name, null)
             }
             MdbxSourceType.LOCAL_EXTERNAL -> {
-                runCatching {
+                runCatchingObserved {
                     checkpointWorkingCopyForFlush(database, workingCopy)
                     val targetUri = Uri.parse(database.filePath)
                     context.contentResolver.openOutputStream(targetUri, "wt")?.use { output ->
@@ -2650,7 +2651,7 @@ class MdbxVaultStore(
                 }
             }
             MdbxSourceType.REMOTE_WEBDAV -> {
-                runCatching {
+                runCatchingObserved {
                     checkpointWorkingCopyForFlush(database, workingCopy)
                     val sourceId = database.sourceId
                         ?: throw IllegalStateException("MDBX WebDAV source is not linked")
@@ -2678,7 +2679,7 @@ class MdbxVaultStore(
                 }
             }
             MdbxSourceType.REMOTE_ONEDRIVE -> {
-                runCatching {
+                runCatchingObserved {
                     checkpointWorkingCopyForFlush(database, workingCopy)
                     val sourceId = database.sourceId
                         ?: throw IllegalStateException("MDBX OneDrive source is not linked")
@@ -5684,7 +5685,7 @@ class MdbxVaultStore(
     }
 
     private fun folderIdFromPayload(payloadJson: String): String {
-        val payload = runCatching { JSONObject(payloadJson) }.getOrNull() ?: return "root"
+        val payload = runCatchingObserved { JSONObject(payloadJson) }.getOrNull() ?: return "root"
         val explicitFolderId = payload.optString("mdbx_folder_id")
             .trim()
             .takeIf { it.isNotBlank() && !it.equals("root", ignoreCase = true) }
@@ -6298,7 +6299,7 @@ class MdbxVaultStore(
         db: SQLiteDatabase,
         database: LocalMdbxDatabase
     ): Int {
-        val status = runCatching { MdbxSyncStatus.valueOf(database.lastSyncStatus) }.getOrNull()
+        val status = runCatchingObserved { MdbxSyncStatus.valueOf(database.lastSyncStatus) }.getOrNull()
         if (status == MdbxSyncStatus.LOCAL_ONLY || status == MdbxSyncStatus.IN_SYNC) {
             return 0
         }
@@ -6484,7 +6485,7 @@ class MdbxVaultStore(
 
     private fun decodeVaultText(value: ByteArray, epochKey: ByteArray? = null): String {
         val raw = MdbxVaultCrypto.decryptText(epochKey, value)
-        return runCatching { securityManager.decryptData(raw) }.getOrDefault(raw)
+        return runCatchingObserved { securityManager.decryptData(raw) }.getOrDefault(raw)
     }
 
     private fun requireEpochKey(db: SQLiteDatabase, dbInfo: LocalMdbxDatabase): ByteArray {
@@ -6531,7 +6532,7 @@ class MdbxVaultStore(
     private fun readEpochKeyOrNull(
         db: SQLiteDatabase,
         dbInfo: LocalMdbxDatabase
-    ): ByteArray? = runCatching {
+    ): ByteArray? = runCatchingObserved {
         val vaultId = queryString(db, "SELECT vault_id FROM vault_meta LIMIT 1") ?: return null
         val salt = queryBlob(db, "SELECT credential_salt FROM vault_meta LIMIT 1") ?: return null
         val verifier = queryBlob(db, "SELECT credential_verifier FROM vault_meta LIMIT 1") ?: return null
@@ -6566,7 +6567,7 @@ class MdbxVaultStore(
             unlockMethod == MdbxUnlockMethod.MASTER_PASSWORD_AND_KEY_FILE
         ) {
             dbInfo.encryptedPassword?.let { encrypted ->
-                runCatching { securityManager.decryptData(encrypted) }.getOrNull()
+                runCatchingObserved { securityManager.decryptData(encrypted) }.getOrNull()
             } ?: return null
         } else {
             null
@@ -6598,7 +6599,7 @@ class MdbxVaultStore(
 
     private fun summarizeConflictPayload(payloadJson: String?): String? {
         if (payloadJson.isNullOrBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             val payload = JSONObject(payloadJson)
             listOfNotNull(
                 payload.optString("kind").takeIf { it.isNotBlank() },
@@ -6618,7 +6619,7 @@ class MdbxVaultStore(
     }
 
     private fun steamIdFromSteamMaFileJson(maFileJson: String): String? {
-        val root = runCatching { JSONObject(maFileJson) }.getOrNull() ?: return null
+        val root = runCatchingObserved { JSONObject(maFileJson) }.getOrNull() ?: return null
         return root.optString("steamid").ifBlank { root.optString("steam_id") }
             .ifBlank { root.optString("SteamID") }
             .ifBlank { root.optString("steam64") }
@@ -6626,7 +6627,7 @@ class MdbxVaultStore(
     }
 
     private fun accountNameFromSteamMaFileJson(maFileJson: String): String? {
-        val root = runCatching { JSONObject(maFileJson) }.getOrNull() ?: return null
+        val root = runCatchingObserved { JSONObject(maFileJson) }.getOrNull() ?: return null
         return root.optString("account_name").ifBlank { root.optString("accountName") }
             .ifBlank { root.optString("AccountName") }
             .takeIf { it.isNotBlank() }

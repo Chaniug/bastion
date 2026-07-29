@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -77,7 +78,7 @@ class GeneratorPreferencesManager(private val context: Context) {
     val preferencesFlow: Flow<GeneratorPreferences> =
         context.generatorPreferencesDataStore.data.map { preferences ->
             val jsonStr = preferences[PREFERENCES_KEY] ?: return@map GeneratorPreferences()
-            runCatching { json.decodeFromString<GeneratorPreferences>(jsonStr) }
+            runCatchingObserved { json.decodeFromString<GeneratorPreferences>(jsonStr) }
                 .getOrDefault(GeneratorPreferences())
         }
 

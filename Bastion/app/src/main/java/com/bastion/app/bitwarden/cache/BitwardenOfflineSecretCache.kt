@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.cache
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.SharedPreferences
 import com.bastion.app.data.PasswordEntry
@@ -31,7 +32,7 @@ class BitwardenOfflineSecretCache(
             return
         }
 
-        val encrypted = runCatching { securityManager.encryptDataLegacyCompat(plainSecret) }
+        val encrypted = runCatchingObserved { securityManager.encryptDataLegacyCompat(plainSecret) }
             .getOrNull() ?: return
 
         prefs.edit()
@@ -75,7 +76,7 @@ class BitwardenOfflineSecretCache(
         }
 
         val encrypted = prefs.getString(secretKey(entryId), null) ?: return null
-        val decrypted = runCatching { securityManager.decryptData(encrypted) }
+        val decrypted = runCatchingObserved { securityManager.decryptData(encrypted) }
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?: return null

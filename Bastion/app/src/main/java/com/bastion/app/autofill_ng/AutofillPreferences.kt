@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -42,17 +43,9 @@ class AutofillPreferences(private val context: Context) {
         private val KEY_ACTIVE_FILL_NOTIFICATION_ENABLED =
             booleanPreferencesKey("active_fill_notification_enabled")
         private val KEY_DOMAIN_MATCH_STRATEGY = stringPreferencesKey("domain_match_strategy")
-        private val KEY_FILL_SUGGESTIONS_ENABLED = booleanPreferencesKey("fill_suggestions_enabled")
-        private val KEY_MANUAL_SELECTION_ENABLED = booleanPreferencesKey("manual_selection_enabled")
         private val KEY_REQUEST_SAVE_DATA = booleanPreferencesKey("request_save_data")
         private val KEY_AUTO_SAVE_APP_INFO = booleanPreferencesKey("auto_save_app_info")
         private val KEY_AUTO_SAVE_WEBSITE_INFO = booleanPreferencesKey("auto_save_website_info")
-        
-        // Phase 8: 生物识别快速填充配置
-        private val KEY_BIOMETRIC_QUICK_FILL_ENABLED = booleanPreferencesKey("biometric_quick_fill_enabled")
-        
-        // 新架构：使用增强匹配引擎
-        private val KEY_USE_ENHANCED_MATCHING = booleanPreferencesKey("use_enhanced_matching")
 
         // Autofill V2 引擎模式
         private val KEY_AUTOFILL_ENGINE_MODE = stringPreferencesKey("autofill_engine_mode")
@@ -66,9 +59,6 @@ class AutofillPreferences(private val context: Context) {
         // 内联建议（输入法候选栏内嵌自动填充）
         private val KEY_INLINE_SUGGESTIONS_ENABLED = booleanPreferencesKey("inline_suggestions_enabled")
 
-        // 是否尊重自动填充禁用标识
-        private val KEY_RESPECT_AUTOFILL_DISABLED = booleanPreferencesKey("respect_autofill_disabled")
-        
         // OTP验证器设置
         private val KEY_OTP_NOTIFICATION_ENABLED = booleanPreferencesKey("otp_notification_enabled")
         private val KEY_AUTO_COPY_OTP = booleanPreferencesKey("auto_copy_otp")
@@ -86,10 +76,7 @@ class AutofillPreferences(private val context: Context) {
         private val KEY_BLACKLIST_ENABLED = booleanPreferencesKey("blacklist_enabled")
         private val KEY_BLACKLIST_PACKAGES = stringSetPreferencesKey("blacklist_packages")
         private val KEY_SAVE_BLOCKED_TARGETS = stringSetPreferencesKey("save_blocked_targets")
-        // 填充组件外观: 是否使用横幅（方案2）
-        private val KEY_FILL_COMPONENT_USE_BANNER = booleanPreferencesKey("fill_component_use_banner")
-
-        // 最近一次自动填充记录（用于显示“上次填充”卡片）
+        // 最近一次自动填充记录（用于显示"上次填充"卡片）
         private val KEY_LAST_FILLED_IDENTIFIER = stringPreferencesKey("last_filled_identifier")
         private val KEY_LAST_FILLED_PASSWORD_ID = longPreferencesKey("last_filled_password_id")
         private val KEY_LAST_FILLED_AT = longPreferencesKey("last_filled_at")
@@ -154,32 +141,6 @@ class AutofillPreferences(private val context: Context) {
     }
     
     /**
-     * 是否启用填充建议
-     */
-    val isFillSuggestionsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_FILL_SUGGESTIONS_ENABLED] ?: true
-    }
-    
-    suspend fun setFillSuggestionsEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_FILL_SUGGESTIONS_ENABLED] = enabled
-        }
-    }
-    
-    /**
-     * 是否启用手动选择
-     */
-    val isManualSelectionEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_MANUAL_SELECTION_ENABLED] ?: true
-    }
-    
-    suspend fun setManualSelectionEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_MANUAL_SELECTION_ENABLED] = enabled
-        }
-    }
-    
-    /**
      * 是否请求保存数据 (填写表单时询问是否更新密码库)
      */
     val isRequestSaveDataEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -217,38 +178,10 @@ class AutofillPreferences(private val context: Context) {
             preferences[KEY_AUTO_SAVE_WEBSITE_INFO] = enabled
         }
     }
-    
-    /**
-     * Phase 8: 是否启用生物识别快速填充
-     * 启用后,用户选择密码时需要生物识别验证才能自动填充
-     */
-    val isBiometricQuickFillEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_BIOMETRIC_QUICK_FILL_ENABLED] ?: true  // 默认启用
-    }
-    
-    suspend fun setBiometricQuickFillEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_BIOMETRIC_QUICK_FILL_ENABLED] = enabled
-        }
-    }
-    
-    /**
-     * 是否使用增强匹配引擎（新架构）
-     * 默认启用
-     */
-    val useEnhancedMatching: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_USE_ENHANCED_MATCHING] ?: true
-    }
-    
-    suspend fun setUseEnhancedMatching(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_USE_ENHANCED_MATCHING] = enabled
-        }
-    }
 
     val autofillEngineMode: Flow<AutofillEngineMode> = context.dataStore.data.map { preferences ->
         val modeName = preferences[KEY_AUTOFILL_ENGINE_MODE] ?: AutofillEngineMode.BITWARDEN_V2.name
-        runCatching { AutofillEngineMode.valueOf(modeName) }
+        runCatchingObserved { AutofillEngineMode.valueOf(modeName) }
             .getOrDefault(AutofillEngineMode.BITWARDEN_V2)
     }
 
@@ -297,7 +230,7 @@ class AutofillPreferences(private val context: Context) {
 
     val v2DefaultSourceFilter: Flow<AutofillDefaultSourceFilter> = context.dataStore.data.map { preferences ->
         val name = preferences[KEY_V2_DEFAULT_SOURCE_FILTER] ?: AutofillDefaultSourceFilter.ALL.name
-        runCatching { AutofillDefaultSourceFilter.valueOf(name) }
+        runCatchingObserved { AutofillDefaultSourceFilter.valueOf(name) }
             .getOrDefault(AutofillDefaultSourceFilter.ALL)
     }
 
@@ -332,21 +265,6 @@ class AutofillPreferences(private val context: Context) {
             } else {
                 preferences[KEY_V2_DEFAULT_BITWARDEN_VAULT_ID] = vaultId
             }
-        }
-    }
-
-    /**
-     * 是否尊重"禁止自动填充"标识
-     * 如果为 true，遇到类似 autocomplete="off" 的字段将不进行填充
-     * 默认为 true (遵循标准)
-     */
-    val isRespectAutofillDisabledEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_RESPECT_AUTOFILL_DISABLED] ?: false // 默认为 false，即强制填充（更符合用户期望）
-    }
-
-    suspend fun setRespectAutofillDisabledEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_RESPECT_AUTOFILL_DISABLED] = enabled
         }
     }
 
@@ -404,20 +322,6 @@ class AutofillPreferences(private val context: Context) {
      */
     val isPasswordSuggestionEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[KEY_PASSWORD_SUGGESTION_ENABLED] ?: true
-    }
-
-    /**
-     * 填充组件外观: 是否使用横幅（方案2）。
-     * 默认 false（方案1）。
-     */
-    val isFillComponentBannerEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_FILL_COMPONENT_USE_BANNER] ?: false
-    }
-
-    suspend fun setFillComponentBannerEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_FILL_COMPONENT_USE_BANNER] = enabled
-        }
     }
     
     suspend fun setPasswordSuggestionEnabled(enabled: Boolean) {
@@ -525,7 +429,7 @@ class AutofillPreferences(private val context: Context) {
     private fun normalizeSaveDomain(rawDomain: String): String? {
         val trimmed = rawDomain.trim().lowercase()
         if (trimmed.isBlank()) return null
-        val host = runCatching {
+        val host = runCatchingObserved {
             val uri = if (trimmed.contains("://")) Uri.parse(trimmed) else Uri.parse("https://$trimmed")
             uri.host
         }.getOrNull()

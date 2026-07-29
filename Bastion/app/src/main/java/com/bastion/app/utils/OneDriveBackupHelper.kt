@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,7 @@ class OneDriveBackupHelper(context: Context) {
 
     suspend fun getConfiguredSession(): OneDriveAccountSession? {
         val config = getConfig() ?: return null
-        return runCatching { authManager.acquireAccessToken(config.accountId) }
+        return runCatchingObserved { authManager.acquireAccessToken(config.accountId) }
             .getOrElse { error ->
                 if (error.isOneDriveAuthTemporarilyUnavailable()) throw error
                 null
@@ -81,7 +82,7 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun listBackups(): Result<List<BackupFile>> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             val backups = OneDriveKeePassFileSource(
                 context = appContext,
@@ -103,7 +104,7 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun uploadBackup(file: File, isPermanent: Boolean): Result<BackupFile> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             val targetName = if (isPermanent) {
                 file.name.replace(".zip", "_permanent.zip")
@@ -139,7 +140,7 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun downloadBackup(backupFile: BackupFile, destFile: File): Result<File> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             val bytes = OneDriveKeePassFileSource(
                 context = appContext,
@@ -152,7 +153,7 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun deleteBackup(backupFile: BackupFile): Result<Boolean> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             OneDriveKeePassFileSource(
                 context = appContext,
@@ -163,8 +164,8 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun markBackupAsPermanent(backupFile: BackupFile): Result<Boolean> = withContext(Dispatchers.IO) {
-        runCatching {
-            if (backupFile.isPermanent) return@runCatching true
+        runCatchingObserved {
+            if (backupFile.isPermanent) return@runCatchingObserved true
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             val newName = backupFile.name.replace(".zip", "_permanent.zip")
             OneDriveKeePassFileSource(
@@ -176,8 +177,8 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun unmarkPermanent(backupFile: BackupFile): Result<Boolean> = withContext(Dispatchers.IO) {
-        runCatching {
-            if (!backupFile.isPermanent) return@runCatching true
+        runCatchingObserved {
+            if (!backupFile.isPermanent) return@runCatchingObserved true
             val config = getConfig() ?: throw IllegalStateException("尚未配置 OneDrive 备份目录")
             val newName = backupFile.name.replace("_permanent", "")
             OneDriveKeePassFileSource(
@@ -189,7 +190,7 @@ class OneDriveBackupHelper(context: Context) {
     }
 
     suspend fun cleanupBackups(): Result<Int> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val backups = listBackups().getOrThrow()
             val expiredBackups = BackupRetentionPolicy.expiredTemporaryBackupsToDelete(backups)
             Log.i(

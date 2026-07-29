@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.app.Application
 import android.content.ClipData
@@ -69,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -399,7 +401,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         // settingsManager 已由 BaseBastionActivity 初始化
         val localSettingsManager = settingsManager
 
-        runCatching {
+        runCatchingObserved {
             val autoLockMinutes = runBlocking {
                 localSettingsManager.settingsFlow.first().autoLockMinutes
             }
@@ -490,7 +492,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             return
         }
         lifecycleScope.launch {
-            runCatching {
+            runCatchingObserved {
                 AutofillPreferences(applicationContext).markFieldSignatureBlocked(
                     signatureKey = signatureKey,
                     packageName = args.applicationId,
@@ -624,7 +626,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
     ): PasswordAutofillPreparation {
         val currentPreparation = passwordAutofillPreparation
         if (passwordAutofillPreparationKey == password.id && currentPreparation != null) {
-            return runCatching { currentPreparation.await() }
+            return runCatchingObserved { currentPreparation.await() }
                 .getOrElse { preparePasswordAutofill(password) }
         }
         return preparePasswordAutofill(password)
@@ -1251,7 +1253,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             saveUriBinding(password)
         }
 
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.Default) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.Default) {
             if (args.rememberLastFilled) {
                 rememberLastFilledCredential(password.id)
             }
@@ -1320,7 +1322,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         )
         
         // 后台保存
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val database = PasswordDatabase.getDatabase(applicationContext)
                 val repository = PasswordRepository(database.passwordEntryDao())
@@ -1589,7 +1591,7 @@ private fun AutofillPickerContent(
     }
 
     LaunchedEffect(Unit) {
-        runCatching {
+        runCatchingObserved {
             val savedSource = autofillPreferences.v2DefaultSourceFilter.first()
             sourceFilter = savedSource.toUiFilter()
             selectedKeePassDatabaseId = autofillPreferences.v2DefaultKeepassDatabaseId.first()
@@ -1601,7 +1603,7 @@ private fun AutofillPickerContent(
 
     fun persistPickerDefaults() {
         coroutineScope.launch {
-            runCatching {
+            runCatchingObserved {
                 autofillPreferences.setV2DefaultSourceFilter(sourceFilter.toPreferenceFilter())
                 autofillPreferences.setV2DefaultKeepassDatabaseId(selectedKeePassDatabaseId)
                 autofillPreferences.setV2DefaultBitwardenVaultId(selectedVaultId)

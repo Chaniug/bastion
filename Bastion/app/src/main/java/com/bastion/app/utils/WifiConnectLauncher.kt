@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -45,7 +46,7 @@ object WifiConnectLauncher {
         }
 
         return if (intent.resolveActivity(context.packageManager) != null) {
-            runCatching { context.startActivity(intent) }
+            runCatchingObserved { context.startActivity(intent) }
                 .onFailure { Log.w(TAG, "ACTION_WIFI_SETTINGS dispatch failed", it) }
             val msg = when {
                 copied -> context.getString(R.string.wifi_connect_fallback_copied)

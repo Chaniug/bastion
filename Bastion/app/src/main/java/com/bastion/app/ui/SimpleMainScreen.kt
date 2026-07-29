@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -848,7 +849,7 @@ fun SimpleMainScreen(
     // 从设置中读取，如果设置中没有则默认为 AUTO
     val stackCardModeKey = appSettings.stackCardMode
     val stackCardMode = remember(stackCardModeKey) {
-        runCatching { StackCardMode.valueOf(stackCardModeKey) }.getOrDefault(StackCardMode.AUTO)
+        runCatchingObserved { StackCardMode.valueOf(stackCardModeKey) }.getOrDefault(StackCardMode.AUTO)
     }
     
     // TOTP的选择模式状态

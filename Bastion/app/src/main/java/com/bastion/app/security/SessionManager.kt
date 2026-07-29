@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -159,14 +160,14 @@ object SessionManager {
      * 两者都失败时返回 null，交由调用方保守处理。
      */
     private fun resolveCurrentProcessName(): String? {
-        runCatching {
+        runCatchingObserved {
             val clazz = Class.forName("android.app.ActivityThread")
             val name = clazz.getMethod("currentProcessName").invoke(null) as? String
             if (!name.isNullOrEmpty()) return name
         }
 
         // 兜底：/proc/self/cmdline 以 \u0000 分隔，第一段即进程名（主进程=包名，子进程=包名:xxx）
-        runCatching {
+        runCatchingObserved {
             val bytes = java.io.File("/proc/self/cmdline").readBytes()
             val end = bytes.indexOf(0)
             val slice = if (end >= 0) bytes.copyOfRange(0, end) else bytes

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -183,7 +184,7 @@ fun SettingsScreen(
                 context.getString(R.string.update_install_permission_required),
                 Toast.LENGTH_LONG
             ).show()
-            runCatching {
+            runCatchingObserved {
                 val intent = Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:${context.packageName}")
@@ -217,7 +218,7 @@ fun SettingsScreen(
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
-                                runCatching {
+                                runCatchingObserved {
                                     context.startActivity(installIntent)
                                     showUpdateCheckDialog = false
                                 }.onFailure {

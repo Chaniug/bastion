@@ -1,5 +1,6 @@
 package com.bastion.app.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -116,7 +117,7 @@ class NotificationValidatorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        runCatching { unregisterReceiver(screenStateReceiver) }
+        runCatchingObserved { unregisterReceiver(screenStateReceiver) }
         updateJob?.cancel()
         serviceScope.cancel()
     }
@@ -231,7 +232,7 @@ class NotificationValidatorService : Service() {
     }
 
     private fun resolveTotpDataForGeneration(data: TotpData): TotpData {
-        val decryptResult = runCatching { securityManager.decryptData(data.secret) }
+        val decryptResult = runCatchingObserved { securityManager.decryptData(data.secret) }
         val decryptedSecret = decryptResult.getOrNull()
             ?.trim()
             ?.takeIf { it.isNotEmpty() }

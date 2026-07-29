@@ -1,5 +1,6 @@
 package com.bastion.app.data.model
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -32,7 +33,7 @@ data class WifiData(
     companion object {
         fun fromJsonOrEmpty(raw: String?): WifiData {
             if (raw.isNullOrBlank()) return WifiData()
-            return runCatching { WifiDataJson.decodeFromString(serializer(), raw) }
+            return runCatchingObserved { WifiDataJson.decodeFromString(serializer(), raw) }
                 .getOrDefault(WifiData())
         }
     }

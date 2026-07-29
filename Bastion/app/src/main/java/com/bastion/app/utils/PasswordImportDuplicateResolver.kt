@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
@@ -58,12 +59,12 @@ object PasswordImportDuplicateResolver {
             return true
         }
 
-        val decryptedCandidatePassword = runCatching { securityManager.decryptData(candidate.password) }.getOrNull()
+        val decryptedCandidatePassword = runCatchingObserved { securityManager.decryptData(candidate.password) }.getOrNull()
         if (decryptedCandidatePassword == snapshot.password) {
             return true
         }
 
-        val decryptedImportedPassword = runCatching { securityManager.decryptData(snapshot.password) }.getOrNull()
+        val decryptedImportedPassword = runCatchingObserved { securityManager.decryptData(snapshot.password) }.getOrNull()
         return decryptedImportedPassword != null && decryptedImportedPassword == decryptedCandidatePassword
     }
 

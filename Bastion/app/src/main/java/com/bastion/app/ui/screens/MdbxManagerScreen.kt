@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -597,7 +598,7 @@ private val MdbxManagerPageSaver: Saver<MdbxManagerPage, Any> = Saver(
         when (list.firstOrNull()) {
             "Hub" -> MdbxManagerPage.Hub
             "Source" -> {
-                val source = runCatching { MdbxManagerSource.valueOf(list[1] as String) }.getOrNull() ?: return@Saver null
+                val source = runCatchingObserved { MdbxManagerSource.valueOf(list[1] as String) }.getOrNull() ?: return@Saver null
                 MdbxManagerPage.Source(source)
             }
             "Detail" -> MdbxManagerPage.Detail(list[1] as Long, parseMdbxManagerSourceOrNull(list[2] as String))
@@ -618,7 +619,7 @@ private val MdbxManagerPageSaver: Saver<MdbxManagerPage, Any> = Saver(
 )
 
 private fun parseMdbxManagerSourceOrNull(raw: String): MdbxManagerSource? =
-    raw.takeIf { it.isNotBlank() }?.let { runCatching { MdbxManagerSource.valueOf(it) }.getOrNull() }
+    raw.takeIf { it.isNotBlank() }?.let { runCatchingObserved { MdbxManagerSource.valueOf(it) }.getOrNull() }
 
 private fun MdbxManagerPage.title(database: LocalMdbxDatabase?): String = when (this) {
     MdbxManagerPage.Hub -> "MDBX 1.0"
@@ -883,7 +884,7 @@ private fun MdbxVaultDetailPage(
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
-    val tigaLabel = runCatching { MdbxTigaMode.valueOf(database.tigaMode).label }.getOrDefault(database.tigaMode)
+    val tigaLabel = runCatchingObserved { MdbxTigaMode.valueOf(database.tigaMode).label }.getOrDefault(database.tigaMode)
     val healthIssueCount = diagnostics?.healthIssueCount ?: 0
     val hasUnavailableCopy = diagnostics?.isReadable == false
 
@@ -3814,6 +3815,7 @@ private fun changedObjectCount(changedObjectIds: String): Int {
         .trim('[', ']')
         .split(',')
         .map { it.trim().trim('"') }
+
         .count { it.isNotBlank() }
 }
 
@@ -3826,7 +3828,7 @@ private fun LocalMdbxDatabase.displayPath(context: Context): String {
             listOfNotNull("Bastion 私有目录", copiedName).joinToString(" · ").ifBlank { raw }
         }
         MdbxSourceType.LOCAL_EXTERNAL -> {
-            val uri = runCatching { Uri.parse(raw) }.getOrNull()
+            val uri = runCatchingObserved { Uri.parse(raw) }.getOrNull()
             val displayName = uri?.let { context.displayNameForUri(it) }
             val location = uri?.lastPathSegment
                 ?.substringAfterLast(':')
@@ -3840,7 +3842,7 @@ private fun LocalMdbxDatabase.displayPath(context: Context): String {
 }
 
 private fun Context.displayNameForUri(uri: Uri): String? =
-    runCatching {
+    runCatchingObserved {
         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null

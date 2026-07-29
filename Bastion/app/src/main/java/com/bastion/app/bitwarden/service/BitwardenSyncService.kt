@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,8 +80,8 @@ class BitwardenSyncService(
     }
 
     init {
-        runCatching { OperationLogger.init(context.applicationContext) }
-        runCatching { BitwardenDiagLogger.initialize(context.applicationContext) }
+        runCatchingObserved { OperationLogger.init(context.applicationContext) }
+        runCatchingObserved { BitwardenDiagLogger.initialize(context.applicationContext) }
     }
 
     private data class ParsedLoginUris(
@@ -113,7 +114,7 @@ class BitwardenSyncService(
             )
             
             if (!response.isSuccessful) {
-                val errorPayload = runCatching { response.errorBody()?.string() }.getOrNull()
+                val errorPayload = runCatchingObserved { response.errorBody()?.string() }.getOrNull()
                 captureRawExchange(
                     vaultId = vault.id,
                     operation = "sync_full",
@@ -146,7 +147,7 @@ class BitwardenSyncService(
                 return@withContext SyncResult.Error("Empty sync response")
             }
 
-            val rawForensicsEnabled = runCatching {
+            val rawForensicsEnabled = runCatchingObserved {
                 BitwardenSyncForensicsLogger.isRawCaptureEnabled(context)
             }.getOrDefault(false)
             if (rawForensicsEnabled) {
@@ -160,7 +161,7 @@ class BitwardenSyncService(
                     responseBody = buildSyncFullRawSummary(syncResponse),
                     success = true
                 )
-                runCatching {
+                runCatchingObserved {
                     BitwardenSyncForensicsLogger.captureSyncCipherSnapshots(
                         context = context,
                         vaultId = vault.id,
@@ -356,7 +357,7 @@ class BitwardenSyncService(
                         cipherApi.attachments != null &&
                             (!remoteUnchanged || cipherApi.attachments.isNotEmpty())
                     if (shouldReconcileAttachments) {
-                        runCatching {
+                        runCatchingObserved {
                             val localEntry = passwordEntryDao.getByBitwardenCipherIdInVault(
                                 vaultId = vault.id,
                                 cipherId = cipherApi.id
@@ -1041,7 +1042,7 @@ class BitwardenSyncService(
 
         // 构建加密的 Cipher 请求
         val createRequest = passwordEntryToCipherRequest(latestEntry, symmetricKey)
-        val requestPayload = runCatching { json.encodeToString(createRequest) }.getOrNull()
+        val requestPayload = runCatchingObserved { json.encodeToString(createRequest) }.getOrNull()
 
         try {
             val vaultApi = apiManager.getVaultApi(vault)
@@ -1051,7 +1052,7 @@ class BitwardenSyncService(
             )
 
             if (!response.isSuccessful) {
-                val errorPayload = runCatching { response.errorBody()?.string() }.getOrNull()
+                val errorPayload = runCatchingObserved { response.errorBody()?.string() }.getOrNull()
                 captureRawExchange(
                     vaultId = vault.id,
                     operation = "upload_password_create",
@@ -1108,7 +1109,7 @@ class BitwardenSyncService(
                 endpoint = "/ciphers",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(createdCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(createdCipher) }.getOrNull(),
                 success = true
             )
 
@@ -1164,7 +1165,7 @@ class BitwardenSyncService(
     ): UploadAttemptResult {
         val vaultApi = apiManager.getVaultApi(vault)
         var baselineCipher: CipherApiResponse? = null
-        val mergedFields = runCatching {
+        val mergedFields = runCatchingObserved {
             val remote = vaultApi.getCipher(
                 authorization = "Bearer $accessToken",
                 cipherId = cipherId
@@ -1186,7 +1187,7 @@ class BitwardenSyncService(
             symmetricKey = symmetricKey,
             mergedFields = mergedFields
         )
-        val requestPayload = runCatching { json.encodeToString(updateRequest) }.getOrNull()
+        val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
 
         try {
             val response = vaultApi.updateCipher(
@@ -1196,7 +1197,7 @@ class BitwardenSyncService(
             )
 
             if (!response.isSuccessful) {
-                val errorPayload = runCatching { response.errorBody()?.string() }.getOrNull()
+                val errorPayload = runCatchingObserved { response.errorBody()?.string() }.getOrNull()
                 captureRawExchange(
                     vaultId = vault.id,
                     operation = "upload_password_update",
@@ -1253,7 +1254,7 @@ class BitwardenSyncService(
                 endpoint = "/ciphers/$cipherId",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(updatedCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(updatedCipher) }.getOrNull(),
                 success = true
             )
 
@@ -1332,7 +1333,7 @@ class BitwardenSyncService(
         success: Boolean,
         error: String? = null
     ) {
-        runCatching {
+        runCatchingObserved {
             BitwardenSyncForensicsLogger.captureRawExchange(
                 context = context,
                 vaultId = vaultId,
@@ -1773,14 +1774,14 @@ class BitwardenSyncService(
     private fun toBitwardenArchivedDate(entry: PasswordEntry): String? {
         if (!entry.isArchived) return null
         val archiveDate = entry.archivedAt ?: entry.updatedAt
-        return runCatching {
+        return runCatchingObserved {
             Instant.ofEpochMilli(archiveDate.time).toString()
         }.getOrNull()
     }
 
     private fun parseRevisionMillis(revisionDate: String?): Long? {
         if (revisionDate.isNullOrBlank()) return null
-        return runCatching { Instant.parse(revisionDate).toEpochMilli() }.getOrNull()
+        return runCatchingObserved { Instant.parse(revisionDate).toEpochMilli() }.getOrNull()
     }
 
     private fun mergeCipherFieldsPreservingUnknown(
@@ -1859,7 +1860,7 @@ class BitwardenSyncService(
     ): Int {
         if (pendingEntries.isEmpty()) return 0
 
-        return runCatching {
+        return runCatchingObserved {
             val vaultApi = apiManager.getVaultApi(vault)
             val response = vaultApi.sync(
                 authorization = "Bearer $accessToken",
@@ -1870,10 +1871,10 @@ class BitwardenSyncService(
                     TAG,
                     "Failed to reconcile pending uploads before create: sync code=${response.code()}"
                 )
-                return@runCatching 0
+                return@runCatchingObserved 0
             }
 
-            val syncResponse = response.body() ?: return@runCatching 0
+            val syncResponse = response.body() ?: return@runCatchingObserved 0
             val remoteLoginCiphers = syncResponse.ciphers
                 .filter { it.type == 1 && it.deletedDate == null && !it.id.isBlank() }
 
@@ -2278,7 +2279,7 @@ class BitwardenSyncService(
         if (storedValue.isBlank()) return ""
         if (!securityManager.looksLikeBastionCiphertext(storedValue)) return storedValue
 
-        return runCatching { securityManager.decryptData(storedValue) }.getOrElse { error ->
+        return runCatchingObserved { securityManager.decryptData(storedValue) }.getOrElse { error ->
             throw IllegalStateException(
                 "Cannot decrypt local $fieldName for Bitwarden upload, entryId=$entryId",
                 error
@@ -2300,7 +2301,7 @@ class BitwardenSyncService(
         cipherId: String
     ): String {
         val primaryEncrypted = securityManager.encryptData(plainPassword)
-        val primaryReadable = runCatching { securityManager.decryptData(primaryEncrypted) }
+        val primaryReadable = runCatchingObserved { securityManager.decryptData(primaryEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false
@@ -2314,7 +2315,7 @@ class BitwardenSyncService(
         )
 
         val legacyEncrypted = securityManager.encryptDataLegacyCompat(plainPassword)
-        val legacyReadable = runCatching { securityManager.decryptData(legacyEncrypted) }
+        val legacyReadable = runCatchingObserved { securityManager.decryptData(legacyEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false

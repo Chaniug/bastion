@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.core
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import java.io.File
@@ -71,7 +72,7 @@ object AutofillLogger {
         if (persistentLogFile != null) return
         synchronized(fileLock) {
             if (persistentLogFile != null) return
-            runCatching {
+            runCatchingObserved {
                 val logDir = File(context.applicationContext.filesDir, LOG_DIR_NAME)
                 if (!logDir.exists()) {
                     logDir.mkdirs()
@@ -130,8 +131,10 @@ object AutofillLogger {
         
         // 控制台输出
         val logMessage = "[$category] $sanitizedMessage${
+
             sanitizedMetadata.takeIf { it.isNotEmpty() }?.let { " $it" } ?: ""
         }"
+
         emitAndroidLog(level, logMessage)
         
         // 内存存储（最近 500 条）
@@ -216,7 +219,7 @@ object AutofillLogger {
             logs.clear()
         }
         synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 persistentLogFile?.let { file ->
                     if (file.exists()) {
                         file.writeText("")
@@ -263,7 +266,7 @@ object AutofillLogger {
         val file = persistentLogFile ?: return ""
         if (!file.exists()) return ""
         return synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 file.readLines()
                     .takeLast(maxEntries.coerceAtLeast(1))
                     .joinToString(separator = "\n")
@@ -292,12 +295,14 @@ object AutofillLogger {
         writeExecutor.execute {
             val formatted = entry.format()
             synchronized(fileLock) {
-                runCatching {
+                runCatchingObserved {
                     if (file.exists() && file.length() > MAX_LOG_FILE_BYTES) {
                         file.writeText(
                             "=== log rotated at ${
+
                                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                             } ===\n"
+
                         )
                     }
                     file.appendText(formatted + "\n")

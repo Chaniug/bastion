@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +88,7 @@ class GoogleDriveKeePassFileSource(
     }
 
     override suspend fun listChildren(): List<FileSourceEntry> = withContext(Dispatchers.IO) {
-        val currentItem = runCatching { resolveFileItem() }.getOrNull()
+        val currentItem = runCatchingObserved { resolveFileItem() }.getOrNull()
         val targetId = when {
             currentItem == null -> null
             currentItem.isDirectory() -> currentItem.id
@@ -109,7 +110,7 @@ class GoogleDriveKeePassFileSource(
     }
 
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             if (itemId != null || normalizedRemotePath.isNotBlank()) {
                 val item = resolveFileItem()
                 if (item.isDirectory()) {
@@ -337,7 +338,7 @@ class GoogleDriveKeePassFileSource(
             val responseBody = response.body?.string().orEmpty()
             if (response.code !in expectedStatusCodes) {
                 if (response.code == 401) {
-                    runCatching { authManager.clearAccessToken(accessToken) }
+                    runCatchingObserved { authManager.clearAccessToken(accessToken) }
                 }
                 throw IOException(
                     responseBody.ifBlank { "Google Drive 请求失败: HTTP ${response.code}" }
@@ -359,7 +360,7 @@ class GoogleDriveKeePassFileSource(
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 if (response.code == 401) {
-                    runCatching { authManager.clearAccessToken(accessToken) }
+                    runCatchingObserved { authManager.clearAccessToken(accessToken) }
                 }
                 throw IOException(response.body?.string().orEmpty().ifBlank {
                     "Google Drive 下载失败: HTTP ${response.code}"
@@ -476,7 +477,7 @@ class GoogleDriveKeePassFileSource(
     }
 }
 
-private fun String.toEpochMillis(): Long? = runCatching { Instant.parse(this).toEpochMilli() }.getOrNull()
+private fun String.toEpochMillis(): Long? = runCatchingObserved { Instant.parse(this).toEpochMilli() }.getOrNull()
 
 object GoogleDriveKeePassSupport {
     fun createFileSource(

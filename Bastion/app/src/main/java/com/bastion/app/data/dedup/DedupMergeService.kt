@@ -1,5 +1,6 @@
 package com.bastion.app.data.dedup
 
+import com.bastion.app.logging.runCatchingObserved
 import java.net.URI
 import java.util.Date
 import java.util.Locale
@@ -948,7 +949,7 @@ class DedupMergeService(
     }
 
     private fun compactServerLabel(serverUrl: String): String? {
-        return runCatching {
+        return runCatchingObserved {
             URI(serverUrl).host
                 ?.removePrefix("www.")
                 ?.takeIf { it.isNotBlank() }
@@ -989,7 +990,7 @@ class DedupMergeService(
 
     private fun decryptComparablePassword(value: String): String {
         if (value.isBlank()) return ""
-        return runCatching { securityManager.decryptData(value) }
+        return runCatchingObserved { securityManager.decryptData(value) }
             .getOrDefault(value)
             .trim()
     }
@@ -1031,7 +1032,7 @@ class DedupMergeService(
     }
 
     private fun decodeNoteData(item: SecureItem): NoteData? {
-        return runCatching { json.decodeFromString<NoteData>(item.itemData) }.getOrNull()
+        return runCatchingObserved { json.decodeFromString<NoteData>(item.itemData) }.getOrNull()
     }
 
     private fun DocumentData.displayNameForCompare(): String {

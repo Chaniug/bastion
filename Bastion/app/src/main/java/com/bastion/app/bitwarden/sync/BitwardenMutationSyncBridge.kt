@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.sync
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 
@@ -37,7 +38,7 @@ object BitwardenMutationSyncBridge {
         requiresWifi: Boolean = false,
         autoSyncEnabled: Boolean = true
     ) {
-        val handledInProcess = runCatching {
+        val handledInProcess = runCatchingObserved {
             registration?.handler?.invoke(vaultId) == true
         }.onFailure { error ->
             Log.w(TAG, "In-process mutation sync handler failed", error)

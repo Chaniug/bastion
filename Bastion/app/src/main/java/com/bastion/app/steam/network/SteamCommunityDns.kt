@@ -1,5 +1,6 @@
 package com.bastion.app.steam.network
 
+import com.bastion.app.logging.runCatchingObserved
 import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -70,7 +71,7 @@ internal class SteamCommunityDns(
     }
 
     private fun logSafely(message: String) {
-        runCatching { logger(message) }
+        runCatchingObserved { logger(message) }
     }
 
     companion object {
@@ -101,7 +102,7 @@ internal class SteamCommunityDns(
                 .callTimeout(6, TimeUnit.SECONDS)
                 .build()
             val resolvers = endpoints.mapNotNull { endpoint ->
-                runCatching {
+                runCatchingObserved {
                     DnsOverHttps.Builder()
                         .client(dohClient)
                         .url(endpoint.url.toHttpUrl())

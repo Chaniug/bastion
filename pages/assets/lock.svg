@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140" role="img" aria-label="加密锁">
+  <defs>
+    <linearGradient id="body" x1="20" y1="60" x2="100" y2="135" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5FB0F2"/>
+      <stop offset="0.55" stop-color="#1E6FC0"/>
+      <stop offset="1" stop-color="#0A2A4D"/>
+    </linearGradient>
+    <radialGradient id="hole" cx="60" cy="100" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFEFC4"/>
+      <stop offset="0.55" stop-color="#F5B942"/>
+      <stop offset="1" stop-color="#B9760F"/>
+    </radialGradient>
+  </defs>
+  <!-- shackle -->
+  <path d="M38 62 V52 a22 22 0 0 1 44 0 V62" fill="none" stroke="#9FD4FF" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9"/>
+  <!-- body -->
+  <rect x="24" y="60" width="72" height="64" rx="16" fill="url(#body)"/>
+  <rect x="24" y="60" width="72" height="22" rx="16" fill="#FFFFFF" fill-opacity="0.16"/>
+  <rect x="24" y="60" width="72" height="64" rx="16" fill="none" stroke="#9FD4FF" stroke-opacity="0.5" stroke-width="1.5"/>
+  <!-- keyhole -->
+  <circle cx="60" cy="98" r="11" fill="url(#hole)"/>
+  <path d="M54 104 L66 104 L71 124 L49 124 Z" fill="url(#hole)"/>
+  <ellipse cx="56.5" cy="93" rx="3.4" ry="2.4" fill="#FFFFFF" fill-opacity="0.6"/>
+</svg>

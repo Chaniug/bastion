@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -65,7 +66,7 @@ class DedupEngineViewModel(
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.Default) {
                     mergeService.getSourceOptions() to mergeService.getTargetOptions()
                 }
@@ -248,7 +249,7 @@ class DedupEngineViewModel(
             val selectedTarget = _uiState.value.selectedMergeTarget
             val conflictPolicy = _uiState.value.conflictPolicy
             _uiState.update { it.copy(isAnalyzing = true, error = null) }
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.Default) {
                     mergeService.buildPlan(selectedKeys, selectedTarget, conflictPolicy)
                 }

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.net.Uri
 import android.widget.Toast
@@ -776,12 +777,12 @@ fun ImportDataScreen(
             passwords = passwordEntriesForPicker.filter { !it.isDeleted && !it.isArchived },
             onDismiss = { showSteamPasswordPicker = false },
             onSelect = { entry ->
-                val resolvedUsername = runCatching { pickerSecurityManager.decryptData(entry.username) }
+                val resolvedUsername = runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }
                     ?: entry.username.trim()
-                val resolvedPassword = runCatching { pickerSecurityManager.decryptData(entry.password) }
+                val resolvedPassword = runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }

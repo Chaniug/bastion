@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.executor
 
+import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.attachments.model.Attachment
 import com.bastion.app.attachments.model.AttachmentDownloadState
 import com.bastion.app.attachments.model.AttachmentSource
@@ -117,7 +118,7 @@ class KeePassAttachmentReconciler(
             }
         }
 
-        runCatching {
+        runCatchingObserved {
             AttachmentLogger.logOk(
                 event = AttachmentLogger.Event.RECONCILE,
                 attachmentId = null,

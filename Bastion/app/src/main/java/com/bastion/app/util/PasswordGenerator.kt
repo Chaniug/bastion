@@ -1,5 +1,6 @@
 package com.bastion.app.util
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import com.nulabinc.zxcvbn.Zxcvbn
 import com.bastion.app.data.PasswordEntry
@@ -569,7 +570,7 @@ class PasswordGenerator {
                 return entropyBasedCrackTimeSeconds(password)
             }
 
-            return runCatching {
+            return runCatchingObserved {
                 zxcvbn.measure(password)
                     .crackTimeSeconds
                     .offlineSlowHashing1e4perSecond

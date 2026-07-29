@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -144,7 +145,7 @@ internal fun passwordQuickAccessIdentity(entry: PasswordEntry): String {
             .substringBefore('/')
             .substringBefore('?')
             .trim()
-        runCatching { URI("https://$normalized").host.orEmpty() }
+        runCatchingObserved { URI("https://$normalized").host.orEmpty() }
             .getOrNull()
             .orEmpty()
             .ifBlank { normalized }

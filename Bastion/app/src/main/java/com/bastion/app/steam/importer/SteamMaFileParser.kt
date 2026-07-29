@@ -1,5 +1,6 @@
 package com.bastion.app.steam.importer
 
+import com.bastion.app.logging.runCatchingObserved
 import java.net.URLDecoder
 import java.security.MessageDigest
 import java.util.Base64
@@ -308,10 +309,10 @@ class SteamMaFileParser(
 
     private fun decodeBase64OrNull(value: String): ByteArray? {
         if (value.isBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             Base64.getDecoder().decode(value.withBase64Padding())
         }.getOrNull()
-            ?: runCatching {
+            ?: runCatchingObserved {
                 Base64.getUrlDecoder().decode(value.withBase64Padding())
             }.getOrNull()
     }
@@ -343,7 +344,7 @@ class SteamMaFileParser(
     }
 
     private fun String.decodeUriComponent(): String {
-        return runCatching {
+        return runCatchingObserved {
             URLDecoder.decode(replace("+", "%2B"), Charsets.UTF_8.name())
         }.getOrDefault(this)
     }

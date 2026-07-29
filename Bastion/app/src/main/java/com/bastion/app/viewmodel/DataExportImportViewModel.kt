@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -1100,7 +1101,7 @@ class DataExportImportViewModel(
             val passwordEntries = passwordRepository.getAllPasswordEntries().first()
             val secureItems = secureItemRepository.getAllItems().first()
             val exportedPasswords = passwordEntries.map { entry ->
-                val exportedPassword = runCatching { securityManager.decryptData(entry.password) }
+                val exportedPassword = runCatchingObserved { securityManager.decryptData(entry.password) }
                     .getOrElse { error ->
                         android.util.Log.w(
                             "DataExport",

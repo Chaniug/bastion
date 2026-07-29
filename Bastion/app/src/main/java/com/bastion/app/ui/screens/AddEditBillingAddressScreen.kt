@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -235,7 +236,7 @@ fun AddEditBillingAddressScreen(
             isSaving = true
             val target = selectedStorageTargets.firstOrNull() ?: StorageTarget.BastionLocal(null)
             scope.launch {
-                runCatching {
+                runCatchingObserved {
                     when (target) {
                         is StorageTarget.BastionLocal -> {
                             if (addressId == null) {

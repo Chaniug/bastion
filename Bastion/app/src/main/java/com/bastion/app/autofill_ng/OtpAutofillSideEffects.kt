@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.Context
 import android.os.Build
@@ -53,7 +54,7 @@ suspend fun performOtpAutofillSideEffects(
         return
     }
 
-    runCatching {
+    runCatchingObserved {
         val preferences = AutofillPreferences(context)
         val showNotification = withContext(Dispatchers.IO) {
             preferences.isOtpNotificationEnabled.first()
@@ -125,7 +126,7 @@ suspend fun generateOtpCodeForPassword(context: Context, password: PasswordEntry
         Log.w(TAG, "generateOtpCodeForPassword: no TOTP resolved, passwordId=${password.id}")
         return null
     }
-    return runCatching {
+    return runCatchingObserved {
         val resolvedTotpData = resolveTotpDataForGeneration(context, totpData)
         val code = TotpGenerator.generateOtp(resolvedTotpData)
         Log.d(TAG, "generated OTP for fill (len=${code.length}), passwordId=${password.id}")
@@ -175,14 +176,14 @@ private suspend fun resolveSteamGuardCodeForPassword(context: Context, password:
     }
     if (hasResolvableTotp) return null
 
-    return runCatching {
+    return runCatchingObserved {
         val securityManager = SecurityManager(context)
         val steamRepo = SteamAccountRepository(
             SteamDatabase.getDatabase(context).steamAccountDao(),
             securityManager
         )
         val accounts = steamRepo.getAccounts()
-        if (accounts.isEmpty()) return@runCatching null
+        if (accounts.isEmpty()) return@runCatchingObserved null
         val matched = accounts.firstOrNull { acct ->
             acct.accountName.equals(password.username, ignoreCase = true)
                 || acct.displayName.equals(password.username, ignoreCase = true)
@@ -202,29 +203,36 @@ private suspend fun resolveOtpFromExistingValidators(
     password: PasswordEntry,
     passwordTotpData: TotpData?,
 ): TotpData? {
-    val validatorTotpList = withContext(Dispatchers.IO) {
+    val result = withContext(Dispatchers.IO) {
         val securityManager = SecurityManager(context)
         val dao = PasswordDatabase.getDatabase(context).secureItemDao()
-        dao.getActiveItemsByTypeSync(ItemType.TOTP)
-            .mapNotNull { item ->
-                TotpDataResolver.parseStoredItemData(
-                    itemData = item.itemData,
-                    fallbackIssuer = item.title,
-                    decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
-                )
-            }
+        val items = dao.getActiveItemsByTypeSync(ItemType.TOTP)
+        if (items.isEmpty()) return@withContext null
+
+        // 按需解密 + 早退：先按 boundPasswordId 匹配，命中即返回，不再解密剩余条目。
+        // 原实现用 mapNotNull 先全量解密所有 TOTP 条目再匹配，大 vault（大量 TOTP 校验器）
+        // 下每次密码填充都做 O(N) 次 AES-GCM 解密；改为逐条解密、命中即退，
+        // 常见情形从 O(N) 降到约 O(1) 次解密。匹配优先级（先 boundPasswordId 后 identityKey）
+        // 与原逻辑完全一致，行为零变化。
+        val parsed = mutableListOf<TotpData>()
+        for (item in items) {
+            val totp = TotpDataResolver.parseStoredItemData(
+                itemData = item.itemData,
+                fallbackIssuer = item.title,
+                decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+            ) ?: continue
+            if (totp.boundPasswordId == password.id) return@withContext totp
+            parsed.add(totp)
+        }
+
+        val identityKey = buildTotpIdentityKey(passwordTotpData)
+        if (identityKey.isNotEmpty()) {
+            parsed.firstOrNull { buildTotpIdentityKey(it) == identityKey }
+        } else {
+            null
+        }
     }
-
-    if (validatorTotpList.isEmpty()) return null
-
-    validatorTotpList.firstOrNull { it.boundPasswordId == password.id }?.let { return it }
-
-    val identityKey = buildTotpIdentityKey(passwordTotpData)
-    if (identityKey.isNotEmpty()) {
-        validatorTotpList.firstOrNull { buildTotpIdentityKey(it) == identityKey }?.let { return it }
-    }
-
-    return null
+    return result
 }
 
 private fun buildTotpIdentityKey(data: TotpData?): String {
@@ -242,7 +250,7 @@ private fun buildTotpIdentityKey(data: TotpData?): String {
 
 private fun resolveTotpDataForGeneration(context: Context, totpData: TotpData): TotpData {
     val securityManager = SecurityManager(context)
-    val decryptResult = runCatching { securityManager.decryptData(totpData.secret) }
+    val decryptResult = runCatchingObserved { securityManager.decryptData(totpData.secret) }
     val decryptedSecret = decryptResult.getOrNull()
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
@@ -262,7 +270,7 @@ private fun resolveTotpDataForGeneration(context: Context, totpData: TotpData): 
 private fun parsePasswordAuthenticatorTotpData(context: Context, authenticatorKey: String): TotpData? {
     val securityManager = SecurityManager(context)
     return TotpDataResolver.fromAuthenticatorKey(
-        rawKey = runCatching {
+        rawKey = runCatchingObserved {
             securityManager.decryptDataIfBastionCiphertext(authenticatorKey)
         }.getOrDefault(authenticatorKey)
     )

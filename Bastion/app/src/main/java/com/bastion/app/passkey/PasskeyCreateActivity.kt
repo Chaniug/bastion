@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -399,7 +400,7 @@ class PasskeyCreateActivity : FragmentActivity() {
                         }
                         if (flow.value.isEmpty()) {
                             scope.launch {
-                                flow.value = runCatching {
+                                flow.value = runCatchingObserved {
                                     mdbxVaultStore.listFolders(databaseId)
                                 }.getOrDefault(emptyList())
                             }
@@ -951,7 +952,7 @@ class PasskeyCreateActivity : FragmentActivity() {
         boundPasswordId: Long?
     ) {
         if (credentialId.isNullOrBlank()) return
-        runCatching {
+        runCatchingObserved {
             kotlinx.coroutines.runBlocking {
                 val createdPasskey = database.passkeyDao().getPasskeyById(credentialId)
                 if (createdPasskey != null) {
@@ -1047,7 +1048,7 @@ class PasskeyCreateActivity : FragmentActivity() {
 
     private fun extractRequestOrigin(requestJson: String): String? {
         if (requestJson.isBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             JSONObject(requestJson).optString("origin").takeIf { it.isNotBlank() }
         }.getOrNull()
     }

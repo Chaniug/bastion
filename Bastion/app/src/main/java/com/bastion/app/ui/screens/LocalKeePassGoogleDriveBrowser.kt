@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -141,7 +142,7 @@ fun KeepassGoogleDriveBrowserBottomSheet(
         coroutineScope.launch {
             isConnecting = true
             browserError = null
-            runCatching {
+            runCatchingObserved {
                 authManager.completeAuthorization(result.data)
             }.onSuccess { resolvedSession ->
                 session = resolvedSession
@@ -170,7 +171,7 @@ fun KeepassGoogleDriveBrowserBottomSheet(
 
             if (forceSwitch) {
                 session?.let { activeSession ->
-                    runCatching { authManager.revokeAccess(activeSession.accountId) }
+                    runCatchingObserved { authManager.revokeAccess(activeSession.accountId) }
                 }
                 session = null
                 entries = emptyList()
@@ -178,7 +179,7 @@ fun KeepassGoogleDriveBrowserBottomSheet(
                 currentFolderId = null
             }
 
-            runCatching { authManager.beginAuthorization() }
+            runCatchingObserved { authManager.beginAuthorization() }
                 .onSuccess { step ->
                     when (step) {
                         is GoogleDriveAuthorizationStep.Authorized -> {
@@ -203,7 +204,7 @@ fun KeepassGoogleDriveBrowserBottomSheet(
     }
 
     LaunchedEffect(Unit) {
-        runCatching { authManager.getCachedSession() }
+        runCatchingObserved { authManager.getCachedSession() }
             .getOrNull()
             ?.let { cached ->
                 session = cached

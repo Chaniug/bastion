@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -104,7 +105,7 @@ class ClipboardUtils(private val context: Context) {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val snapshot = readClipboardSnapshot(context, clipboard)
             if (shouldClearDelayedClipboard(snapshot, label, text)) {
-                runCatching {
+                runCatchingObserved {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         clipboard.clearPrimaryClip()
                     } else {
@@ -118,7 +119,7 @@ class ClipboardUtils(private val context: Context) {
             context: Context,
             clipboard: ClipboardManager
         ): ClipboardSnapshot {
-            return runCatching {
+            return runCatchingObserved {
                 val currentClip = clipboard.primaryClip
                 if (currentClip == null) {
                     ClipboardSnapshot(text = null, label = null, canVerify = false)

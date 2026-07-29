@@ -1,5 +1,6 @@
 package com.bastion.app
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -360,7 +361,7 @@ class MainActivity : BaseBastionActivity() {
 
         // Initialize dependencies
         val database = PasswordDatabase.getDatabase(this)
-        val securityManager = SecurityManager(this)
+        val securityManager = SecurityManager.instance(this)
         val mdbxRepository: MdbxRepository = MdbxVaultStore(
             this.applicationContext,
             database.localMdbxDatabaseDao(),
@@ -631,16 +632,16 @@ fun BastionApp(
     var startupAuthState by remember { mutableStateOf<MainAppAccessState?>(null) }
     LaunchedEffect(passkeyRepository) {
         withContext(Dispatchers.IO) {
-            runCatching { passkeyRepository.protectPlaintextPrivateKeys() }
+            runCatchingObserved { passkeyRepository.protectPlaintextPrivateKeys() }
         }
     }
 
     LaunchedEffect(viewModel, settingsManager) {
         val loadedState = withContext(Dispatchers.IO) {
-            val settingsSnapshot = runCatching {
+            val settingsSnapshot = runCatchingObserved {
                 settingsManager.settingsFlow.first()
             }.getOrElse { AppSettings() }
-            runCatching {
+            runCatchingObserved {
                 SessionManager.updateAutoLockTimeout(settingsSnapshot.autoLockMinutes)
                 MainAppLockPolicy.resolveAccessState(
                     securityManager,
@@ -923,7 +924,7 @@ fun BastionContent(
                 }
             }
             withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingObserved {
                     delay(15_000)
                     sensitiveFieldMigrationManager.runUnlockedSmallBatch()
                 }.onFailure { error ->
@@ -1874,7 +1875,7 @@ fun BastionContent(
         ) { backStackEntry ->
             AddEditRouteContent {
             val initialTypeRaw = backStackEntry.arguments?.getString("initialType").orEmpty()
-            val initialType = runCatching {
+            val initialType = runCatchingObserved {
                 com.bastion.app.ui.screens.CardWalletTab.valueOf(initialTypeRaw)
             }.getOrDefault(com.bastion.app.ui.screens.CardWalletTab.BANK_CARDS)
             val pendingStorageDefaults = remember(backStackEntry) {
@@ -3958,7 +3959,7 @@ fun BastionContent(
 private fun launchSystemFidoQrIntent(context: Context, rawQrData: String): Int? {
     val qrData = rawQrData.trim()
     if (qrData.isBlank()) return R.string.passkey_qr_invalid
-    val uri = runCatching { Uri.parse(qrData) }.getOrNull()
+    val uri = runCatchingObserved { Uri.parse(qrData) }.getOrNull()
         ?: return R.string.passkey_qr_invalid
     val scheme = uri.scheme.orEmpty()
     if (scheme.isBlank()) return R.string.passkey_qr_invalid
@@ -3967,7 +3968,7 @@ private fun launchSystemFidoQrIntent(context: Context, rawQrData: String): Int? 
         addCategory(Intent.CATEGORY_BROWSABLE)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    return runCatching {
+    return runCatchingObserved {
         context.startActivity(intent)
     }.fold(
         onSuccess = { null },

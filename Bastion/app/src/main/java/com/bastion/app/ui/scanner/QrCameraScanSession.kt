@@ -1,5 +1,6 @@
 package com.bastion.app.ui.scanner
 
+import com.bastion.app.logging.runCatchingObserved
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
@@ -81,7 +82,7 @@ internal class QrCameraScanSession(
         previewView.controller = controller
         previewView.previewStreamState.observeForever(previewObserver)
 
-        runCatching {
+        runCatchingObserved {
             controller.bindToLifecycle(lifecycleOwner)
         }.onFailure { error ->
             diagnostics?.logCameraBindFailed(error)
@@ -92,7 +93,7 @@ internal class QrCameraScanSession(
         controller.initializationFuture.addListener(
             {
                 if (!active.get()) return@addListener
-                runCatching { controller.initializationFuture.get() }
+                runCatchingObserved { controller.initializationFuture.get() }
                     .onSuccess {
                         diagnostics?.logCameraBindSuccess(SystemClock.elapsedRealtime() - startedAt)
                         previewView.post { requestCenterFocus(reason = "session_start") }
@@ -149,11 +150,11 @@ internal class QrCameraScanSession(
             if (!frameFinished.compareAndSet(false, true)) return
             healthPolicy.onFrameCompleted(SystemClock.elapsedRealtime(), succeeded)
             processingFrame.set(false)
-            runCatching { imageProxy.close() }
+            runCatchingObserved { imageProxy.close() }
         }
 
         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        val task = runCatching { scanner.process(inputImage) }
+        val task = runCatchingObserved { scanner.process(inputImage) }
             .onFailure { error ->
                 diagnostics?.logFrameFailure(error)
                 finishFrame(succeeded = false)
@@ -168,7 +169,7 @@ internal class QrCameraScanSession(
                 .flatMap { it.candidateValues() }
                 .distinct()
             val durationMs = SystemClock.elapsedRealtime() - frameStartedAt
-            val matched = runCatching {
+            val matched = runCatchingObserved {
                 onCandidates(candidates, barcodes.size, durationMs)
             }.getOrDefault(false)
             diagnostics?.logFrameSuccess(
@@ -188,7 +189,7 @@ internal class QrCameraScanSession(
         if (!active.get() || !previewStreaming.get()) return false
         if (previewView.width <= 0 || previewView.height <= 0) return false
 
-        return runCatching {
+        return runCatchingObserved {
             val point = previewView.meteringPointFactory.createPoint(
                 previewView.width / 2f,
                 previewView.height / 2f,
@@ -202,7 +203,7 @@ internal class QrCameraScanSession(
             )
                 .setAutoCancelDuration(FOCUS_AUTO_CANCEL_SECONDS, TimeUnit.SECONDS)
                 .build()
-            val cameraControl = controller.cameraControl ?: return@runCatching false
+            val cameraControl = controller.cameraControl ?: return@runCatchingObserved false
             cameraControl.startFocusAndMetering(action)
             diagnostics?.logRefocusRequested(reason)
             true
@@ -227,11 +228,11 @@ internal class QrCameraScanSession(
         if (!closed.compareAndSet(false, true)) return
         diagnostics?.logDispose(processingFrame.get())
         previewStreaming.set(false)
-        runCatching { previewView.previewStreamState.removeObserver(previewObserver) }
-        runCatching { controller.clearImageAnalysisAnalyzer() }
-        runCatching { previewView.controller = null }
-        runCatching { controller.unbind() }
-        runCatching { scanner.close() }
+        runCatchingObserved { previewView.previewStreamState.removeObserver(previewObserver) }
+        runCatchingObserved { controller.clearImageAnalysisAnalyzer() }
+        runCatchingObserved { previewView.controller = null }
+        runCatchingObserved { controller.unbind() }
+        runCatchingObserved { scanner.close() }
         analysisExecutor.shutdown()
     }
 

@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 /**
  * Builds an ordered entry-level replay batch from persisted KeePass pending changes.
  *
@@ -37,7 +38,7 @@ class KeePassPendingFlushPlanner(
         val blocked = mutableListOf<KeePassPendingFlushBlockedItem>()
 
         pendingChanges.forEach { pending ->
-            val decoded = runCatching { pending.toChangeSet() }
+            val decoded = runCatchingObserved { pending.toChangeSet() }
             val changeSet = decoded.getOrNull()
             if (changeSet == null) {
                 blocked += KeePassPendingFlushBlockedItem(

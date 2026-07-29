@@ -1,5 +1,6 @@
 package com.bastion.app.data.maintenance
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ContentValues
 import android.database.Cursor
 import android.util.Base64
@@ -56,7 +57,7 @@ class MaintenanceSnapshotManager(
     }
 
     suspend fun restorePayload(payload: TimelineMaintenanceSnapshotPayload): RestoreStats = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val writableDb = database.openHelper.writableDatabase
             val passwordRows = resolveRows(payload.passwordRows, payload.passwordRowsCompressedChunks, payload.compression)
             val secureRows = resolveRows(payload.secureItemRows, payload.secureItemRowsCompressedChunks, payload.compression)
@@ -252,7 +253,7 @@ class MaintenanceSnapshotManager(
     }
 
     private fun parseId(rowJson: String): Long? {
-        return runCatching {
+        return runCatchingObserved {
             val obj = JSONObject(rowJson)
             obj.optLong("id").takeIf { it > 0L }
         }.getOrNull()
@@ -270,7 +271,7 @@ class MaintenanceSnapshotManager(
     }
 
     private fun decodeRowsFromChunks(chunks: List<String>): List<String> {
-        return runCatching {
+        return runCatchingObserved {
             val encoded = chunks.joinToString(separator = "")
             val compressed = Base64.decode(encoded, Base64.NO_WRAP)
             val text = GZIPInputStream(ByteArrayInputStream(compressed)).bufferedReader(Charsets.UTF_8).use {

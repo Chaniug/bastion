@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -270,7 +271,7 @@ class MdbxViewModel(
         password: String,
         path: String? = null
     ): Result<List<FileSourceEntry>> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val source = WebDavMdbxFileSource(serverUrl, username, password)
             source.listDirectory(path)
         }
@@ -278,8 +279,8 @@ class MdbxViewModel(
 
     suspend fun readSelectedKeyFile(uri: Uri): Result<MdbxKeyFileSelection> =
         withContext(Dispatchers.IO) {
-            runCatching {
-                runCatching {
+            runCatchingObserved {
+                runCatchingObserved {
                     context.contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -298,12 +299,12 @@ class MdbxViewModel(
 
     suspend fun writeGeneratedKeyFile(targetUri: Uri): Result<MdbxKeyFileSelection> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 val bytes = MdbxVaultCrypto.generateKeyFileBytes()
                 context.contentResolver.openOutputStream(targetUri, "wt")?.use { output ->
                     output.write(bytes)
                 } ?: throw IllegalArgumentException("Unable to write MDBX key file")
-                runCatching {
+                runCatchingObserved {
                     context.contentResolver.takePersistableUriPermission(
                         targetUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -440,7 +441,7 @@ class MdbxViewModel(
                     } ?: throw IllegalArgumentException("Unable to read selected MDBX file")
 
                     // Take persistent URI permissions (read + write)
-                    runCatching {
+                    runCatchingObserved {
                         context.contentResolver.takePersistableUriPermission(
                             sourceUri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -730,7 +731,7 @@ class MdbxViewModel(
         accountId: String,
         currentPath: String?
     ): Result<OneDriveMdbxDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = OneDriveKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val entries = OneDriveMdbxFileSource(context, accountId).listDirectory(normalizedPath)
             OneDriveMdbxDirectoryListing(
@@ -1099,7 +1100,7 @@ class MdbxViewModel(
                 }
                 SyncDiagnostics.success(taskId, targetLog, triggerLog, startedAt)
             } catch (error: Exception) {
-                runCatching { refreshSingleVaultState(databaseId) }
+                runCatchingObserved { refreshSingleVaultState(databaseId) }
                 SyncDiagnostics.failed(taskId, targetLog, triggerLog, startedAt, error)
                 throw error
             }
@@ -2078,7 +2079,7 @@ class MdbxViewModel(
             }
         } ?: throw IllegalArgumentException("Cannot write to selected directory")
 
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.takePersistableUriPermission(
                 treeUri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -2096,7 +2097,7 @@ class MdbxViewModel(
     }
 
     private fun queryDisplayName(uri: Uri): String? {
-        return runCatching {
+        return runCatchingObserved {
             context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 if (nameIndex >= 0 && cursor.moveToFirst()) cursor.getString(nameIndex) else null
@@ -2145,7 +2146,7 @@ class MdbxViewModel(
         val remotePasswordRoomIdsByEntryId = entries
             .filter { !it.deleted && it.entryType == "login" }
             .mapNotNull { stored ->
-                runCatching { JSONObject(stored.payloadJson) }
+                runCatchingObserved { JSONObject(stored.payloadJson) }
                     .getOrNull()
                     ?.optLong("room_id", 0L)
                     ?.takeIf { it > 0L }
@@ -2198,7 +2199,7 @@ class MdbxViewModel(
         }
         val importMs = measureTimeMillis {
             entries.filterNot { it.deleted }.forEach { stored ->
-                val payload = runCatching { JSONObject(stored.payloadJson) }.getOrNull()
+                val payload = runCatchingObserved { JSONObject(stored.payloadJson) }.getOrNull()
                     ?: return@forEach
                 payloadByEntryId[stored.entryId] = payload
                 if (stored.entryType == "login") {
@@ -2716,7 +2717,7 @@ class MdbxViewModel(
     }
 
     private fun hasReadableDocumentUri(uriString: String): Boolean {
-        return runCatching {
+        return runCatchingObserved {
             val uri = Uri.parse(uriString)
             context.contentResolver.openInputStream(uri)?.use { input ->
                 input.read(ByteArray(1))
@@ -2733,7 +2734,7 @@ class MdbxViewModel(
         val plainPassword = payload.optString("password_plain")
             .takeIf { it.isNotEmpty() }
             ?: payload.optString("password").takeIf { it.isNotEmpty() }?.let { value ->
-                runCatching { securityManager.decryptData(value) }.getOrDefault(value)
+                runCatchingObserved { securityManager.decryptData(value) }.getOrDefault(value)
             }
             ?: ""
         val entry = PasswordEntry(
@@ -2924,11 +2925,11 @@ class MdbxViewModel(
             .takeIf { it.isNotBlank() }
             ?: return itemData
         val localPasswordId = importedPasswordIds[boundPasswordEntryId] ?: return itemData
-        return runCatching {
+        return runCatchingObserved {
             val decoded = TotpDataResolver.parseStoredItemData(
                 itemData = itemData,
                 decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
-            ) ?: return@runCatching itemData
+            ) ?: return@runCatchingObserved itemData
             val remappedJson = Json.encodeToString(decoded.copy(boundPasswordId = localPasswordId))
             if (securityManager.looksLikeBastionCiphertext(itemData)) {
                 securityManager.encryptDataLegacyCompat(remappedJson)
@@ -3023,7 +3024,7 @@ class MdbxViewModel(
     }
 
     private fun decryptBastionCiphertextOrRaw(value: String): String {
-        return runCatching { securityManager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
+        return runCatchingObserved { securityManager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
     }
 
     private fun JSONObject.optMdbxFolderId(): String? {
@@ -3060,7 +3061,7 @@ class MdbxViewModel(
             attachmentDao.purgeByParent(parentPasswordId)
             remoteAttachments.forEach remoteLoop@{ stored ->
                 val wrappedCek = stored.wrappedCek ?: return@remoteLoop
-                val localWrappedCek = runCatching {
+                val localWrappedCek = runCatchingObserved {
                     MdbxAttachmentCekPayload.toLocalWrappedCek(
                         storedValue = wrappedCek,
                         wrapBase64 = securityManager::encryptData

@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import com.thegrizzlylabs.sardineandroid.DavResource
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,7 @@ class WebDavMdbxFileSource(
     private val sardine: OkHttpSardine by lazy { WebDavGateway.buildClient(credentials) }
 
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             sardine.list(normalizedServerUrl, 0)
         }.map { Unit }
     }

@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
@@ -162,9 +163,9 @@ data class LocalMdbxDatabase(
 ) {
     val tigaModeEnum: MdbxTigaMode get() = MdbxTigaMode.fromName(tigaMode)
     val storageLocationEnum: MdbxStorageLocation get() =
-        runCatching { MdbxStorageLocation.valueOf(storageLocation) }.getOrDefault(MdbxStorageLocation.REMOTE_WEBDAV)
+        runCatchingObserved { MdbxStorageLocation.valueOf(storageLocation) }.getOrDefault(MdbxStorageLocation.REMOTE_WEBDAV)
     val sourceTypeEnum: MdbxSourceType get() =
-        runCatching { MdbxSourceType.valueOf(sourceType) }.getOrDefault(MdbxSourceType.REMOTE_WEBDAV)
+        runCatchingObserved { MdbxSourceType.valueOf(sourceType) }.getOrDefault(MdbxSourceType.REMOTE_WEBDAV)
     val unlockMethodEnum: MdbxUnlockMethod get() = MdbxUnlockMethod.fromStoredValue(unlockMethod)
 }
 

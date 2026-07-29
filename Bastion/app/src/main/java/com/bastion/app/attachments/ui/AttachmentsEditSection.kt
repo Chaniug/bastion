@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -109,7 +110,7 @@ fun AttachmentsEditSection(
             return
         }
         scope.launch {
-            runCatching {
+            runCatchingObserved {
                 facade.addAttachment(
                     AttachmentFacade.UploadRequest(
                         parentPasswordId = passwordId,
@@ -131,7 +132,7 @@ fun AttachmentsEditSection(
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         // 保持 URI 读权限，避免草稿阶段关闭 picker 后权限被收回
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.takePersistableUriPermission(
                 uri,
                 android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -214,7 +215,7 @@ fun AttachmentsEditSection(
                     secondary = formatSecondaryShort(attachment),
                     onDelete = {
                         scope.launch {
-                            runCatching {
+                            runCatchingObserved {
                                 facade.deleteAttachment(
                                     attachmentId = attachment.id,
                                     keepassContext = keepassContext
@@ -266,7 +267,7 @@ suspend fun flushPendingDraftsTo(
     var successCount = 0
     val snapshot = pendingDrafts.toList()
     snapshot.forEach { draft ->
-        val result = runCatching {
+        val result = runCatchingObserved {
             facade.addAttachment(
                 AttachmentFacade.UploadRequest(
                     parentPasswordId = passwordId,

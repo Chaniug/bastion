@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -297,7 +298,7 @@ class LocalKeePassViewModel(
                     val options = diagnostics.creationOptions
                     val encryptedPassword = securityManager.encryptData(passwordToUse)
                     if (keyFileUri != null) {
-                        runCatching {
+                        runCatchingObserved {
                             context.contentResolver.takePersistableUriPermission(
                                 keyFileUri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -488,7 +489,7 @@ class LocalKeePassViewModel(
                     }
                     
                     if (keyFileUri != null) {
-                        runCatching {
+                        runCatchingObserved {
                             context.contentResolver.takePersistableUriPermission(
                                 keyFileUri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -621,7 +622,7 @@ class LocalKeePassViewModel(
                         output.write(xmlContent.toByteArray())
                     } ?: throw Exception("无法写入文件")
                     
-                    runCatching {
+                    runCatchingObserved {
                         context.contentResolver.takePersistableUriPermission(
                             uri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -674,7 +675,7 @@ class LocalKeePassViewModel(
                     val encryptedPassword = if (password.isNotBlank()) securityManager.encryptData(password) else null
                     
                     // 获取持久化 URI 权限
-                    runCatching {
+                    runCatchingObserved {
                         context.contentResolver.takePersistableUriPermission(
                             uri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -684,7 +685,7 @@ class LocalKeePassViewModel(
                     }
                     
                     if (keyFileUri != null) {
-                        runCatching {
+                        runCatchingObserved {
                             context.contentResolver.takePersistableUriPermission(
                                 keyFileUri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -1139,7 +1140,7 @@ class LocalKeePassViewModel(
         username: String,
         webDavPassword: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             buildWebDavFileSource(
                 serverUrl = serverUrl,
                 username = username,
@@ -1154,7 +1155,7 @@ class LocalKeePassViewModel(
         webDavPassword: String,
         currentPath: String?
     ): Result<WebDavDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = WebDavKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val entries = buildWebDavFileSource(
                 serverUrl = serverUrl,
@@ -1173,7 +1174,7 @@ class LocalKeePassViewModel(
         accountId: String,
         currentPath: String?
     ): Result<OneDriveDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = OneDriveKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val entries = OneDriveKeePassFileSource(
                 context = context,
@@ -1192,7 +1193,7 @@ class LocalKeePassViewModel(
         currentPath: String?,
         currentFolderId: String?
     ): Result<GoogleDriveDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = GoogleDriveKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val entries = GoogleDriveKeePassFileSource(
                 context = context,
@@ -1216,7 +1217,7 @@ class LocalKeePassViewModel(
         currentPath: String?,
         folderName: String
     ): Result<WebDavDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = WebDavKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val fileSource = buildWebDavFileSource(
                 serverUrl = serverUrl,
@@ -1238,7 +1239,7 @@ class LocalKeePassViewModel(
         currentPath: String?,
         folderName: String
     ): Result<OneDriveDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = OneDriveKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val fileSource = OneDriveKeePassFileSource(
                 context = context,
@@ -1260,7 +1261,7 @@ class LocalKeePassViewModel(
         currentFolderId: String?,
         folderName: String
     ): Result<GoogleDriveDirectoryListing> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val normalizedPath = GoogleDriveKeePassFileSource.normalizeOptionalRemotePath(currentPath)
             val fileSource = GoogleDriveKeePassFileSource(
                 context = context,
@@ -2158,7 +2159,7 @@ class LocalKeePassViewModel(
             val attachmentRepository = com.bastion.app.attachments.AttachmentContainer
                 .repository(context)
             keepassEntries.forEach { entry ->
-                runCatching {
+                runCatchingObserved {
                     attachmentRepository.convertSourceToLocal(
                         passwordId = entry.id,
                         fromSource = com.bastion.app.attachments.model.AttachmentSource.KEEPASS
@@ -2227,7 +2228,7 @@ class LocalKeePassViewModel(
         targets: List<PasswordEntry>
     ) {
         if (targets.isEmpty()) return
-        runCatching {
+        runCatchingObserved {
             compatibilityBridge.deleteLegacyPasswordEntries(
                 databaseId = databaseId,
                 entries = targets
@@ -2391,7 +2392,7 @@ class LocalKeePassViewModel(
         if (keyFileUri == null) {
             return null
         }
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.takePersistableUriPermission(
                 keyFileUri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -2473,7 +2474,7 @@ class LocalKeePassViewModel(
             fileSource.testConnection().getOrThrow()
 
             val remoteBytes = fileSource.read()
-            val remoteStat = runCatching { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
+            val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
             if ((remoteSource.itemId.isNullOrBlank() || remoteSource.driveId.isNullOrBlank()) &&
                 (!remoteStat.remoteId.isNullOrBlank() || !remoteStat.driveId.isNullOrBlank())
             ) {
@@ -2649,7 +2650,7 @@ class LocalKeePassViewModel(
             fileSource.testConnection().getOrThrow()
 
             val remoteBytes = fileSource.read()
-            val remoteStat = runCatching { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
+            val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
             val mirrorPaths = GoogleDriveKeePassSupport.buildLocalMirrorPaths(
                 sourceId = remoteSourceId,
                 remotePath = normalizedRemotePath
@@ -2812,7 +2813,7 @@ class LocalKeePassViewModel(
             fileSource.testConnection().getOrThrow()
 
             val remoteBytes = fileSource.read()
-            val remoteStat = runCatching { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
+            val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(com.bastion.app.utils.FileSourceStat())
             val mirrorPaths = WebDavKeePassSupport.buildLocalMirrorPaths(
                 sourceId = remoteSourceId,
                 remotePath = normalizedRemotePath

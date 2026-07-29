@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
@@ -21,7 +22,7 @@ object AppUpdateSecurityGuard {
 
     fun enforceLockIfAppUpdated(context: Context, reason: String) {
         val appContext = context.applicationContext
-        val packageInfo = runCatching {
+        val packageInfo = runCatchingObserved {
             getPackageInfoCompat(appContext)
         }.getOrElse { error ->
             Log.w(TAG, "Failed to inspect package info for reason=$reason", error)

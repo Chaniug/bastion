@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import com.bastion.app.data.PasskeyEntry
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -47,7 +48,7 @@ object PasskeyPrivateKeySupport {
         if (normalized.isBlank()) return false
         if (decodeFlexiblePrivateKey(normalized) != null) return true
 
-        return runCatching {
+        return runCatchingObserved {
             val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
             keyStore.load(null)
             val entry = keyStore.getEntry(normalized, null) as? KeyStore.PrivateKeyEntry
@@ -61,7 +62,7 @@ object PasskeyPrivateKeySupport {
         if (normalized.isBlank()) return null
         exportPkcs8Base64(normalized)?.let { return it }
 
-        return runCatching {
+        return runCatchingObserved {
             val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER)
             keyStore.load(null)
             val entry = keyStore.getEntry(normalized, null) as? KeyStore.PrivateKeyEntry
@@ -80,7 +81,7 @@ object PasskeyPrivateKeySupport {
             PasskeyEntry.ALGORITHM_ES256 -> Signature.getInstance("SHA256withECDSA")
             PasskeyEntry.ALGORITHM_RS256 -> Signature.getInstance("SHA256withRSA")
             PasskeyEntry.ALGORITHM_PS256 -> {
-                runCatching { Signature.getInstance("SHA256withRSA/PSS") }.getOrElse {
+                runCatchingObserved { Signature.getInstance("SHA256withRSA/PSS") }.getOrElse {
                     Signature.getInstance("RSASSA-PSS").apply {
                         setParameter(
                             PSSParameterSpec(
@@ -137,13 +138,13 @@ object PasskeyPrivateKeySupport {
         keyAlgorithm: String,
         keySpec: PKCS8EncodedKeySpec
     ): PrivateKey? {
-        val defaultKey = runCatching {
+        val defaultKey = runCatchingObserved {
             KeyFactory.getInstance(keyAlgorithm).generatePrivate(keySpec)
         }.getOrNull()
         if (defaultKey != null) return defaultKey
 
         val provider = getBundledBouncyCastleProvider() ?: return null
-        return runCatching {
+        return runCatchingObserved {
             KeyFactory.getInstance(keyAlgorithm, provider).generatePrivate(keySpec)
         }.getOrNull()
     }
@@ -155,7 +156,7 @@ object PasskeyPrivateKeySupport {
         }
 
         val provider = BouncyCastleProvider()
-        return runCatching {
+        return runCatchingObserved {
             Security.addProvider(provider)
             provider
         }.getOrElse {
@@ -183,7 +184,7 @@ object PasskeyPrivateKeySupport {
             Base64.DEFAULT
         )
         flags.forEach { base64Flags ->
-            val decoded = runCatching { Base64.decode(value, base64Flags) }.getOrNull()
+            val decoded = runCatchingObserved { Base64.decode(value, base64Flags) }.getOrNull()
             if (decoded != null && decoded.isNotEmpty()) {
                 return decoded
             }
@@ -210,7 +211,7 @@ object PasskeyPrivateKeySupport {
         }
 
         candidates.forEach { decode ->
-            val decoded = runCatching { decode() }.getOrNull()
+            val decoded = runCatchingObserved { decode() }.getOrNull()
             if (decoded != null && decoded.isNotEmpty()) {
                 return decoded
             }

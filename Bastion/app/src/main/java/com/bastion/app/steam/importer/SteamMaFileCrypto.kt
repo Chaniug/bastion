@@ -1,5 +1,6 @@
 package com.bastion.app.steam.importer
 
+import com.bastion.app.logging.runCatchingObserved
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -38,7 +39,7 @@ object SteamMaFileCrypto {
         encryptedBase64: String,
         iterations: Int = PBKDF2_ITERATIONS
     ): String? {
-        return runCatching {
+        return runCatchingObserved {
             val key = deriveKey(password, saltBase64, iterations)
             val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
             cipher.init(

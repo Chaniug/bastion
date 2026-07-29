@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.backup
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -60,7 +61,7 @@ object AttachmentBackupCodec {
 
     fun decode(jsonText: String): Manifest {
         if (jsonText.isBlank()) return Manifest()
-        return runCatching { json.decodeFromString<Manifest>(jsonText) }
+        return runCatchingObserved { json.decodeFromString<Manifest>(jsonText) }
             .getOrElse { Manifest() }
     }
 

@@ -1,5 +1,6 @@
 package com.bastion.app.data.model
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -37,7 +38,7 @@ object SshKeyDataCodec {
 
     fun decode(raw: String?): SshKeyData? {
         if (raw.isNullOrBlank()) return null
-        return runCatching { json.decodeFromString<SshKeyData>(raw) }
+        return runCatchingObserved { json.decodeFromString<SshKeyData>(raw) }
             .getOrNull()
             ?.takeUnless { it.isEmpty() }
     }

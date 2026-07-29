@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -120,7 +121,7 @@ class TimelineViewModel(application: Application) : AndroidViewModel(application
         val operationLogId = logId.toLongOrNull() ?: return@withContext null
         val snapshot = database.timelineVersionSnapshotDao().getByOperationLogId(operationLogId)
             ?: return@withContext null
-        runCatching {
+        runCatchingObserved {
             json.decodeFromString<List<FieldChange>>(
                 securityManager.decryptTimelineSnapshot(snapshot.encryptedChangesJson)
             ).map { change ->
@@ -184,7 +185,7 @@ class TimelineViewModel(application: Application) : AndroidViewModel(application
             it.fieldName == TIMELINE_FIELD_BATCH_MOVE_PAYLOAD
         }?.newValue
         if (!batchMovePayload.isNullOrBlank() && !batchMovePayload.isRedactedTimelineValue()) {
-            val payload = runCatching {
+            val payload = runCatchingObserved {
                 json.decodeFromString<TimelineBatchMovePayload>(batchMovePayload)
             }.getOrNull()
             if (payload != null && payload.oldStates.isNotEmpty()) return true
@@ -194,7 +195,7 @@ class TimelineViewModel(application: Application) : AndroidViewModel(application
             it.fieldName == TIMELINE_FIELD_BATCH_COPY_PAYLOAD
         }?.newValue
         if (!batchCopyPayload.isNullOrBlank() && !batchCopyPayload.isRedactedTimelineValue()) {
-            val payload = runCatching {
+            val payload = runCatchingObserved {
                 json.decodeFromString<TimelineBatchCopyPayload>(batchCopyPayload)
             }.getOrNull()
             if (payload != null && payload.copiedEntryIds.isNotEmpty()) return true
@@ -204,7 +205,7 @@ class TimelineViewModel(application: Application) : AndroidViewModel(application
             it.fieldName == TIMELINE_FIELD_MAINTENANCE_SNAPSHOT_PAYLOAD
         }?.newValue
         if (!maintenancePayload.isNullOrBlank() && !maintenancePayload.isRedactedTimelineValue()) {
-            val payload = runCatching {
+            val payload = runCatchingObserved {
                 json.decodeFromString<TimelineMaintenanceSnapshotPayload>(maintenancePayload)
             }.getOrNull()
             if (

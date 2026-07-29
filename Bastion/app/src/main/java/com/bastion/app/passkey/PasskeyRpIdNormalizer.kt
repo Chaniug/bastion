@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import java.net.IDN
 import java.util.Locale
 
@@ -17,7 +18,7 @@ object PasskeyRpIdNormalizer {
         val trimmed = rpId?.trim().orEmpty().trimEnd('.')
         if (trimmed.isBlank()) return null
         val lower = trimmed.lowercase(Locale.ROOT)
-        return runCatching { IDN.toASCII(lower, IDN.USE_STD3_ASCII_RULES) }
+        return runCatchingObserved { IDN.toASCII(lower, IDN.USE_STD3_ASCII_RULES) }
             .getOrDefault(lower)
     }
 

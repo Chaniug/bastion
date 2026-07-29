@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,7 +26,7 @@ class PasskeySupportCatalog(
             cachedSigninDomains?.let { return@withContext it }
             synchronized(this@PasskeySupportCatalog) {
                 cachedSigninDomains?.let { return@synchronized it }
-                val domains = runCatching { loadSigninDomains() }
+                val domains = runCatchingObserved { loadSigninDomains() }
                     .getOrDefault(emptyList())
                 cachedSigninDomains = domains
                 domains

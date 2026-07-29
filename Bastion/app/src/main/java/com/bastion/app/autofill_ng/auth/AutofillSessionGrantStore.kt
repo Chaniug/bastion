@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.auth
 
+import com.bastion.app.logging.runCatchingObserved
 import android.os.SystemClock
 import java.net.URI
 import java.util.Locale
@@ -37,7 +38,7 @@ data class AutofillGrantContext(
         ): AutofillGrantContext {
             val parsedUri = requestUri
                 ?.takeIf { it.isNotBlank() }
-                ?.let { runCatching { URI(it) }.getOrNull() }
+                ?.let { runCatchingObserved { URI(it) }.getOrNull() }
             val webDomain = parsedUri
                 ?.takeUnless { it.scheme.equals("androidapp", ignoreCase = true) }
                 ?.host

@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.mapper
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import com.bastion.app.bitwarden.api.SendApiResponse
 import com.bastion.app.bitwarden.api.SendCreateRequest
@@ -225,13 +226,13 @@ object BitwardenSendMapper {
         if (raw.size == 16) return raw
 
         // 兼容早期错误格式：将 Base64 文本作为字符串加密
-        val asText = runCatching { String(raw, Charsets.UTF_8).trim() }.getOrNull().orEmpty()
+        val asText = runCatchingObserved { String(raw, Charsets.UTF_8).trim() }.getOrNull().orEmpty()
         if (asText.isBlank()) return null
 
-        val standard = runCatching { Base64.decode(asText, Base64.NO_WRAP) }.getOrNull()
+        val standard = runCatchingObserved { Base64.decode(asText, Base64.NO_WRAP) }.getOrNull()
         if (standard?.size == 16) return standard
 
-        val urlSafe = runCatching {
+        val urlSafe = runCatchingObserved {
             Base64.decode(asText, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
         }.getOrNull()
         if (urlSafe?.size == 16) return urlSafe

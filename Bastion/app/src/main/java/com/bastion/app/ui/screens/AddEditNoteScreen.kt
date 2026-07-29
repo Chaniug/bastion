@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -361,7 +362,7 @@ fun AddEditNoteScreen(
     }
 
     val launchNoteCameraCapture: () -> Unit = {
-        runCatching {
+        runCatchingObserved {
             val (tempFile, tempUri) = imageManager.createTempPhotoCaptureRequest()
             pendingCameraImagePath = tempFile.absolutePath
             pendingCameraImageUri = tempUri.toString()
@@ -963,14 +964,14 @@ fun AddEditNoteScreen(
                                     ADD_EDIT_NOTE_SCREEN_TAG,
                                     "Gallery button clicked insertionCursor=$pendingImageInsertionCursor"
                                 )
-                                runCatching {
+                                runCatchingObserved {
                                     noteGalleryLauncher.launch(
                                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                     )
                                 }.onFailure { error ->
                                     if (error is ActivityNotFoundException) {
                                         Log.w(ADD_EDIT_NOTE_SCREEN_TAG, "PickVisualMedia unavailable, falling back to GetContent", error)
-                                        runCatching {
+                                        runCatchingObserved {
                                             noteGalleryFallbackLauncher.launch("image/*")
                                         }.onFailure { fallbackError ->
                                             Log.e(ADD_EDIT_NOTE_SCREEN_TAG, "Fallback gallery launch failed", fallbackError)

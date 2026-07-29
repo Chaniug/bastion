@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import android.util.Log
 import com.bastion.app.security.SecurityManager
@@ -22,7 +23,7 @@ object AutofillSecretResolver {
     ): String? {
         if (encryptedOrPlain.isBlank()) return ""
 
-        val decrypted = runCatching {
+        val decrypted = runCatchingObserved {
             securityManager.decryptData(encryptedOrPlain)
         }.onFailure { e ->
             Log.w(logTag, "Password decrypt failed for autofill entry", e)
@@ -50,7 +51,7 @@ object AutofillSecretResolver {
         }
 
         // Legacy V1 payload format: Base64(12-byte IV + encrypted bytes + 16-byte GCM tag)
-        val decoded = runCatching {
+        val decoded = runCatchingObserved {
             Base64.decode(value, Base64.DEFAULT)
         }.getOrNull() ?: return false
 

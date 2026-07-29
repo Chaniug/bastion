@@ -1,14 +1,11 @@
 package com.bastion.app
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 import com.bastion.app.attachments.AttachmentContainer
 import com.bastion.app.data.AppLauncherIcon
 import com.bastion.app.data.AppLauncherLabel
@@ -21,18 +18,18 @@ import com.bastion.app.sync.SyncTaskRunner
 import com.bastion.app.utils.AppLauncherIconManager
 import com.bastion.app.security.SessionManager
 import com.bastion.app.utils.SettingsManager
+import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import com.bastion.app.security.SecurityManager
 import com.bastion.app.webdav.WebDavBackoffState
 import com.bastion.app.workers.KeePassRemoteUploadWorker
 
 /**
  * Bastion 应用程序入口
- * 
- * 负责初始化全局依赖注入容器（Koin）
- * 
- * 安全设计考量:
- * - Koin 在进程级别初始化，生命周期与应用一致
- * - 敏感依赖使用 single 作用域，避免多实例
- * - 模块化设计便于测试时替换 mock 实现
+ *
+ * 负责全局初始化：应用更新安全守卫、SecurityManager 单例预热、
+ * 同步网络门、主线程卡顿监控、诊断日志、附件清理、启动器入口同步等
+ * 主进程专属开销（独立进程如 :accessibility 不在此列）。
  */
 class BastionApplication : Application() {
     
@@ -55,10 +52,6 @@ class BastionApplication : Application() {
             reason = "application_on_create"
         )
 
-        // Koin 启动：本仓库 startKoin 未注册任何 module，成本极低；
-        // 全进程保留以兼容可能依赖 Koin 的组件（:accessibility 实际不使用，但保留无副作用）。
-        initKoin()
-
         // —— 以下为主进程专属的「重度」初始化 ——
         // :accessibility 等独立进程常驻后台，不应承担这些与主业务相关的开销
         // （主线程卡顿监控、诊断日志、附件清理、启动器入口同步、WebDAV 退避持久化、
@@ -67,6 +60,12 @@ class BastionApplication : Application() {
         // 保证主进程逻辑绝不漏跑。
         if (SessionManager.isNonMainProcess(this)) {
             return
+        }
+
+        // 后台线程预热加密单例（SecurityManager），将 Keystore / EncryptedSharedPreferences
+        // 的初始化从主线程移出（A1），避免冷启动与旋转屏幕时的主线程阻塞。
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            SecurityManager.prewarm(this@BastionApplication)
         }
 
         SyncTaskRunner.installNetworkGate(AndroidSyncNetworkGate(this))
@@ -78,21 +77,8 @@ class BastionApplication : Application() {
         scheduleAttachmentHousekeeping()
     }
     
-    /**
-     * 初始化 Koin 依赖注入框架
-     */
-    private fun initKoin() {
-        startKoin {
-            // 关闭日志以提高性能和安全性
-            androidLogger(Level.NONE)
-            
-            // 提供 Android Context
-            androidContext(this@BastionApplication)
-        }
-    }
-
     private fun scheduleKeePassRemoteUploadRecovery() {
-        runCatching {
+        runCatchingObserved {
             KeePassRemoteUploadWorker.enqueueIfPending(this)
         }.onFailure { error ->
             Log.w(TAG, "Failed to schedule KeePass remote upload recovery", error)
@@ -107,8 +93,8 @@ class BastionApplication : Application() {
      */
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun scheduleAttachmentHousekeeping() {
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            runCatching {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatchingObserved {
                 val facade = AttachmentContainer.facade(this@BastionApplication)
                 facade.purgeOrphanedLocalBlobs()
             }.onFailure { Log.w(TAG, "Attachment housekeeping failed", it) }
@@ -117,8 +103,8 @@ class BastionApplication : Application() {
 
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun syncLauncherEntryPointsWithSettings() {
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-            runCatching {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            runCatchingObserved {
                 val settings = SettingsManager(this@BastionApplication).settingsFlow.first()
                 AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
                     this@BastionApplication,
@@ -127,7 +113,7 @@ class BastionApplication : Application() {
                 )
             }.onFailure { error ->
                 Log.w(TAG, "Failed to sync launcher entry points with settings", error)
-                runCatching {
+                runCatchingObserved {
                     AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
                         this@BastionApplication,
                         AppLauncherIcon.MODERN,

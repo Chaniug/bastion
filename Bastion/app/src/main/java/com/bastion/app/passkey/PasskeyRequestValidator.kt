@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import androidx.credentials.provider.CallingAppInfo
@@ -97,14 +98,14 @@ object PasskeyRequestValidator {
     }
 
     private fun extractRequestOrigin(requestJson: String): String? {
-        return runCatching {
+        return runCatchingObserved {
             JSONObject(requestJson).optString("origin").takeIf { it.isNotBlank() }
         }.getOrNull()
     }
 
     private fun extractHttpsHost(origin: String?): String? {
         if (origin.isNullOrBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             val uri = URI(origin)
             if (uri.scheme?.lowercase(Locale.ROOT) != "https") return null
             val host = uri.host ?: return null

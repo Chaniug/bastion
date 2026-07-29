@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import app.keemobile.kotpass.cryptography.EncryptedValue
 import app.keemobile.kotpass.database.Credentials
 import java.security.MessageDigest
@@ -32,7 +33,7 @@ object KeePassCredentialSupport {
             if (password.isBlank()) {
                 val keyOnlySig = "key-only:$keyFingerprint"
                 if (seen.add(keyOnlySig)) {
-                    runCatching {
+                    runCatchingObserved {
                         KeePassCredentialCandidate(
                             label = "$label/key-only",
                             credentials = Credentials.from(keyBytes)
@@ -42,7 +43,7 @@ object KeePassCredentialSupport {
                 if (includeEmptyPasswordVariant) {
                     val comboSig = "empty-password+key:$keyFingerprint"
                     if (seen.add(comboSig)) {
-                        runCatching {
+                        runCatchingObserved {
                             KeePassCredentialCandidate(
                                 label = "$label/empty-password+key",
                                 credentials = Credentials.from(EncryptedValue.fromString(""), keyBytes)
@@ -53,7 +54,7 @@ object KeePassCredentialSupport {
             } else {
                 val comboSig = "password+key:$keyFingerprint:${password.length}"
                 if (seen.add(comboSig)) {
-                    runCatching {
+                    runCatchingObserved {
                         KeePassCredentialCandidate(
                             label = "$label/password+key",
                             credentials = Credentials.from(EncryptedValue.fromString(password), keyBytes)
@@ -94,7 +95,7 @@ object KeePassCredentialSupport {
 
         putVariant("raw", rawBytes)
 
-        val text = runCatching { rawBytes.toString(Charsets.UTF_8) }.getOrNull()
+        val text = runCatchingObserved { rawBytes.toString(Charsets.UTF_8) }.getOrNull()
         if (text != null) {
             putVariant("xml-data", extractXmlDataKey(text))
             putVariant("hex-text", extractHexTextKey(text))
@@ -125,7 +126,7 @@ object KeePassCredentialSupport {
         if (compact.length == 64 && compact.all { it.isHexChar() }) {
             return decodeHex(compact)
         }
-        return runCatching { Base64.getDecoder().decode(compact) }.getOrNull()
+        return runCatchingObserved { Base64.getDecoder().decode(compact) }.getOrNull()
     }
 
     private fun Char.isHexChar(): Boolean {

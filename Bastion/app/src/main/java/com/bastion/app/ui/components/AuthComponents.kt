@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
@@ -70,7 +71,7 @@ fun PasswordVerificationContent(
 
     fun canProceedAfterBiometricAuth(): PasswordVerificationBiometricAccessResult {
         if (!securityManager.isMasterPasswordSet()) return PasswordVerificationBiometricAccessResult.PROCEED
-        val directUnlock = runCatching {
+        val directUnlock = runCatchingObserved {
             securityManager.unlockVaultWithBiometric()
         }.getOrDefault(false)
         if (directUnlock) {

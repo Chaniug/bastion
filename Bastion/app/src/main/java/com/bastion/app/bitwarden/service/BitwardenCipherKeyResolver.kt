@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Log
 import com.bastion.app.bitwarden.api.CipherApiResponse
 import com.bastion.app.bitwarden.crypto.BitwardenCrypto
@@ -27,7 +28,7 @@ internal object BitwardenCipherKeyResolver {
         logTag: String
     ): SymmetricCryptoKey {
         val encryptedItemKey = cipher.key?.takeIf { it.isNotBlank() } ?: return vaultKey
-        return runCatching {
+        return runCatchingObserved {
             BitwardenCrypto.decryptSymmetricKey(encryptedItemKey, vaultKey)
         }.getOrElse { error ->
             Log.w(

@@ -1,5 +1,6 @@
 package com.bastion.app.steam.network
 
+import com.bastion.app.logging.runCatchingObserved
 import java.util.Base64
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -76,10 +77,10 @@ class SteamSessionRefreshService(
 
     private fun jwtPayload(token: String): JsonObject? {
         val payload = token.split('.').getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
-        val decoded = runCatching {
+        val decoded = runCatchingObserved {
             Base64.getUrlDecoder().decode(payload.withBase64Padding()).toString(Charsets.UTF_8)
         }.getOrNull() ?: return null
-        return runCatching { json.parseToJsonElement(decoded).jsonObject }.getOrNull()
+        return runCatchingObserved { json.parseToJsonElement(decoded).jsonObject }.getOrNull()
     }
 
     private fun JsonObject.longAny(vararg keys: String): Long? {

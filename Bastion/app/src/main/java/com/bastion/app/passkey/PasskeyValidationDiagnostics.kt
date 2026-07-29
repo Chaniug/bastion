@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
@@ -242,7 +243,7 @@ object PasskeyValidationDiagnostics {
 
     private fun readRootJson(prefs: android.content.SharedPreferences): JSONObject {
         val raw = prefs.getString(KEY_STATE_JSON, null)
-        val parsed = runCatching { if (raw.isNullOrBlank()) JSONObject() else JSONObject(raw) }.getOrDefault(JSONObject())
+        val parsed = runCatchingObserved { if (raw.isNullOrBlank()) JSONObject() else JSONObject(raw) }.getOrDefault(JSONObject())
         if (!parsed.has(F_BUCKETS)) parsed.put(F_BUCKETS, JSONObject())
         if (!parsed.has(F_EVENTS)) parsed.put(F_EVENTS, JSONArray())
         return parsed

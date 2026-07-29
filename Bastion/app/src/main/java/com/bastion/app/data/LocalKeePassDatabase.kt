@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
@@ -241,9 +242,9 @@ fun LocalKeePassDatabase.toCreationOptions(): KeePassDatabaseCreationOptions {
         .entries
         .firstOrNull { it.majorVersion == kdbxMajorVersion }
         ?: KeePassFormatVersion.KDBX4
-    val parsedCipher = runCatching { KeePassCipherAlgorithm.valueOf(cipherAlgorithm) }
+    val parsedCipher = runCatchingObserved { KeePassCipherAlgorithm.valueOf(cipherAlgorithm) }
         .getOrDefault(KeePassCipherAlgorithm.AES)
-    val parsedKdf = runCatching { KeePassKdfAlgorithm.valueOf(kdfAlgorithm) }
+    val parsedKdf = runCatchingObserved { KeePassKdfAlgorithm.valueOf(kdfAlgorithm) }
         .getOrDefault(KeePassKdfAlgorithm.ARGON2D)
 
     return KeePassDatabaseCreationOptions(

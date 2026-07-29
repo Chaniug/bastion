@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.text.InputType
@@ -901,7 +902,7 @@ class EnhancedAutofillStructureParserV2 {
             (trimmed.contains(".") && trimmed.any { it == '/' || it == ':' })
         if (!looksLikeUrl) return null
         val urlStr = if (trimmed.contains("://")) trimmed else "https://$trimmed"
-        val host = runCatching { URL(urlStr).host }.getOrNull()
+        val host = runCatchingObserved { URL(urlStr).host }.getOrNull()
             ?.trim()
             ?.lowercase(Locale.ROOT)
             ?.takeIf { it.isNotBlank() && it.contains(".") && it.any { c -> c.isLetter() } }
@@ -1067,7 +1068,7 @@ class EnhancedAutofillStructureParserV2 {
                 val attributes = kotlin.run {
                     nodeHtml.attributes
                         ?.map { it.first to it.second }
-                        ?.takeUnless { it.isEmpty() } ?: kotlin.runCatching {
+                        ?.takeUnless { it.isEmpty() } ?: runCatchingObserved {
                         val values = nodeHtml.javaClass.getDeclaredField("mValues")
                             .apply { isAccessible = true }
                             .get(nodeHtml)

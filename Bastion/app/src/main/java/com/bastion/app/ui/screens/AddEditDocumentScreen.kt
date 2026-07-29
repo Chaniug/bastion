@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1036,7 +1037,7 @@ fun AddEditDocumentScreen(
 
 private fun parseSecureItemImagePaths(imagePaths: String): Pair<String?, String?> {
     if (imagePaths.isBlank()) return null to null
-    return runCatching {
+    return runCatchingObserved {
         val paths = Json.decodeFromString<List<String>>(imagePaths)
         paths.getOrNull(0)?.takeIf { it.isNotBlank() } to
             paths.getOrNull(1)?.takeIf { it.isNotBlank() }

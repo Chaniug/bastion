@@ -1,5 +1,6 @@
 package com.bastion.app.steam.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -2484,12 +2485,12 @@ private fun SteamAccountCredentialCard(
         it.id == credentialEntryId && !it.isDeleted && !it.isArchived
     }
     val boundCredentialUserName = boundCredentialEntry?.let { entry ->
-        runCatching { pickerSecurityManager.decryptData(entry.username) }
+        runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
             .getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
             ?: entry.username.trim()
     }.orEmpty()
     val boundCredentialPassword = boundCredentialEntry?.let { entry ->
-        runCatching { pickerSecurityManager.decryptData(entry.password) }
+        runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
             .getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
             ?: entry.password.trim()
     }.orEmpty()
@@ -2899,8 +2900,8 @@ private suspend fun loadSteamAvatar(context: Context, steamId: String): ImageBit
         return@withContext cachedAvatar
     }
 
-    val freshAvatar = runCatching {
-        val avatarUrl = fetchSteamAvatarUrl(steamId) ?: return@runCatching null
+    val freshAvatar = runCatchingObserved {
+        val avatarUrl = fetchSteamAvatarUrl(steamId) ?: return@runCatchingObserved null
         downloadSteamAvatarBytes(avatarUrl)?.also { bytes ->
             cacheFile.parentFile?.mkdirs()
             cacheFile.writeBytes(bytes)
@@ -2928,13 +2929,13 @@ private fun fetchSteamAvatarUrl(steamId: String): String? {
         connection.inputStream.use { stream ->
             val factory = DocumentBuilderFactory.newInstance().apply {
                 isNamespaceAware = false
-                runCatching {
+                runCatchingObserved {
                     setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
                 }
-                runCatching {
+                runCatchingObserved {
                     setFeature("http://xml.org/sax/features/external-general-entities", false)
                 }
-                runCatching {
+                runCatchingObserved {
                     setFeature("http://xml.org/sax/features/external-parameter-entities", false)
                 }
             }
@@ -2975,7 +2976,7 @@ private fun steamAvatarCacheFile(context: Context, steamId: String): File {
 
 private fun readSteamAvatarCache(cacheFile: File): ImageBitmap? {
     if (!cacheFile.isFile) return null
-    return runCatching {
+    return runCatchingObserved {
         BitmapFactory.decodeFile(cacheFile.absolutePath)?.asImageBitmap()
     }.getOrNull()
 }
@@ -2999,7 +3000,7 @@ internal suspend fun loadSteamConfirmationImage(context: Context, imageUrl: Stri
             return@withContext cachedImage
         }
 
-        val freshImage = runCatching {
+        val freshImage = runCatchingObserved {
             downloadSteamConfirmationImageBytes(normalizedUrl)?.also { bytes ->
                 cacheFile.parentFile?.mkdirs()
                 cacheFile.writeBytes(bytes)
@@ -3512,11 +3513,11 @@ private fun SteamAuthorizedDevicesSection(
             passwords = passwordEntriesForPicker.filter { !it.isDeleted && !it.isArchived },
             onDismiss = { showRevokePasswordPicker = false },
             onSelect = { entry ->
-                revokeUserName = runCatching {
+                revokeUserName = runCatchingObserved {
                     pickerSecurityManager.decryptData(entry.username)
                 }.getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
                     ?: entry.username.trim()
-                revokePassword = runCatching {
+                revokePassword = runCatchingObserved {
                     pickerSecurityManager.decryptData(entry.password)
                 }.getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
                     ?: entry.password.trim()
@@ -3579,12 +3580,12 @@ private fun SteamAuthorizedDevicesSection(
                                 it.id == boundEntryId && !it.isDeleted && !it.isArchived
                             }
                             val boundUserName = boundEntry?.let { entry ->
-                                runCatching { pickerSecurityManager.decryptData(entry.username) }
+                                runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
                                     .getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
                                     ?: entry.username.trim()
                             }.orEmpty()
                             val boundPassword = boundEntry?.let { entry ->
-                                runCatching { pickerSecurityManager.decryptData(entry.password) }
+                                runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
                                     .getOrNull()?.trim().takeUnless { it.isNullOrBlank() }
                                     ?: entry.password.trim()
                             }.orEmpty()
@@ -4839,7 +4840,7 @@ private fun SteamAuthenticatorCodePickerBottomSheet(
                 ) {
                     items(filteredAccounts, key = { it.id }) { account ->
                         val code = remember(account.sharedSecret, currentSeconds) {
-                            runCatching {
+                            runCatchingObserved {
                                 SteamTotp.generateAuthCode(account.sharedSecret, currentSeconds)
                             }.getOrDefault("")
                         }
@@ -5045,7 +5046,7 @@ private fun SecureItem.toLegacySteamAuthenticatorCodeSource(
     val normalized = TotpDataResolver.normalizeTotpData(totpData)
     if (normalized.otpType != OtpType.STEAM) return null
 
-    val code = runCatching {
+    val code = runCatchingObserved {
         TotpGenerator.generateOtp(normalized, currentSeconds = currentSeconds)
     }.getOrDefault("").trim()
     if (!code.isSteamGuardFiveCharacterCode()) return null
@@ -5108,7 +5109,7 @@ private fun SteamQrLoginCodeImage(
 
 private fun createSteamQrLoginBitmap(content: String, size: Int = 768): ImageBitmap? {
     if (content.isBlank()) return null
-    return runCatching {
+    return runCatchingObserved {
         val matrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         for (y in 0 until size) {
@@ -5326,12 +5327,12 @@ private fun SteamLoginImportDialog(
             passwords = passwordEntriesForPicker.filter { !it.isDeleted && !it.isArchived },
             onDismiss = { showSteamPasswordPicker = false },
             onSelect = { entry ->
-                val resolvedUsername = runCatching { pickerSecurityManager.decryptData(entry.username) }
+                val resolvedUsername = runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }
                     ?: entry.username.trim()
-                val resolvedPassword = runCatching { pickerSecurityManager.decryptData(entry.password) }
+                val resolvedPassword = runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }

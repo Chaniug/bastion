@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -1050,7 +1051,7 @@ private suspend fun resolveBillingAddressFromCurrentLocation(context: Context): 
     if (!hasAnyLocationPermission(context)) return null
 
     val locationManager = context.getSystemService(LocationManager::class.java) ?: return null
-    val providers = runCatching {
+    val providers = runCatchingObserved {
         locationManager.getProviders(true)
             .filter { provider ->
                 provider == LocationManager.GPS_PROVIDER ||
@@ -1063,7 +1064,7 @@ private suspend fun resolveBillingAddressFromCurrentLocation(context: Context): 
 
     val lastKnown = providers
         .mapNotNull { provider ->
-            runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+            runCatchingObserved { locationManager.getLastKnownLocation(provider) }.getOrNull()
         }
         .maxByOrNull { it.time }
 
@@ -1101,7 +1102,7 @@ private suspend fun requestSingleLocation(
                 if (continuation.isActive) {
                     continuation.resume(location)
                 }
-                runCatching { locationManager.removeUpdates(this) }
+                runCatchingObserved { locationManager.removeUpdates(this) }
             }
 
             override fun onProviderEnabled(provider: String) = Unit
@@ -1112,7 +1113,7 @@ private suspend fun requestSingleLocation(
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
         }
 
-        runCatching {
+        runCatchingObserved {
             locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
         }.onFailure {
             if (continuation.isActive) {
@@ -1121,7 +1122,7 @@ private suspend fun requestSingleLocation(
         }
 
         continuation.invokeOnCancellation {
-            runCatching { locationManager.removeUpdates(listener) }
+            runCatchingObserved { locationManager.removeUpdates(listener) }
         }
     }
 }
@@ -1132,7 +1133,7 @@ private suspend fun reverseGeocodeBillingAddress(
 ): BillingAddress? = withContext(Dispatchers.IO) {
     if (!Geocoder.isPresent()) return@withContext null
     val geocoder = Geocoder(context, Locale.getDefault())
-    val address = runCatching {
+    val address = runCatchingObserved {
         @Suppress("DEPRECATION")
         geocoder.getFromLocation(location.latitude, location.longitude, 1)
             ?.firstOrNull()

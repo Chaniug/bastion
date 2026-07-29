@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +14,7 @@ class OneDriveMdbxFileSource(
         OneDriveKeePassFileSource(context, accountId, remotePath = remotePath)
 
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching { delegate().testConnection().getOrThrow() }
+        runCatchingObserved { delegate().testConnection().getOrThrow() }
     }
 
     override suspend fun listDirectory(path: String?): List<FileSourceEntry> =

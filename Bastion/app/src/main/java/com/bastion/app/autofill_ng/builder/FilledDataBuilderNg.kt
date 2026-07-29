@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.builder
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.view.autofill.AutofillValue
 import android.widget.inline.InlinePresentationSpec
@@ -30,7 +31,7 @@ class FilledDataBuilderNg(
 ) {
 
     private fun resolveAutoLockTimeoutForAutofill(): Int {
-        return runCatching {
+        return runCatchingObserved {
             val settingsManager = SettingsManager(context.applicationContext)
             val autoLockMinutes = runBlocking {
                 settingsManager.settingsFlow.first().autoLockMinutes
