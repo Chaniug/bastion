@@ -182,7 +182,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: preview-apk
-          path: Bastion/app/build/outputs/apk/release/*.apk
+          path: Bastion/app/build/outputs/apk/release/*.APK
           retention-days: 7
           if-no-files-found: warn
 
