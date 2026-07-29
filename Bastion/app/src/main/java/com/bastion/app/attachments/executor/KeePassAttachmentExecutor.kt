@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.executor
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -110,7 +111,7 @@ class KeePassAttachmentExecutor(
         val wrappedLocalCek = try {
             keyVault.wrap(blob.cek)
         } catch (e: Throwable) {
-            runCatching { storage.delete(blob.relativePath) }
+            runCatchingObserved { storage.delete(blob.relativePath) }
             throw AttachmentError.CryptoError
         } finally {
             blob.cek.fill(0)
@@ -157,7 +158,7 @@ class KeePassAttachmentExecutor(
         val wrappedLocalCek = try {
             keyVault.wrap(blob.cek)
         } catch (e: Throwable) {
-            runCatching { storage.delete(blob.relativePath) }
+            runCatchingObserved { storage.delete(blob.relativePath) }
             throw AttachmentError.CryptoError
         } finally {
             blob.cek.fill(0)

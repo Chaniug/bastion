@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.sync.Mutex
@@ -139,7 +140,7 @@ class SensitiveFieldMigrationManager(
 
             for (record in batch) {
                 val id = recordId(record)
-                val result = runCatching { processRecord(record) }
+                val result = runCatchingObserved { processRecord(record) }
                     .getOrElse { error ->
                         recordBlocked(domain, id, error)
                         return
@@ -172,13 +173,13 @@ class SensitiveFieldMigrationManager(
         if (securityManager.looksLikeBastionCiphertext(rawValue)) return null
 
         val plainValue = resolveLegacyPlainCandidate(rawValue)
-        val canMigrate = runCatching { canMigratePlainValue(plainValue) }.getOrDefault(false)
+        val canMigrate = runCatchingObserved { canMigratePlainValue(plainValue) }.getOrDefault(false)
         if (!canMigrate) {
             Log.d(TAG, "Sensitive field migration skipped unsupported value domain=$domain id=$id")
             return null
         }
 
-        return runCatching {
+        return runCatchingObserved {
             val encrypted = securityManager.encryptDataLegacyCompat(plainValue)
             val roundTrip = securityManager.decryptData(encrypted)
             check(roundTrip == plainValue) { "ciphertext round-trip mismatch" }
@@ -189,7 +190,7 @@ class SensitiveFieldMigrationManager(
     }
 
     private fun resolveLegacyPlainCandidate(value: String): String {
-        return runCatching { securityManager.decryptData(value) }.getOrDefault(value)
+        return runCatchingObserved { securityManager.decryptData(value) }.getOrDefault(value)
     }
 
     private fun recordBlocked(domain: String, id: Long, error: Throwable) {

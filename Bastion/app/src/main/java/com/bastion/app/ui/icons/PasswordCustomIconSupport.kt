@@ -1,5 +1,6 @@
 package com.bastion.app.ui.icons
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -83,7 +84,7 @@ object SimpleIconCatalog {
     }
 
     private fun collectSlugs(context: Context, assetDir: String, output: MutableSet<String>) {
-        val files = runCatching { context.assets.list(assetDir).orEmpty() }.getOrDefault(emptyArray())
+        val files = runCatchingObserved { context.assets.list(assetDir).orEmpty() }.getOrDefault(emptyArray())
         files.forEach { name ->
             if (!name.endsWith(".png", ignoreCase = true)) return@forEach
             val raw = name.removeSuffix(".png")
@@ -151,7 +152,7 @@ private fun parseWebsite(rawWebsite: String): ParsedWebsite {
     val raw = rawWebsite.trim()
     if (raw.isBlank()) return ParsedWebsite(scheme = null, host = "")
     val withScheme = if (raw.contains("://")) raw else "https://$raw"
-    val parsed = runCatching { URI(withScheme) }.getOrNull()
+    val parsed = runCatchingObserved { URI(withScheme) }.getOrNull()
     return ParsedWebsite(
         scheme = parsed?.scheme?.trim()?.lowercase(Locale.ROOT),
         host = parsed?.host.orEmpty().trim().lowercase(Locale.ROOT)
@@ -278,11 +279,11 @@ object PasswordCustomIconStore {
 
     fun deleteIconFile(context: Context, value: String?): Boolean {
         val file = resolveIconFile(context, value) ?: return false
-        return runCatching { file.delete() }.getOrDefault(false)
+        return runCatchingObserved { file.delete() }.getOrDefault(false)
     }
 
     suspend fun importAndCompress(context: Context, uri: Uri): Result<String> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val decoded = decodeBitmapCompat(context, uri)
                 ?: throw IllegalStateException("Unsupported image format")
 
@@ -304,7 +305,7 @@ object PasswordCustomIconStore {
 
     private fun decodeBitmapCompat(context: Context, uri: Uri): Bitmap? {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            runCatching {
+            runCatchingObserved {
                 val source = ImageDecoder.createSource(context.contentResolver, uri)
                 return ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                     val sample = calculateSampleSize(info.size.width, info.size.height, MAX_DIMENSION)
@@ -381,8 +382,8 @@ private object SimpleIconCache {
                 }
             }
 
-            runCatching {
-                val bitmap = fetchSimpleIconBitmap(context, normalizedSlug, darkTheme) ?: return@runCatching null
+            runCatchingObserved {
+                val bitmap = fetchSimpleIconBitmap(context, normalizedSlug, darkTheme) ?: return@runCatchingObserved null
                 FileOutputStream(diskFile).use { out ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                     out.flush()
@@ -414,7 +415,7 @@ private object SimpleIconCache {
         }
 
         for (assetPath in candidates) {
-            val bitmap = runCatching {
+            val bitmap = runCatchingObserved {
                 context.assets.open(assetPath).use { stream ->
                     BitmapFactory.decodeStream(stream)
                 }

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.text.InputType
@@ -144,6 +145,11 @@ class EnhancedAutofillStructureParserV2 {
         var nodesWithAutofillId: Int = 0,
         var nodesWithoutAutofillId: Int = 0,
         var totalNodesVisited: Int = 0,
+        // 祖先搜索容器深度：进入 role=search/searchbox（或 class/id/data-* 含 search）的容器时 +1，
+        // 离开时 -1。容器内（含容器自身）所有 input 据此稳定判定为搜索框，
+        // 摆脱对「单个 input 自身 placeholder/htmlInfo 是否在本轮 AssistStructure 捕获中序列化」的依赖。
+        // 直接修复「搜索框偶尔仍弹密码条目」的间歇性问题（捕获时序导致自身文本信号偶发缺失）。
+        var searchContainerDepth: Int = 0,
     )
 
     private class AutofillHintMatcher(
@@ -901,7 +907,7 @@ class EnhancedAutofillStructureParserV2 {
             (trimmed.contains(".") && trimmed.any { it == '/' || it == ':' })
         if (!looksLikeUrl) return null
         val urlStr = if (trimmed.contains("://")) trimmed else "https://$trimmed"
-        val host = runCatching { URL(urlStr).host }.getOrNull()
+        val host = runCatchingObserved { URL(urlStr).host }.getOrNull()
             ?.trim()
             ?.lowercase(Locale.ROOT)
             ?.takeIf { it.isNotBlank() && it.contains(".") && it.any { c -> c.isLetter() } }
@@ -918,6 +924,13 @@ class EnhancedAutofillStructureParserV2 {
         val rawWebScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) node.webScheme else null
         var webDomain: String? = rawWebDomain?.takeIf { it.isNotEmpty() }
         var webScheme: String? = rawWebScheme?.takeIf { it.isNotEmpty() }
+
+        // 搜索容器判定：自身是 role=search/searchbox（或 class/id/data-* 含 search）的节点，
+        // 其整棵子树（含自身）统一按搜索上下文处理。进入时 +1，离开（含子树递归完毕后）-1，
+        // 使容器内 input 即便自身 placeholder/htmlInfo 在捕获中缺失，也能稳定排除凭据填充。
+        val isSearchContainerNode = isSearchContainerNode(node)
+        if (isSearchContainerNode) context.searchContainerDepth++
+
         if (context.traversalIndex == 0) {
             Log.d(
                 "BastionAutofill",
@@ -953,7 +966,7 @@ class EnhancedAutofillStructureParserV2 {
             // 搜索框识别与排除：搜索框不应作为登录凭据字段。否则在「页面存在密码框即整页按登录
             // 上下文处理」的策略下，聚焦搜索框也会弹出密码条目（Edge 访问 GitHub 时顶部搜索框误弹）。
             // 命中则清空凭据候选，使该节点不进入 ParsedStructure.items，从而不触发填充建议。
-            if (outBuilders.isNotEmpty() && isSearchField(node)) {
+            if (outBuilders.isNotEmpty() && isSearchField(node, context.searchContainerDepth > 0)) {
                 AutofillLogger.d(
                     "PARSING",
                     "Search field excluded from credential fill",
@@ -964,6 +977,8 @@ class EnhancedAutofillStructureParserV2 {
                         "placeholder" to (node.htmlInfo?.attributes
                             ?.firstOrNull { it.first.equals("placeholder", ignoreCase = true) }?.second ?: "none"),
                         "isFocused" to node.isFocused,
+                        // 祖先容器命中：即便本节点自身 placeholder/htmlInfo 缺失也能稳定排除
+                        "ancestorSearchContainer" to (context.searchContainerDepth > 0),
                     )
                 )
                 outBuilders.clear()
@@ -1032,6 +1047,9 @@ class EnhancedAutofillStructureParserV2 {
             out += childStructure.items
         }
 
+        // 离开搜索容器：恢复祖先深度，确保兄弟节点不误判为搜索上下文
+        if (isSearchContainerNode) context.searchContainerDepth--
+
         return RawParsedStructure(
             webScheme = webScheme,
             webDomain = webDomain,
@@ -1067,7 +1085,7 @@ class EnhancedAutofillStructureParserV2 {
                 val attributes = kotlin.run {
                     nodeHtml.attributes
                         ?.map { it.first to it.second }
-                        ?.takeUnless { it.isEmpty() } ?: kotlin.runCatching {
+                        ?.takeUnless { it.isEmpty() } ?: runCatchingObserved {
                         val values = nodeHtml.javaClass.getDeclaredField("mValues")
                             .apply { isAccessible = true }
                             .get(nodeHtml)
@@ -1734,7 +1752,64 @@ class EnhancedAutofillStructureParserV2 {
      * - aria-label / placeholder / title / name / id / 节点 hint(label) 含搜索相关词
      *   （search / 搜索 / 查询 / 查找 / recherche / buscar / suche 等）
      */
-    private fun isSearchField(node: AssistStructure.ViewNode): Boolean {
+    private fun isSearchField(
+        node: AssistStructure.ViewNode,
+        inSearchContainer: Boolean = false,
+    ): Boolean {
+        // 0) 祖先搜索容器命中：容器内（含容器自身）所有 input 一律判为搜索框。
+        //    这是根治「搜索框偶尔弹密码」的关键——容器的 role=search/searchbox 或 class/id 含 search
+        //    在 AssistStructure 捕获中远比单个深层 input 的 placeholder 稳定，
+        //    因此即便该 input 自身 htmlInfo/placeholder 在某次捕获中缺失，也能稳定排除凭据填充。
+        if (inSearchContainer) return true
+
+        // 1) Android 标准 autofillHints（系统 / WebView 可能直接给出语义提示）
+        val autofillHints = node.autofillHints?.map { it.lowercase(Locale.ENGLISH) }.orEmpty()
+        val hintSearchTerms = listOf("search", "filter", "find", "query")
+        if (autofillHints.any { h -> hintSearchTerms.any { t -> t in h } }) return true
+
+        // 2) inputType：筛选变体（TYPE_TEXT_VARIATION_FILTER = 0x000000B0，列表筛选框常见）
+        if (node.inputType and android.text.InputType.TYPE_TEXT_VARIATION_FILTER
+            == android.text.InputType.TYPE_TEXT_VARIATION_FILTER
+        ) return true
+
+        // 3) 文本信号（Android 级 hint 优先，不依赖 htmlInfo 是否非空）。
+        //    关键修复：GitHub 等站点的「Find a user...」输入框在 autofill 结构里常无 htmlInfo，
+        //    仅靠 node.hint 暴露占位文案；若在此之后才检查，会因 htmlInfo 为 null 提前 return，
+        //    导致搜索框被当成 USERNAME 候选而弹出密码条目。
+        //    注意：不能加入裸 "user"（会误伤真正的 username 登录框），仅匹配明确的「查找/搜索用户」短语。
+        //    补充：把 node.idEntry / className / htmlInfo 的 class 与 data-* 属性也纳入匹配，
+        //    覆盖「自身 placeholder 缺失但资源 id / class 含 search」的捕获情形。
+        val searchTerms = listOf(
+            "search", "searchbox", "filter", "find", "query", "jump", "lookup",
+            "combobox", "find a user", "find user", "search user", "search for user",
+            "invite user", "add user", "lookup user",
+            "搜索", "查询", "查找", "筛选", "过滤", "搜索框", "找用户", "搜索用户",
+            "recherche", "buscar", "suche",
+        )
+        val textPieces = mutableListOf<String>().apply {
+            add(node.hint?.toString().orEmpty())
+            add(node.idEntry?.toString().orEmpty())
+            add(node.className?.toString().orEmpty())
+            val html = node.htmlInfo
+            if (html != null) {
+                val attrs = html.attributes
+                    ?.map { it.first.lowercase(Locale.ENGLISH) to (it.second ?: "") }
+                    ?.toMap().orEmpty()
+                add(attrs["aria-label"].orEmpty())
+                add(attrs["placeholder"].orEmpty())
+                add(attrs["title"].orEmpty())
+                add(attrs["name"].orEmpty())
+                add(attrs["id"].orEmpty())
+                add(attrs["class"].orEmpty())
+                // data-* 属性（如 data-component）可能携带 search 语义
+                html.attributes?.forEach { attr ->
+                    if (attr.first.lowercase(Locale.ENGLISH).startsWith("data-")) add(attr.second ?: "")
+                }
+            }
+        }.map { it.lowercase(Locale.ENGLISH) }
+        if (textPieces.any { t -> searchTerms.any { term -> term in t } }) return true
+
+        // 4) HTML 属性（仅当 htmlInfo 存在；type=search / role / inputmode 等）
         val html = node.htmlInfo ?: return false
         val tag = html.tag?.lowercase(Locale.ENGLISH).orEmpty()
         if (tag != "input" && tag != "search" && tag != "textarea") return false
@@ -1753,21 +1828,35 @@ class EnhancedAutofillStructureParserV2 {
         if ("search" in autocomplete) return true
         if ("search" in role) return true
         if (inputMode == "search") return true
+        // role=searchbox / combobox（筛选下拉也是非登录语义）视为搜索/筛选
+        if (role.contains("searchbox") || role.contains("combobox")) return true
 
-        val searchTerms = listOf(
-            "search", "搜索", "查询", "查找",
-            "recherche", "buscar", "suche", "searchbox",
-        )
-        val textSignals = listOf(
-            attrs["aria-label"].orEmpty(),
-            attrs["placeholder"].orEmpty(),
-            attrs["title"].orEmpty(),
-            attrs["name"].orEmpty(),
-            attrs["id"].orEmpty(),
-            node.hint?.toString().orEmpty(),
-        ).map { it.lowercase(Locale.ENGLISH) }
-        if (textSignals.any { t -> searchTerms.any { term -> term in t } }) return true
+        return false
+    }
 
+    /**
+     * 判定节点自身是否为「搜索容器」：htmlInfo 的 role=search、tag=search，
+     * 或 class / id / data-* 属性含 search 语义。命中则其整棵子树（含自身）都被视为搜索上下文，
+     * 由 parseViewNode 通过 ParseContext.searchContainerDepth 传递给子节点——
+     * 容器内 input 即使自身 placeholder/htmlInfo 在捕获中缺失，也能稳定排除凭据填充。
+     * 仅用明确含 "search" 的信号，避免误伤普通 combobox / 下拉选择器。
+     */
+    private fun isSearchContainerNode(node: AssistStructure.ViewNode): Boolean {
+        val html = node.htmlInfo ?: return false
+        val tag = html.tag?.lowercase(Locale.ENGLISH).orEmpty()
+        if (tag == "search") return true
+        val attrs = html.attributes
+            ?.map { it.first.lowercase(Locale.ENGLISH) to (it.second ?: "") }
+            ?.toMap().orEmpty()
+        val role = attrs["role"].orEmpty().lowercase(Locale.ENGLISH)
+        if (role == "search" || role == "searchbox") return true
+        if ("search" in (attrs["class"].orEmpty().lowercase(Locale.ENGLISH))) return true
+        if ("search" in (attrs["id"].orEmpty().lowercase(Locale.ENGLISH))) return true
+        html.attributes?.forEach { attr ->
+            if (attr.first.lowercase(Locale.ENGLISH).startsWith("data-") &&
+                (attr.second ?: "").lowercase(Locale.ENGLISH).contains("search")
+            ) return true
+        }
         return false
     }
 

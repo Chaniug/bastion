@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Base64
 import android.util.Log
@@ -88,7 +89,7 @@ object PasskeyOriginResolver {
     }
 
     private fun extractRequestOrigin(requestJson: String): String? {
-        return runCatching {
+        return runCatchingObserved {
             JSONObject(requestJson).optString("origin").takeIf { it.isNotBlank() }
         }.getOrNull()
     }

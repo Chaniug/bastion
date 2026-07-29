@@ -1,5 +1,6 @@
 package com.bastion.app.data.model
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -21,7 +22,7 @@ object CardWalletDataCodec {
         decryptIfNeeded: ((String) -> String)? = null
     ): BankCardData? {
         val resolvedRaw = resolveStoredData(raw, decryptIfNeeded)
-        return runCatching { json.decodeFromString<BankCardData>(resolvedRaw) }
+        return runCatchingObserved { json.decodeFromString<BankCardData>(resolvedRaw) }
             .getOrElse {
                 parseLegacyBankCardData(resolvedRaw)
             }
@@ -32,7 +33,7 @@ object CardWalletDataCodec {
         decryptIfNeeded: ((String) -> String)? = null
     ): DocumentData? {
         val resolvedRaw = resolveStoredData(raw, decryptIfNeeded)
-        return runCatching { json.decodeFromString<DocumentData>(resolvedRaw) }
+        return runCatchingObserved { json.decodeFromString<DocumentData>(resolvedRaw) }
             .getOrElse {
                 parseLegacyDocumentData(resolvedRaw)
             }
@@ -43,7 +44,7 @@ object CardWalletDataCodec {
         decryptIfNeeded: ((String) -> String)? = null
     ): BillingAddressData? {
         val resolvedRaw = resolveStoredData(raw, decryptIfNeeded)
-        return runCatching { json.decodeFromString<BillingAddressData>(resolvedRaw) }
+        return runCatchingObserved { json.decodeFromString<BillingAddressData>(resolvedRaw) }
             .getOrElse {
                 parseLegacyBillingAddressData(resolvedRaw)
             }
@@ -54,7 +55,7 @@ object CardWalletDataCodec {
         decryptIfNeeded: ((String) -> String)? = null
     ): PaymentAccountData? {
         val resolvedRaw = resolveStoredData(raw, decryptIfNeeded)
-        val decoded = runCatching { json.decodeFromString<PaymentAccountData>(resolvedRaw) }.getOrNull()
+        val decoded = runCatchingObserved { json.decodeFromString<PaymentAccountData>(resolvedRaw) }.getOrNull()
         val hasCurrentShape = resolvedRaw.hasAnyJsonKey(
             "paymentType",
             "provider",
@@ -98,13 +99,13 @@ object CardWalletDataCodec {
         decryptIfNeeded: ((String) -> String)?
     ): String {
         return decryptIfNeeded
-            ?.let { decrypt -> runCatching { decrypt(raw) }.getOrDefault(raw) }
+            ?.let { decrypt -> runCatchingObserved { decrypt(raw) }.getOrDefault(raw) }
             ?: raw
     }
 
     fun parseBillingAddress(raw: String): BillingAddress {
         if (raw.isBlank()) return BillingAddress()
-        return runCatching { json.decodeFromString<BillingAddress>(raw) }.getOrDefault(BillingAddress())
+        return runCatchingObserved { json.decodeFromString<BillingAddress>(raw) }.getOrDefault(BillingAddress())
     }
 
     fun encodeBillingAddress(address: BillingAddress): String {
@@ -152,7 +153,7 @@ object CardWalletDataCodec {
     }
 
     private fun parseLegacyBankCardData(raw: String): BankCardData? {
-        val obj = runCatching { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
+        val obj = runCatchingObserved { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
         return BankCardData(
             cardNumber = obj.string("cardNumber", "number"),
             cardholderName = obj.string("cardholderName"),
@@ -169,8 +170,8 @@ object CardWalletDataCodec {
     }
 
     private fun parseLegacyDocumentData(raw: String): DocumentData? {
-        val obj = runCatching { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
-        val legacy = runCatching { json.decodeFromString<LegacyDocumentItemData>(raw) }.getOrNull()
+        val obj = runCatchingObserved { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
+        val legacy = runCatchingObserved { json.decodeFromString<LegacyDocumentItemData>(raw) }.getOrNull()
         val firstName = legacy?.firstName ?: obj.string("firstName")
         val middleName = legacy?.middleName ?: obj.string("middleName")
         val lastName = legacy?.lastName ?: obj.string("lastName")
@@ -215,7 +216,7 @@ object CardWalletDataCodec {
     }
 
     private fun parseLegacyBillingAddressData(raw: String): BillingAddressData? {
-        val address = runCatching { json.decodeFromString<BillingAddress>(raw) }.getOrNull()
+        val address = runCatchingObserved { json.decodeFromString<BillingAddress>(raw) }.getOrNull()
         if (address != null && !address.isEmpty()) {
             return BillingAddressData(
                 streetAddress = address.streetAddress,
@@ -227,7 +228,7 @@ object CardWalletDataCodec {
             )
         }
 
-        val obj = runCatching { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
+        val obj = runCatchingObserved { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
         return BillingAddressData(
             fullName = obj.string("fullName", "name"),
             company = obj.string("company", "organization"),
@@ -243,7 +244,7 @@ object CardWalletDataCodec {
     }
 
     private fun parseLegacyPaymentAccountData(raw: String): PaymentAccountData? {
-        val obj = runCatching { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
+        val obj = runCatchingObserved { json.parseToJsonElement(raw) as? JsonObject }.getOrNull() ?: return null
         val embeddedBillingAddress = obj.string("billingAddress")
         val billingAddress = embeddedBillingAddress.ifBlank {
             val address = BillingAddress(
@@ -280,7 +281,7 @@ object CardWalletDataCodec {
     }
 
     private fun parseEmbeddedCustomFields(obj: JsonObject): List<SecureCustomField> {
-        return runCatching {
+        return runCatchingObserved {
             json.decodeFromString<List<SecureCustomField>>(obj["customFields"].toString())
         }.getOrElse {
             emptyList()
@@ -313,7 +314,7 @@ object CardWalletDataCodec {
     }
 
     private fun String.hasAnyJsonKey(vararg keys: String): Boolean {
-        val obj = runCatching { json.parseToJsonElement(this) as? JsonObject }.getOrNull() ?: return false
+        val obj = runCatchingObserved { json.parseToJsonElement(this) as? JsonObject }.getOrNull() ?: return false
         return keys.any { key -> obj.containsKey(key) }
     }
 

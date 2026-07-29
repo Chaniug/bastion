@@ -1,5 +1,6 @@
 package com.bastion.app.repository
 
+import com.bastion.app.logging.runCatchingObserved
 import java.util.Base64
 
 /**
@@ -36,7 +37,7 @@ object MdbxAttachmentCekPayload {
 
     private fun looksLikeRawCekBase64(value: String): Boolean {
         if (value.isBlank()) return false
-        return runCatching {
+        return runCatchingObserved {
             Base64.getDecoder().decode(value).size == CEK_SIZE_BYTES
         }.getOrDefault(false)
     }

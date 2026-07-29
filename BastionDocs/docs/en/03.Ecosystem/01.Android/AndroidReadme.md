@@ -9,11 +9,11 @@ permalink: /ecosystem/AndroidReadme
 > Bastion’s local password vault client for Android  
 > Android 8.0+ · Jetpack Compose · MDBX / Bitwarden / KeePass · AutoFill · TOTP · WebDAV
 
-[![Release](https://img.shields.io/github/v/release/Bastion/Bastion-for-Android?style=flat-square)](https://github.com/Bastion/Bastion-for-Android/releases)
+[![Release](https://img.shields.io/github/v/release/Chaniug/bastion?style=flat-square)](https://github.com/Chaniug/bastion/releases)
 
-[![Downloads](https://img.shields.io/github/downloads/Bastion/Bastion-for-Android/total?style=flat-square)](https://github.com/Bastion/Bastion-for-Android/releases)
+[![Downloads](https://img.shields.io/github/downloads/Chaniug/bastion/total?style=flat-square)](https://github.com/Chaniug/bastion/releases)
 
-[![Last Commit](https://img.shields.io/github/last-commit/Bastion/Bastion-for-Android?style=flat-square)](https://github.com/Bastion/Bastion-for-Android/commits)
+[![Last Commit](https://img.shields.io/github/last-commit/Chaniug/bastion?style=flat-square)](https://github.com/Chaniug/bastion/commits)
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)](LICENSE)
 
@@ -208,7 +208,7 @@ Bastion’s design, compatibility work, and parts of its feature direction were 
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Bastion/Bastion-for-Android&type=Date)](https://star-history.com/#Bastion/Bastion-for-Android&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Monica-Pass/Monica-for-Android&type=Date)](https://star-history.com/#Chaniug/bastion&Date)
 
 ---
 

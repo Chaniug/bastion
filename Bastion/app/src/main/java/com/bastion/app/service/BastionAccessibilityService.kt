@@ -1,5 +1,6 @@
 package com.bastion.app.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.AccessibilityService
 import android.content.ClipData
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.first
 import com.bastion.app.autofill_ng.ActiveFillPromptThrottle
 import com.bastion.app.autofill_ng.AutofillPreferences
 import com.bastion.app.data.PasswordDatabase
-import com.bastion.app.data.isLinkedToApp
 import com.bastion.app.data.linkedAppBindings
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.autofill_ng.ActiveFillNotificationHelper
@@ -153,7 +153,9 @@ class BastionAccessibilityService : AccessibilityService() {
         }
 
         fun getActiveWindowPackageName(): String? {
-            return activeInstance?.rootInActiveWindow?.packageName?.toString()
+            // P6: rootInActiveWindow 是 Binder IPC，目标窗口所属进程已死亡时会抛 DeadObjectException，安全降级
+            return activeInstance?.let { runCatchingObserved { it.rootInActiveWindow }.getOrNull() }
+                ?.packageName?.toString()
         }
 
         fun isCredentialFillAvailable(context: Context): Boolean {
@@ -224,27 +226,42 @@ class BastionAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        runCatching {
+        runCatchingObserved {
             event ?: return
             if (event.eventType !in trackedEventTypes) return
 
             val packageName = event.packageName?.toString().orEmpty()
             val browserSpec = browserSpecsByPackage[packageName]
             if (browserSpec != null) {
+                // P1: URL 基本只在窗口切换(TYPE_WINDOW_STATE_CHANGED)时变化；
+                // TYPE_WINDOW_CONTENT_CHANGED 在浏览时极频繁且通常不改 URL，
+                // 仅在尚未拿到 URL(lastUrl 为空)时补扫一次，避免主线程高频遍历节点树。
+                val et = event.eventType
+                val shouldScan = et == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    (et == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && lastUrl.isBlank())
+                if (!shouldScan) return
+
                 val now = System.currentTimeMillis()
                 if (packageName == lastPackageName && now - lastScanTime < SCAN_THROTTLE_MS) return
                 lastScanTime = now
 
-                val root = rootInActiveWindow ?: event.source ?: return
-                val url = findBrowserUrl(root, browserSpec) ?: return
-
-                if (packageName == lastPackageName && url == lastUrl) return
-
-                lastPackageName = packageName
-                lastUrl = url
-                BrowserAutofillContextStore.update(packageName, url)
-                ValidatorContextManager.updateContext(packageName, url)
-                Log.d(TAG, "Updated browser context: pkg=$packageName, hasUrl=${url.isNotBlank()}")
+                // P2: 节点遍历移到后台线程，避免阻塞无障碍服务主线程(消除 ANR/卡顿风险)。
+                // 后台仅做只读遍历；拿到 URL 后回到主线程写上下文，保持与原实现一致线程模型。
+                serviceScope.launch(Dispatchers.Default) {
+                    runCatchingObserved {
+                        // P6: rootInActiveWindow 是 Binder IPC，目标窗口进程死亡时抛 DeadObjectException，安全降级
+                        val root = runCatchingObserved { rootInActiveWindow }.getOrNull() ?: return@launch
+                        val url = findBrowserUrl(root, browserSpec) ?: return@launch
+                        if (packageName == lastPackageName && url == lastUrl) return@launch
+                        withContext(Dispatchers.Main.immediate) {
+                            lastPackageName = packageName
+                            lastUrl = url
+                            BrowserAutofillContextStore.update(packageName, url)
+                            ValidatorContextManager.updateContext(packageName, url)
+                            Log.d(TAG, "Updated browser context: pkg=$packageName, hasUrl=${url.isNotBlank()}")
+                        }
+                    }.onFailure { e -> Log.w(TAG, "browser context scan failed", e) }
+                }
                 return
             }
 
@@ -276,15 +293,15 @@ class BastionAccessibilityService : AccessibilityService() {
         username: String,
         password: String,
         preferPasswordField: Boolean,
-    ): Boolean = runCatching {
-        val root = rootInActiveWindow ?: return@runCatching false
+    ): Boolean = runCatchingObserved {
+        val root = rootInActiveWindow ?: return@runCatchingObserved false
         val activePackageName = root.packageName?.toString().orEmpty()
         if (
             !targetPackageName.isNullOrBlank() &&
             !activePackageName.equals(targetPackageName, ignoreCase = true)
         ) {
             Log.d(TAG, "Skip accessibility fill: active package mismatch ($activePackageName != $targetPackageName)")
-            return@runCatching false
+            return@runCatchingObserved false
         }
 
         val focusedNode = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
@@ -292,7 +309,7 @@ class BastionAccessibilityService : AccessibilityService() {
         val candidates = collectFillCandidates(root, focusedNode)
         if (candidates.isEmpty()) {
             Log.d(TAG, "Skip accessibility fill: no editable candidates")
-            return@runCatching false
+            return@runCatchingObserved false
         }
 
         val focusedCandidate = candidates.firstOrNull { it.isFocused }
@@ -329,7 +346,7 @@ class BastionAccessibilityService : AccessibilityService() {
 
         if (!usernameFilled && !passwordFilled) {
             Log.d(TAG, "Accessibility fill failed: no fields accepted text")
-            return@runCatching false
+            return@runCatchingObserved false
         }
 
         Log.d(
@@ -355,8 +372,8 @@ class BastionAccessibilityService : AccessibilityService() {
 
         serviceScope.launch {
             try {
-                val entries = passwordRepository.getAllPasswordEntries().first()
-                val match = entries.firstOrNull { entry -> entry.isLinkedToApp(packageName) }
+                // P4: 按包名定向查询，避免每次登录字段聚焦都加载全库（后台高频热点）
+                val match = passwordRepository.findByPackageName(packageName).firstOrNull()
                 if (match != null && activeFillNotificationEnabled) {
                     val linkedAppName = match.linkedAppBindings()
                         .firstOrNull { binding ->
@@ -424,7 +441,7 @@ class BastionAccessibilityService : AccessibilityService() {
             val (node, depth) = queue.removeFirst()
             visited += 1
 
-            runCatching {
+            runCatchingObserved {
                 val viewId = node.viewIdResourceName.orEmpty()
                 if (browserSpec.urlFieldIds.any { viewId.endsWith(it) }) {
                     extractNodeText(node)?.let { return it }
@@ -469,7 +486,7 @@ class BastionAccessibilityService : AccessibilityService() {
             val node = queue.removeFirst()
             visited += 1
 
-            runCatching {
+            runCatchingObserved {
                 if (node.isVisibleToUser && node.isEnabled && supportsSetText(node)) {
                     candidates += classifyFillCandidate(node)
                 }
@@ -482,13 +499,13 @@ class BastionAccessibilityService : AccessibilityService() {
 
         if (
             focusedNode != null &&
-            runCatching { supportsSetText(focusedNode) }.getOrDefault(false) &&
+            runCatchingObserved { supportsSetText(focusedNode) }.getOrDefault(false) &&
             candidates.none { it.node == focusedNode }
         ) {
-            runCatching { candidates += classifyFillCandidate(focusedNode) }
+            runCatchingObserved { candidates += classifyFillCandidate(focusedNode) }
         }
 
-        return runCatching {
+        return runCatchingObserved {
             candidates.distinctBy { candidate ->
                 val bounds = Rect().also(candidate.node::getBoundsInScreen)
                 listOf(
@@ -504,13 +521,13 @@ class BastionAccessibilityService : AccessibilityService() {
 
     private fun supportsSetText(node: AccessibilityNodeInfo): Boolean {
         if (node.isEditable) return true
-        return runCatching {
+        return runCatchingObserved {
             node.actionList.orEmpty().any { action -> action.id == AccessibilityNodeInfo.ACTION_SET_TEXT }
         }.getOrDefault(false)
     }
 
     private fun classifyFillCandidate(node: AccessibilityNodeInfo): FillCandidate {
-        val bounds = Rect().also { runCatching { node.getBoundsInScreen(it) } }
+        val bounds = Rect().also { runCatchingObserved { node.getBoundsInScreen(it) } }
         val signals = buildList {
             add(node.viewIdResourceName.orEmpty())
             add(node.hintText?.toString().orEmpty())
@@ -655,11 +672,12 @@ class BastionAccessibilityService : AccessibilityService() {
     private fun setNodeText(node: AccessibilityNodeInfo?, text: String): Boolean {
         if (node == null || text.isBlank()) return false
         if (!node.isFocused) {
-            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            // P6: performAction 是 Binder IPC，目标节点所属进程已死亡时抛 DeadObjectException，忽略即可
+            runCatchingObserved { node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) }.getOrDefault(false)
         }
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        runCatchingObserved { node.performAction(AccessibilityNodeInfo.ACTION_CLICK) }.getOrDefault(false)
 
-        val existingText = runCatching { node.text?.toString().orEmpty() }.getOrDefault("")
+        val existingText = runCatchingObserved { node.text?.toString().orEmpty() }.getOrDefault("")
         val canPasteWithoutAppending = if (existingText.isEmpty()) {
             true
         } else {
@@ -667,7 +685,7 @@ class BastionAccessibilityService : AccessibilityService() {
                 putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
                 putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, existingText.length)
             }
-            runCatching {
+            runCatchingObserved {
                 node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs)
             }.getOrDefault(false)
         }
@@ -675,7 +693,7 @@ class BastionAccessibilityService : AccessibilityService() {
         if (canPasteWithoutAppending) {
             val temporaryClipboard = setTemporaryClipboard(text)
             if (temporaryClipboard != null) {
-                val pasted = runCatching {
+                val pasted = runCatchingObserved {
                     node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
                 }.getOrDefault(false)
                 scheduleTemporaryClipboardRestore(temporaryClipboard)
@@ -686,7 +704,7 @@ class BastionAccessibilityService : AccessibilityService() {
         val args = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
-        return runCatching {
+        return runCatchingObserved {
             node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
         }.getOrDefault(false)
     }
@@ -698,7 +716,7 @@ class BastionAccessibilityService : AccessibilityService() {
         synchronized(temporaryClipboardLock) {
             val startedSession = !temporaryClipboardActive
             if (startedSession) {
-                val originalResult = runCatching { clipboard.primaryClip }
+                val originalResult = runCatchingObserved { clipboard.primaryClip }
                 temporaryClipboardOriginal = originalResult.getOrNull()
                 temporaryClipboardOriginalWasReadable = originalResult.isSuccess
                 temporaryClipboardActive = true
@@ -712,7 +730,7 @@ class BastionAccessibilityService : AccessibilityService() {
                     }
                 }
             }
-            val written = runCatching { clipboard.setPrimaryClip(temporaryClip) }.isSuccess
+            val written = runCatchingObserved { clipboard.setPrimaryClip(temporaryClip) }.isSuccess
             if (!written) {
                 if (startedSession) {
                     resetTemporaryClipboardSessionLocked()
@@ -763,7 +781,7 @@ class BastionAccessibilityService : AccessibilityService() {
             val snapshot = if (clipboard == null) {
                 TemporaryClipboardSnapshot(text = null, label = null, canVerify = false)
             } else {
-                runCatching {
+                runCatchingObserved {
                     val currentClip = clipboard.primaryClip
                     TemporaryClipboardSnapshot(
                         text = currentClip
@@ -787,14 +805,14 @@ class BastionAccessibilityService : AccessibilityService() {
                     temporaryClipboardOriginalWasReadable &&
                     temporaryClipboardOriginal != null
                 ) {
-                    runCatching {
+                    runCatchingObserved {
                         clipboard.setPrimaryClip(requireNotNull(temporaryClipboardOriginal))
                     }.isSuccess
                 } else {
                     false
                 }
                 if (!restored) {
-                    runCatching {
+                    runCatchingObserved {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             clipboard.clearPrimaryClip()
                         } else {

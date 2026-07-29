@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -268,7 +269,7 @@ class CommonAccountPreferences(private val context: Context) {
 
     private fun readProtectedPreference(raw: String?): String {
         if (raw.isNullOrBlank()) return ""
-        return runCatching {
+        return runCatchingObserved {
             if (securityManager.looksLikeBastionCiphertext(raw)) {
                 securityManager.decryptData(raw)
             } else {

@@ -1,5 +1,6 @@
 package com.bastion.app.steam.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.StringRes
@@ -265,7 +266,7 @@ class SteamViewModel(
                         inventoryMarket = SteamInventoryMarketUiState()
                     )
                     setLoading(true)
-                    runCatching {
+                    runCatchingObserved {
                         withContext(Dispatchers.IO) { store.loadAccounts(source.databaseId) }
                     }.onSuccess { records ->
                         mdbxAccountRecords = records
@@ -306,7 +307,7 @@ class SteamViewModel(
 
     fun updateDisplayName(accountId: Long, displayName: String) {
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val storedAccount = accountById(accountId) ?: return@launch
                 val normalizedDisplayName = displayName.trim()
                     .ifBlank { storedAccount.accountName.ifBlank { storedAccount.steamId } }
@@ -358,7 +359,7 @@ class SteamViewModel(
     ) {
         viewModelScope.launch {
             setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 val maFileText = readText(maFileUri)
                 val manifestText = manifestUri?.let { readText(it) }
                 val payload = parser.parse(
@@ -402,7 +403,7 @@ class SteamViewModel(
     fun importCodeOnlyKey(displayName: String, accountName: String, sharedSecret: String) {
         viewModelScope.launch {
             setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 val resolvedAccountName = accountName.trim().ifBlank { displayName.trim() }
                     .ifBlank { "Steam" }
                 val resolvedDisplayName = displayName.trim().ifBlank { resolvedAccountName }
@@ -686,7 +687,7 @@ class SteamViewModel(
         if (accountIds.isEmpty() || source == targetSource) return
         viewModelScope.launch {
             setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 val accounts = accountIds.distinct().mapNotNull(::accountById)
                 require(accounts.isNotEmpty()) {
                     appContext.getString(R.string.steam_transfer_mafile_failed)
@@ -722,7 +723,7 @@ class SteamViewModel(
                 return@launch
             }
             setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.IO) { authenticatorService.remove(account) }
             }.onSuccess { result ->
                 if (result.success) {
@@ -747,7 +748,7 @@ class SteamViewModel(
         val account = selectedAccount() ?: return
         viewModelScope.launch {
             if (!silent) setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 account.confirmationUnavailableMessage()?.let { reason ->
                     throw IllegalStateException(reason)
                 }
@@ -797,7 +798,7 @@ class SteamViewModel(
         if (confirmations.isEmpty()) return
         viewModelScope.launch {
             setLoading(true)
-            val result = runCatching {
+            val result = runCatchingObserved {
                 account.confirmationUnavailableMessage()?.let { reason ->
                     throw IllegalStateException(reason)
                 }
@@ -821,8 +822,8 @@ class SteamViewModel(
             val failureReason = account.confirmationUnavailableMessage()
             val ok = if (failureReason != null) {
                 false
-            } else runCatching {
-                val freshAccount = ensureSteamSession(account) ?: return@runCatching false
+            } else runCatchingObserved {
+                val freshAccount = ensureSteamSession(account) ?: return@runCatchingObserved false
                 withContext(Dispatchers.IO) { confirmationService.respond(freshAccount, confirmation, accept) }
             }.getOrDefault(false)
             setMessage(if (ok) appContext.getString(R.string.steam_done) else failureReason ?: appContext.getString(R.string.steam_confirmation_failed))
@@ -843,7 +844,7 @@ class SteamViewModel(
             )
         }
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -908,7 +909,7 @@ class SteamViewModel(
             )
         }
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -947,7 +948,7 @@ class SteamViewModel(
         val generation = inventoryLoadGeneration
         updateInventoryMarket { it.copy(inventoryLoadingMore = true, inventoryError = null) }
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -990,7 +991,7 @@ class SteamViewModel(
             )
         }
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -1022,7 +1023,7 @@ class SteamViewModel(
         if (!state.listingsHasMore || state.listingsLoading || state.listingsLoadingMore) return
         updateInventoryMarket { it.copy(listingsLoadingMore = true, listingsError = null) }
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -1056,7 +1057,7 @@ class SteamViewModel(
         }
         viewModelScope.launch {
             val freshAccount = ensureSteamSession(account)
-            val price = runCatching {
+            val price = runCatchingObserved {
                 withContext(Dispatchers.IO) {
                     marketService.fetchPriceOverview(
                         appId = item.appId,
@@ -1068,7 +1069,7 @@ class SteamViewModel(
             val history = if (freshAccount == null) {
                 emptyList()
             } else {
-                runCatching {
+                runCatchingObserved {
                     withContext(Dispatchers.IO) {
                         marketService.fetchPriceHistory(
                             account = freshAccount,
@@ -1131,14 +1132,14 @@ class SteamViewModel(
             targets.forEach { stack ->
                 if (generation != batchQuoteGeneration) return@launch
                 val quote = withContext(Dispatchers.IO) {
-                    val price = runCatching {
+                    val price = runCatchingObserved {
                         marketService.fetchPriceOverview(
                             appId = stack.item.appId,
                             marketHashName = stack.item.marketHashName,
                             currency = wallet.currency
                         )
                     }.getOrNull()
-                    val history = runCatching {
+                    val history = runCatchingObserved {
                         marketService.fetchPriceHistory(
                             account = freshAccount,
                             appId = stack.item.appId,
@@ -1208,12 +1209,12 @@ class SteamViewModel(
             it.copy(actionLoading = true, lastActionResult = null)
         }
         viewModelScope.launch {
-            val outcome = runCatching {
+            val outcome = runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
                     val preExistingMarketIds = if (autoConfirm) {
-                        runCatching {
+                        runCatchingObserved {
                             confirmationService.fetch(freshAccount)
                                 .filter { it.isMarketListingConfirmation() }
                                 .map { it.id }
@@ -1231,7 +1232,7 @@ class SteamViewModel(
                             entry.quantity.coerceAtMost(entry.stack.assetIds.size)
                         )
                         assetIds.forEach { assetId ->
-                            runCatching {
+                            runCatchingObserved {
                                 marketService.sell(
                                     account = freshAccount,
                                     item = entry.stack.item,
@@ -1349,7 +1350,7 @@ class SteamViewModel(
         if (targets.isEmpty()) return
         updateInventoryMarket { it.copy(actionLoading = true, lastActionResult = null) }
         viewModelScope.launch {
-            val result = runCatching {
+            val result = runCatchingObserved {
                 val freshAccount = ensureSteamSession(account)
                     ?: throw IllegalStateException("Steam community session unavailable")
                 withContext(Dispatchers.IO) {
@@ -1357,7 +1358,7 @@ class SteamViewModel(
                     var failedCount = 0
                     var firstError: String? = null
                     targets.forEach { listing ->
-                        runCatching {
+                        runCatchingObserved {
                             marketService.cancelListing(freshAccount, listing.listingId)
                         }.onSuccess { success ->
                             if (success) {
@@ -1422,7 +1423,7 @@ class SteamViewModel(
         val account = selectedAccount() ?: return
         viewModelScope.launch {
             if (!silent) setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 account.loginApprovalUnavailableMessage()?.let { reason ->
                     throw IllegalStateException(reason)
                 }
@@ -1456,7 +1457,7 @@ class SteamViewModel(
                 return@launch
             }
             if (!silent) setLoading(true)
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.IO) { authorizedDeviceService.fetch(account) }
             }.onSuccess { devices ->
                 if (_uiState.value.accounts.any { it.id == accountId }) {
@@ -1520,8 +1521,8 @@ class SteamViewModel(
             val failureReason = account.loginApprovalUnavailableMessage()
             val ok = if (failureReason != null) {
                 false
-            } else runCatching {
-                val freshAccount = ensureSteamSession(account) ?: return@runCatching false
+            } else runCatchingObserved {
+                val freshAccount = ensureSteamSession(account) ?: return@runCatchingObserved false
                 withContext(Dispatchers.IO) {
                     loginApprovalService.respondToSession(
                         account = freshAccount,
@@ -1549,8 +1550,8 @@ class SteamViewModel(
             val failureReason = account.loginApprovalUnavailableMessage()
             val ok = if (failureReason != null) {
                 false
-            } else runCatching {
-                val freshAccount = ensureSteamSession(account) ?: return@runCatching false
+            } else runCatchingObserved {
+                val freshAccount = ensureSteamSession(account) ?: return@runCatchingObserved false
                 withContext(Dispatchers.IO) { loginApprovalService.respondToQr(freshAccount, challenge, approve) }
             }.getOrDefault(false)
             setMessage(if (ok) appContext.getString(R.string.steam_done) else failureReason ?: appContext.getString(R.string.steam_qr_response_failed))
@@ -1562,7 +1563,7 @@ class SteamViewModel(
         result: SteamLoginImportService.LoginResult.ReadyForImport,
         displayNameOverride: String? = pendingLoginDisplayName
     ): Int? {
-        return runCatching {
+        return runCatchingObserved {
             val message = saveLoginResult(result, displayNameOverride)
             pendingLoginCredentialEntryId?.let { entryId ->
                 appContext.getSharedPreferences(

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.password
 
+import com.bastion.app.logging.runCatchingObserved
 import java.net.URI
 import java.util.Locale
 import com.bastion.app.data.PasswordEntry
@@ -151,7 +152,7 @@ private fun extractHost(raw: String): String? {
     val normalized = raw.trim().lowercase(Locale.ROOT)
     if (normalized.isBlank()) return null
 
-    val fromUri = runCatching {
+    val fromUri = runCatchingObserved {
         val withScheme = if ("://" in normalized) normalized else "https://$normalized"
         URI(withScheme).host
     }.getOrNull()

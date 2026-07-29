@@ -1,5 +1,6 @@
 package com.bastion.app.util
 
+import com.bastion.app.logging.runCatchingObserved
 import android.net.Uri
 import com.bastion.app.data.model.OtpType
 import com.bastion.app.data.model.TotpData
@@ -229,7 +230,7 @@ object TotpUriParser {
     }
 
     private fun decodeMigrationPayload(encodedData: String): ByteArray? {
-        return runCatching {
+        return runCatchingObserved {
             var base64 = encodedData
                 .replace(' ', '+')
                 .replace('-', '+')

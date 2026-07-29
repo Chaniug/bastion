@@ -1,5 +1,6 @@
 package com.bastion.app.mdbx
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -32,7 +33,7 @@ object MdbxDiagLogger {
         if (persistentLogFile != null) return
         synchronized(fileLock) {
             if (persistentLogFile != null) return
-            runCatching {
+            runCatchingObserved {
                 val logDir = File(context.applicationContext.filesDir, LOG_DIR_NAME)
                 if (!logDir.exists()) {
                     logDir.mkdirs()
@@ -69,7 +70,7 @@ object MdbxDiagLogger {
             val sanitizedLine = sanitize(line)
             Log.d(TAG, sanitizedLine)
             synchronized(fileLock) {
-                runCatching {
+                runCatchingObserved {
                     if (file.exists() && file.length() > MAX_LOG_FILE_BYTES) {
                         rotate(file)
                     }
@@ -85,7 +86,7 @@ object MdbxDiagLogger {
         val file = persistentLogFile ?: return ""
         if (!file.exists()) return ""
         return synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 file.readLines()
                     .takeLast(maxEntries.coerceAtLeast(1))
                     .joinToString(separator = "\n")
@@ -95,7 +96,7 @@ object MdbxDiagLogger {
 
     fun clear() {
         synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 persistentLogFile?.let { file ->
                     if (file.exists()) {
                         file.writeText("")
@@ -107,7 +108,7 @@ object MdbxDiagLogger {
 
     private fun rotate(file: File) {
         val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        val tail = runCatching {
+        val tail = runCatchingObserved {
             file.readLines().takeLast(ROTATE_KEEP_LINES)
         }.getOrElse { emptyList() }
 

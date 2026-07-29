@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">bastionpass</string>
-    <string name="app_label">bastionpass</string>
+    <string name="app_name">Bastion</string>
+    <string name="app_label">Bastion</string>
     
     <!-- General -->
     <string name="accessibility_service_description">Dịch vụ trợ năng Bastion giúp cải thiện chức năng tự động điền bằng cách phát hiện trường mật khẩu chính xác hơn.</string>
@@ -3366,7 +3366,6 @@ Làm mới hoặc đồng bộ hóa cơ sở dữ liệu KeePass này, sau đó 
     <string name="autofill_v2_set_system_service_desc">Mở cài đặt hệ thống Android và đặt Bastion làm nhà cung cấp tính năng tự động điền của bạn.</string>
     <string name="autofill_v2_privileged_apps">Ứng dụng đặc quyền</string>
     <string name="autofill_v2_privileged_apps_desc">Mở cài đặt Android để có đặc quyền của nhà cung cấp thông tin xác thực.</string>
-    <string name="autofill_v2_freeze_notice">Tính năng tự động điền cũ và các cài đặt cũ của nó bị đóng băng. Hành vi mới chỉ được kiểm soát bởi trang V2 này.</string>
     <string name="autofill_v2_default_scope_title">Phạm vi bộ chọn mặc định</string>
     <string name="autofill_v2_default_scope_desc">Đặt nguồn lưu trữ Bastion hiển thị theo mặc định khi danh sách tự động điền mở ra.</string>
     <string name="autofill_v2_default_keepass_title">Cơ sở dữ liệu KeePass mặc định</string>

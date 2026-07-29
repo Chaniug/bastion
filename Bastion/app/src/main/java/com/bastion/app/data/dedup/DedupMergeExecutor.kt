@@ -1,5 +1,6 @@
 package com.bastion.app.data.dedup
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ensureActive
@@ -32,7 +33,7 @@ internal class RepositoryDedupMergeWriter(
             }
         } catch (throwable: Exception) {
             val rollbackFailure = insertedId?.let { id ->
-                runCatching {
+                runCatchingObserved {
                     withContext(NonCancellable) {
                         passwordRepository.deletePasswordEntryById(id)
                     }

@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 import app.keemobile.kotpass.models.BinaryReference
 import app.keemobile.kotpass.models.Entry
 import app.keemobile.kotpass.models.EntryValue
@@ -56,8 +57,8 @@ data class KeePassEntrySnapshot(
                 )
             }
             val binarySnapshots = entry.binaries.map { it.toSnapshot() }
-            val icon = runCatching { entry.icon.toString() }.getOrNull()
-            val timesFingerprint = runCatching { entry.times.toString() }.getOrNull()
+            val icon = runCatchingObserved { entry.icon.toString() }.getOrNull()
+            val timesFingerprint = runCatchingObserved { entry.times.toString() }.getOrNull()
             return KeePassEntrySnapshot(
                 uuid = entry.uuid,
                 groupPath = groupPath,
@@ -155,7 +156,7 @@ data class KeePassEntryProjection(
 }
 
 private fun EntryValue.safeContent(): String {
-    return runCatching { content }.getOrDefault("")
+    return runCatchingObserved { content }.getOrDefault("")
 }
 
 private fun BinaryReference.toSnapshot(): KeePassEntryBinarySnapshot {

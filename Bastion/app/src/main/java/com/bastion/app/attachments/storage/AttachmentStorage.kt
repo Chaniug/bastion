@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.storage
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +80,7 @@ class AttachmentStorage(private val context: Context) {
             }
         } catch (e: Exception) {
             // 写入失败时清理半成品，避免遗留密文
-            runCatching { target.delete() }
+            runCatchingObserved { target.delete() }
             throw e
         }
 

@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -29,7 +30,7 @@ class CredentialProviderRefreshReceiver : BroadcastReceiver() {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
 
-        runCatching {
+        runCatchingObserved {
             logCredentialProviderComponentState(context, action)
         }.onFailure { error ->
             Log.w(TAG, "Failed to inspect CredentialProviderService on action=$action", error)

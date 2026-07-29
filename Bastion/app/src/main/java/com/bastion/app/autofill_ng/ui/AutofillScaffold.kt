@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -340,7 +341,7 @@ fun AppInfo(
             value = appIcon to appName
         } else if (packageName != null) {
             value = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingObserved {
                     val pm = appContext.packageManager
                     val appInfo = pm.getApplicationInfo(packageName, 0)
                     val icon = pm.getApplicationIcon(appInfo)

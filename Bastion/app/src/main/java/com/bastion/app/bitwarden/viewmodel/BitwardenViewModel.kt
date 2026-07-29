@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.Uri
@@ -499,6 +500,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         
         viewModelScope.launch {
             repository.lock(vaultId)
+            bitwardenOfflineSecretCache.clearMemoryCache()
             syncOrchestrator.clearVault(vaultId)
             setUnlockState(vaultId, currentRepositoryUnlockState(vaultId))
             if (isActiveVault) {
@@ -1624,7 +1626,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun warmBitwardenOfflineSecretCacheForVault(vaultId: Long): Int {
-        return runCatching {
+        return runCatchingObserved {
             repository.getPasswordEntries(vaultId).fold(0) { warmedCount: Int, entry: PasswordEntry ->
                 if (!entry.hasBitwardenCipherBinding() || entry.password.isBlank()) {
                     warmedCount
@@ -1646,13 +1648,13 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun decodePasswordOrNull(rawPassword: String): String? {
         if (rawPassword.isEmpty()) return ""
-        return runCatching {
+        return runCatchingObserved {
             var current = rawPassword
             repeat(3) {
                 val decrypted = synchronized(decryptLock) {
                     securityManager.decryptData(current)
                 }
-                if (decrypted == current) return@runCatching current
+                if (decrypted == current) return@runCatchingObserved current
                 current = decrypted
             }
             current

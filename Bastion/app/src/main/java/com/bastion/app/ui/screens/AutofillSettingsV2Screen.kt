@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
@@ -595,7 +596,13 @@ fun AutofillSettingsV2Screen(
                         scope.launch { preferences.setPasswordSuggestionEnabled(enabled) }
                     },
                 )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            }
+
+            SectionCard(
+                title = stringResource(R.string.autofill_save_behavior_title),
+                icon = Icons.Outlined.Save,
+                iconTint = MaterialTheme.colorScheme.tertiary,
+            ) {
                 SwitchSettingItem(
                     icon = Icons.Outlined.AddCircleOutline,
                     title = stringResource(R.string.autofill_save_enable),
@@ -758,20 +765,6 @@ fun AutofillSettingsV2Screen(
                         blockedFieldSignatureRecords.size,
                     ),
                     onClick = onNavigateToBlockedFields,
-                )
-            }
-
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                ),
-            ) {
-                Text(
-                    text = stringResource(R.string.autofill_v2_freeze_notice),
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
         }

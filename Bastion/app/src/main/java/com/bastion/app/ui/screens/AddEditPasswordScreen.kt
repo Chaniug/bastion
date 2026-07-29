@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Context
@@ -417,7 +418,7 @@ fun AddEditPasswordScreen(
     val inlineGeneratedPasswords = remember { mutableStateMapOf<Int, String>() }
     val inlinePasswordGenerator = remember { PasswordGenerator() }
     val selectedAuthenticatorOtpType = remember(selectedAuthenticatorOtpTypeName) {
-        runCatching { OtpType.valueOf(selectedAuthenticatorOtpTypeName) }.getOrDefault(OtpType.TOTP)
+        runCatchingObserved { OtpType.valueOf(selectedAuthenticatorOtpTypeName) }.getOrDefault(OtpType.TOTP)
     }
     val authenticatorKey = remember(
         authenticatorSecret,
@@ -1232,7 +1233,7 @@ fun AddEditPasswordScreen(
                     currentReplicaGroupId = entry.replicaGroupId
                     if (!authenticatorEditedByUser) {
                         val resolvedAuthenticatorKey = withContext(Dispatchers.Default) {
-                            runCatching {
+                            runCatchingObserved {
                                 securityManager.decryptDataIfBastionCiphertext(entry.authenticatorKey)
                             }.getOrDefault(entry.authenticatorKey)
                         }

@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
@@ -138,7 +139,7 @@ class OneDriveKeePassFileSource(
     override suspend fun listChildren(): List<FileSourceEntry> = withContext(Dispatchers.IO) {
         val targetDirectory = when {
             normalizedRemotePath.isBlank() -> ""
-            runCatching { stat() }.getOrNull()?.isDirectory == true -> normalizedRemotePath
+            runCatchingObserved { stat() }.getOrNull()?.isDirectory == true -> normalizedRemotePath
             else -> parentPathOf(normalizedRemotePath)
         }
         listDirectory(targetDirectory)
@@ -150,7 +151,7 @@ class OneDriveKeePassFileSource(
     }
 
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val token = authManager.acquireAccessToken(accountIdentifier).accessToken
                 ?: throw IOException("OneDrive 访问令牌为空")
             val relativeUrl = if (normalizedRemotePath.isBlank()) {
@@ -209,7 +210,7 @@ class OneDriveKeePassFileSource(
     suspend fun createDirectory(parentPath: String?, name: String): FileSourceEntry = withContext(Dispatchers.IO) {
         val normalizedParentPath = normalizeOptionalRemotePath(parentPath)
         val targetPath = buildChildPath(normalizedParentPath, name)
-        if (runCatching { resolveItemByPath(targetPath) }.getOrNull() != null) {
+        if (runCatchingObserved { resolveItemByPath(targetPath) }.getOrNull() != null) {
             throw IOException("同名目录已存在")
         }
         val token = authManager.acquireAccessToken(accountIdentifier).accessToken
@@ -248,7 +249,7 @@ class OneDriveKeePassFileSource(
     ): FileSourceEntry = withContext(Dispatchers.IO) {
         val normalizedParentPath = normalizeOptionalRemotePath(parentPath)
         val targetPath = buildChildPath(normalizedParentPath, name)
-        if (runCatching { resolveItemByPath(targetPath) }.getOrNull() != null) {
+        if (runCatchingObserved { resolveItemByPath(targetPath) }.getOrNull() != null) {
             throw IOException("同名文件已存在")
         }
         val token = authManager.acquireAccessToken(accountIdentifier).accessToken
@@ -610,7 +611,7 @@ private data class RenameItemRequest(
     val name: String
 )
 
-private fun String.toEpochMillis(): Long? = runCatching { Instant.parse(this).toEpochMilli() }.getOrNull()
+private fun String.toEpochMillis(): Long? = runCatchingObserved { Instant.parse(this).toEpochMilli() }.getOrNull()
 
 object OneDriveKeePassSupport {
     fun createFileSource(

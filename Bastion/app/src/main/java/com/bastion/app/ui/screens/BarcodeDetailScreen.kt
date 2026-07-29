@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -268,7 +269,7 @@ fun BarcodeDetailScreen(
 }
 
 private fun generateBarcodeBitmap(payload: String, mode: BarcodeRenderMode): Result<Bitmap> =
-    runCatching {
+    runCatchingObserved {
         val encoder = BarcodeEncoder()
         when (mode) {
             BarcodeRenderMode.QR_CODE -> {

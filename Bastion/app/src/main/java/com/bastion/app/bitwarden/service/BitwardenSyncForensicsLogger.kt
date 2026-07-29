@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
@@ -181,7 +182,7 @@ object BitwardenSyncForensicsLogger {
     ): Session = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext
         initialize(appContext)
-        runCatching { BitwardenDiagLogger.initialize(appContext) }
+        runCatchingObserved { BitwardenDiagLogger.initialize(appContext) }
         val settings = SettingsManager(appContext).settingsFlow.first()
         Session(
             enabled = settings.bitwardenSyncForensicsEnabled,
@@ -266,7 +267,7 @@ object BitwardenSyncForensicsLogger {
     ) = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext
         initialize(appContext)
-        runCatching { BitwardenDiagLogger.initialize(appContext) }
+        runCatchingObserved { BitwardenDiagLogger.initialize(appContext) }
 
         val settings = SettingsManager(appContext).settingsFlow.first()
         if (!settings.bitwardenSyncForensicsEnabled ||
@@ -341,7 +342,7 @@ object BitwardenSyncForensicsLogger {
 
         val appContext = context.applicationContext
         initialize(appContext)
-        runCatching { BitwardenDiagLogger.initialize(appContext) }
+        runCatchingObserved { BitwardenDiagLogger.initialize(appContext) }
         val settings = SettingsManager(appContext).settingsFlow.first()
         if (!settings.bitwardenSyncForensicsEnabled ||
             !settings.bitwardenSyncForensicsRawCaptureEnabled
@@ -355,7 +356,7 @@ object BitwardenSyncForensicsLogger {
             .forEach { cipher ->
                 val cipherId = cipher.id.trim()
                 if (cipherId.isEmpty()) return@forEach
-                val payload = runCatching { json.encodeToString(cipher) }.getOrNull() ?: return@forEach
+                val payload = runCatchingObserved { json.encodeToString(cipher) }.getOrNull() ?: return@forEach
                 persistRawEntrySnapshot(
                     context = appContext,
                     vaultId = vaultId,
@@ -413,7 +414,7 @@ object BitwardenSyncForensicsLogger {
     }
 
     private fun readFileForExport(file: File, maxChars: Int): String {
-        return runCatching {
+        return runCatchingObserved {
             val text = file.readText()
             if (text.length <= maxChars) {
                 text
@@ -462,7 +463,7 @@ object BitwardenSyncForensicsLogger {
     }
 
     private fun writeInternalLog(context: Context, fileName: String, payload: String): String {
-        return runCatching {
+        return runCatchingObserved {
             synchronized(fileLock) {
                 val dir = File(context.filesDir, LOG_DIR_NAME)
                 if (!dir.exists()) {
@@ -476,7 +477,7 @@ object BitwardenSyncForensicsLogger {
     }
 
     private fun writeRawInternalLog(context: Context, fileName: String, payload: String): String {
-        return runCatching {
+        return runCatchingObserved {
             synchronized(fileLock) {
                 val dir = File(context.filesDir, RAW_LOG_DIR_NAME)
                 if (!dir.exists()) {
@@ -497,20 +498,20 @@ object BitwardenSyncForensicsLogger {
     ): String? {
         if (treeUriRaw.isNullOrBlank()) return null
 
-        return runCatching {
+        return runCatchingObserved {
             val treeUri = Uri.parse(treeUriRaw)
             val root = DocumentFile.fromTreeUri(context, treeUri)
-                ?: return@runCatching "tree_unavailable"
+                ?: return@runCatchingObserved "tree_unavailable"
             val targetDir = root.findFile(EXTERNAL_DIR_NAME)
                 ?.takeIf { it.isDirectory }
                 ?: root.createDirectory(EXTERNAL_DIR_NAME)
                 ?: root
 
             val targetFile = targetDir.createFile("application/json", fileName)
-                ?: return@runCatching "create_file_failed"
+                ?: return@runCatchingObserved "create_file_failed"
             context.contentResolver.openOutputStream(targetFile.uri, "w")?.use { stream ->
                 stream.write(payload.toByteArray())
-            } ?: return@runCatching "open_stream_failed"
+            } ?: return@runCatchingObserved "open_stream_failed"
             targetFile.uri.toString()
         }.getOrElse { "mirror_failed: ${it.message}" }
     }
@@ -523,20 +524,20 @@ object BitwardenSyncForensicsLogger {
     ): String? {
         if (treeUriRaw.isNullOrBlank()) return null
 
-        return runCatching {
+        return runCatchingObserved {
             val treeUri = Uri.parse(treeUriRaw)
             val root = DocumentFile.fromTreeUri(context, treeUri)
-                ?: return@runCatching "tree_unavailable"
+                ?: return@runCatchingObserved "tree_unavailable"
             val targetDir = root.findFile(EXTERNAL_RAW_DIR_NAME)
                 ?.takeIf { it.isDirectory }
                 ?: root.createDirectory(EXTERNAL_RAW_DIR_NAME)
                 ?: root
 
             val targetFile = targetDir.createFile("application/json", fileName)
-                ?: return@runCatching "create_file_failed"
+                ?: return@runCatchingObserved "create_file_failed"
             context.contentResolver.openOutputStream(targetFile.uri, "w")?.use { stream ->
                 stream.write(payload.toByteArray())
-            } ?: return@runCatching "open_stream_failed"
+            } ?: return@runCatchingObserved "open_stream_failed"
             targetFile.uri.toString()
         }.getOrElse { "mirror_failed: ${it.message}" }
     }
@@ -634,13 +635,13 @@ object BitwardenSyncForensicsLogger {
         responseCode: Int?,
         success: Boolean
     ) {
-        runCatching {
-            val sanitizedPayload = sanitizeRawPayload(payload)?.takeIf { it.isNotBlank() } ?: return@runCatching
+        runCatchingObserved {
+            val sanitizedPayload = sanitizeRawPayload(payload)?.takeIf { it.isNotBlank() } ?: return@runCatchingObserved
             val digest = shortSha(sanitizedPayload)
             val dao = PasswordDatabase.getDatabase(context).bitwardenSyncRawEntryRecordDao()
             val latest = dao.getLatestByCipher(vaultId, cipherId)
             if (latest?.payloadDigest == digest) {
-                return@runCatching
+                return@runCatchingObserved
             }
 
             val cipherText = SecurityManager(context).encryptDataLegacyCompat(sanitizedPayload)
@@ -684,7 +685,7 @@ object BitwardenSyncForensicsLogger {
             file.isFile && file.name.startsWith(prefix) && file.name.endsWith(LOG_FILE_SUFFIX)
         } ?: return
         files.forEach { file ->
-            runCatching { file.delete() }
+            runCatchingObserved { file.delete() }
         }
     }
 

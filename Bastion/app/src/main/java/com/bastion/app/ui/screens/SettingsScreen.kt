@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -39,6 +40,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
@@ -51,6 +53,7 @@ import com.bastion.app.data.ItemType
 import com.bastion.app.ui.components.TrashSettingsSheet
 import com.bastion.app.data.ThemeMode
 import com.bastion.app.ui.components.M3IdentityVerifyDialog
+import com.bastion.app.ui.components.MarkdownPreviewText
 import com.bastion.app.ui.components.UnifiedMoveAction
 import com.bastion.app.ui.main.navigation.SteamDockIcon
 import com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState
@@ -183,7 +186,7 @@ fun SettingsScreen(
                 context.getString(R.string.update_install_permission_required),
                 Toast.LENGTH_LONG
             ).show()
-            runCatching {
+            runCatchingObserved {
                 val intent = Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:${context.packageName}")
@@ -217,7 +220,7 @@ fun SettingsScreen(
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
-                                runCatching {
+                                runCatchingObserved {
                                     context.startActivity(installIntent)
                                     showUpdateCheckDialog = false
                                 }.onFailure {
@@ -1492,10 +1495,10 @@ fun SettingsScreen(
                                 }
                                 result.releaseNotes?.let { notes ->
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = notes,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    MarkdownPreviewText(
+                                        markdown = notes,
+                                        imageBitmaps = emptyMap(),
+                                        modifier = Modifier.fillMaxWidth(),
                                     )
                                 }
                             }

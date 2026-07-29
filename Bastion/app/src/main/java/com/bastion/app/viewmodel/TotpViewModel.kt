@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -688,7 +689,7 @@ class TotpViewModel(
     private fun restoreLastCategoryFilter() {
         val manager = settingsManager ?: return
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 manager.categoryFilterStateFlow(SettingsManager.CategoryFilterScope.TOTP).first()
             }.onSuccess { state ->
                 _categoryFilter.value = decodeCategoryFilter(state)

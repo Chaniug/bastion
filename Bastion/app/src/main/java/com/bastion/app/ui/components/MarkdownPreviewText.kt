@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -664,7 +665,7 @@ private fun openLink(
         callback(raw)
         return
     }
-    runCatching {
+    runCatchingObserved {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(raw)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

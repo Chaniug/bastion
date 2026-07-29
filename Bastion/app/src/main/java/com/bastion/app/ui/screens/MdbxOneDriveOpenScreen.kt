@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -135,7 +136,7 @@ fun MdbxOneDriveOpenScreen(
 
     LaunchedEffect(Unit) {
         viewModel.clearOperationState()
-        runCatching { authManager.getCachedSession() }
+        runCatchingObserved { authManager.getCachedSession() }
             .getOrNull()
             ?.let { cached ->
                 session = cached
@@ -212,7 +213,7 @@ fun MdbxOneDriveOpenScreen(
                                 isConnecting = true
                                 authError = null
                                 scope.launch {
-                                    runCatching { authManager.signIn(activity) }
+                                    runCatchingObserved { authManager.signIn(activity) }
                                         .onSuccess { s ->
                                             session = s
                                             loadDirectory("")

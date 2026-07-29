@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">bastionpass</string>
-    <string name="app_label">bastionpass</string>
+    <string name="app_name">Bastion</string>
+    <string name="app_label">Bastion</string>
     
     <!-- General -->
     <string name="accessibility_service_description">Bastionアクセシビリティサービスは、パスワードフィールドをより正確に検出することで、自動入力機能の向上に役立ちます。</string>
@@ -3353,7 +3353,6 @@
     <string name="autofill_v2_set_system_service_desc">Android システム設定を開き、自動入力プロバイダーとして Bastion を設定します。</string>
     <string name="autofill_v2_privileged_apps">特権のあるアプリ</string>
     <string name="autofill_v2_privileged_apps_desc">認証情報プロバイダー権限の Android 設定を開きます。</string>
-    <string name="autofill_v2_freeze_notice">従来の自動入力とその古い設定は凍結されます。新しい動作は、この V2 ページによってのみ制御されます。</string>
     <string name="autofill_v2_default_scope_title">デフォルトのピッカースコープ</string>
     <string name="autofill_v2_default_scope_desc">自動入力リストが開いたときに、Bastion がデフォルトで表示するストレージ ソースを設定します。</string>
     <string name="autofill_v2_default_keepass_title">デフォルトのKeePassデータベース</string>

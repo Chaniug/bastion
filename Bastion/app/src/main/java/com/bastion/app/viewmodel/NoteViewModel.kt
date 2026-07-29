@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -89,7 +90,7 @@ class NoteViewModel(
 
     private fun decryptStoredSensitiveValue(value: String): String {
         return securityManager
-            ?.let { manager -> runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value) }
+            ?.let { manager -> runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value) }
             ?: value
     }
 

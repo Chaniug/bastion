@@ -9,11 +9,11 @@ permalink: /ecosystem/iOSReadme
 > Ứng dụng khách kho mật khẩu iOS ưu tiên cục bộ của Bastion  
 > iOS 17+ · SwiftUI · MDBX Vault · AutoFill · TOTP · WebDAV
 
-[![Release](https://img.shields.io/github/v/release/Bastion/Bastion-for-iOS?style=flat-square)](https://github.com/Bastion/Bastion-for-iOS/releases)
+[![Release](https://img.shields.io/github/v/release/Monica-Pass/Monica-for-iOS?style=flat-square)](https://github.com/Monica-Pass/Monica-for-iOS/releases)
 
-[![Downloads](https://img.shields.io/github/downloads/Bastion/Bastion-for-iOS/total?style=flat-square)](https://github.com/Bastion/Bastion-for-iOS/releases)
+[![Downloads](https://img.shields.io/github/downloads/Monica-Pass/Monica-for-iOS/total?style=flat-square)](https://github.com/Monica-Pass/Monica-for-iOS/releases)
 
-[![Last Commit](https://img.shields.io/github/last-commit/Bastion/Bastion-for-iOS?style=flat-square)](https://github.com/Bastion/Bastion-for-iOS/commits)
+[![Last Commit](https://img.shields.io/github/last-commit/Monica-Pass/Monica-for-iOS?style=flat-square)](https://github.com/Monica-Pass/Monica-for-iOS/commits)
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)](LICENSE)
 
@@ -294,7 +294,7 @@ Thiết kế, khả năng tương thích và một phần định hướng tính
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Bastion/Bastion-for-iOS&type=Date)](https://star-history.com/#Bastion/Bastion-for-iOS&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Monica-Pass/Monica-for-iOS&type=Date)](https://star-history.com/#Monica-Pass/Monica-for-iOS&Date)
 
 ---
 

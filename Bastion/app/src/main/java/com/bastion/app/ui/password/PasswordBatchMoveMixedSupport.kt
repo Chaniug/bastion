@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.widget.Toast
 import kotlinx.coroutines.CompletableDeferred
@@ -462,7 +463,7 @@ internal suspend fun executeMixedPasswordBatchMove(
         val recreatedEntries = mutableListOf<TimelinePasswordRecreatedEntry>()
         val decryptedPasswordSnapshot = selectedEntries
             .mapNotNull { entry ->
-                runCatching { securityManager.decryptData(entry.password) }
+                runCatchingObserved { securityManager.decryptData(entry.password) }
                     .getOrNull()
                     ?.takeIf { it.isNotEmpty() }
                     ?.let { plain -> entry.password to plain }

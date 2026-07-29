@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.app.assist.AssistStructure
 import android.content.Context
@@ -15,7 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -142,7 +143,7 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
         }
         biometricPromptShown = true
         AutofillLogger.i("CALLBACK", "Showing biometric prompt for autofill")
-        runCatching {
+        runCatchingObserved {
             biometricAuthHelper.authenticate(
                 activity = this@AutofillCipherCallbackActivity,
                 title = getString(R.string.autofill_auth_title),
@@ -300,13 +301,14 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
 
         // 回归修复：认证填充主路径此前缺少 OTP 自动复制副作用（仅挂在 Picker Activity 上，
         // 而 vault 锁定时框架直接走 AutofillCipherCallbackActivity 完成填充，绕过 Picker）。
-        // 用 GlobalScope 脱离 Activity 生命周期，避免 finish 取消协程。
+        // 用 ProcessLifecycleOwner.get().lifecycleScope（进程级作用域）而非 Activity.lifecycleScope：
+        // Activity 在 finish() 后仍可安全完成 OTP 自动复制副作用，协程在进程销毁时方被结构化取消。
         Log.d(
             "BastionOtpCopy",
             "trigger: completeCipherAutofill reached, passwordId=${passwordEntry.id}, " +
                 "hints=${callbackArgs.autofillHints}, autoCopyEnabledPathPending"
         )
-        GlobalScope.launch(Dispatchers.Default) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.Default) {
             performOtpAutofillSideEffects(
                 context = applicationContext,
                 password = passwordEntry,
@@ -352,8 +354,37 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
 
     private fun resolveAutofillTargets(callbackArgs: Args): ResolvedAutofillTargets {
         val assistStructure = getAssistStructureOrNull()
+        val callbackIds = callbackArgs.autofillIds?.distinct().orEmpty()
+        val callbackHints = callbackArgs.autofillHints.orEmpty()
+
+        // 优先采用 FillResponse 构建时烘焙进 PendingIntent 的目标（callback_args）：
+        // 构建期流水线（selectFillableTargets + buildFocusedSyntheticItems）能恢复
+        // 原始 re-parse 找不到的账号框——例如 Edge WebView 不暴露 username 的 autofill
+        // hint，只有“聚焦文本域 + 密码上下文”合成才能定位账号框。直接 re-parse assist
+        // structure 会漏掉合成出的账号框，导致只填充密码、不填充用户名。
+        // 这里信任 callback_args，并仅对当前结构做有效性校验，避免注入已销毁的 id。
+        if (callbackIds.isNotEmpty()) {
+            val idHintPairs = callbackIds.mapIndexed { index, id ->
+                id to callbackHints.getOrNull(index).orEmpty()
+            }
+            val validPairs = if (assistStructure != null) {
+                val liveIds = collectAutofillIds(assistStructure)
+                idHintPairs.filter { liveIds.contains(it.first) }
+            } else {
+                idHintPairs
+            }
+            if (validPairs.isNotEmpty()) {
+                return ResolvedAutofillTargets(
+                    ids = validPairs.map { it.first },
+                    hints = validPairs.map { it.second },
+                    source = "callback_args",
+                )
+            }
+        }
+
+        // 回退：当 PendingIntent 未携带可用目标时，才 re-parse 当前结构。
         if (assistStructure != null) {
-            val parsedTargets = runCatching {
+            val parsedTargets = runCatchingObserved {
                 val parser = EnhancedAutofillStructureParserV2()
                 val parsed = parser.parse(assistStructure, respectAutofillOff = false)
                 selectLoginFillableTargets(parsed.items)
@@ -368,11 +399,22 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
             }
         }
 
-        return ResolvedAutofillTargets(
-            ids = callbackArgs.autofillIds?.distinct().orEmpty(),
-            hints = callbackArgs.autofillHints.orEmpty(),
-            source = "callback_args",
-        )
+        return ResolvedAutofillTargets(emptyList(), emptyList(), "none")
+    }
+
+    private fun collectAutofillIds(structure: AssistStructure): Set<AutofillId> {
+        val ids = mutableSetOf<AutofillId>()
+        for (i in 0 until structure.windowNodeCount) {
+            collectAutofillIds(structure.getWindowNodeAt(i).rootViewNode, ids)
+        }
+        return ids
+    }
+
+    private fun collectAutofillIds(node: AssistStructure.ViewNode, ids: MutableSet<AutofillId>) {
+        node.autofillId?.let { ids.add(it) }
+        for (i in 0 until node.childCount) {
+            node.getChildAt(i)?.let { collectAutofillIds(it, ids) }
+        }
     }
 
     private fun getAssistStructureOrNull(): AssistStructure? {

@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.data.model.OtpType
 import com.bastion.app.data.model.TotpData
 import java.net.URI
@@ -178,7 +179,7 @@ object KeePassTotpCodec {
         fallbackLink: String
     ): TotpData? {
         if (!uri.startsWith("otpauth://", ignoreCase = true)) return null
-        return runCatching {
+        return runCatchingObserved {
             val parsed = URI(uri)
             val typeRaw = parsed.host?.lowercase(Locale.ROOT).orEmpty()
             val otpType = if (typeRaw == "hotp") OtpType.HOTP else OtpType.TOTP

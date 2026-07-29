@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.api
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import android.util.Base64
 import okhttp3.MediaType.Companion.toMediaType
@@ -91,6 +92,7 @@ object BitwardenApiFactory {
                 builder.header("Keyguard-Client", "1")
                 builder.header("Accept-Language", java.util.Locale.getDefault().toLanguageTag())
                 builder.header("Sec-Ch-Ua", """"Not.A/Brand";v="8", "Chromium";v="${headerSpec.majorVersion}"""")
+
                 builder.header("Sec-Ch-Ua-Mobile", "?0")
                 builder.header("Sec-Ch-Ua-Platform", "Linux")
                 // Bitwarden 服务端根据客户端版本决定是否返回 Type 5 (SSH Key) 等新类型数据
@@ -220,7 +222,7 @@ object BitwardenApiFactory {
         val normalized = url.lowercase().trimEnd('/')
         if (normalized == OFFICIAL_VAULT_URL.lowercase()) return true
         // 严格匹配：域名部分以 bitwarden.com 结尾（不是 URL 任意位置 contains）
-        val host = runCatching { java.net.URI(normalized).host }.getOrNull() ?: return false
+        val host = runCatchingObserved { java.net.URI(normalized).host }.getOrNull() ?: return false
         return host == "bitwarden.com" || host.endsWith(".bitwarden.com")
     }
 
@@ -230,7 +232,7 @@ object BitwardenApiFactory {
     fun isOfficialEuServer(url: String): Boolean {
         val normalized = url.lowercase().trimEnd('/')
         if (normalized == OFFICIAL_EU_VAULT_URL.lowercase()) return true
-        val host = runCatching { java.net.URI(normalized).host }.getOrNull() ?: return false
+        val host = runCatchingObserved { java.net.URI(normalized).host }.getOrNull() ?: return false
         return host == "bitwarden.eu" || host.endsWith(".bitwarden.eu")
     }
     

@@ -1,5 +1,6 @@
 package com.bastion.app.util
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
@@ -1088,7 +1089,7 @@ class DataExportImportManager(private val context: Context) {
         val raw = rawUrl.trim()
         if (raw.isBlank()) return raw
 
-        val fromJson = runCatching {
+        val fromJson = runCatchingObserved {
             Json { ignoreUnknownKeys = true }.parseToJsonElement(raw)
         }.getOrNull()?.let(::extractWebsiteTextFromJsonElement)
 
@@ -1137,7 +1138,7 @@ class DataExportImportManager(private val context: Context) {
         val normalizedRaw = rawTag.trim()
         if (normalizedRaw.isBlank()) return emptyList()
 
-        val fromJson = runCatching {
+        val fromJson = runCatchingObserved {
             Json { ignoreUnknownKeys = true }.parseToJsonElement(normalizedRaw)
         }.getOrNull()?.let { element ->
             when (element) {
@@ -1314,6 +1315,7 @@ class DataExportImportManager(private val context: Context) {
                     i++
                 }
                 c == '"' -> {
+
                     inQuotes = !inQuotes
                 }
             }
@@ -1339,9 +1341,11 @@ class DataExportImportManager(private val context: Context) {
                     char == '"' && inQuotes && i + 1 < line.length && line[i + 1] == '"' -> {
                         // 转义的引号
                         currentField.append('"')
+
                         i++
                     }
                     char == '"' -> {
+
                         inQuotes = !inQuotes
                     }
                     char == ',' && !inQuotes -> {
@@ -1823,7 +1827,7 @@ class DataExportImportManager(private val context: Context) {
     private fun extractUuidFromXml(input: String): String? {
         if (!input.contains("<") && !input.contains("?xml", ignoreCase = true)) return null
 
-        runCatching {
+        runCatchingObserved {
             val factory = DocumentBuilderFactory.newInstance()
             val builder = factory.newDocumentBuilder()
             val doc = builder.parse(InputSource(StringReader(input)))
@@ -1843,10 +1847,10 @@ class DataExportImportManager(private val context: Context) {
     }
 
     private fun decodeSteamSharedSecret(sharedSecret: String): ByteArray? {
-        return runCatching {
+        return runCatchingObserved {
             android.util.Base64.decode(sharedSecret, android.util.Base64.DEFAULT)
         }.getOrElse {
-            runCatching {
+            runCatchingObserved {
                 android.util.Base64.decode(
                     sharedSecret,
                     android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING
@@ -2003,7 +2007,7 @@ class DataExportImportManager(private val context: Context) {
 
             val entries = mutableListOf<AegisEntry>()
             authenticatorsArray.forEach { element ->
-                runCatching {
+                runCatchingObserved {
                     val obj = element.jsonObject
                     val type = obj["Type"]?.jsonPrimitive?.content?.toIntOrNull() ?: 2
                     val issuer = obj["Issuer"]?.jsonPrimitive?.content.orEmpty()

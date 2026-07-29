@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -238,7 +239,7 @@ object BackupRestoreApplier {
                 "Restored portable attachments: total=${content.portableAttachments.entries.size} restored=$attachmentRestored skipped=$attachmentSkipped missingPayload=$attachmentMissingPayload unmappedParent=$attachmentUnmappedParent"
             )
             content.portableAttachments.payloads.values.distinct().forEach { payload ->
-                runCatching { payload.delete() }
+                runCatchingObserved { payload.delete() }
             }
         } else if (content.attachments.isNotEmpty()) {
             val attachmentDao = PasswordDatabase.getDatabase(context).attachmentDao()
@@ -509,7 +510,7 @@ private fun encryptImportedPasswordForDisplay(
     logTag: String
 ): String {
     val primaryEncrypted = securityManager.encryptData(plainPassword)
-    val primaryReadable = runCatching { securityManager.decryptData(primaryEncrypted) }
+    val primaryReadable = runCatchingObserved { securityManager.decryptData(primaryEncrypted) }
         .getOrNull()
         ?.let { it == plainPassword }
         ?: false
@@ -522,7 +523,7 @@ private fun encryptImportedPasswordForDisplay(
         "Imported password encrypted payload is not immediately readable; fallback to legacy V1"
     )
     val legacyEncrypted = securityManager.encryptDataLegacyCompat(plainPassword)
-    val legacyReadable = runCatching { securityManager.decryptData(legacyEncrypted) }
+    val legacyReadable = runCatchingObserved { securityManager.decryptData(legacyEncrypted) }
         .getOrNull()
         ?.let { it == plainPassword }
         ?: false

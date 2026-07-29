@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
@@ -222,7 +223,7 @@ fun DualPhotoPicker(
     }
 
     val launchCameraCapture: () -> Unit = {
-        runCatching {
+        runCatchingObserved {
             val (tempFile, tempUri) = imageManager.createTempPhotoCaptureRequest()
             pendingCameraImagePath = tempFile.absolutePath
             pendingCameraImageUri = tempUri.toString()
@@ -258,14 +259,14 @@ fun DualPhotoPicker(
     fun launchGallery(slot: DualPhotoSlot) {
         pendingSlot = slot
         Log.d(DUAL_PHOTO_PICKER_TAG, "Launching gallery for slot=$slot")
-        runCatching {
+        runCatchingObserved {
             galleryLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         }.onFailure { error ->
             if (error is ActivityNotFoundException) {
                 Log.w(DUAL_PHOTO_PICKER_TAG, "PickVisualMedia unavailable, falling back to GetContent for slot=$slot", error)
-                runCatching {
+                runCatchingObserved {
                     galleryFallbackLauncher.launch("image/*")
                 }.onFailure { fallbackError ->
                     Log.e(DUAL_PHOTO_PICKER_TAG, "Fallback gallery launch failed for slot=$slot", fallbackError)

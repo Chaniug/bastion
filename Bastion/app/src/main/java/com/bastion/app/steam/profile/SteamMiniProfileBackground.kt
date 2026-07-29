@@ -1,5 +1,6 @@
 package com.bastion.app.steam.profile
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
@@ -92,7 +93,7 @@ class SteamMiniProfileBackgroundRepository private constructor(
             val background = if (cached != null && now - cached.fetchedAt < METADATA_TTL_MILLIS) {
                 cached.background
             } else {
-                val fetched = runCatching {
+                val fetched = runCatchingObserved {
                     withContext(Dispatchers.IO) { service.fetch(steamId) }
                 }
                 if (fetched.isSuccess) {
@@ -238,7 +239,7 @@ class SteamMiniProfileMediaCache(
             .build()
         val partial = File(destination.parentFile, destination.name + ".part")
         partial.delete()
-        return runCatching {
+        return runCatchingObserved {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use false
                 val body = response.body ?: return@use false
@@ -273,11 +274,11 @@ class SteamMiniProfileMediaCache(
 
     private fun createPoster(video: File, destination: File): Boolean {
         val retriever = MediaMetadataRetriever()
-        return runCatching {
+        return runCatchingObserved {
             retriever.setDataSource(video.absolutePath)
             val source = retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                 ?: retriever.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                ?: return@runCatching false
+                ?: return@runCatchingObserved false
             val scaled = scalePoster(source, POSTER_MAX_WIDTH)
             destination.outputStream().buffered().use { output ->
                 @Suppress("DEPRECATION")

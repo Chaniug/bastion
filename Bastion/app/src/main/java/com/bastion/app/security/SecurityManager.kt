@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
@@ -119,10 +120,29 @@ class SecurityManager(private val context: Context) {
         @Volatile
         private var cachedCompatDataKey: SecretKey? = null
 
+        @Volatile
+        private var cachedInstance: SecurityManager? = null
+
         private val compatDataKeyLock = Any()
 
         fun clearRuntimeUnlockCache() {
             processCachedMdk = null
+        }
+
+        /**
+         * 进程级单例访问点。首次访问在调用线程构造 SecurityManager（含 Keystore 初始化）。
+         * 建议在 Application 启动时通过 [prewarm] 于后台线程预热，以避免冷启动 / 配置变更时
+         * 在主线程触发 Keystore 初始化开销。
+         */
+        @Synchronized
+        fun instance(context: Context): SecurityManager {
+            val appContext = context.applicationContext
+            return cachedInstance ?: SecurityManager(appContext).also { cachedInstance = it }
+        }
+
+        /** 后台线程预热单例，仅用于提前完成 Keystore 初始化。 */
+        fun prewarm(context: Context) {
+            instance(context)
         }
     }
     
@@ -706,7 +726,7 @@ class SecurityManager(private val context: Context) {
     }
 
     private fun hasSecureKeyAlias(alias: String = KEY_ALIAS_DATA): Boolean {
-        return runCatching {
+        return runCatchingObserved {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             keyStore.containsAlias(alias)
@@ -714,7 +734,7 @@ class SecurityManager(private val context: Context) {
     }
 
     private fun deleteSecureKeyAlias(alias: String) {
-        runCatching {
+        runCatchingObserved {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             if (keyStore.containsAlias(alias)) {

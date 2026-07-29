@@ -14,7 +14,15 @@ android {
     def previewVersionSuffix = project.findProperty('previewVersionSuffix')?.toString()?.trim()
     // versionCode 取当前 epoch 秒以保证每次构建严格大于上次（覆盖安装必须）
     def appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
-    def baseVersionName = previewVersionSuffix ? "1.0.297-${previewVersionSuffix}" : "1.0.297"
+    // 主版本号随每次 git 提交自动递增：patch 位取仓库提交总数，根治「版本号永远停在 1.0.297」。
+    // 仍兼容 -PpreviewVersionSuffix=xxx 标记预览构建（如 1.0.839-preview）。
+    def gitCommitCount = 0
+    try {
+        gitCommitCount = ['git', 'rev-list', '--count', 'HEAD'].execute([], rootDir).text.trim().toInteger()
+    } catch (ignored) {
+        gitCommitCount = 0
+    }
+    def baseVersionName = previewVersionSuffix ? "1.0.${gitCommitCount}-${previewVersionSuffix}" : "1.0.${gitCommitCount}"
     def normalizeTwoDigits = { raw ->
         def value = raw?.toString()?.trim()?.replaceAll('\\D', '')
         if (!value) {
@@ -99,6 +107,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
+        }
+        // 单测中 android.util.Log 等未 mock 框架方法返回默认值而非抛异常，
+        // 避免历史单测因 "Method ... not mocked" 失败导致 CI 假绿（exit code 1 误导标注）。
+        testOptions {
+            unitTests.returnDefaultValues = true
         }
 
         def gitSha = 'unknown'
@@ -312,11 +325,6 @@ dependencies {
 
     // Reorderable for drag-and-drop sorting
     implementation libs.reorderable
-
-    // Koin Dependency Injection (for autofill modularization)
-    implementation libs.koin.android
-    implementation libs.koin.androidx.compose
-    implementation libs.koin.core
 
     // Markdown rendering
     implementation libs.commonmark

@@ -1,5 +1,6 @@
 package com.bastion.app.sync
 
+import com.bastion.app.logging.runCatchingObserved
 import android.os.SystemClock
 import android.util.Log
 import java.util.concurrent.atomic.AtomicLong
@@ -13,7 +14,7 @@ object SyncDiagnostics {
         return "$prefix-${now()}-$value"
     }
 
-    fun now(): Long = runCatching {
+    fun now(): Long = runCatchingObserved {
         SystemClock.elapsedRealtime()
     }.getOrElse {
         System.currentTimeMillis()
@@ -95,7 +96,7 @@ object SyncDiagnostics {
         val cleanDetail = detail?.takeIf { it.isNotBlank() }?.let { " detail=${sanitize(it)}" }.orEmpty()
         val message = "event=$event taskId=${sanitize(taskId)} target=${sanitize(target)} " +
             "trigger=${sanitize(trigger)}$elapsed thread=${Thread.currentThread().name}$cleanDetail"
-        runCatching {
+        runCatchingObserved {
             Log.i(TAG, message)
         }.onFailure {
             println("$TAG: $message")

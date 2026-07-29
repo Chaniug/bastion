@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
@@ -268,7 +269,7 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
 
     private fun blockCurrentTarget(packageName: String, website: String) {
         lifecycleScope.launch {
-            runCatching {
+            runCatchingObserved {
                 autofillPreferences.addSaveBlockedTarget(
                     packageName = packageName.takeIf { it.isNotBlank() },
                     webDomain = website.takeIf { it.isNotBlank() },
@@ -281,7 +282,7 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
 
     private fun resolveAppName(packageName: String): String {
         if (packageName.isBlank()) return ""
-        return runCatching {
+        return runCatchingObserved {
             val appInfo = packageManager.getApplicationInfo(packageName, 0)
             packageManager.getApplicationLabel(appInfo).toString()
         }.getOrDefault("")

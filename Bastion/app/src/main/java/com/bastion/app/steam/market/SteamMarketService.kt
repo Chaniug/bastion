@@ -1,5 +1,6 @@
 package com.bastion.app.steam.market
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -111,7 +112,7 @@ class SteamMarketService(
 
     fun cancelListing(account: SteamAccount, listingId: String): Boolean {
         val sessionId = SteamInventoryService.newSessionId()
-        return runCatching {
+        return runCatchingObserved {
             val payload = api.communityPostJson(
                 path = "/market/removelisting/$listingId",
                 form = mapOf("sessionid" to listOf(sessionId)),

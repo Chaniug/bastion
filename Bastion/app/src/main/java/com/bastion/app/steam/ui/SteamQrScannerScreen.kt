@@ -1,5 +1,6 @@
 package com.bastion.app.steam.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -104,7 +105,7 @@ fun SteamQrScannerScreen(
         accounts = withContext(Dispatchers.IO) {
             when (storageSource) {
                 SteamStorageSource.Local -> repository.getAccounts()
-                is SteamStorageSource.Mdbx -> runCatching {
+                is SteamStorageSource.Mdbx -> runCatchingObserved {
                     mdbxAccountStore
                         .loadAccounts(storageSource.databaseId)
                         .map { it.account }

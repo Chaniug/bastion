@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -17,7 +18,7 @@ object PasskeyDiscoverabilityResolver {
 
     fun isDiscoverableCreationRequest(requestJson: String): Boolean {
         if (requestJson.isBlank()) return false
-        return runCatching {
+        return runCatchingObserved {
             val authSelection = requestOptions(requestJson)?.get("authenticatorSelection") as? JsonObject
             isDiscoverableAuthenticatorSelection(authSelection)
         }.getOrDefault(false)
@@ -25,7 +26,7 @@ object PasskeyDiscoverabilityResolver {
 
     fun isCredPropsRequested(requestJson: String): Boolean {
         if (requestJson.isBlank()) return false
-        return runCatching {
+        return runCatchingObserved {
             val extensions = requestOptions(requestJson)?.get("extensions") as? JsonObject
             isCredPropsValueRequested(extensions?.get("credProps"))
         }.getOrDefault(false)

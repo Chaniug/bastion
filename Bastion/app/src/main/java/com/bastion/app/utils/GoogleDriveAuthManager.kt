@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.accounts.Account
 import android.app.PendingIntent
 import android.content.Context
@@ -73,7 +74,7 @@ class GoogleDriveAuthManager(context: Context) {
         }
 
     suspend fun getCachedSession(expectedAccountId: String? = null): GoogleDriveAccountSession? {
-        return runCatching {
+        return runCatchingObserved {
             when (val step = beginAuthorization(expectedAccountId)) {
                 is GoogleDriveAuthorizationStep.Authorized -> step.session
                 is GoogleDriveAuthorizationStep.ResolutionRequired -> null

@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#0B2E52" />
-</shape>
+<!-- 透明底板：不绘制任何内容，让启动器背景/壁纸直接透出。
+     盾牌与金色锁孔作为前景层浮在其上，靠自身的轮廓光与投影撑起立体感，
+     更接近 Android 原生的"液态玻璃"观感（Android 无实时壁纸模糊，
+     实心白盘会被渲染成明显白贴纸，故改为全透明）。 -->
+<color xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@android:color/transparent" />

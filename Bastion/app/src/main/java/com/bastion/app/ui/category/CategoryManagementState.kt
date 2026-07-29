@@ -1,5 +1,6 @@
 package com.bastion.app.ui.category
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.ColumnScope
@@ -198,7 +199,7 @@ private fun executeCategoryMove(
     targetParentCategoryId: Long?,
     passwordViewModel: PasswordViewModel
 ) {
-    runCatching {
+    runCatchingObserved {
         planLocalCategoryMove(
             categories = categories,
             sourceCategory = category,

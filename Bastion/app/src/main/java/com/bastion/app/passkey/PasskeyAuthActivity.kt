@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -668,7 +669,7 @@ class PasskeyAuthActivity : FragmentActivity() {
 
     private fun extractRequestOrigin(requestJson: String): String? {
         if (requestJson.isBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             JSONObject(requestJson).optString("origin").takeIf { it.isNotBlank() }
         }.getOrNull()
     }

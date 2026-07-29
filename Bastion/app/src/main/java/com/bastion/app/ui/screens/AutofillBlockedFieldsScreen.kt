@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -103,7 +104,7 @@ fun AutofillBlockedFieldsScreen(
                         IconButton(
                             onClick = {
                                 scope.launch {
-                                    runCatching {
+                                    runCatchingObserved {
                                         val shareIntent = createBlockedFieldsShareIntent(
                                             context = context,
                                             records = sortedRecords,
@@ -436,7 +437,7 @@ private fun resolveBlockedFieldAppLabel(
     packageName: String?,
 ): String? {
     val normalized = packageName?.trim()?.takeIf { it.isNotBlank() } ?: return null
-    return runCatching {
+    return runCatchingObserved {
         val appInfo = context.packageManager.getApplicationInfo(normalized, 0)
         context.packageManager.getApplicationLabel(appInfo).toString().trim().ifBlank { null }
     }.getOrNull()
@@ -492,7 +493,7 @@ private fun cleanupOldBlockedFieldExports(dir: File) {
     exported.sortedByDescending { it.lastModified() }
         .drop(10)
         .forEach { stale ->
-            runCatching { stale.delete() }
+            runCatchingObserved { stale.delete() }
         }
 }
 

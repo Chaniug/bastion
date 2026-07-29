@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -873,7 +874,7 @@ internal fun rememberPasswordListLazyListState(
             "source=v1_fast_scroll_apply requestKey=$fastScrollRequestKey progress=$fastScrollProgress target=$targetIndex current=${listState.firstVisibleItemIndex} total=$totalItems"
         )
 
-        runCatching {
+        runCatchingObserved {
             listState.scrollToItem(index = targetIndex)
         }.onFailure { throwable ->
             if (throwable is CancellationException) return@onFailure
@@ -911,7 +912,7 @@ internal fun rememberPasswordListLazyListState(
                     PASSWORD_SCROLL_LOG_TAG,
                     "source=v1_restore_no_saved_force_top current=${listState.firstVisibleItemIndex}/${listState.firstVisibleItemScrollOffset} total=$totalItems"
                 )
-                runCatching {
+                runCatchingObserved {
                     listState.scrollToItem(0, 0)
                 }.onSuccess {
                     viewModel.updatePasswordListScrollPosition(
@@ -935,7 +936,7 @@ internal fun rememberPasswordListLazyListState(
                 PASSWORD_SCROLL_LOG_TAG,
                 "source=v1_restore_saved_out_of_bounds saved=$savedScrollIndex/$savedScrollOffset total=$totalItems -> 0/0"
             )
-            runCatching {
+            runCatchingObserved {
                 listState.scrollToItem(targetIndex, targetOffset)
             }.onSuccess {
                 viewModel.updatePasswordListScrollPosition(
@@ -963,7 +964,7 @@ internal fun rememberPasswordListLazyListState(
             PASSWORD_SCROLL_LOG_TAG,
             "source=v1_restore_apply target=$targetIndex/$targetOffset current=${listState.firstVisibleItemIndex}/${listState.firstVisibleItemScrollOffset} total=$totalItems"
         )
-        runCatching {
+        runCatchingObserved {
             listState.scrollToItem(targetIndex, targetOffset)
         }.onSuccess {
             Log.d(

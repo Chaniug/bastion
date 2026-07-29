@@ -1,5 +1,6 @@
 package com.bastion.app.steam.network
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -83,7 +84,7 @@ class SteamConfirmationService(
         form["cid[]"] = confirmations.map { it.id }
         form["ck[]"] = confirmations.map { it.nonce }
 
-        runCatching {
+        runCatchingObserved {
             val payload = api.communityPostJson(
                 path = "/mobileconf/multiajaxop",
                 form = form,
@@ -97,7 +98,7 @@ class SteamConfirmationService(
         var ok = 0
         var failed = 0
         confirmations.forEach { confirmation ->
-            if (runCatching { respond(account, confirmation, accept, nowSeconds) }.getOrDefault(false)) {
+            if (runCatchingObserved { respond(account, confirmation, accept, nowSeconds) }.getOrDefault(false)) {
                 ok++
             } else {
                 failed++

@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
@@ -122,7 +123,7 @@ fun AttachmentPreviewDialog(
 private fun ImagePreview(uri: Uri) {
     val context = LocalContext.current
     val bitmap = remember(uri) {
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)?.asImageBitmap()
             }
@@ -248,7 +249,7 @@ private fun PdfPreview(uri: Uri) {
 private fun TextPreview(uri: Uri) {
     val context = LocalContext.current
     val text = remember(uri) {
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
         }.getOrNull().orEmpty()
     }

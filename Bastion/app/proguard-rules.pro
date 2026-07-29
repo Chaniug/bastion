@@ -74,10 +74,5 @@
     public static *** i(...);
 }
 
-# Koin 依赖注入
--keep class org.koin.** { *; }
--keep interface org.koin.** { *; }
--dontwarn org.koin.**
-
 # 确保实体类不被混淆 (特别是用于 JSON 序列化的)
 -keep class com.bastion.app.data.model.** { *; }

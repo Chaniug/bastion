@@ -3876,7 +3876,6 @@
     <string name="autofill_v2_set_system_service_desc">Open Android system settings and set Bastion as your autofill provider.</string>
     <string name="autofill_v2_privileged_apps">Privileged apps</string>
     <string name="autofill_v2_privileged_apps_desc">Open Android settings for credential-provider privileges.</string>
-    <string name="autofill_v2_freeze_notice">Legacy autofill and its old settings are frozen. New behavior is controlled only by this V2 page.</string>
     <string name="autofill_v2_default_scope_title">Default picker scope</string>
     <string name="autofill_v2_default_scope_desc">Set which storage source Bastion shows by default when autofill list opens.</string>
     <string name="autofill_v2_default_keepass_title">Default KeePass database</string>

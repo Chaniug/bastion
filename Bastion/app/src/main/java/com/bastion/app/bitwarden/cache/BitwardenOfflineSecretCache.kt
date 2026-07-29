@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.cache
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.SharedPreferences
 import com.bastion.app.data.PasswordEntry
@@ -31,7 +32,7 @@ class BitwardenOfflineSecretCache(
             return
         }
 
-        val encrypted = runCatching { securityManager.encryptDataLegacyCompat(plainSecret) }
+        val encrypted = runCatchingObserved { securityManager.encryptDataLegacyCompat(plainSecret) }
             .getOrNull() ?: return
 
         prefs.edit()
@@ -39,9 +40,22 @@ class BitwardenOfflineSecretCache(
             .putString(cipherKey(entryId), cipherId)
             .apply()
 
-        memoryCache = memoryCache.toMutableMap().also {
-            it[entryId] = CachedSecret(cipherId = cipherId, secret = plainSecret)
-        }
+        putMemory(entryId, cipherId, plainSecret)
+    }
+
+    /**
+     * 仅把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences）。
+     * 用于启动预热：让 recall() 命中内存即秒回，且不产生 N 次 apply()
+     * 引发的 QueuedWork.waitToFinish() 主线程反堵。磁盘离线兜底仍由常规
+     * remember() 在真实查看/复制时写入。
+     */
+    fun warmMemory(entry: PasswordEntry, plainSecret: String) {
+        if (!entry.hasBitwardenCipherBinding() || plainSecret.isBlank()) return
+        val entryId = entry.id
+        val cipherId = entry.bitwardenCipherId.orEmpty()
+        val existing = memoryCache[entryId]
+        if (existing != null && existing.cipherId == cipherId && existing.secret == plainSecret) return
+        putMemory(entryId, cipherId, plainSecret)
     }
 
     fun recall(entry: PasswordEntry): String? {
@@ -62,14 +76,12 @@ class BitwardenOfflineSecretCache(
         }
 
         val encrypted = prefs.getString(secretKey(entryId), null) ?: return null
-        val decrypted = runCatching { securityManager.decryptData(encrypted) }
+        val decrypted = runCatchingObserved { securityManager.decryptData(encrypted) }
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?: return null
 
-        memoryCache = memoryCache.toMutableMap().also {
-            it[entryId] = CachedSecret(cipherId = cipherId, secret = decrypted)
-        }
+        putMemory(entryId, cipherId, decrypted)
         return decrypted
     }
 
@@ -88,6 +100,31 @@ class BitwardenOfflineSecretCache(
 
     private fun cipherKey(entryId: Long): String = "cipher_$entryId"
 
+    /**
+     * 清空内存中的明文 secret 缓存（不触碰磁盘离线兜底）。
+     * 在保险库锁定（设备锁屏 / 应用锁定）时调用，避免已锁定的 App
+     * 在后台长期持有明文。recall() 下次未命中时会从磁盘兜底解密，行为不变。
+     */
+    fun clearMemoryCache() {
+        memoryCache = emptyMap()
+    }
+
+    /**
+     * 线程安全地写入内存缓存并按容量上限淘汰最久未用的条目。
+     * 保留既有的「整体替换 volatile Map 引用」发布模型，不引入锁。
+     * toMutableMap() 返回 LinkedHashMap，保留插入顺序，故 keys.first()
+     * 即最久未用条目，可作为 LRU 淘汰目标。
+     */
+    private fun putMemory(entryId: Long, cipherId: String, secret: String) {
+        val next = memoryCache.toMutableMap()
+        next[entryId] = CachedSecret(cipherId = cipherId, secret = secret)
+        while (next.size > BITWARDEN_OFFLINE_SECRET_CACHE_MAX_ENTRIES) {
+            val eldest = next.keys.firstOrNull() ?: break
+            next.remove(eldest)
+        }
+        memoryCache = next
+    }
+
     private data class CachedSecret(
         val cipherId: String,
         val secret: String
@@ -95,5 +132,6 @@ class BitwardenOfflineSecretCache(
 
     companion object {
         private const val PREF_NAME = "bitwarden_offline_secret_cache"
+        private const val BITWARDEN_OFFLINE_SECRET_CACHE_MAX_ENTRIES = 1000
     }
 }

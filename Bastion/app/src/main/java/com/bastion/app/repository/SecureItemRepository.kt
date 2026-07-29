@@ -1,5 +1,6 @@
 package com.bastion.app.repository
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Log
 import com.bastion.app.bitwarden.BitwardenMutationStateHelper
 import com.bastion.app.data.ItemType
@@ -461,7 +462,7 @@ class SecureItemRepository(
 
     private fun parseTotpFingerprint(itemData: String): TotpFingerprint? {
         val resolvedItemData = decryptSensitiveValue
-            ?.let { decrypt -> runCatching { decrypt(itemData) }.getOrDefault(itemData) }
+            ?.let { decrypt -> runCatchingObserved { decrypt(itemData) }.getOrDefault(itemData) }
             ?: itemData
 
         TotpDataResolver.parseStoredItemData(resolvedItemData)?.let { data ->
@@ -472,7 +473,7 @@ class SecureItemRepository(
             )
         }
 
-        runCatching {
+        runCatchingObserved {
             json.parseToJsonElement(resolvedItemData).jsonObject
         }.getOrNull()?.let { obj ->
             val issuer = obj["issuer"]?.jsonPrimitive?.contentOrNull.orEmpty()
@@ -516,7 +517,7 @@ class SecureItemRepository(
             return null
         }
 
-        return runCatching {
+        return runCatchingObserved {
             val uri = java.net.URI(raw)
             val queryParams = parseQueryParams(uri.rawQuery)
             val secret = queryParams["secret"].orEmpty()
@@ -557,7 +558,7 @@ class SecureItemRepository(
     }
 
     private fun urlDecode(value: String): String {
-        return runCatching { URLDecoder.decode(value, Charsets.UTF_8.name()) }
+        return runCatchingObserved { URLDecoder.decode(value, Charsets.UTF_8.name()) }
             .getOrElse { value }
     }
 

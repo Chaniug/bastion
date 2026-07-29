@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.room.TypeConverter
 import java.util.Date
 
@@ -70,6 +71,6 @@ class Converters {
     private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String?, defaultValue: T): T {
         val normalized = value?.trim().orEmpty()
         if (normalized.isBlank()) return defaultValue
-        return runCatching { enumValueOf<T>(normalized) }.getOrDefault(defaultValue)
+        return runCatchingObserved { enumValueOf<T>(normalized) }.getOrDefault(defaultValue)
     }
 }

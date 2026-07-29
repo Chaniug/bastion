@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -53,14 +54,14 @@ object PasskeyCredentialIdCodec {
      */
     fun toBitwardenCredentialId(credentialId: String?): String? = normalize(credentialId)
 
-    private fun parseUuid(value: String): UUID? = runCatching {
+    private fun parseUuid(value: String): UUID? = runCatchingObserved {
         UUID.fromString(value)
     }.getOrNull()
 
     private fun decodeFlexible(value: String): ByteArray? {
         val urlSafeFlags = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-        return runCatching { Base64.decode(value, urlSafeFlags) }.getOrNull()
-            ?: runCatching { Base64.decode(value, Base64.DEFAULT) }.getOrNull()
+        return runCatchingObserved { Base64.decode(value, urlSafeFlags) }.getOrNull()
+            ?: runCatchingObserved { Base64.decode(value, Base64.DEFAULT) }.getOrNull()
     }
 
     private fun toBase64Url(data: ByteArray): String {

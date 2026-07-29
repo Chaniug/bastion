@@ -1,5 +1,6 @@
 package com.bastion.app.steam.data
 
+import com.bastion.app.logging.runCatchingObserved
 import java.security.MessageDigest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -79,7 +80,7 @@ class SteamMdbxAccountStore(
         sortOrder: Int
     ): SteamMdbxAccountRecord? {
         val extracted = extractMaFile(entry.payloadJson) ?: return null
-        val payload = runCatching {
+        val payload = runCatchingObserved {
             parser.parse(
                 maFileContent = extracted.maFileJson,
                 fileName = "${entry.entryId}.maFile",
@@ -108,7 +109,7 @@ class SteamMdbxAccountStore(
     private fun extractMaFile(payloadJson: String): ExtractedMaFile? {
         val trimmed = payloadJson.trim()
         if (!trimmed.startsWith("{")) return null
-        val root = runCatching { json.parseToJsonElement(trimmed).jsonObject }.getOrNull()
+        val root = runCatchingObserved { json.parseToJsonElement(trimmed).jsonObject }.getOrNull()
             ?: return null
         val wrapperSteamId = root.stringAny(
             "steamid",

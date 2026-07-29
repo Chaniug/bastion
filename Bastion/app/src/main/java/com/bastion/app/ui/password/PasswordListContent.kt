@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -1455,7 +1456,7 @@ fun PasswordListContent(
             "source=v1_filter_change_force_top from=$previousFilter to=$currentFilter usesLazyColumn=$usesLazyColumn"
         )
         if (usesLazyColumn) {
-            runCatching {
+            runCatchingObserved {
                 listState.scrollToItem(0, 0)
             }.onFailure { throwable ->
                 if (throwable is CancellationException) return@onFailure
@@ -1619,7 +1620,7 @@ fun PasswordListContent(
 
     val decryptAuthenticatorKeyForPreview: (String) -> String = remember(securityManager) {
         { value: String ->
-            runCatching { securityManager.decryptDataIfBastionCiphertext(value) }
+            runCatchingObserved { securityManager.decryptDataIfBastionCiphertext(value) }
                 .getOrDefault(value)
         }
     }

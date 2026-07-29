@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -1052,12 +1053,12 @@ fun WebDavBackupScreen(
             onDismiss = { showPasswordPicker = false },
             onSelect = { entry ->
                 val resolvedServerUrl = entry.website.trim()
-                val resolvedUsername = runCatching { pickerSecurityManager.decryptData(entry.username) }
+                val resolvedUsername = runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }
                     ?: entry.username.trim()
-                val resolvedPassword = runCatching { pickerSecurityManager.decryptData(entry.password) }
+                val resolvedPassword = runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
                     .getOrNull()
                     ?.trim()
                     .takeUnless { it.isNullOrBlank() }

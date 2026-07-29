@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -140,19 +141,33 @@ object SessionManager {
     }
 
     /**
+     * 是否「确定」运行在非主进程（如 :accessibility 独立进程）。
+     *
+     * 用于 [com.bastion.app.BastionApplication.onCreate] 中守卫「仅主进程执行」的重度初始化：
+     * 只有能可靠确认进程名以 "包名:" 开头时才返回 true；若进程名无法判明（null）或就是主进程，
+     * 一律返回 false —— 这样即使进程名探测失败，也仍会执行完整初始化，
+     * 绝不会误跳过主进程必备逻辑。语义与 [isMainProcess] 相反，但同样保守安全。
+     */
+    fun isNonMainProcess(context: Context): Boolean {
+        val pkg = context.packageName
+        val procName = resolveCurrentProcessName() ?: return false
+        return procName != pkg && procName.startsWith("$pkg:")
+    }
+
+    /**
      * 解析当前进程名，优先用 [android.app.ActivityThread.currentProcessName]，
      * 个别 ROM 上该反射路径可能失效，回退到读取 /proc/self/cmdline（内容即进程名）。
      * 两者都失败时返回 null，交由调用方保守处理。
      */
     private fun resolveCurrentProcessName(): String? {
-        runCatching {
+        runCatchingObserved {
             val clazz = Class.forName("android.app.ActivityThread")
             val name = clazz.getMethod("currentProcessName").invoke(null) as? String
             if (!name.isNullOrEmpty()) return name
         }
 
         // 兜底：/proc/self/cmdline 以 \u0000 分隔，第一段即进程名（主进程=包名，子进程=包名:xxx）
-        runCatching {
+        runCatchingObserved {
             val bytes = java.io.File("/proc/self/cmdline").readBytes()
             val end = bytes.indexOf(0)
             val slice = if (end >= 0) bytes.copyOfRange(0, end) else bytes

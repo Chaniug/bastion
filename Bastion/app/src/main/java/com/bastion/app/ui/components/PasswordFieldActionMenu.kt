@@ -9,6 +9,7 @@
 
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -356,7 +357,7 @@ private fun FieldBarcodePage(
     onDismiss: () -> Unit
 ) {
     val bitmap = remember(value) {
-        runCatching {
+        runCatchingObserved {
             BarcodeEncoder().encodeBitmap(value, BarcodeFormat.QR_CODE, 720, 720)
         }.getOrNull()
     }

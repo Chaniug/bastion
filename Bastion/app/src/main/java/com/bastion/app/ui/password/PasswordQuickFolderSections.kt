@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -109,7 +110,7 @@ internal data class QuickStatusKeePassSyncState(
 }
 
 internal fun LocalMdbxDatabase.mdbxPathPendingSyncCount(): Int {
-    val pending = when (runCatching { MdbxSyncStatus.valueOf(lastSyncStatus) }.getOrNull()) {
+    val pending = when (runCatchingObserved { MdbxSyncStatus.valueOf(lastSyncStatus) }.getOrNull()) {
         MdbxSyncStatus.PENDING_UPLOAD,
         MdbxSyncStatus.REMOTE_CHANGED,
         MdbxSyncStatus.CONFLICT,

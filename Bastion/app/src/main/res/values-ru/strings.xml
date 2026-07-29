@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">bastionpass</string>
-    <string name="app_label">bastionpass</string>
+    <string name="app_name">Bastion</string>
+    <string name="app_label">Bastion</string>
 
     <!-- General -->
     <string name="press_back_again_to_exit">Нажмите «Назад» ещё раз, чтобы выйти</string>
@@ -3340,7 +3340,6 @@
     <string name="autofill_v2_set_system_service_desc">Откройте настройки Android и выберите Bastion как провайдер автозаполнения.</string>
     <string name="autofill_v2_privileged_apps">Привилегированные приложения</string>
     <string name="autofill_v2_privileged_apps_desc">Настройки Android для привилегий провайдера.</string>
-    <string name="autofill_v2_freeze_notice">Старое автозаполнение и его настройки заморожены. Новое поведение управляется только этой страницей V2.</string>
     <string name="autofill_v2_default_scope_title">Область по умолчанию</string>
     <string name="autofill_v2_default_scope_desc">Какой источник Bastion показывает по умолчанию при открытии списка автозаполнения.</string>
     <string name="autofill_v2_default_keepass_title">База KeePass по умолчанию</string>

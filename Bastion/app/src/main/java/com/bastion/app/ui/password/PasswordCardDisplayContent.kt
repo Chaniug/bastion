@@ -1,5 +1,6 @@
 package com.bastion.app.ui.password
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Language
@@ -78,7 +79,7 @@ fun rememberPasswordAuthenticatorDisplayState(
 ): PasswordAuthenticatorDisplayState? {
     val totpData = remember(authenticatorKey, fallbackIssuer, fallbackAccountName, decryptAuthenticatorKey) {
         val resolvedAuthenticatorKey = decryptAuthenticatorKey?.let { decrypt ->
-            runCatching { decrypt(authenticatorKey) }.getOrDefault(authenticatorKey)
+            runCatchingObserved { decrypt(authenticatorKey) }.getOrDefault(authenticatorKey)
         } ?: authenticatorKey
         parsePasswordAuthenticatorTotpData(
             authenticatorKey = resolvedAuthenticatorKey,

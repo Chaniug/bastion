@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.facade
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -23,7 +24,7 @@ object AttachmentUriMetadata {
         val resolver = context.applicationContext.contentResolver
         var name: String? = null
         var size: Long = -1L
-        runCatching {
+        runCatchingObserved {
             resolver.query(
                 uri,
                 arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),

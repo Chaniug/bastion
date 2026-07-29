@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -1582,7 +1583,7 @@ fun PasswordCardAdjustmentScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        val selectedMode = runCatching {
+                        val selectedMode = runCatchingObserved {
                             StackCardMode.valueOf(settings.stackCardMode)
                         }.getOrDefault(StackCardMode.AUTO)
                         listOf(StackCardMode.AUTO, StackCardMode.ALWAYS_EXPANDED).forEachIndexed { index, mode ->

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -9,6 +10,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
 import android.content.pm.ServiceInfo
 import android.graphics.Typeface
 import android.os.Build
@@ -60,10 +63,31 @@ class AutofillOtpNotificationService : Service() {
     private var activeSessionId: Long = 0L
 
     private var isForeground = false
+    // P5: 息屏时暂停 OTP 通知刷新，避免后台每秒推送通知（省电）；亮屏后下一拍自动恢复
+    @Volatile
+    private var screenOn = true
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> screenOn = false
+                Intent.ACTION_SCREEN_ON -> screenOn = true
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
+        // P5: 监听息屏/亮屏，息屏时暂停 OTP 通知刷新
+        val screenFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenStateReceiver, screenFilter)
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -83,6 +107,7 @@ class AutofillOtpNotificationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        runCatchingObserved { unregisterReceiver(screenStateReceiver) }
         updateJob?.cancel()
         scope.cancel()
     }
@@ -143,16 +168,19 @@ class AutofillOtpNotificationService : Service() {
                 if (snapshot.expired) break
 
                 latestCode = snapshot.code
-                runCatching {
-                    val notification = buildNotification(labelArg, snapshot.code, snapshot.remainingSeconds)
-                    withContext(Dispatchers.Main.immediate) {
-                        if (activeSessionId == sessionId) {
-                            getSystemService(NotificationManager::class.java)
-                                ?.notify(NOTIFICATION_ID, notification)
+                // P5: 息屏时跳过通知推送（用户不可见，纯属后台耗电），亮屏后下一拍自动恢复
+                if (screenOn) {
+                    runCatchingObserved {
+                        val notification = buildNotification(labelArg, snapshot.code, snapshot.remainingSeconds)
+                        withContext(Dispatchers.Main.immediate) {
+                            if (activeSessionId == sessionId) {
+                                getSystemService(NotificationManager::class.java)
+                                    ?.notify(NOTIFICATION_ID, notification)
+                            }
                         }
+                    }.onFailure {
+                        Log.w(TAG, "session=$sessionId failed to publish OTP notification tick", it)
                     }
-                }.onFailure {
-                    Log.w(TAG, "session=$sessionId failed to publish OTP notification tick", it)
                 }
                 delay(1000)
             }
@@ -207,7 +235,7 @@ class AutofillOtpNotificationService : Service() {
             Notification.Builder(this)
         }
 
-        val copyActionText = runCatching {
+        val copyActionText = runCatchingObserved {
             getString(R.string.autofill_otp_copy_action, code)
         }.getOrDefault(getString(R.string.copy))
 
@@ -323,7 +351,7 @@ class AutofillOtpNotificationService : Service() {
             label: String,
             durationSeconds: Int
         ) {
-            val payload = runCatching {
+            val payload = runCatchingObserved {
                 Json.encodeToString(totpData)
             }.onFailure {
                 Log.w(TAG, "Unable to serialize TotpData", it)

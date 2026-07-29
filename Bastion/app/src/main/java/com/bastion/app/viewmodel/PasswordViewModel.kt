@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -247,7 +248,7 @@ class PasswordViewModel(
     )
 
     private fun decryptStoredSensitiveValue(value: String): String {
-        return runCatching {
+        return runCatchingObserved {
             securityManager.decryptDataIfBastionCiphertext(value)
         }.getOrDefault(value)
     }
@@ -358,15 +359,25 @@ class PasswordViewModel(
         restoreLastCategoryFilter()
         observeInvalidCustomCategoryFilter()
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 repairLegacyDetachedKeePassEntries()
                 repairLegacyOwnershipConflicts()
             }.onFailure { error ->
                 Log.w("PasswordViewModel", "Password startup maintenance failed", error)
             }
         }
-        viewModelScope.launch(Dispatchers.Default) {
-            warmupBitwardenOfflineSecretCache()
+        // 离线密钥缓存预热：在 ViewModel init 时立即于 Dispatchers.IO（而非与首页密码列表
+        // 共用 Dispatchers.Default 的线程池）开始，抢占冷启动早期窗口把缓存尽早填热。预热只
+        // 把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences），因此不会产生 N 次
+        // apply() 引发的 QueuedWork.waitToFinish() 主线程反堵，冷启动主线程不被堵塞；而用户
+        // 点开密码时 recall() 命中内存即秒回。任何加密/安全逻辑均未改动，常规 remember() 仍
+        // 在真实查看/复制时照常写盘做离线兜底。
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatchingObserved {
+                warmupBitwardenOfflineSecretCache()
+            }.onFailure { error ->
+                Log.w("PasswordViewModel", "Offline secret cache warmup skipped", error)
+            }
         }
     }
     
@@ -382,7 +393,7 @@ class PasswordViewModel(
 
     fun refreshMdbxFolders(databaseId: Long) {
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.IO) {
                     repository.listMdbxFolders(databaseId)
                 }
@@ -723,7 +734,7 @@ class PasswordViewModel(
             }
 
             val decrypted = groupEntries.map { entry ->
-                entry to runCatching { securityManager.decryptData(entry.password) }.getOrNull()
+                entry to runCatchingObserved { securityManager.decryptData(entry.password) }.getOrNull()
             }
 
             val hasAnyDecrypted = decrypted.any { (_, password) -> password != null }
@@ -978,7 +989,7 @@ class PasswordViewModel(
         val raw = value.trim()
         if (raw.isEmpty()) return ""
 
-        return runCatching {
+        return runCatchingObserved {
             val withScheme = if (raw.contains("://")) raw else "https://$raw"
             val host = URI(withScheme).host?.lowercase(Locale.ROOT)?.removePrefix("www.") ?: ""
             if (host.isNotBlank()) host else raw
@@ -1011,11 +1022,11 @@ class PasswordViewModel(
         val raw = value.trim()
         if (raw.isEmpty()) return ""
 
-        return runCatching {
+        return runCatchingObserved {
             val withScheme = if (raw.contains("://")) raw else "https://$raw"
             val uri = URI(withScheme)
             val host = (uri.host ?: "").lowercase(Locale.ROOT).removePrefix("www.")
-            if (host.isEmpty()) return@runCatching raw.lowercase(Locale.ROOT).trimEnd('/')
+            if (host.isEmpty()) return@runCatchingObserved raw.lowercase(Locale.ROOT).trimEnd('/')
 
             val port = uri.port
             val hostWithPort = if (port == -1 || port == 80 || port == 443) host else "$host:$port"
@@ -1137,7 +1148,7 @@ class PasswordViewModel(
             if (!entry.hasBitwardenCipherBinding() || entry.password.isBlank()) return@forEach
             val decoded = decodePasswordOrNull(entry.password)
             if (!decoded.isNullOrBlank()) {
-                cache.remember(entry, decoded)
+                cache.warmMemory(entry, decoded)
                 warmedCount += 1
             }
         }
@@ -1693,7 +1704,7 @@ class PasswordViewModel(
         if (raw.isBlank()) return raw
         var current = raw
         repeat(3) {
-            val decrypted = runCatching {
+            val decrypted = runCatchingObserved {
                 synchronized(decryptLock) {
                     securityManager.decryptData(current)
                 }
@@ -1831,7 +1842,7 @@ class PasswordViewModel(
     private fun restoreLastCategoryFilter() {
         val manager = settingsManager ?: return
         viewModelScope.launch {
-            runCatching { manager.settingsFlow.first() }
+            runCatchingObserved { manager.settingsFlow.first() }
                 .onSuccess { settings ->
                     if (_categoryFilter.value !is CategoryFilter.All) return@onSuccess
                     val restoredFilter = decodeSavedCategoryFilter(settings)
@@ -1959,7 +1970,7 @@ class PasswordViewModel(
     private fun persistCategoryFilter(filter: CategoryFilter) {
         val manager = settingsManager ?: return
         viewModelScope.launch {
-            runCatching {
+            runCatchingObserved {
                 when (filter) {
                     is CategoryFilter.All -> manager.updateLastPasswordCategoryFilter(
                         type = SAVED_FILTER_ALL
@@ -2052,7 +2063,7 @@ class PasswordViewModel(
     ) {
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingObserved {
                     repository.createMdbxFolder(databaseId, name, parentFolderId)
                         ?: throw IllegalStateException("MDBX repository unavailable")
                 }
@@ -2107,10 +2118,10 @@ class PasswordViewModel(
         categoryId: Long?
     ): Result<Int> {
         if (ids.isEmpty()) return Result.success(0)
-        return runCatching {
+        return runCatchingObserved {
             val entries = repository.getPasswordsByIds(ids)
             val keepassEntries = entries.filter { it.keepassDatabaseId != null }
-            if (keepassEntries.isEmpty()) return@runCatching 0
+            if (keepassEntries.isEmpty()) return@runCatchingObserved 0
 
             repository.updateCategoryForPasswords(keepassEntries.map { it.id }, categoryId)
             repository.updateKeePassDatabaseForPasswords(keepassEntries.map { it.id }, null)
@@ -2270,7 +2281,7 @@ class PasswordViewModel(
     ): Boolean {
         val keepassEntries = entries.filter { it.keepassDatabaseId != null }
         if (keepassEntries.isEmpty()) return true
-        val attachmentsReady = runCatching {
+        val attachmentsReady = runCatchingObserved {
             materializeMovedKeePassAttachments(keepassEntries)
         }.onFailure { error ->
             Log.e(
@@ -3523,14 +3534,14 @@ class PasswordViewModel(
                 storedTotps = storedTotps
             ) ?: return@forEach
 
-            runCatching {
+            runCatchingObserved {
                 val now = Date()
                 val normalizedData = TotpDataResolver.normalizeTotpData(sourceTotp.data).copy(
                     boundPasswordId = newPassword.id,
                     categoryId = null,
                     keepassDatabaseId = null
                 )
-                if (normalizedData.secret.isBlank()) return@runCatching
+                if (normalizedData.secret.isBlank()) return@runCatchingObserved
 
                 val copiedItem = sourceTotp.item?.copy(
                     id = 0,

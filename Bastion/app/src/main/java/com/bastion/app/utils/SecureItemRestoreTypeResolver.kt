@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import com.bastion.app.data.ItemType
@@ -66,7 +67,7 @@ internal object SecureItemRestoreTypeResolver {
     }
 
     private fun inferTypeFromItemData(itemData: String): ItemType? {
-        val root = runCatching { json.parseToJsonElement(itemData).jsonObject }.getOrNull() ?: return null
+        val root = runCatchingObserved { json.parseToJsonElement(itemData).jsonObject }.getOrNull() ?: return null
         val keys = root.keys
 
         if (looksLikeTotp(keys)) return ItemType.TOTP

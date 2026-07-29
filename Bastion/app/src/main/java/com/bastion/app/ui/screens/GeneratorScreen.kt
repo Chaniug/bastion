@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -324,7 +325,7 @@ fun GeneratorScreen(
                     val request = buildSshKeyRequest(sshKeyAlgorithm, sshKeyRsaSize)
                     val generated = try {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                            runCatching { com.bastion.app.utils.SshKeyGenerator.generate(request) }
+                            runCatchingObserved { com.bastion.app.utils.SshKeyGenerator.generate(request) }
                         }
                     } finally {
                         isSshKeyGenerating = false
@@ -437,7 +438,7 @@ fun GeneratorScreen(
                 isSshKeyGenerating = true
                 val generated = try {
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                        runCatching {
+                        runCatchingObserved {
                             com.bastion.app.utils.SshKeyGenerator.generate(request)
                         }.getOrNull()
                     }

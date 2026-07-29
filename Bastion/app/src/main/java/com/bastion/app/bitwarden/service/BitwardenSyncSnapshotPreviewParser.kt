@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import com.bastion.app.bitwarden.api.CipherApiResponse
@@ -30,7 +31,7 @@ class BitwardenSyncSnapshotPreviewParser {
     ): BitwardenSyncSnapshotPreview? {
         if (payload.isNullOrBlank()) return null
 
-        val cipher = runCatching {
+        val cipher = runCatchingObserved {
             json.decodeFromString<CipherApiResponse>(payload.trim())
         }.getOrElse {
             symmetricKey?.clear()
@@ -304,7 +305,7 @@ class BitwardenSyncSnapshotPreviewParser {
         if (value.isNullOrBlank()) return null
         if (key == null) return null
         if (!looksLikeCipherString(value)) return null
-        return runCatching {
+        return runCatchingObserved {
             BitwardenCrypto.decryptToString(value, key)
         }.getOrNull()
     }

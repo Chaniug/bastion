@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.PendingIntent
 import android.app.assist.AssistStructure
 import android.content.BroadcastReceiver
@@ -138,7 +139,7 @@ class BastionAutofillServiceNg : AutofillService() {
         )
         screenOffReceiverRegistered = true
         scope.launch {
-            runCatching { autofillPreferences.ensureBitwardenV2EngineMode() }
+            runCatchingObserved { autofillPreferences.ensureBitwardenV2EngineMode() }
                 .onFailure { AutofillLogger.w("AF", "Failed to enforce V2 engine mode: ${it.message}") }
         }
 
@@ -148,7 +149,7 @@ class BastionAutofillServiceNg : AutofillService() {
     override fun onDestroy() {
         AutofillSessionGrants.clear()
         if (screenOffReceiverRegistered) {
-            runCatching { unregisterReceiver(screenOffReceiver) }
+            runCatchingObserved { unregisterReceiver(screenOffReceiver) }
             screenOffReceiverRegistered = false
         }
         scope.cancel()
@@ -1477,7 +1478,7 @@ class BastionAutofillServiceNg : AutofillService() {
 
     private fun resolveAppDisplayName(packageName: String): String? {
         if (packageName.isBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             val info = packageManager.getApplicationInfo(packageName, 0)
             packageManager.getApplicationLabel(info)?.toString()
         }.getOrNull()?.takeIf { it.isNotBlank() }

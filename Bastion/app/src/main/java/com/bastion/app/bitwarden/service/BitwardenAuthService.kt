@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.util.Base64
@@ -1102,7 +1103,7 @@ class BitwardenAuthService(
 
     private fun parseTokenError(errorBody: String?): TokenResponse? {
         if (errorBody.isNullOrBlank()) return null
-        return runCatching { json.decodeFromString<TokenResponse>(errorBody) }
+        return runCatchingObserved { json.decodeFromString<TokenResponse>(errorBody) }
             .getOrNull()
     }
 

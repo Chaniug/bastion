@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -142,7 +143,7 @@ class KeePassKdbxViewModel {
             null
         }
 
-        runCatching {
+        runCatchingObserved {
             context.contentResolver.takePersistableUriPermission(
                 sourceUri,
                 android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
@@ -150,7 +151,7 @@ class KeePassKdbxViewModel {
             )
         }
         if (keyFileUri != null) {
-            runCatching {
+            runCatchingObserved {
                 context.contentResolver.takePersistableUriPermission(
                     keyFileUri,
                     android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
@@ -884,7 +885,7 @@ class KeePassKdbxViewModel {
             if (key in standardFields || key.startsWith("_etm_")) return@forEach
             if (value is EntryValue.Encrypted) {
                 val content = KeePassFieldReferenceResolver.resolveValue(
-                    rawValue = runCatching { value.content }.getOrDefault(""),
+                    rawValue = runCatchingObserved { value.content }.getOrDefault(""),
                     currentEntry = entry,
                     context = resolutionContext
                 )
@@ -932,7 +933,7 @@ class KeePassKdbxViewModel {
             "BastionItemData", "BastionSecureItemId", "BastionImagePaths", "BastionIsFavorite"
         )
         return entry.fields.any { (key, value) ->
-            key !in standardFields && runCatching { value.content.isNotBlank() }.getOrDefault(false)
+            key !in standardFields && runCatchingObserved { value.content.isNotBlank() }.getOrDefault(false)
         }
     }
 
@@ -1024,7 +1025,7 @@ class KeePassKdbxViewModel {
 
         var current = rawPassword
         repeat(3) {
-            val candidate = runCatching { securityManager.decryptData(current) }
+            val candidate = runCatchingObserved { securityManager.decryptData(current) }
                 .getOrDefault(current)
             if (candidate == current || candidate.isBlank()) {
                 return current
@@ -1047,7 +1048,7 @@ class KeePassKdbxViewModel {
         }
 
         val primaryEncrypted = securityManager.encryptData(plainPassword)
-        val primaryReadable = runCatching { securityManager.decryptData(primaryEncrypted) }
+        val primaryReadable = runCatchingObserved { securityManager.decryptData(primaryEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false
@@ -1057,7 +1058,7 @@ class KeePassKdbxViewModel {
 
         Log.w(TAG, "Imported password encrypted payload is not immediately readable; fallback to legacy V1")
         val legacyEncrypted = securityManager.encryptDataLegacyCompat(plainPassword)
-        val legacyReadable = runCatching { securityManager.decryptData(legacyEncrypted) }
+        val legacyReadable = runCatchingObserved { securityManager.decryptData(legacyEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false

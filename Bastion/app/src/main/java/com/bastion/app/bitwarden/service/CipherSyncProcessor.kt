@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -500,7 +501,7 @@ class CipherSyncProcessor(
     private fun hasLikelyNonBlankPassword(entry: PasswordEntry): Boolean {
         if (entry.password.isBlank()) return false
 
-        val decrypted = runCatching { securityManager.decryptData(entry.password) }.getOrNull()
+        val decrypted = runCatchingObserved { securityManager.decryptData(entry.password) }.getOrNull()
         return when {
             decrypted == null -> true
             decrypted.isBlank() -> false
@@ -748,7 +749,7 @@ class CipherSyncProcessor(
         cipherId: String
     ): String {
         val primaryEncrypted = securityManager.encryptData(plainPassword)
-        val primaryReadable = runCatching { securityManager.decryptData(primaryEncrypted) }
+        val primaryReadable = runCatchingObserved { securityManager.decryptData(primaryEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false
@@ -762,7 +763,7 @@ class CipherSyncProcessor(
         )
 
         val legacyEncrypted = securityManager.encryptDataLegacyCompat(plainPassword)
-        val legacyReadable = runCatching { securityManager.decryptData(legacyEncrypted) }
+        val legacyReadable = runCatchingObserved { securityManager.decryptData(legacyEncrypted) }
             .getOrNull()
             ?.let { it == plainPassword }
             ?: false
@@ -1588,12 +1589,12 @@ class CipherSyncProcessor(
 
     private fun parseRevisionMillis(revisionDate: String?): Long? {
         if (revisionDate.isNullOrBlank()) return null
-        return runCatching { Instant.parse(revisionDate).toEpochMilli() }.getOrNull()
+        return runCatchingObserved { Instant.parse(revisionDate).toEpochMilli() }.getOrNull()
     }
 
     private fun parseCreationDateMillis(value: String?): Long? {
         if (value.isNullOrBlank()) return null
-        return runCatching { java.time.Instant.parse(value).toEpochMilli() }.getOrNull()
+        return runCatchingObserved { java.time.Instant.parse(value).toEpochMilli() }.getOrNull()
     }
 
     private fun parseAlgorithm(value: String?): Int {
@@ -1774,14 +1775,14 @@ class CipherSyncProcessor(
 
     private fun parseBitwardenDeletedAt(raw: String?): Date? {
         if (raw.isNullOrBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             Date.from(Instant.parse(raw))
         }.getOrNull() ?: Date()
     }
 
     private fun parseBitwardenArchivedAt(raw: String?): Date? {
         if (raw.isNullOrBlank()) return null
-        return runCatching {
+        return runCatchingObserved {
             Date.from(Instant.parse(raw))
         }.getOrNull()
     }
