@@ -26,7 +26,7 @@ permissions:
 
 concurrency:
   group: android-preview-release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-preview:
@@ -136,6 +136,19 @@ jobs:
         shell: bash
         run: ./gradlew --stop || true
 
+      - name: Diagnostics - cache & environment
+        if: always()
+        shell: bash
+        run: |
+          echo "=== Gradle wrapper / cache diagnostics ==="
+          ./gradlew --version 2>/dev/null || true
+          echo "--- Gradle cache sizes ---"
+          du -sh "$HOME/.gradle/caches" 2>/dev/null || true
+          du -sh "$HOME/.gradle/caches/build-cache-1" 2>/dev/null || true
+          du -sh "$HOME/.gradle/configuration-cache" 2>/dev/null || true
+          echo "--- Java version ---"
+          java -version 2>&1 || true
+
       - name: Collect generated APK metadata
         id: preview_apk_meta
         if: github.event_name != 'pull_request'
@@ -163,6 +176,31 @@ jobs:
             printf '%s\n' "$apk_markdown"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Upload Preview APK artifact (fallback)
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-apk
+          path: Bastion/app/build/outputs/apk/release/*.apk
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Generate preview changelog (since last preview)
+        id: preview_changelog
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set +e
+          prev="$(git rev-parse preview 2>/dev/null || true)"
+          if [ -n "$prev" ]; then
+            range="${prev}..HEAD"
+            log="$(git log $range --pretty=format:'- %s (%h)')"
+          else
+            log="$(git log --pretty=format:'- %s (%h)')"
+          fi
+          if [ -z "$log" ]; then log="- 无变更记录"; fi
+          { echo "notes<<EOF"; echo "$log"; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - name: Move preview tag to current commit
         if: github.event_name != 'pull_request'
@@ -229,6 +267,9 @@ jobs:
             > 正式使用请下载下面的 Stable 版本。
             > 但是实际上 Stable 版本可能不如这个预览版本更新，毕竟 Stable 版本需要经过更多的测试和验证。
             > 预览版本可能会更快地包含最新的功能和修复，但也可能更不稳定。
+            > ---
+            > **更新内容 (What's Changed):**
+            > ${{ steps.preview_changelog.outputs.notes }}
             > ---
             > **构建信息：**
             > *   **Build Suffix**: `${{ steps.preview_meta.outputs.preview_version_suffix }}`
