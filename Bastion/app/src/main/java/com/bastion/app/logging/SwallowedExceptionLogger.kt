@@ -63,7 +63,11 @@ fun logSwallowed(tag: String?, priority: Int, throwable: Throwable?) {
     if (!BuildConfig.DEBUG) return                 // release 全剔除，绝不留异常栈
     val t = tag ?: DEFAULT_TAG
     if (!shouldLog(t)) return                      // 限频
-    swallowedExceptionSink(t, priority, throwable) // 默认 -> Log.println
+    try {
+        swallowedExceptionSink(t, priority, throwable)
+    } catch (_: Throwable) {
+        // 日志 sink 自身绝不能抛异常拖垮调用方（如 JVM 单测里 android.util.Log 未 mock 时会抛 RuntimeException）
+    }
 }
 
 /**
