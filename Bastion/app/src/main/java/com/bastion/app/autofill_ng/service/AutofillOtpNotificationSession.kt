@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.service
 
+import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.util.TotpGenerator
 
@@ -28,10 +29,10 @@ internal class AutofillOtpNotificationSession(
             .toInt()
             .coerceAtLeast(0)
         val expired = dismissRemaining <= 0
-        val otpRemaining = runCatching {
+        val otpRemaining = runCatchingObserved {
             remainingSecondsForPeriod(periodSeconds, nowWallSeconds)
         }.getOrDefault(periodSeconds)
-        val code = runCatching {
+        val code = runCatchingObserved {
             generateCode(data, nowWallSeconds)
         }.getOrDefault("")
 

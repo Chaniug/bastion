@@ -1,5 +1,6 @@
 package com.bastion.app.passkey
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -340,12 +341,12 @@ class BastionCredentialProviderService : CredentialProviderService() {
 
         suspend fun rpIdCandidates(): List<com.bastion.app.data.PasskeyEntry> {
             if (rpId.isBlank()) return emptyList()
-            val direct = runCatching { database.passkeyDao().getPasskeysByRpIdSync(rpId) }
+            val direct = runCatchingObserved { database.passkeyDao().getPasskeysByRpIdSync(rpId) }
                 .getOrDefault(emptyList())
             if (direct.isNotEmpty()) return direct
 
             if (normalizedRpId.isNullOrBlank()) return emptyList()
-            val normalizedMatches = runCatching { database.passkeyDao().getAllPasskeysSync() }
+            val normalizedMatches = runCatchingObserved { database.passkeyDao().getAllPasskeysSync() }
                 .getOrDefault(emptyList())
                 .filter { PasskeyRpIdNormalizer.isEquivalent(it.rpId, normalizedRpId) }
 
@@ -375,7 +376,7 @@ class BastionCredentialProviderService : CredentialProviderService() {
     }
 
     private fun warmUpDatabase() {
-        runCatching {
+        runCatchingObserved {
             database.openHelper.writableDatabase.query("SELECT 1").close()
         }.onFailure { error ->
             Log.w(TAG, "Database warmup failed", error)
@@ -383,7 +384,7 @@ class BastionCredentialProviderService : CredentialProviderService() {
     }
 
     private fun isRecentlyUpdated(windowMs: Long = 5 * 60 * 1000L): Boolean {
-        return runCatching {
+        return runCatchingObserved {
             val info = packageManager.getPackageInfo(packageName, 0)
             val now = System.currentTimeMillis()
             (now - info.lastUpdateTime) in 0..windowMs

@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.bastion.app.data.PasskeyEntry
@@ -20,7 +21,7 @@ object KeePassPasskeySyncCodec {
         groupPath: String?,
         groupUuid: String?
     ): PasskeyEntry? {
-        return runCatching {
+        return runCatchingObserved {
             val payload = json.decodeFromString(Payload.serializer(), raw)
             payload.toPasskeyEntry(
                 databaseId = databaseId,

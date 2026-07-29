@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 import app.keemobile.kotpass.models.Entry
 import app.keemobile.kotpass.models.EntryFields
 import app.keemobile.kotpass.models.EntryValue
@@ -47,7 +48,7 @@ class KeePassEntryFieldPatch private constructor(
             replacementFields = replacementFields.map { (name, value) ->
                 KeePassFieldChange(
                     name = name,
-                    value = runCatching { value.content }.getOrDefault(""),
+                    value = runCatchingObserved { value.content }.getOrDefault(""),
                     protected = value is EntryValue.Encrypted
                 )
             },
@@ -85,7 +86,7 @@ class KeePassEntryFieldPatch private constructor(
                     val (existingName, value) = existing
                     KeePassFieldBaseValue(
                         name = existingName,
-                        value = runCatching { value.content }.getOrDefault(""),
+                        value = runCatchingObserved { value.content }.getOrDefault(""),
                         protected = value is EntryValue.Encrypted,
                         present = true
                     )

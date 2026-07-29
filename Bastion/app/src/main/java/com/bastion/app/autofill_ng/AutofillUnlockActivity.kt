@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -75,7 +76,7 @@ class AutofillUnlockActivity : AppCompatActivity() {
         biometricPromptShown = true
         AutofillLogger.i("AUTH", "Showing response-level autofill biometric prompt")
 
-        runCatching {
+        runCatchingObserved {
             biometricAuthHelper.authenticate(
                 activity = this,
                 title = getString(R.string.autofill_auth_title),
@@ -137,7 +138,7 @@ class AutofillUnlockActivity : AppCompatActivity() {
             return
         }
 
-        val responseResult = runCatching {
+        val responseResult = runCatchingObserved {
             val passwordRepository = PasswordRepository(
                 PasswordDatabase.getDatabase(applicationContext).passwordEntryDao()
             )

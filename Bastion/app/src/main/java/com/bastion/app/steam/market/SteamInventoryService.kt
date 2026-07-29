@@ -1,5 +1,6 @@
 package com.bastion.app.steam.market
 
+import com.bastion.app.logging.runCatchingObserved
 import java.security.SecureRandom
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -172,12 +173,13 @@ class SteamInventoryService(
                 } else {
                     when (char) {
                         '\'', '"' -> quote = char
+
                         '{' -> depth++
                         '}' -> {
                             depth--
                             if (depth == 0) {
                                 val raw = html.substring(start, index + 1)
-                                return runCatching {
+                                return runCatchingObserved {
                                     parser.parseToJsonElement(raw).jsonObject
                                 }.getOrNull()
                             }

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.app.Application
 import android.content.ClipData
@@ -400,7 +401,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         // settingsManager 已由 BaseBastionActivity 初始化
         val localSettingsManager = settingsManager
 
-        runCatching {
+        runCatchingObserved {
             val autoLockMinutes = runBlocking {
                 localSettingsManager.settingsFlow.first().autoLockMinutes
             }
@@ -491,7 +492,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             return
         }
         lifecycleScope.launch {
-            runCatching {
+            runCatchingObserved {
                 AutofillPreferences(applicationContext).markFieldSignatureBlocked(
                     signatureKey = signatureKey,
                     packageName = args.applicationId,
@@ -625,7 +626,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
     ): PasswordAutofillPreparation {
         val currentPreparation = passwordAutofillPreparation
         if (passwordAutofillPreparationKey == password.id && currentPreparation != null) {
-            return runCatching { currentPreparation.await() }
+            return runCatchingObserved { currentPreparation.await() }
                 .getOrElse { preparePasswordAutofill(password) }
         }
         return preparePasswordAutofill(password)
@@ -1590,7 +1591,7 @@ private fun AutofillPickerContent(
     }
 
     LaunchedEffect(Unit) {
-        runCatching {
+        runCatchingObserved {
             val savedSource = autofillPreferences.v2DefaultSourceFilter.first()
             sourceFilter = savedSource.toUiFilter()
             selectedKeePassDatabaseId = autofillPreferences.v2DefaultKeepassDatabaseId.first()
@@ -1602,7 +1603,7 @@ private fun AutofillPickerContent(
 
     fun persistPickerDefaults() {
         coroutineScope.launch {
-            runCatching {
+            runCatchingObserved {
                 autofillPreferences.setV2DefaultSourceFilter(sourceFilter.toPreferenceFilter())
                 autofillPreferences.setV2DefaultKeepassDatabaseId(selectedKeePassDatabaseId)
                 autofillPreferences.setV2DefaultBitwardenVaultId(selectedVaultId)

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -366,7 +367,7 @@ fun AppListItem(
     val icon by produceState<Drawable?>(initialValue = app.icon, app.packageName) {
         if (value != null) return@produceState
         value = withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 context.packageManager.getApplicationIcon(app.packageName)
             }.getOrNull()
         }

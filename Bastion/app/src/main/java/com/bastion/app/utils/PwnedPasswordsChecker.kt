@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -90,7 +91,7 @@ object PwnedPasswordsChecker {
             prefixes.map { prefix ->
                 async {
                     semaphore.withPermit {
-                        val result = runCatching { getRangeResult(prefix) }
+                        val result = runCatchingObserved { getRangeResult(prefix) }
                             .onFailure { error ->
                                 Log.w(TAG, "Prefix query failed for $prefix: ${error.message}")
                             }

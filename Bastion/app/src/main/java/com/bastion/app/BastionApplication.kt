@@ -1,5 +1,6 @@
 package com.bastion.app
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Application
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +102,7 @@ class BastionApplication : Application() {
     }
 
     private fun scheduleKeePassRemoteUploadRecovery() {
-        runCatching {
+        runCatchingObserved {
             KeePassRemoteUploadWorker.enqueueIfPending(this)
         }.onFailure { error ->
             Log.w(TAG, "Failed to schedule KeePass remote upload recovery", error)
@@ -117,7 +118,7 @@ class BastionApplication : Application() {
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun scheduleAttachmentHousekeeping() {
         ProcessLifecycleOwner.get().lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 val facade = AttachmentContainer.facade(this@BastionApplication)
                 facade.purgeOrphanedLocalBlobs()
             }.onFailure { Log.w(TAG, "Attachment housekeeping failed", it) }
@@ -127,7 +128,7 @@ class BastionApplication : Application() {
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun syncLauncherEntryPointsWithSettings() {
         ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 val settings = SettingsManager(this@BastionApplication).settingsFlow.first()
                 AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
                     this@BastionApplication,
@@ -136,7 +137,7 @@ class BastionApplication : Application() {
                 )
             }.onFailure { error ->
                 Log.w(TAG, "Failed to sync launcher entry points with settings", error)
-                runCatching {
+                runCatchingObserved {
                     AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
                         this@BastionApplication,
                         AppLauncherIcon.MODERN,

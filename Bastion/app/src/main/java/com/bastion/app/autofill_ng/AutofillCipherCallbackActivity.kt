@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.app.assist.AssistStructure
 import android.content.Context
@@ -142,7 +143,7 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
         }
         biometricPromptShown = true
         AutofillLogger.i("CALLBACK", "Showing biometric prompt for autofill")
-        runCatching {
+        runCatchingObserved {
             biometricAuthHelper.authenticate(
                 activity = this@AutofillCipherCallbackActivity,
                 title = getString(R.string.autofill_auth_title),
@@ -383,7 +384,7 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
 
         // 回退：当 PendingIntent 未携带可用目标时，才 re-parse 当前结构。
         if (assistStructure != null) {
-            val parsedTargets = runCatching {
+            val parsedTargets = runCatchingObserved {
                 val parser = EnhancedAutofillStructureParserV2()
                 val parsed = parser.parse(assistStructure, respectAutofillOff = false)
                 selectLoginFillableTargets(parsed.items)

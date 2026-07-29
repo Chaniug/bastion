@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.executor
 
+import com.bastion.app.logging.runCatchingObserved
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -47,6 +48,6 @@ data class KeePassAttachmentRef(
             URLEncoder.encode(value, Charsets.UTF_8.name())
 
         private fun urlDecode(value: String): String =
-            runCatching { URLDecoder.decode(value, Charsets.UTF_8.name()) }.getOrElse { value }
+            runCatchingObserved { URLDecoder.decode(value, Charsets.UTF_8.name()) }.getOrElse { value }
     }
 }

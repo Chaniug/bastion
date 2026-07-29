@@ -1,5 +1,6 @@
 package com.bastion.app.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import java.io.File
@@ -65,7 +66,7 @@ object BrowserAutofillContextStore {
     private fun writeSnapshotToFile(snap: Snapshot) {
         val ctx = appContext ?: return
         synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 val dir = ctx.filesDir
                 val target = File(dir, FILE_NAME)
                 val tmp = File(dir, FILE_NAME_TMP)
@@ -74,7 +75,7 @@ object BrowserAutofillContextStore {
                     // rename 失败时直接覆盖写（极端情况下可能读到半写内容，但读取端会做格式校验）。
                     target.writeText("${snap.packageName}\n${snap.domain}\n${snap.updatedAt}")
                 }
-                runCatching { tmp.delete() }
+                runCatchingObserved { tmp.delete() }
             }
         }
     }
@@ -82,15 +83,15 @@ object BrowserAutofillContextStore {
     private fun readSnapshotFromFile(): Snapshot? {
         val ctx = appContext ?: return null
         return synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 val file = File(ctx.filesDir, FILE_NAME)
-                if (!file.exists()) return@runCatching null
+                if (!file.exists()) return@runCatchingObserved null
                 val lines = file.readLines()
-                if (lines.size < 3) return@runCatching null
+                if (lines.size < 3) return@runCatchingObserved null
                 val pkg = lines[0].trim()
                 val domain = lines[1].trim()
-                val ts = lines[2].trim().toLongOrNull() ?: return@runCatching null
-                if (pkg.isBlank() || domain.isBlank()) return@runCatching null
+                val ts = lines[2].trim().toLongOrNull() ?: return@runCatchingObserved null
+                if (pkg.isBlank() || domain.isBlank()) return@runCatchingObserved null
                 Snapshot(pkg, domain, ts)
             }.getOrNull()
         }
@@ -100,7 +101,7 @@ object BrowserAutofillContextStore {
         val candidate = rawValue.trim()
         if (candidate.isBlank()) return null
 
-        val host = runCatching {
+        val host = runCatchingObserved {
             val parsed = Uri.parse(candidate)
             when {
                 !parsed.host.isNullOrBlank() -> parsed.host
@@ -109,7 +110,7 @@ object BrowserAutofillContextStore {
             }
         }.getOrNull() ?: return null
 
-        val asciiHost = runCatching { IDN.toASCII(host.trim().trimEnd('.')) }.getOrNull() ?: return null
+        val asciiHost = runCatchingObserved { IDN.toASCII(host.trim().trimEnd('.')) }.getOrNull() ?: return null
         val normalized = asciiHost.lowercase(Locale.ROOT)
         return normalized.takeIf { it.isNotBlank() }
     }

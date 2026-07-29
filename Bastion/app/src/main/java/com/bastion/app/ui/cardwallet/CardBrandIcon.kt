@@ -1,5 +1,6 @@
 package com.bastion.app.ui.cardwallet
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -166,7 +167,7 @@ private fun CardBrandLibraryLogo(
 ) {
     val parsedPaths = remember(logo) {
         logo.paths.mapNotNull { logoPath ->
-            runCatching {
+            runCatchingObserved {
                 ParsedLogoPath(
                     path = PathParser().parsePathString(logoPath.pathData).toPath(),
                     color = logoPath.color

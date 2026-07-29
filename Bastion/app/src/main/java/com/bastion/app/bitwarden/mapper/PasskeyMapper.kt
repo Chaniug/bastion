@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.mapper
 
+import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.bitwarden.api.*
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.passkey.PasskeyCredentialIdCodec
@@ -257,7 +258,7 @@ class PasskeyMapper : BitwardenMapper<PasskeyEntry> {
 
     private fun parseCreationDateMillis(value: String?): Long {
         if (value.isNullOrBlank()) return System.currentTimeMillis()
-        return runCatching { java.time.Instant.parse(value).toEpochMilli() }
+        return runCatchingObserved { java.time.Instant.parse(value).toEpochMilli() }
             .getOrElse { System.currentTimeMillis() }
     }
 

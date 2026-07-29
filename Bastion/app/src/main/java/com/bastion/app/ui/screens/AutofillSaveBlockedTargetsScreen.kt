@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -337,7 +338,7 @@ private fun resolveAutofillBlockedTargetAppLabel(
     packageName: String?,
 ): String? {
     val normalized = packageName?.trim()?.takeIf { it.isNotBlank() } ?: return null
-    return runCatching {
+    return runCatchingObserved {
         val appInfo = context.packageManager.getApplicationInfo(normalized, 0)
         context.packageManager.getApplicationLabel(appInfo).toString().trim().ifBlank { null }
     }.getOrNull()

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.assist.AssistStructure
 import android.content.Intent
 import android.os.Bundle
@@ -247,7 +248,7 @@ class AutofillSaveActivity : ComponentActivity() {
 
     private fun blockCurrentTarget(packageName: String, website: String) {
         lifecycleScope.launch {
-            runCatching {
+            runCatchingObserved {
                 val autofillPreferences = AutofillPreferences(applicationContext)
                 autofillPreferences.addSaveBlockedTarget(
                     packageName = packageName.takeIf { it.isNotBlank() },

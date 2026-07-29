@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import java.io.File
@@ -32,7 +33,7 @@ object SecurityDiagLogger {
         if (persistentLogFile != null) return
         synchronized(fileLock) {
             if (persistentLogFile != null) return
-            runCatching {
+            runCatchingObserved {
                 val logDir = File(context.applicationContext.filesDir, LOG_DIR_NAME)
                 if (!logDir.exists()) {
                     logDir.mkdirs()
@@ -62,7 +63,7 @@ object SecurityDiagLogger {
         if (shouldSkipRoutineLine(line)) return
         writeExecutor.execute {
             synchronized(fileLock) {
-                runCatching {
+                runCatchingObserved {
                     if (file.exists() && file.length() > MAX_LOG_FILE_BYTES) {
                         rotate(file)
                     }
@@ -76,7 +77,7 @@ object SecurityDiagLogger {
         val file = persistentLogFile ?: return ""
         if (!file.exists()) return ""
         return synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 file.readLines()
                     .takeLast(maxEntries.coerceAtLeast(1))
                     .joinToString(separator = "\n")
@@ -98,7 +99,7 @@ object SecurityDiagLogger {
 
     fun clear() {
         synchronized(fileLock) {
-            runCatching {
+            runCatchingObserved {
                 persistentLogFile?.let { file ->
                     if (file.exists()) {
                         file.writeText("")
@@ -110,7 +111,7 @@ object SecurityDiagLogger {
 
     private fun rotate(file: File) {
         val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        val tail = runCatching {
+        val tail = runCatchingObserved {
             file.readLines().takeLast(ROTATE_KEEP_LINES)
         }.getOrElse { emptyList() }
 

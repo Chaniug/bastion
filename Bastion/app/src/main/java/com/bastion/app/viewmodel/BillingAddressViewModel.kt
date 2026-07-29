@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -335,7 +336,7 @@ class BillingAddressViewModel(
 
     private fun decryptStoredSensitiveValue(value: String): String {
         return securityManager
-            ?.let { manager -> runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value) }
+            ?.let { manager -> runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value) }
             ?: value
     }
 

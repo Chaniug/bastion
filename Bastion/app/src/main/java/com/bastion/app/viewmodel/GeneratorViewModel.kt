@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,7 @@ class GeneratorViewModel(
         preferencesManager?.let { manager ->
             viewModelScope.launch(Dispatchers.IO) {
                 val saved = manager.load()
-                _selectedGenerator.value = runCatching {
+                _selectedGenerator.value = runCatchingObserved {
                     GeneratorType.valueOf(saved.selectedGenerator)
                 }.getOrDefault(GeneratorType.SYMBOL)
                 _symbolLength.value = saved.symbolLength

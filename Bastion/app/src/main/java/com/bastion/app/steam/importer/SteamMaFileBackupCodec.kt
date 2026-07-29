@@ -1,5 +1,6 @@
 package com.bastion.app.steam.importer
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -10,7 +11,7 @@ object SteamMaFileBackupCodec {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun encode(account: SteamAccount): String {
-        val root = runCatching {
+        val root = runCatchingObserved {
             json.parseToJsonElement(account.rawSteamGuardJson).jsonObject.toMutableMap()
         }.getOrElse {
             mutableMapOf()

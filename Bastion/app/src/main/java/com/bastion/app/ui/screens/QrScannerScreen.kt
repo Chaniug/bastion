@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.Manifest
 import android.content.Context
 import android.net.Uri
@@ -272,7 +273,7 @@ private fun QrCodeScanner(
     }
 
     DisposableEffect(galleryScanner) {
-        onDispose { runCatching { galleryScanner.close() } }
+        onDispose { runCatchingObserved { galleryScanner.close() } }
     }
 
     DisposableEffect(cameraSession) {
@@ -558,7 +559,7 @@ private fun processImageWithMlKit(
     onNotFound: () -> Unit
 ) {
     val startedAt = SystemClock.elapsedRealtime()
-    val image = runCatching { InputImage.fromFilePath(context, uri) }
+    val image = runCatchingObserved { InputImage.fromFilePath(context, uri) }
         .getOrElse {
             diagnostics?.logGalleryDecodeFailed(it)
             onNotFound()

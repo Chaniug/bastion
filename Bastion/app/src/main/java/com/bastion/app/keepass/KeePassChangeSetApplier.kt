@@ -1,5 +1,6 @@
 package com.bastion.app.keepass
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import app.keemobile.kotpass.constants.AutoTypeObfuscation
 import app.keemobile.kotpass.constants.GroupOverride
@@ -170,7 +171,7 @@ class KeePassChangeSetApplier {
             fields = fields
         )
         val entry = patch.iconName
-            ?.let { iconName -> runCatching { PredefinedIcon.valueOf(iconName) }.getOrNull() }
+            ?.let { iconName -> runCatchingObserved { PredefinedIcon.valueOf(iconName) }.getOrNull() }
             ?.let { icon -> baseEntry.copy(icon = icon) }
             ?: baseEntry
         val inserted = addEntryToGroupUuid(root, targetGroupUuid, entry)
@@ -844,18 +845,18 @@ class KeePassChangeSetApplier {
     }
 
     private fun String?.toPredefinedIconOrNull(): PredefinedIcon? {
-        return this?.takeIf { it.isNotBlank() }?.let { runCatching { PredefinedIcon.valueOf(it) }.getOrNull() }
+        return this?.takeIf { it.isNotBlank() }?.let { runCatchingObserved { PredefinedIcon.valueOf(it) }.getOrNull() }
     }
 
     private fun String?.toGroupOverride(): GroupOverride {
         return this?.takeIf { it.isNotBlank() }?.let {
-            runCatching { GroupOverride.valueOf(it) }.getOrNull()
+            runCatchingObserved { GroupOverride.valueOf(it) }.getOrNull()
         } ?: GroupOverride.Inherit
     }
 
     private fun String?.toAutoTypeObfuscation(): AutoTypeObfuscation {
         return this?.takeIf { it.isNotBlank() }?.let {
-            runCatching { AutoTypeObfuscation.valueOf(it) }.getOrNull()
+            runCatchingObserved { AutoTypeObfuscation.valueOf(it) }.getOrNull()
         } ?: AutoTypeObfuscation.None
     }
 
@@ -873,7 +874,7 @@ class KeePassChangeSetApplier {
     }
 
     private fun String.toUuidOrNull(): UUID? {
-        return runCatching { UUID.fromString(this) }.getOrNull()
+        return runCatchingObserved { UUID.fromString(this) }.getOrNull()
     }
 
     private fun String.hexToByteString(): ByteString {
@@ -886,7 +887,7 @@ class KeePassChangeSetApplier {
     }
 
     private fun String.hexToByteStringOrNull(): ByteString? {
-        return runCatching { hexToByteString() }.getOrNull()
+        return runCatchingObserved { hexToByteString() }.getOrNull()
     }
 
     private data class UpdateEntryResult(

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -106,7 +107,7 @@ class AutofillOtpNotificationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        runCatching { unregisterReceiver(screenStateReceiver) }
+        runCatchingObserved { unregisterReceiver(screenStateReceiver) }
         updateJob?.cancel()
         scope.cancel()
     }
@@ -169,7 +170,7 @@ class AutofillOtpNotificationService : Service() {
                 latestCode = snapshot.code
                 // P5: 息屏时跳过通知推送（用户不可见，纯属后台耗电），亮屏后下一拍自动恢复
                 if (screenOn) {
-                    runCatching {
+                    runCatchingObserved {
                         val notification = buildNotification(labelArg, snapshot.code, snapshot.remainingSeconds)
                         withContext(Dispatchers.Main.immediate) {
                             if (activeSessionId == sessionId) {
@@ -234,7 +235,7 @@ class AutofillOtpNotificationService : Service() {
             Notification.Builder(this)
         }
 
-        val copyActionText = runCatching {
+        val copyActionText = runCatchingObserved {
             getString(R.string.autofill_otp_copy_action, code)
         }.getOrDefault(getString(R.string.copy))
 
@@ -350,7 +351,7 @@ class AutofillOtpNotificationService : Service() {
             label: String,
             durationSeconds: Int
         ) {
-            val payload = runCatching {
+            val payload = runCatchingObserved {
                 Json.encodeToString(totpData)
             }.onFailure {
                 Log.w(TAG, "Unable to serialize TotpData", it)

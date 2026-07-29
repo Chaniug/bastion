@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -453,7 +454,7 @@ fun PasswordDetailScreen(
 
         if (entry.keepassDatabaseId != null && !entry.keepassEntryUuid.isNullOrBlank()) {
             launch(Dispatchers.IO) {
-                runCatching {
+                runCatchingObserved {
                     AttachmentContainer.keepassReconciler(context).reconcile(
                         passwordId = entry.id,
                         databaseId = entry.keepassDatabaseId,
@@ -1893,7 +1894,7 @@ private fun isPasskeyAvailableForEntry(
     catalog: PasskeySupportCatalog
 ): Boolean {
     return normalizeWebsiteUrls(entry.website).any { website ->
-        val host = runCatching {
+        val host = runCatchingObserved {
             val uri = Uri.parse(if (website.contains("://")) website else "https://$website")
             uri.host ?: website.substringBefore('/').substringBefore(':')
         }.getOrDefault(website)
@@ -3036,7 +3037,7 @@ private fun CollapsibleSection(
 
 private fun openWebsiteInBrowser(context: Context, website: String) {
     val target = normalizeWebsiteUrl(website) ?: return
-    runCatching {
+    runCatchingObserved {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

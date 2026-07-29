@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,7 @@ class BitwardenHistoricalTotpRepairService(
     }
 
     private fun decryptStoredSensitiveValue(value: String): String {
-        return runCatching {
+        return runCatchingObserved {
             securityManager.decryptDataIfBastionCiphertext(value)
         }.getOrDefault(value)
     }
@@ -272,7 +273,7 @@ class BitwardenHistoricalTotpRepairService(
         cipherId: String,
         symmetricKey: SymmetricCryptoKey
     ): RemoteTotpContext? {
-        val response = runCatching {
+        val response = runCatchingObserved {
             vaultApi.getCipher(
                 authorization = "Bearer $accessToken",
                 cipherId = cipherId

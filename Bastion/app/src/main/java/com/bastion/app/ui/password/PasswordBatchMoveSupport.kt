@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
@@ -643,7 +644,7 @@ internal suspend fun executePasswordBatchCopy(
     if (targetRouting.isBastionCopyTarget && idPairs.isNotEmpty()) {
         val facade = com.bastion.app.attachments.AttachmentContainer.facade(context)
         idPairs.forEach { (sourceId, newId) ->
-            runCatching { facade.cloneAttachmentsToNewParent(sourceId, newId) }
+            runCatchingObserved { facade.cloneAttachmentsToNewParent(sourceId, newId) }
                 .onFailure { e ->
                     android.util.Log.w(
                         "PasswordBatchCopy",
@@ -743,7 +744,7 @@ private fun buildPasswordDecryptSnapshot(
     securityManager: SecurityManager
 ): Map<String, String> {
     return entries.mapNotNull { entry ->
-        runCatching { securityManager.decryptData(entry.password) }
+        runCatchingObserved { securityManager.decryptData(entry.password) }
             .getOrNull()
             ?.takeIf { it.isNotEmpty() }
             ?.let { plain -> entry.password to plain }

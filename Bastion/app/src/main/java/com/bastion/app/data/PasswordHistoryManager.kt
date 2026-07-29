@@ -1,5 +1,6 @@
 package com.bastion.app.data
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -115,7 +116,7 @@ class PasswordHistoryManager(private val context: Context) {
             if (raw.isBlank() || securityManager.looksLikeBastionCiphertext(raw)) {
                 return@edit
             }
-            val decoded = runCatching {
+            val decoded = runCatchingObserved {
                 json.decodeFromString<List<PasswordGenerationHistory>>(raw)
             }.getOrNull() ?: return@edit
             preferences[HISTORY_KEY] = encodeHistoryPayload(decoded.take(MAX_HISTORY_SIZE))
@@ -124,14 +125,14 @@ class PasswordHistoryManager(private val context: Context) {
 
     private fun decodeHistoryPayload(raw: String?): List<PasswordGenerationHistory> {
         if (raw.isNullOrBlank()) return emptyList()
-        val historyJson = runCatching {
+        val historyJson = runCatchingObserved {
             if (securityManager.looksLikeBastionCiphertext(raw)) {
                 securityManager.decryptData(raw)
             } else {
                 raw
             }
         }.getOrDefault("[]")
-        return runCatching {
+        return runCatchingObserved {
             json.decodeFromString<List<PasswordGenerationHistory>>(historyJson)
         }.getOrDefault(emptyList())
     }

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -1391,7 +1392,7 @@ fun AddEditBankCardScreen(
 
 private fun parseSecureItemImagePaths(imagePaths: String): Pair<String?, String?> {
     if (imagePaths.isBlank()) return null to null
-    return runCatching {
+    return runCatchingObserved {
         val paths = Json.decodeFromString<List<String>>(imagePaths)
         paths.getOrNull(0)?.takeIf { it.isNotBlank() } to
             paths.getOrNull(1)?.takeIf { it.isNotBlank() }

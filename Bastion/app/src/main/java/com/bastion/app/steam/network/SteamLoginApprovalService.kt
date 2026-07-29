@@ -1,5 +1,6 @@
 package com.bastion.app.steam.network
 
+import com.bastion.app.logging.runCatchingObserved
 import java.math.BigInteger
 import java.net.URI
 import java.net.URLDecoder
@@ -38,7 +39,7 @@ data class SteamQrChallenge(
         }
 
         private fun parseCandidate(value: String): SteamQrChallenge? {
-            val uri = runCatching { URI(value.trimQrPayload()) }.getOrNull() ?: return null
+            val uri = runCatchingObserved { URI(value.trimQrPayload()) }.getOrNull() ?: return null
             if (!uri.scheme.equals("https", ignoreCase = true)) return null
             val host = uri.host?.lowercase(Locale.ROOT) ?: return null
             if (host !in ALLOWED_STEAM_QR_HOSTS) return null
@@ -55,7 +56,7 @@ data class SteamQrChallenge(
 
         private fun parseUnsignedClientId(value: String): Long? {
             if (value.isEmpty() || value.any { it !in '0'..'9' }) return null
-            val unsigned = runCatching { BigInteger(value) }.getOrNull() ?: return null
+            val unsigned = runCatchingObserved { BigInteger(value) }.getOrNull() ?: return null
             if (unsigned <= BigInteger.ZERO || unsigned > UNSIGNED_LONG_MAX) return null
             return if (unsigned <= SIGNED_LONG_MAX) {
                 unsigned.toLong()
@@ -70,7 +71,7 @@ data class SteamQrChallenge(
         }
 
         private fun String.decodeUrlComponent(): String {
-            return runCatching {
+            return runCatchingObserved {
                 URLDecoder.decode(replace("+", "%2B"), Charsets.UTF_8.name())
             }.getOrDefault(this)
         }
@@ -78,6 +79,7 @@ data class SteamQrChallenge(
         private fun String.trimQrPayload(): String {
             return trim()
                 .trim('"', '\'', '`', '<', '>', '(', ')', '[', ']', '{', '}')
+
                 .trimEnd('.', ',', ';')
         }
 
@@ -115,7 +117,7 @@ class SteamLoginApprovalService(
         val token = account.accessToken ?: return emptyList()
         val ids = pendingLoginClientIds(token)
         return ids.mapNotNull { clientId ->
-            runCatching { sessionInfo(account, clientId) }.getOrNull()
+            runCatchingObserved { sessionInfo(account, clientId) }.getOrNull()
         }
     }
 

@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.facade
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -402,7 +403,7 @@ class AttachmentFacade(
                     val bw = bitwardenContext
                     val remoteId = item.bitwardenAttachmentId
                     if (bw != null && bw.isOnline && !remoteId.isNullOrBlank()) {
-                        runCatching {
+                        runCatchingObserved {
                             bitwardenExecutor.remove(
                                 vaultApi = bw.vaultApi,
                                 accessToken = bw.accessToken,
@@ -417,7 +418,7 @@ class AttachmentFacade(
                     val kp = keepassContext
                     val ref = item.keepassBinaryRef
                     if (kp != null && !ref.isNullOrBlank()) {
-                        runCatching {
+                        runCatchingObserved {
                             keepassExecutor.remove(
                                 databaseId = kp.databaseId,
                                 entryUuid = kp.entryUuid,
@@ -467,13 +468,13 @@ class AttachmentFacade(
 
         var successCount = 0
         sources.forEach { source ->
-            runCatching {
+            runCatchingObserved {
                 val plainStream = localExecutor.openDecrypted(source)
                 val blob = plainStream.use { storage.writeEncrypted(it) }
                 val wrapped = try {
                     keyVault.wrap(blob.cek)
                 } catch (e: Throwable) {
-                    runCatching { storage.delete(blob.relativePath) }
+                    runCatchingObserved { storage.delete(blob.relativePath) }
                     throw AttachmentError.CryptoError
                 } finally {
                     blob.cek.fill(0)
@@ -677,7 +678,7 @@ class AttachmentFacade(
         val parent = dao.getPasswordEntryById(attachment.parentPasswordId) ?: return
         val databaseId = parent.mdbxDatabaseId ?: return
         val parentEntryId = vaultStore.passwordObjectIdForAttachment(parent)
-        runCatching {
+        runCatchingObserved {
             vaultStore.upsertAttachment(databaseId, parentEntryId, attachment)
         }.onFailure { error ->
             AttachmentLogger.logFailure(
@@ -696,7 +697,7 @@ class AttachmentFacade(
         val parent = dao.getPasswordEntryById(attachment.parentPasswordId) ?: return
         val databaseId = parent.mdbxDatabaseId ?: return
         val parentEntryId = vaultStore.passwordObjectIdForAttachment(parent)
-        runCatching {
+        runCatchingObserved {
             vaultStore.deleteAttachment(databaseId, parentEntryId, attachment)
         }.onFailure { error ->
             AttachmentLogger.logFailure(

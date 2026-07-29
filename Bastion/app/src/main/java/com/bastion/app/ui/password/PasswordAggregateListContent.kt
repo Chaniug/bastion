@@ -1,5 +1,6 @@
 package com.bastion.app.ui.password
 
+import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.json.Json
 import com.bastion.app.data.PasskeyEntry
@@ -613,5 +614,5 @@ private fun otpTypeBadge(otpType: OtpType): String = when (otpType) {
 }
 
 private inline fun <reified T> decodeJson(raw: String): T? {
-    return runCatching { Json.decodeFromString<T>(raw) }.getOrNull()
+    return runCatchingObserved { Json.decodeFromString<T>(raw) }.getOrNull()
 }

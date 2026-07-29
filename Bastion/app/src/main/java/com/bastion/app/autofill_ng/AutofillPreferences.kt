@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -248,7 +249,7 @@ class AutofillPreferences(private val context: Context) {
 
     val autofillEngineMode: Flow<AutofillEngineMode> = context.dataStore.data.map { preferences ->
         val modeName = preferences[KEY_AUTOFILL_ENGINE_MODE] ?: AutofillEngineMode.BITWARDEN_V2.name
-        runCatching { AutofillEngineMode.valueOf(modeName) }
+        runCatchingObserved { AutofillEngineMode.valueOf(modeName) }
             .getOrDefault(AutofillEngineMode.BITWARDEN_V2)
     }
 
@@ -297,7 +298,7 @@ class AutofillPreferences(private val context: Context) {
 
     val v2DefaultSourceFilter: Flow<AutofillDefaultSourceFilter> = context.dataStore.data.map { preferences ->
         val name = preferences[KEY_V2_DEFAULT_SOURCE_FILTER] ?: AutofillDefaultSourceFilter.ALL.name
-        runCatching { AutofillDefaultSourceFilter.valueOf(name) }
+        runCatchingObserved { AutofillDefaultSourceFilter.valueOf(name) }
             .getOrDefault(AutofillDefaultSourceFilter.ALL)
     }
 
@@ -525,7 +526,7 @@ class AutofillPreferences(private val context: Context) {
     private fun normalizeSaveDomain(rawDomain: String): String? {
         val trimmed = rawDomain.trim().lowercase()
         if (trimmed.isBlank()) return null
-        val host = runCatching {
+        val host = runCatchingObserved {
             val uri = if (trimmed.contains("://")) Uri.parse(trimmed) else Uri.parse("https://$trimmed")
             uri.host
         }.getOrNull()

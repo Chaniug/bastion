@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -32,7 +33,7 @@ object AccountFillPolicy {
     }
 
     fun shouldFillEmailWithAccount(context: Context): Boolean {
-        return runCatching {
+        return runCatchingObserved {
             runBlocking {
                 SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled
             }

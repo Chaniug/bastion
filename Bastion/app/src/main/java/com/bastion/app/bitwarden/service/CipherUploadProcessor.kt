@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import android.content.Context
 import kotlinx.serialization.encodeToString
@@ -102,7 +103,7 @@ class CipherUploadProcessor(
     }
 
     init {
-        runCatching { OperationLogger.init(context.applicationContext) }
+        runCatchingObserved { OperationLogger.init(context.applicationContext) }
     }
     
     /**
@@ -122,7 +123,7 @@ class CipherUploadProcessor(
                 ItemType.DOCUMENT -> createIdentityCipherRequest(item, symmetricKey)
                 else -> return UploadItemResult.Error("Unsupported item type: ${item.itemType}")
             }
-            val requestPayload = runCatching { json.encodeToString(request) }.getOrNull()
+            val requestPayload = runCatchingObserved { json.encodeToString(request) }.getOrNull()
             
             val vaultApi = apiManager.getVaultApi(vault)
             val response = vaultApi.createCipher(
@@ -138,7 +139,7 @@ class CipherUploadProcessor(
                     endpoint = "/ciphers",
                     requestBody = requestPayload,
                     responseCode = response.code(),
-                    responseBody = runCatching { response.errorBody()?.string() }.getOrNull(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
                     success = false,
                     error = "create cipher failed: ${response.code()}"
                 )
@@ -168,7 +169,7 @@ class CipherUploadProcessor(
                 endpoint = "/ciphers",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(createdCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(createdCipher) }.getOrNull(),
                 success = true
             )
             
@@ -224,7 +225,7 @@ class CipherUploadProcessor(
             val baselineCipher = fetchCipherForFieldMerge(vaultApi, accessToken, cipherId)
             val mergedRequest = mergeRequestWithCipherBaseline(request, baselineCipher, symmetricKey)
             val updateRequest = mergedRequest.toUpdateRequest()
-            val requestPayload = runCatching { json.encodeToString(updateRequest) }.getOrNull()
+            val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
             val response = vaultApi.updateCipher(
                 authorization = "Bearer $accessToken",
                 cipherId = cipherId,
@@ -239,7 +240,7 @@ class CipherUploadProcessor(
                     endpoint = "/ciphers/$cipherId",
                     requestBody = requestPayload,
                     responseCode = response.code(),
-                    responseBody = runCatching { response.errorBody()?.string() }.getOrNull(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
                     success = false,
                     error = "update cipher failed: ${response.code()}"
                 )
@@ -269,7 +270,7 @@ class CipherUploadProcessor(
                 endpoint = "/ciphers/$cipherId",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(updatedCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(updatedCipher) }.getOrNull(),
                 success = true
             )
 
@@ -354,7 +355,7 @@ class CipherUploadProcessor(
             
             // 加密请求
             val encryptedRequest = encryptCipherRequest(request, symmetricKey)
-            val requestPayload = runCatching { json.encodeToString(encryptedRequest) }.getOrNull()
+            val requestPayload = runCatchingObserved { json.encodeToString(encryptedRequest) }.getOrNull()
             
             val vaultApi = apiManager.getVaultApi(vault)
             val response = vaultApi.createCipher(
@@ -370,7 +371,7 @@ class CipherUploadProcessor(
                     endpoint = "/ciphers",
                     requestBody = requestPayload,
                     responseCode = response.code(),
-                    responseBody = runCatching { response.errorBody()?.string() }.getOrNull(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
                     success = false,
                     error = "create cipher failed: ${response.code()}"
                 )
@@ -400,7 +401,7 @@ class CipherUploadProcessor(
                 endpoint = "/ciphers",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(createdCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(createdCipher) }.getOrNull(),
                 success = true
             )
             if (createdCipher.login?.fido2Credentials.isNullOrEmpty()) {
@@ -413,7 +414,7 @@ class CipherUploadProcessor(
             android.util.Log.d(TAG, "Uploaded Passkey as cipher")
             UploadItemResult.Success(createdCipher.id)
         } catch (e: Exception) {
-            runCatching { passkeyDao.markFailedByRecordId(passkey.id) }
+            runCatchingObserved { passkeyDao.markFailedByRecordId(passkey.id) }
             captureRawExchange(
                 vaultId = vault.id,
                 operation = "upload_passkey_create",
@@ -461,7 +462,7 @@ class CipherUploadProcessor(
 
             val encryptedCreate = encryptCipherRequest(createRequest, symmetricKey)
             val updateRequest = encryptedCreate.toUpdateRequest()
-            val requestPayload = runCatching { json.encodeToString(updateRequest) }.getOrNull()
+            val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
 
             val vaultApi = apiManager.getVaultApi(vault)
             val response = vaultApi.updateCipher(
@@ -478,7 +479,7 @@ class CipherUploadProcessor(
                     endpoint = "/ciphers/$cipherId",
                     requestBody = requestPayload,
                     responseCode = response.code(),
-                    responseBody = runCatching { response.errorBody()?.string() }.getOrNull(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
                     success = false,
                     error = "update cipher failed: ${response.code()}"
                 )
@@ -508,7 +509,7 @@ class CipherUploadProcessor(
                 endpoint = "/ciphers/$cipherId",
                 requestBody = requestPayload,
                 responseCode = response.code(),
-                responseBody = runCatching { json.encodeToString(updatedCipher) }.getOrNull(),
+                responseBody = runCatchingObserved { json.encodeToString(updatedCipher) }.getOrNull(),
                 success = true
             )
             if (updatedCipher.login?.fido2Credentials.isNullOrEmpty()) {
@@ -518,7 +519,7 @@ class CipherUploadProcessor(
             passkeyDao.markSyncedByRecordId(passkey.id, updatedCipher.id)
             UploadItemResult.Success(updatedCipher.id)
         } catch (e: Exception) {
-            runCatching { passkeyDao.markFailedByRecordId(passkey.id) }
+            runCatchingObserved { passkeyDao.markFailedByRecordId(passkey.id) }
             captureRawExchange(
                 vaultId = vault.id,
                 operation = "upload_passkey_update",
@@ -727,7 +728,7 @@ class CipherUploadProcessor(
         success: Boolean,
         error: String? = null
     ) {
-        runCatching {
+        runCatchingObserved {
             BitwardenSyncForensicsLogger.captureRawExchange(
                 context = context,
                 vaultId = vaultId,
@@ -1379,7 +1380,7 @@ class CipherUploadProcessor(
     private fun decryptOrPlain(value: String?, symmetricKey: SymmetricCryptoKey): String? {
         if (value.isNullOrBlank()) return value
         if (!CIPHER_STRING_PATTERN.matches(value)) return value
-        return runCatching {
+        return runCatchingObserved {
             BitwardenCrypto.decryptToString(value, symmetricKey)
         }.getOrNull()
     }
@@ -1501,7 +1502,7 @@ class CipherUploadProcessor(
         fun isEncrypted(value: String?): Boolean {
             if (value.isNullOrBlank()) return false
             if (!CIPHER_STRING_PATTERN.matches(value)) return false
-            return runCatching { crypto.parseCipherString(value) }.isSuccess
+            return runCatchingObserved { crypto.parseCipherString(value) }.isSuccess
         }
 
         fun encryptIfNeeded(value: String?): String? {

@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
@@ -341,7 +342,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isNullOrBlank()) return null
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching {
+                runCatchingObserved {
                     com.bastion.app.data.PasswordCardDisplayField.valueOf(value.trim())
                 }.getOrNull()
             }
@@ -357,7 +358,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isBlank()) return emptyList()
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching {
+                runCatchingObserved {
                     com.bastion.app.data.AuthenticatorCardDisplayField.valueOf(value.trim())
                 }.getOrNull()
             }
@@ -371,7 +372,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isNullOrBlank()) return null
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching { PasswordListTopModule.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordListTopModule.valueOf(value.trim()) }.getOrNull()
             }
         if (parsed.isEmpty()) return null
         return PasswordListTopModule.sanitizeOrder(parsed)
@@ -384,7 +385,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isBlank()) return emptyList()
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching { PasswordListQuickFilterItem.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordListQuickFilterItem.valueOf(value.trim()) }.getOrNull()
             }
         return PasswordListQuickFilterItem.sanitizeOrder(parsed)
     }
@@ -395,7 +396,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isNullOrBlank()) return null
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
             }
         if (parsed.isEmpty()) return null
         return AddButtonMenuAction.sanitizeOrder(parsed)
@@ -411,7 +412,7 @@ class SettingsManager(private val context: Context) {
         }
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
             }
         return AddButtonMenuAction.normalizeEnabledActions(parsed, order)
     }
@@ -423,7 +424,7 @@ class SettingsManager(private val context: Context) {
         if (raw.isBlank()) return listOf(PasswordPageContentType.PASSWORD)
         val parsed = raw.split(",")
             .mapNotNull { value ->
-                runCatching { PasswordPageContentType.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordPageContentType.valueOf(value.trim()) }.getOrNull()
             }
         return PasswordPageContentType.normalizeEnabledTypes(parsed)
     }
@@ -437,7 +438,7 @@ class SettingsManager(private val context: Context) {
 
     private fun normalizeCategorySelectionUiMode(raw: String?): CategorySelectionUiMode {
         val parsed = raw?.trim()?.let { value ->
-            runCatching { CategorySelectionUiMode.valueOf(value) }.getOrNull()
+            runCatchingObserved { CategorySelectionUiMode.valueOf(value) }.getOrNull()
         } ?: CategorySelectionUiMode.DEFAULT
         return normalizeCategorySelectionUiMode(parsed)
     }
@@ -471,7 +472,7 @@ class SettingsManager(private val context: Context) {
         val parsedOrder = storedOrder
             ?.split(",")
             ?.mapNotNull { value ->
-                runCatching { BottomNavContentTab.valueOf(value) }.getOrNull()
+                runCatchingObserved { BottomNavContentTab.valueOf(value) }.getOrNull()
             }
             ?: BottomNavContentTab.DEFAULT_ORDER
         val sanitizedOrder = BottomNavContentTab.sanitizeOrder(parsedOrder)
@@ -499,7 +500,7 @@ class SettingsManager(private val context: Context) {
                 preferences[THEME_MODE_KEY] ?: ThemeMode.SYSTEM.name
             ),
             oledPureBlackEnabled = preferences[OLED_PURE_BLACK_ENABLED_KEY] ?: false,
-            colorScheme = runCatching {
+            colorScheme = runCatchingObserved {
                 ColorScheme.valueOf(
                     preferences[COLOR_SCHEME_KEY] ?: ColorScheme.DEFAULT.name
                 )
@@ -544,12 +545,12 @@ class SettingsManager(private val context: Context) {
                 preferences[BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY],
             bitwardenSyncForensicsRawCaptureEnabled =
                 preferences[BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY] ?: false,
-            validatorProgressBarStyle = runCatching {
+            validatorProgressBarStyle = runCatchingObserved {
                 val styleString = preferences[VALIDATOR_PROGRESS_BAR_STYLE_KEY]
                     ?: com.bastion.app.data.ProgressBarStyle.LINEAR.name
                 com.bastion.app.data.ProgressBarStyle.valueOf(styleString)
             }.getOrDefault(com.bastion.app.data.ProgressBarStyle.LINEAR),
-            validatorUnifiedProgressBar = runCatching {
+            validatorUnifiedProgressBar = runCatchingObserved {
                 val modeString = preferences[VALIDATOR_UNIFIED_PROGRESS_BAR_KEY]
                     ?: com.bastion.app.data.UnifiedProgressBarMode.ENABLED.name
                 com.bastion.app.data.UnifiedProgressBarMode.valueOf(modeString)
@@ -577,12 +578,12 @@ class SettingsManager(private val context: Context) {
             trashEnabled = preferences[TRASH_ENABLED_KEY] ?: true,
             trashAutoDeleteDays = preferences[TRASH_AUTO_DELETE_DAYS_KEY] ?: 30,
             iconCardsEnabled = preferences[ICON_CARDS_ENABLED_KEY] ?: true,
-            appLauncherIcon = runCatching {
+            appLauncherIcon = runCatchingObserved {
                 AppLauncherIcon.valueOf(
                     preferences[APP_LAUNCHER_ICON_KEY] ?: AppLauncherIcon.MODERN.name
                 )
             }.getOrDefault(AppLauncherIcon.MODERN),
-            appLauncherLabel = runCatching {
+            appLauncherLabel = runCatchingObserved {
                 AppLauncherLabel.valueOf(
                     preferences[APP_LAUNCHER_LABEL_KEY] ?: AppLauncherLabel.MONICA_PASS.name
                 )
@@ -593,20 +594,20 @@ class SettingsManager(private val context: Context) {
                 ?: (preferences[ICON_CARDS_ENABLED_KEY] ?: true),
             passkeyPageIconEnabled = preferences[PASSKEY_PAGE_ICON_ENABLED_KEY]
                 ?: (preferences[ICON_CARDS_ENABLED_KEY] ?: true),
-            unmatchedIconHandlingStrategy = runCatching {
+            unmatchedIconHandlingStrategy = runCatchingObserved {
                 com.bastion.app.data.UnmatchedIconHandlingStrategy.valueOf(
                     preferences[UNMATCHED_ICON_HANDLING_STRATEGY_KEY]
                         ?: com.bastion.app.data.UnmatchedIconHandlingStrategy.DEFAULT_ICON.name
                 )
             }.getOrDefault(com.bastion.app.data.UnmatchedIconHandlingStrategy.DEFAULT_ICON),
-            passwordCardDisplayMode = runCatching {
+            passwordCardDisplayMode = runCatchingObserved {
                 val modeString = preferences[PASSWORD_CARD_DISPLAY_MODE_KEY]
                     ?: com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL.name
                 com.bastion.app.data.PasswordCardDisplayMode.valueOf(modeString)
             }.getOrDefault(com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL),
             passwordCardDisplayFields = parsePasswordCardDisplayFields(preferences[PASSWORD_CARD_DISPLAY_FIELDS_KEY])
                 ?: fieldsFromMode(
-                    runCatching {
+                    runCatchingObserved {
                         val modeString = preferences[PASSWORD_CARD_DISPLAY_MODE_KEY]
                             ?: com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL.name
                         com.bastion.app.data.PasswordCardDisplayMode.valueOf(modeString)
@@ -623,7 +624,7 @@ class SettingsManager(private val context: Context) {
             passwordListCategoryQuickFiltersEnabled =
                 preferences[PASSWORD_LIST_CATEGORY_QUICK_FILTERS_ENABLED_KEY] ?: false,
             passwordListQuickFoldersEnabled = preferences[PASSWORD_LIST_QUICK_FOLDERS_ENABLED_KEY] ?: false,
-            passwordListQuickFolderStyle = runCatching {
+            passwordListQuickFolderStyle = runCatchingObserved {
                 PasswordListQuickFolderStyle.valueOf(
                     preferences[PASSWORD_LIST_QUICK_FOLDER_STYLE_KEY]
                         ?: PasswordListQuickFolderStyle.CLASSIC.name
@@ -632,7 +633,7 @@ class SettingsManager(private val context: Context) {
             passwordListQuickFolderPathBannerEnabled =
                 preferences[PASSWORD_LIST_QUICK_FOLDER_PATH_BANNER_ENABLED_KEY]
                     ?: (
-                        runCatching {
+                        runCatchingObserved {
                             PasswordListQuickFolderStyle.valueOf(
                                 preferences[PASSWORD_LIST_QUICK_FOLDER_STYLE_KEY]
                                     ?: PasswordListQuickFolderStyle.CLASSIC.name
@@ -642,7 +643,7 @@ class SettingsManager(private val context: Context) {
                     ),
             passwordListSystemBackToParentFolderEnabled =
                 preferences[PASSWORD_LIST_SYSTEM_BACK_TO_PARENT_FOLDER_ENABLED_KEY] ?: false,
-            addButtonBehaviorMode = runCatching {
+            addButtonBehaviorMode = runCatchingObserved {
                 AddButtonBehaviorMode.valueOf(
                     preferences[ADD_BUTTON_BEHAVIOR_MODE_KEY]
                         ?: AddButtonBehaviorMode.DIRECT_PASSWORD.name
@@ -658,14 +659,14 @@ class SettingsManager(private val context: Context) {
             ),
             passwordListQuickAccessEnabled = preferences[PASSWORD_LIST_QUICK_ACCESS_ENABLED_KEY] ?: true,
             passwordListTopModulesOrder = parsedTopModulesOrder,
-            passwordSwipeSelectionMode = runCatching {
+            passwordSwipeSelectionMode = runCatchingObserved {
                 PasswordSwipeSelectionMode.valueOf(
                     preferences[PASSWORD_SWIPE_SELECTION_MODE_KEY]
                         ?: PasswordSwipeSelectionMode.DEFAULT.name
                 )
             }.getOrDefault(PasswordSwipeSelectionMode.DEFAULT),
             noteGridLayout = preferences[NOTE_GRID_LAYOUT_KEY] ?: true,
-            noteCodeBlockCollapseMode = runCatching {
+            noteCodeBlockCollapseMode = runCatchingObserved {
                 NoteCodeBlockCollapseMode.valueOf(
                     preferences[NOTE_CODE_BLOCK_COLLAPSE_MODE_KEY]
                         ?: NoteCodeBlockCollapseMode.BALANCED.name
@@ -689,16 +690,16 @@ class SettingsManager(private val context: Context) {
             lastPasswordCategoryFilterSecondaryId = preferences[LAST_PASSWORD_CATEGORY_FILTER_SECONDARY_ID_KEY],
             lastPasswordCategoryFilterText = preferences[LAST_PASSWORD_CATEGORY_FILTER_TEXT_KEY],
             bitwardenUploadAll = preferences[BITWARDEN_UPLOAD_ALL_KEY] ?: false,
-            autofillSources = runCatching {
+            autofillSources = runCatchingObserved {
                 val sourcesStr = preferences[AUTOFILL_SOURCES_KEY] ?: AutofillSource.V1_LOCAL.name
                 sourcesStr.split(",").mapNotNull {
-                    runCatching { AutofillSource.valueOf(it.trim()) }.getOrNull()
+                    runCatchingObserved { AutofillSource.valueOf(it.trim()) }.getOrNull()
                 }.toSet()
             }.getOrDefault(setOf(AutofillSource.V1_LOCAL)),
-            autofillPriority = runCatching {
+            autofillPriority = runCatchingObserved {
                 val priorityStr = preferences[AUTOFILL_PRIORITY_KEY] ?: AutofillSource.V1_LOCAL.name
                 priorityStr.split(",").mapNotNull {
-                    runCatching { AutofillSource.valueOf(it.trim()) }.getOrNull()
+                    runCatchingObserved { AutofillSource.valueOf(it.trim()) }.getOrNull()
                 }
             }.getOrDefault(listOf(AutofillSource.V1_LOCAL))
         )
@@ -1213,7 +1214,7 @@ class SettingsManager(private val context: Context) {
 
     suspend fun exportPageAdjustmentSettings(): PageAdjustmentSettingsSnapshot {
         val settings = settingsFlow.first()
-        val normalizedPresetCustomFieldsJson = runCatching {
+        val normalizedPresetCustomFieldsJson = runCatchingObserved {
             val rawPresetCustomFieldsJson = dataStore.data.first()[PRESET_CUSTOM_FIELDS_KEY] ?: "[]"
             PresetCustomField.listToJson(PresetCustomField.listFromJson(rawPresetCustomFieldsJson))
         }.getOrDefault("[]")
@@ -1298,46 +1299,46 @@ class SettingsManager(private val context: Context) {
     suspend fun importPageAdjustmentSettings(snapshot: PageAdjustmentSettingsSnapshot) {
         val parsedQuickFilterItems = PasswordListQuickFilterItem.sanitizeOrder(
             snapshot.passwordListQuickFilterItems.mapNotNull { value ->
-                runCatching { PasswordListQuickFilterItem.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordListQuickFilterItem.valueOf(value.trim()) }.getOrNull()
             }
         )
         val parsedTopModules = PasswordListTopModule.sanitizeOrder(
             snapshot.passwordListTopModulesOrder.mapNotNull { value ->
-                runCatching { PasswordListTopModule.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordListTopModule.valueOf(value.trim()) }.getOrNull()
             }
         )
-        val parsedPasswordCardMode = runCatching {
+        val parsedPasswordCardMode = runCatchingObserved {
             com.bastion.app.data.PasswordCardDisplayMode.valueOf(snapshot.passwordCardDisplayMode.trim())
         }.getOrDefault(com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL)
         val parsedPasswordCardFields = snapshot.passwordCardDisplayFields.mapNotNull { value ->
-            runCatching { com.bastion.app.data.PasswordCardDisplayField.valueOf(value.trim()) }.getOrNull()
+            runCatchingObserved { com.bastion.app.data.PasswordCardDisplayField.valueOf(value.trim()) }.getOrNull()
         }.distinct()
         val normalizedPasswordCardFields = parsedPasswordCardFields.ifEmpty {
             fieldsFromMode(parsedPasswordCardMode)
         }
         val parsedAuthenticatorCardFields = snapshot.authenticatorCardDisplayFields.mapNotNull { value ->
-            runCatching { com.bastion.app.data.AuthenticatorCardDisplayField.valueOf(value.trim()) }.getOrNull()
+            runCatchingObserved { com.bastion.app.data.AuthenticatorCardDisplayField.valueOf(value.trim()) }.getOrNull()
         }.distinct()
         val normalizedAuthenticatorCardFields = if (parsedAuthenticatorCardFields.isEmpty()) {
             com.bastion.app.data.AuthenticatorCardDisplayField.DEFAULT_ORDER
         } else {
             parsedAuthenticatorCardFields
         }
-        val parsedValidatorProgressBarStyle = runCatching {
+        val parsedValidatorProgressBarStyle = runCatchingObserved {
             ProgressBarStyle.valueOf(snapshot.validatorProgressBarStyle.trim())
         }.getOrDefault(ProgressBarStyle.LINEAR)
-        val parsedValidatorUnifiedProgressBar = runCatching {
+        val parsedValidatorUnifiedProgressBar = runCatchingObserved {
             UnifiedProgressBarMode.valueOf(snapshot.validatorUnifiedProgressBar.trim())
         }.getOrDefault(UnifiedProgressBarMode.ENABLED)
-        val parsedQuickFolderStyle = runCatching {
+        val parsedQuickFolderStyle = runCatchingObserved {
             PasswordListQuickFolderStyle.valueOf(snapshot.passwordListQuickFolderStyle.trim())
         }.getOrDefault(PasswordListQuickFolderStyle.CLASSIC)
-        val parsedAddButtonBehaviorMode = runCatching {
+        val parsedAddButtonBehaviorMode = runCatchingObserved {
             AddButtonBehaviorMode.valueOf(snapshot.addButtonBehaviorMode.trim())
         }.getOrDefault(AddButtonBehaviorMode.DIRECT_PASSWORD)
         val parsedAddButtonOrder = AddButtonMenuAction.sanitizeOrder(
             snapshot.addButtonMenuOrder.mapNotNull { value ->
-                runCatching { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
             }
         )
         val normalizedAddButtonOrder = if (parsedAddButtonOrder.isEmpty()) {
@@ -1347,22 +1348,22 @@ class SettingsManager(private val context: Context) {
         }
         val normalizedAddButtonEnabledActions = AddButtonMenuAction.normalizeEnabledActions(
             snapshot.addButtonMenuEnabledActions.mapNotNull { value ->
-                runCatching { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { AddButtonMenuAction.valueOf(value.trim()) }.getOrNull()
             },
             normalizedAddButtonOrder
         )
         val normalizedPasswordPageVisibleContentTypes = PasswordPageContentType.normalizeEnabledTypes(
             snapshot.passwordPageVisibleContentTypes.mapNotNull { value ->
-                runCatching { PasswordPageContentType.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { PasswordPageContentType.valueOf(value.trim()) }.getOrNull()
             }
         )
         val shouldRestoreColorSettings = snapshot.colorSettingsVersion > 0
-        val parsedColorScheme = runCatching {
+        val parsedColorScheme = runCatchingObserved {
             ColorScheme.valueOf(snapshot.colorScheme.trim())
         }.getOrDefault(ColorScheme.DEFAULT)
         val parsedBottomNavOrder = BottomNavContentTab.sanitizeOrder(
             snapshot.bottomNavOrder.mapNotNull { value ->
-                runCatching { BottomNavContentTab.valueOf(value.trim()) }.getOrNull()
+                runCatchingObserved { BottomNavContentTab.valueOf(value.trim()) }.getOrNull()
             }
         )
         val shouldRestoreBottomNavSettings = snapshot.bottomNavSettingsVersion > 0
@@ -1370,10 +1371,10 @@ class SettingsManager(private val context: Context) {
             snapshot.categorySelectionUiMode
         )
         val shouldRestorePasswordFieldSettings = snapshot.passwordFieldSettingsVersion > 0
-        val normalizedPresetCustomFieldsJson = runCatching {
+        val normalizedPresetCustomFieldsJson = runCatchingObserved {
             PresetCustomField.listToJson(PresetCustomField.listFromJson(snapshot.presetCustomFieldsJson))
         }.getOrDefault("[]")
-        val parsedUnmatchedIconStrategy = runCatching {
+        val parsedUnmatchedIconStrategy = runCatchingObserved {
             com.bastion.app.data.UnmatchedIconHandlingStrategy.valueOf(
                 snapshot.unmatchedIconHandlingStrategy.trim()
             )
@@ -1454,11 +1455,11 @@ class SettingsManager(private val context: Context) {
                 snapshot.steamMiniProfileBackgroundEnabled
             preferences[AUTOFILL_AUTH_REQUIRED_KEY] = snapshot.autofillAuthRequired
             preferences[ICON_CARDS_ENABLED_KEY] = snapshot.iconCardsEnabled
-            val parsedAppLauncherIcon = runCatching {
+            val parsedAppLauncherIcon = runCatchingObserved {
                 AppLauncherIcon.valueOf(snapshot.appLauncherIcon.trim())
             }.getOrDefault(AppLauncherIcon.MODERN)
             preferences[APP_LAUNCHER_ICON_KEY] = parsedAppLauncherIcon.name
-            val parsedAppLauncherLabel = runCatching {
+            val parsedAppLauncherLabel = runCatchingObserved {
                 AppLauncherLabel.valueOf(snapshot.appLauncherLabel.trim())
             }.getOrDefault(AppLauncherLabel.MONICA_PASS)
             preferences[APP_LAUNCHER_LABEL_KEY] = parsedAppLauncherLabel.name
@@ -1480,10 +1481,10 @@ class SettingsManager(private val context: Context) {
             preferences[FIELD_ADDRESS_INFO_KEY] = snapshot.passwordFieldVisibility.addressInfo
             preferences[FIELD_PAYMENT_INFO_KEY] = snapshot.passwordFieldVisibility.paymentInfo
         }
-        val appliedIcon = runCatching {
+        val appliedIcon = runCatchingObserved {
             AppLauncherIcon.valueOf(snapshot.appLauncherIcon.trim())
         }.getOrDefault(AppLauncherIcon.MODERN)
-        val appliedLabel = runCatching {
+        val appliedLabel = runCatchingObserved {
             AppLauncherLabel.valueOf(snapshot.appLauncherLabel.trim())
         }.getOrDefault(AppLauncherLabel.MONICA_PASS)
         AppLauncherIconManager.apply(context, appliedIcon, appliedLabel)

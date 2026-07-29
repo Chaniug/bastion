@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.executor
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
@@ -48,7 +49,7 @@ class LocalAttachmentExecutor(
         val wrapped = try {
             keyVault.wrap(blob.cek)
         } catch (e: Throwable) {
-            runCatching { storage.delete(blob.relativePath) }
+            runCatchingObserved { storage.delete(blob.relativePath) }
             throw AttachmentError.CryptoError
         } finally {
             // CEK 在内存中使用完毕，覆盖一次

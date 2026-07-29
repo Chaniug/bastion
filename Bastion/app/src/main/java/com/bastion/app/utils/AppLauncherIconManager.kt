@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
@@ -54,7 +55,7 @@ object AppLauncherIconManager {
         val builderClass = promptInfoBuilder.javaClass
         val iconRes = resolveBrandingIconRes(context)
 
-        runCatching {
+        runCatchingObserved {
             builderClass.methods.firstOrNull { method ->
                 method.name == "setLogoRes" &&
                     method.parameterTypes.size == 1 &&
@@ -62,7 +63,7 @@ object AppLauncherIconManager {
             }?.invoke(promptInfoBuilder, iconRes)
         }
 
-        runCatching {
+        runCatchingObserved {
             builderClass.methods.firstOrNull { method ->
                 method.name == "setLogoDescription" &&
                     method.parameterTypes.size == 1 &&

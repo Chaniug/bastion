@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import app.keemobile.kotpass.models.Entry
 import app.keemobile.kotpass.models.EntryValue
 import java.util.Locale
@@ -187,6 +188,6 @@ internal object KeePassFieldReferenceResolver {
     }
 
     private fun extractContent(value: EntryValue?): String {
-        return runCatching { value?.content.orEmpty() }.getOrDefault("")
+        return runCatchingObserved { value?.content.orEmpty() }.getOrDefault("")
     }
 }

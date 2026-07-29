@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import com.thegrizzlylabs.sardineandroid.DavResource
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
@@ -86,14 +87,14 @@ class WebDavKeePassFileSource(
         }
 
         if (!expectedVersion.isNullOrBlank()) {
-            val current = runCatching { stat() }.getOrNull()
+            val current = runCatchingObserved { stat() }.getOrNull()
             if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
                 throw IOException("远端文件已变化，请先重新同步")
             }
         }
 
         sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
-        val latest = runCatching { stat() }.getOrDefault(FileSourceStat())
+        val latest = runCatchingObserved { stat() }.getOrDefault(FileSourceStat())
         FileSourceWriteResult(
             versionToken = latest.versionToken,
             etag = latest.etag,
@@ -106,7 +107,7 @@ class WebDavKeePassFileSource(
             if (normalizedRemotePath.isBlank()) {
                 ""
             } else {
-                val stat = runCatching { stat() }.getOrNull()
+                val stat = runCatchingObserved { stat() }.getOrNull()
                 if (stat?.isDirectory == true) normalizedRemotePath else parentPathOf(normalizedRemotePath)
             }
         )
@@ -118,10 +119,10 @@ class WebDavKeePassFileSource(
     }
 
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             val targetDirectory = when {
                 normalizedRemotePath.isBlank() -> ""
-                runCatching { stat() }.getOrNull()?.isDirectory == true -> normalizedRemotePath
+                runCatchingObserved { stat() }.getOrNull()?.isDirectory == true -> normalizedRemotePath
                 else -> parentPathOf(normalizedRemotePath)
             }
             val targetUrl = buildRemoteUrl(normalizedServerUrl, targetDirectory).ifBlank { normalizedServerUrl }
@@ -206,7 +207,7 @@ class WebDavKeePassFileSource(
             throw IOException("同名文件已存在")
         }
         sardine.put(targetUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
-        val latest = runCatching { resolveResource(targetUrl) }.getOrNull()
+        val latest = runCatchingObserved { resolveResource(targetUrl) }.getOrNull()
         FileSourceEntry(
             id = latest?.href?.toString() ?: targetUrl,
             name = latest?.name ?: name.trim(),
@@ -221,7 +222,7 @@ class WebDavKeePassFileSource(
     }
 
     private fun resolveResource(targetUrl: String): DavResource? {
-        val directResources = runCatching { sardine.list(targetUrl) }.getOrNull().orEmpty()
+        val directResources = runCatchingObserved { sardine.list(targetUrl) }.getOrNull().orEmpty()
         directResources.firstOrNull { resource ->
             normalizeResourceUrl(resource.href?.toString()).equals(
                 normalizeResourceUrl(targetUrl),
@@ -233,7 +234,7 @@ class WebDavKeePassFileSource(
         val parentUrl = buildRemoteUrl(normalizedServerUrl, parentPathOf(normalizedRemotePath))
         if (parentUrl.isBlank()) return null
         val fileName = normalizedRemotePath.substringAfterLast('/')
-        return runCatching { sardine.list(parentUrl) }
+        return runCatchingObserved { sardine.list(parentUrl) }
             .getOrNull()
             .orEmpty()
             .firstOrNull { !it.isDirectory && it.name.equals(fileName, ignoreCase = true) }
@@ -244,9 +245,9 @@ class WebDavKeePassFileSource(
     }
 
     private fun webDavPathExists(targetUrl: String): Boolean {
-        runCatching { sardine.exists(targetUrl) }
+        runCatchingObserved { sardine.exists(targetUrl) }
             .onSuccess { return it }
-        return runCatching { sardine.list(targetUrl) }
+        return runCatchingObserved { sardine.list(targetUrl) }
             .map { true }
             .getOrElse { false }
     }

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -487,7 +488,7 @@ fun SendScreen(
                                         clipboardManager.setText(AnnotatedString(send.shareUrl))
                                     },
                                     onOpenLink = {
-                                        runCatching {
+                                        runCatchingObserved {
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(send.shareUrl))
                                             context.startActivity(intent)
                                         }
@@ -923,7 +924,7 @@ fun AddEditSendScreen(
     val context = LocalContext.current
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            runCatching {
+            runCatchingObserved {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION

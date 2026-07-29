@@ -1,5 +1,6 @@
 package com.bastion.app.ui.vaultv2
 
+import com.bastion.app.logging.runCatchingObserved
 import android.icu.text.Transliterator
 import android.util.Log
 import android.widget.Toast
@@ -245,7 +246,7 @@ private fun parseVaultV2TotpItemData(
 ): TotpData? {
 	val decryptIfNeeded = securityManager?.let { manager ->
 		{ value: String ->
-			runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
+			runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
 		}
 	}
 	return TotpDataResolver.parseStoredItemData(
@@ -261,7 +262,7 @@ private fun parseVaultV2BankCardData(
 ): BankCardData? {
 	val decryptIfNeeded = securityManager?.let { manager ->
 		{ value: String ->
-			runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
+			runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
 		}
 	}
 	return CardWalletDataCodec.parseBankCardData(
@@ -276,7 +277,7 @@ private fun parseVaultV2DocumentData(
 ): DocumentData? {
 	val decryptIfNeeded = securityManager?.let { manager ->
 		{ value: String ->
-			runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
+			runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
 		}
 	}
 	return CardWalletDataCodec.parseDocumentData(
@@ -1445,7 +1446,7 @@ fun VaultV2Pane(
 		onSearchTriggered = { isSearchExpanded = true },
 	)
 	val stackCardMode = remember(appSettings.stackCardMode) {
-		runCatching { StackCardMode.valueOf(appSettings.stackCardMode) }.getOrDefault(StackCardMode.AUTO)
+		runCatchingObserved { StackCardMode.valueOf(appSettings.stackCardMode) }.getOrDefault(StackCardMode.AUTO)
 	}
 
 	val passwordEntries by passwordViewModel.allPasswordsForUi.collectAsState()
@@ -2451,7 +2452,7 @@ fun VaultV2Pane(
 		if (state.scrollToTopRequestKey > lastHandledScrollToTopRequestKey) {
 			isAutoScrollingToTop = true
 			try {
-				runCatching {
+				runCatchingObserved {
 					listState.animateScrollToItem(0)
 				}
 				listState.scrollToItem(0)
@@ -2492,7 +2493,7 @@ fun VaultV2Pane(
 
 		try {
 			if (listState.firstVisibleItemIndex != targetLazyIndex) {
-				runCatching {
+				runCatchingObserved {
 					listState.scrollToItem(index = targetLazyIndex)
 				}.onFailure { throwable ->
 					if (throwable is CancellationException) return@onFailure
@@ -2645,7 +2646,7 @@ fun VaultV2Pane(
 										showCreateCategoryDialog = true
 									},
 									onMoveCategory = { category, targetParentCategoryId ->
-										runCatching {
+										runCatchingObserved {
 											planLocalCategoryMove(
 												categories = categories,
 												sourceCategory = category,
@@ -2664,7 +2665,7 @@ fun VaultV2Pane(
 									onMoveCategoryToStorageTarget = { category, target ->
 										when (target) {
 											is StorageTarget.BastionLocal -> {
-												runCatching {
+												runCatchingObserved {
 													planLocalCategoryMove(
 														categories = categories,
 														sourceCategory = category,
@@ -2784,7 +2785,7 @@ fun VaultV2Pane(
 									onClick = {
 										isTopActionsMenuExpanded = false
 										scope.launch {
-											runCatching {
+											runCatchingObserved {
 												bitwardenRepository.forceLock(selectedVaultId)
 											}.onSuccess {
 												Toast.makeText(
@@ -2810,7 +2811,7 @@ fun VaultV2Pane(
 									onClick = {
 										isTopActionsMenuExpanded = false
 										scope.launch {
-											runCatching {
+											runCatchingObserved {
 												passwordViewModel.getBitwardenVaultCacheRiskSummary(selectedVaultId)
 											}.onSuccess { summary ->
 												clearCacheRiskSummary = summary
@@ -3040,7 +3041,7 @@ fun VaultV2Pane(
 						onClick = {
 							scope.launch {
 								isBitwardenMaintenanceActionRunning = true
-								runCatching {
+								runCatchingObserved {
 									passwordViewModel.clearBitwardenVaultLocalCache(
 										vaultId = vaultId,
 										mode = if (hasRisk) {
@@ -3094,7 +3095,7 @@ fun VaultV2Pane(
 								onClick = {
 									scope.launch {
 										isBitwardenMaintenanceActionRunning = true
-										runCatching {
+										runCatchingObserved {
 											passwordViewModel.clearBitwardenVaultLocalCache(
 												vaultId = vaultId,
 												mode = BitwardenRepository.CacheClearMode.FULL_FORCE
@@ -3940,7 +3941,7 @@ private fun VaultV2ItemCard(
 					smoothProgress = appSettings.validatorSmoothProgress,
 					decryptAuthenticatorKey = securityManager?.let { manager ->
 						{ value: String ->
-							runCatching { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
+							runCatchingObserved { manager.decryptDataIfBastionCiphertext(value) }.getOrDefault(value)
 						}
 					}
 				)

@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.annotation.SuppressLint
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -74,7 +75,7 @@ fun BitwardenLoginScreen(
     var tlsClientCertPkcs12Base64 by rememberSaveable { mutableStateOf("") }
     var tlsClientCertPassword by rememberSaveable { mutableStateOf("") }
     var showClientCertPassword by rememberSaveable { mutableStateOf(false) }
-    val selectedServerPreset = runCatching {
+    val selectedServerPreset = runCatchingObserved {
         BitwardenServerPreset.valueOf(selectedServerPresetName)
     }.getOrElse { BitwardenServerPreset.US }
     

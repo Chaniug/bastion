@@ -1,5 +1,6 @@
 package com.bastion.app.util
 
+import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -100,10 +101,10 @@ object TotpDataResolver {
         decryptIfNeeded: ((String) -> String)? = null
     ): TotpData? {
         val resolvedItemData = decryptIfNeeded?.let { decrypt ->
-            runCatching { decrypt(itemData) }.getOrDefault(itemData)
+            runCatchingObserved { decrypt(itemData) }.getOrDefault(itemData)
         } ?: itemData
 
-        runCatching {
+        runCatchingObserved {
             json.decodeFromString<TotpData>(resolvedItemData)
         }.getOrNull()?.let { decoded ->
             return normalizeTotpData(
@@ -114,7 +115,7 @@ object TotpDataResolver {
             )
         }
 
-        runCatching {
+        runCatchingObserved {
             json.parseToJsonElement(resolvedItemData) as? JsonObject
         }.getOrNull()?.let { obj ->
             val secret = obj["secret"]?.jsonPrimitive?.content
@@ -276,7 +277,7 @@ object TotpDataResolver {
             .trim('/')
             .takeIf { it.isNotBlank() }
             ?: return null
-        val decodedSecret = runCatching {
+        val decodedSecret = runCatchingObserved {
             URLDecoder.decode(secretPart.replace("+", "%2B"), Charsets.UTF_8.name())
         }.getOrDefault(secretPart)
         val base64Bytes = decodeSteamSharedSecret(decodedSecret)
@@ -404,7 +405,7 @@ object TotpDataResolver {
             { Base64.getDecoder().decode(padded) },
             { Base64.getUrlDecoder().decode(padded) }
         ).firstNotNullOfOrNull { decode ->
-            runCatching { decode() }
+            runCatchingObserved { decode() }
                 .getOrNull()
                 ?.takeIf { it.size >= 10 }
         }
@@ -456,7 +457,7 @@ object TotpDataResolver {
         URLEncoder.encode(value, Charsets.UTF_8.name()).replace("+", "%20")
 
     private fun decodeUriComponent(value: String): String =
-        runCatching { URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8.name()) }
+        runCatchingObserved { URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8.name()) }
             .getOrDefault(value)
 
     private fun buildTotpLabel(title: String, issuer: String, accountName: String): String {

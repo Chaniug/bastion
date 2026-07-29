@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -688,7 +689,7 @@ class KeePassKdbxService(
             val baseHash = syncState?.baseHash
             syncService.markComparing(databaseId, workingHash)
 
-            val remoteStat = runCatching { fileSource.stat() }.getOrDefault(FileSourceStat())
+            val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
             val remoteBytes = fileSource.read()
             val remoteHash = GoogleDriveKeePassSupport.sha256Hex(remoteBytes)
             val localHasChanges = if (baseHash.isNullOrBlank()) {
@@ -2434,7 +2435,7 @@ class KeePassKdbxService(
     }
 
     private fun epochMillisToInstant(value: Long): Instant {
-        return runCatching { Instant.ofEpochMilli(value.takeIf { it > 0L } ?: System.currentTimeMillis()) }
+        return runCatchingObserved { Instant.ofEpochMilli(value.takeIf { it > 0L } ?: System.currentTimeMillis()) }
             .getOrDefault(Instant.now())
     }
 
@@ -2772,7 +2773,7 @@ class KeePassKdbxService(
         if (itemData.isBlank() || !securityManager.looksLikeBastionCiphertext(itemData)) {
             return itemData
         }
-        return runCatching { securityManager.decryptData(itemData) }.getOrElse { error ->
+        return runCatchingObserved { securityManager.decryptData(itemData) }.getOrElse { error ->
             throw IllegalStateException(
                 "Cannot write encrypted secure item data to KeePass for itemId=${item.id}",
                 error
@@ -3044,7 +3045,7 @@ class KeePassKdbxService(
                 fields = entry.fields.map { (name, value) ->
                     com.bastion.app.keepass.KeePassFieldChange(
                         name = name,
-                        value = runCatching { value.content }.getOrDefault(""),
+                        value = runCatchingObserved { value.content }.getOrDefault(""),
                         protected = value is EntryValue.Encrypted
                     )
                 },
@@ -3884,7 +3885,7 @@ class KeePassKdbxService(
         }
         val typeRaw = getFieldValue(entry, FIELD_MONICA_ITEM_TYPE, resolutionContext)
         if (typeRaw.isNotBlank()) {
-            val itemType = runCatching { ItemType.valueOf(typeRaw) }.getOrNull() ?: return null
+            val itemType = runCatchingObserved { ItemType.valueOf(typeRaw) }.getOrNull() ?: return null
             if (allowedTypes != null && itemType !in allowedTypes) return null
 
             val itemData = getFieldValue(entry, FIELD_MONICA_ITEM_DATA, resolutionContext)
@@ -4221,7 +4222,7 @@ class KeePassKdbxService(
 
     private fun parseUuid(value: String?): UUID? {
         if (value.isNullOrBlank()) return null
-        return runCatching { UUID.fromString(value) }.getOrNull()
+        return runCatchingObserved { UUID.fromString(value) }.getOrNull()
     }
 
     private fun resolveRecycleBinFlag(
@@ -4269,7 +4270,7 @@ class KeePassKdbxService(
             if (!KeePassFieldRegistry.isPasswordSecretFallbackCandidateField(key)) return@forEach
             if (value is EntryValue.Encrypted) {
                 val content = KeePassFieldReferenceResolver.resolveValue(
-                    rawValue = runCatching { value.content }.getOrDefault(""),
+                    rawValue = runCatchingObserved { value.content }.getOrDefault(""),
                     currentEntry = entry,
                     context = resolutionContext
                 )
@@ -5217,7 +5218,7 @@ class KeePassKdbxService(
     }
 
     private fun openExternalInputBytes(uri: Uri): ByteArray? {
-        val descriptorBytes = runCatching {
+        val descriptorBytes = runCatchingObserved {
             context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
                 ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { input ->
                     input.readBytes()
@@ -5333,7 +5334,7 @@ class KeePassKdbxService(
         }
         val remoteDb = PasswordDatabase.getDatabase(context)
         val syncState = remoteDb.keepassRemoteSyncStateDao().getState(database.id)
-        val workingHashAtChange = runCatching {
+        val workingHashAtChange = runCatchingObserved {
             GoogleDriveKeePassSupport.sha256Hex(readDatabaseSnapshot(database).bytes)
         }.getOrNull()
         val baseSnapshot = KeePassPendingChangeBaseSnapshot(
@@ -5427,7 +5428,7 @@ class KeePassKdbxService(
                         if (!isRemoteVersionConflict(error)) {
                             throw error
                         }
-                        val remoteStat = runCatching { fileSource.stat() }.getOrDefault(FileSourceStat())
+                        val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
                         val currentRemoteVersion = remoteStat.etag ?: remoteStat.versionToken
                         if (currentRemoteVersion.isNullOrBlank()) {
                             throw error
@@ -5704,7 +5705,7 @@ class KeePassKdbxService(
             val fileSource = conflictFileSource
             var rebaseFailure: Throwable? = null
             if (isRemoteVersionConflict(error) && fileSource != null) {
-                val rebaseResult = runCatching {
+                val rebaseResult = runCatchingObserved {
                     rebasePendingChangesOntoLatestRemote(
                         database = database,
                         fileSource = fileSource,
@@ -5943,7 +5944,7 @@ class KeePassKdbxService(
         val now = System.currentTimeMillis()
         val cached = synchronized(loadedDatabaseCache) { loadedDatabaseCache[databaseId] } ?: return null
 
-        val latestDatabase = runCatching { dao.getDatabaseById(databaseId) }.getOrNull() ?: return null
+        val latestDatabase = runCatchingObserved { dao.getDatabaseById(databaseId) }.getOrNull() ?: return null
         val previous = cached.loaded.database
         val configChanged =
             latestDatabase.filePath != previous.filePath ||
@@ -6057,12 +6058,12 @@ class KeePassKdbxService(
 
     private fun writeExternal(database: LocalKeePassDatabase, bytes: ByteArray) {
         val uri = Uri.parse(database.resolvedActiveFilePath())
-        val originalBytes = runCatching { readDatabaseBytes(database) }.getOrNull()
+        val originalBytes = runCatchingObserved { readDatabaseBytes(database) }.getOrNull()
         try {
             writeExternalBytes(uri, bytes)
         } catch (e: Exception) {
             if (originalBytes != null) {
-                runCatching {
+                runCatchingObserved {
                     writeExternalBytes(uri, originalBytes)
                 }
             }

@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -261,7 +262,7 @@ fun AddEditSshKeyScreen(
                 else -> SshKeyGenerator.Request.Ed25519
             }
             val generated = withContext(Dispatchers.Default) {
-                runCatching { SshKeyGenerator.generate(request, comment) }
+                runCatchingObserved { SshKeyGenerator.generate(request, comment) }
             }
             isGenerating = false
             generated.onSuccess { data ->

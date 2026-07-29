@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.parser
 
+import com.bastion.app.logging.runCatchingObserved
 import android.os.Build
 import android.view.View
 import android.view.inputmethod.InlineSuggestionsRequest
@@ -177,8 +178,8 @@ class AutofillParserNg {
     private fun extractWebDomain(uri: String?): String? {
         val raw = uri?.trim().orEmpty()
         if (raw.isBlank() || raw.startsWith("androidapp://")) return null
-        val host = runCatching { java.net.URI(raw).host }.getOrNull()
-            ?: runCatching {
+        val host = runCatchingObserved { java.net.URI(raw).host }.getOrNull()
+            ?: runCatchingObserved {
                 val normalized = if (raw.contains("://")) raw else "https://$raw"
                 java.net.URI(normalized).host
             }.getOrNull()

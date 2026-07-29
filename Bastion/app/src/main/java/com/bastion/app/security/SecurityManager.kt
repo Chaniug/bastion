@@ -1,5 +1,6 @@
 package com.bastion.app.security
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
@@ -725,7 +726,7 @@ class SecurityManager(private val context: Context) {
     }
 
     private fun hasSecureKeyAlias(alias: String = KEY_ALIAS_DATA): Boolean {
-        return runCatching {
+        return runCatchingObserved {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             keyStore.containsAlias(alias)
@@ -733,7 +734,7 @@ class SecurityManager(private val context: Context) {
     }
 
     private fun deleteSecureKeyAlias(alias: String) {
-        runCatching {
+        runCatchingObserved {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             if (keyStore.containsAlias(alias)) {

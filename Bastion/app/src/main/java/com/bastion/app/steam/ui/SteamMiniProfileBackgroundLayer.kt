@@ -1,5 +1,6 @@
 package com.bastion.app.steam.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -127,7 +128,7 @@ private fun rememberSteamMiniProfileMotionAllowed(requested: Boolean): Boolean {
         )
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
-            runCatching { context.unregisterReceiver(powerReceiver) }
+            runCatchingObserved { context.unregisterReceiver(powerReceiver) }
         }
     }
     return requested && resumed && !powerSave
@@ -260,7 +261,7 @@ private class SteamMiniProfileTextureView @JvmOverloads constructor(
         animate().cancel()
         alpha = 0f
         prepared = false
-        player = runCatching {
+        player = runCatchingObserved {
             MediaPlayer().apply {
                 isLooping = true
                 setVolume(0f, 0f)
@@ -299,7 +300,7 @@ private class SteamMiniProfileTextureView @JvmOverloads constructor(
     private fun updatePlayback() {
         val active = player ?: return
         if (!prepared) return
-        runCatching {
+        runCatchingObserved {
             if (playRequested) {
                 if (!active.isPlaying) active.start()
             } else if (active.isPlaying) {
@@ -336,9 +337,9 @@ private class SteamMiniProfileTextureView @JvmOverloads constructor(
         val current = player
         player = null
         current?.let {
-            runCatching { current.stop() }
-            runCatching { current.reset() }
-            runCatching { current.release() }
+            runCatchingObserved { current.stop() }
+            runCatchingObserved { current.reset() }
+            runCatchingObserved { current.release() }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.bastion.app.viewmodel
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -248,7 +249,7 @@ class SecurityAnalysisViewModel(
 
     private fun decryptPassword(value: String): String {
         if (value.isBlank()) return ""
-        return runCatching { securityManager.decryptData(value) }
+        return runCatchingObserved { securityManager.decryptData(value) }
             .getOrElse { value }
             .trim()
     }

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.Context
 import android.os.Build
@@ -53,7 +54,7 @@ suspend fun performOtpAutofillSideEffects(
         return
     }
 
-    runCatching {
+    runCatchingObserved {
         val preferences = AutofillPreferences(context)
         val showNotification = withContext(Dispatchers.IO) {
             preferences.isOtpNotificationEnabled.first()
@@ -125,7 +126,7 @@ suspend fun generateOtpCodeForPassword(context: Context, password: PasswordEntry
         Log.w(TAG, "generateOtpCodeForPassword: no TOTP resolved, passwordId=${password.id}")
         return null
     }
-    return runCatching {
+    return runCatchingObserved {
         val resolvedTotpData = resolveTotpDataForGeneration(context, totpData)
         val code = TotpGenerator.generateOtp(resolvedTotpData)
         Log.d(TAG, "generated OTP for fill (len=${code.length}), passwordId=${password.id}")
@@ -175,14 +176,14 @@ private suspend fun resolveSteamGuardCodeForPassword(context: Context, password:
     }
     if (hasResolvableTotp) return null
 
-    return runCatching {
+    return runCatchingObserved {
         val securityManager = SecurityManager(context)
         val steamRepo = SteamAccountRepository(
             SteamDatabase.getDatabase(context).steamAccountDao(),
             securityManager
         )
         val accounts = steamRepo.getAccounts()
-        if (accounts.isEmpty()) return@runCatching null
+        if (accounts.isEmpty()) return@runCatchingObserved null
         val matched = accounts.firstOrNull { acct ->
             acct.accountName.equals(password.username, ignoreCase = true)
                 || acct.displayName.equals(password.username, ignoreCase = true)
@@ -242,7 +243,7 @@ private fun buildTotpIdentityKey(data: TotpData?): String {
 
 private fun resolveTotpDataForGeneration(context: Context, totpData: TotpData): TotpData {
     val securityManager = SecurityManager(context)
-    val decryptResult = runCatching { securityManager.decryptData(totpData.secret) }
+    val decryptResult = runCatchingObserved { securityManager.decryptData(totpData.secret) }
     val decryptedSecret = decryptResult.getOrNull()
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
@@ -262,7 +263,7 @@ private fun resolveTotpDataForGeneration(context: Context, totpData: TotpData): 
 private fun parsePasswordAuthenticatorTotpData(context: Context, authenticatorKey: String): TotpData? {
     val securityManager = SecurityManager(context)
     return TotpDataResolver.fromAuthenticatorKey(
-        rawKey = runCatching {
+        rawKey = runCatchingObserved {
             securityManager.decryptDataIfBastionCiphertext(authenticatorKey)
         }.getOrDefault(authenticatorKey)
     )

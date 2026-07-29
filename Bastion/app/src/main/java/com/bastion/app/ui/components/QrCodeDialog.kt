@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -245,7 +246,7 @@ fun TextQrCodeDialog(
 
     LaunchedEffect(content) {
         withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingObserved {
                 val hints = mapOf(
                     com.google.zxing.EncodeHintType.CHARACTER_SET to "UTF-8",
                     com.google.zxing.EncodeHintType.ERROR_CORRECTION to

@@ -1,5 +1,6 @@
 package com.bastion.app.attachments.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -79,7 +80,7 @@ fun AttachmentsDetailSection(
         if (targetUri == null) return@rememberLauncherForActivityResult
         val sourceUri = previewState?.uri ?: return@rememberLauncherForActivityResult
         scope.launch {
-            runCatching {
+            runCatchingObserved {
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(sourceUri)?.use { input ->
                         context.contentResolver.openOutputStream(targetUri)?.use { output ->
@@ -181,7 +182,7 @@ fun AttachmentsDetailSection(
                     },
                     onRetry = {
                         scope.launch {
-                            runCatching {
+                            runCatchingObserved {
                                 facade.retryFailed(
                                     attachment.id,
                                     bitwardenContext = bitwardenContext,
@@ -216,7 +217,7 @@ private suspend fun handleAttachmentClick(
     onPreviewReady: (Uri, String, String) -> Unit,
     onError: (Throwable) -> Unit
 ) {
-    runCatching {
+    runCatchingObserved {
         val ready = facade.ensureDownloaded(
             attachment.id,
             bitwardenContext = bitwardenContext,

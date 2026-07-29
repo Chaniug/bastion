@@ -1,5 +1,6 @@
 package com.bastion.app.ui
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -284,7 +285,7 @@ internal fun PasswordListTopSection(
                                     showCreateCategoryDialog = true
                                 },
                                 onMoveCategory = { category, targetParentCategoryId ->
-                                    runCatching {
+                                    runCatchingObserved {
                                         planLocalCategoryMove(
                                             categories = categories,
                                             sourceCategory = category,
@@ -303,7 +304,7 @@ internal fun PasswordListTopSection(
                                 onMoveCategoryToStorageTarget = { category, target ->
                                     when (target) {
                                         is StorageTarget.BastionLocal -> {
-                                            runCatching {
+                                            runCatchingObserved {
                                                 planLocalCategoryMove(
                                                     categories = categories,
                                                     sourceCategory = category,
@@ -410,7 +411,7 @@ internal fun PasswordListTopSection(
                                     onClick = {
                                         onTopActionsMenuExpandedChange(false)
                                         coroutineScope.launch {
-                                            runCatching {
+                                            runCatchingObserved {
                                                 bitwardenRepository.forceLock(selectedBitwardenVaultId)
                                             }.onSuccess {
                                                 Toast.makeText(
@@ -438,7 +439,7 @@ internal fun PasswordListTopSection(
                                         if (vaultId != null) {
                                             onTopActionsMenuExpandedChange(false)
                                             coroutineScope.launch {
-                                                runCatching {
+                                                runCatchingObserved {
                                                     viewModel.getBitwardenVaultCacheRiskSummary(vaultId)
                                                 }.onSuccess { summary ->
                                                     clearCacheRiskSummary = summary
@@ -542,7 +543,7 @@ internal fun PasswordListTopSection(
                         onClick = {
                             coroutineScope.launch {
                                 isBitwardenMaintenanceActionRunning = true
-                                runCatching {
+                                runCatchingObserved {
                                     viewModel.clearBitwardenVaultLocalCache(
                                         vaultId = vaultId,
                                         mode = if (hasRisk) {
@@ -596,7 +597,7 @@ internal fun PasswordListTopSection(
                                         onClick = {
                                             coroutineScope.launch {
                                                 isBitwardenMaintenanceActionRunning = true
-                                                runCatching {
+                                                runCatchingObserved {
                                                     viewModel.clearBitwardenVaultLocalCache(
                                                         vaultId = vaultId,
                                                         mode = BitwardenRepository.CacheClearMode.FULL_FORCE
@@ -652,7 +653,7 @@ internal fun PasswordListTopSection(
                         title = context.getString(R.string.verify_identity),
                         subtitle = context.getString(R.string.reunlock_current_database_menu),
                         onSuccess = {
-                            val unlocked = runCatching {
+                            val unlocked = runCatchingObserved {
                                 securityManager.unlockVaultWithBiometric()
                             }.getOrDefault(false)
                             if (unlocked) {

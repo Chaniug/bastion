@@ -1,5 +1,6 @@
 package com.bastion.app.ui.components
 
+import com.bastion.app.logging.runCatchingObserved
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -829,7 +830,7 @@ private fun splitPathSegments(path: String): List<String> {
 }
 
 private fun decodePathSegmentForDisplay(segment: String): String {
-    val decoded = runCatching { Uri.decode(segment).trim() }
+    val decoded = runCatchingObserved { Uri.decode(segment).trim() }
         .getOrNull()
         .orEmpty()
     return decoded.ifBlank { segment }

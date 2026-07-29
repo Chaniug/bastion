@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import android.net.ConnectivityManager
@@ -1071,7 +1072,7 @@ class WebDavHelper(
         if (value.isBlank() || !securityManager.looksLikeBastionCiphertext(value)) {
             return value
         }
-        return runCatching { securityManager.decryptData(value) }.getOrElse { error ->
+        return runCatchingObserved { securityManager.decryptData(value) }.getOrElse { error ->
             throw IllegalStateException(
                 "Cannot export encrypted $fieldName for backup item $itemId",
                 error
@@ -1117,7 +1118,7 @@ class WebDavHelper(
             var successSteamMaFileCount = 0
             val securityManager = SecurityManager(context)
             val steamMaFileBackups = if (preferences.includeAuthenticators) {
-                runCatching { createSteamMaFileBackups(securityManager) }
+                runCatchingObserved { createSteamMaFileBackups(securityManager) }
                     .onFailure { error ->
                         android.util.Log.w("WebDavHelper", "Failed to prepare Steam maFile backups: ${error.message}")
                         warnings.add("Steam maFile备份失败: ${error.message}")
@@ -2604,7 +2605,7 @@ class WebDavHelper(
     }
 
     private fun restoreSteamMaFilePayload(file: File): SteamMaFilePayload? {
-        return runCatching {
+        return runCatchingObserved {
             SteamMaFileParser().parse(
                 maFileContent = file.readText(Charsets.UTF_8),
                 fileName = file.name
@@ -2747,7 +2748,7 @@ class WebDavHelper(
                 backupFile
             }
 
-            detectedBastionConfigEntries = runCatching {
+            detectedBastionConfigEntries = runCatchingObserved {
                 detectBastionConfigEntries(zipFile)
             }.onFailure { error ->
                 android.util.Log.w("WebDavHelper", "Failed to detect Bastion config entries: ${error.message}")
@@ -4367,7 +4368,7 @@ class WebDavHelper(
         var current = value
         var changed = false
         repeat(3) {
-            val decrypted = runCatching { securityManager.decryptData(current) }.getOrNull() ?: return@repeat
+            val decrypted = runCatchingObserved { securityManager.decryptData(current) }.getOrNull() ?: return@repeat
             if (decrypted == current) {
                 return current
             }
@@ -4394,7 +4395,7 @@ class WebDavHelper(
         ) {
             return true
         }
-        return runCatching {
+        return runCatchingObserved {
             val decoded = android.util.Base64.decode(trimmed, android.util.Base64.DEFAULT)
             decoded.size >= 28
         }.getOrDefault(false)
@@ -4528,7 +4529,7 @@ class WebDavHelper(
      */
     private fun normalizeRestoredTotpItemData(itemData: String, title: String): String {
         val json = Json { ignoreUnknownKeys = true }
-        val root = runCatching { json.parseToJsonElement(itemData).jsonObject }.getOrNull()
+        val root = runCatchingObserved { json.parseToJsonElement(itemData).jsonObject }.getOrNull()
             ?: return itemData
 
         val normalizedMap = root.toMutableMap()
@@ -4905,7 +4906,7 @@ class WebDavHelper(
         val normalized = normalizeServerUrl(rawUrl)
         if (normalized.isBlank()) return emptyList()
         val candidates = mutableListOf(normalized)
-        val path = runCatching { Uri.parse(normalized).path }.getOrNull().orEmpty()
+        val path = runCatchingObserved { Uri.parse(normalized).path }.getOrNull().orEmpty()
         if (path.isBlank() || path == "/") {
             val davUrl = joinWebDavUrl(normalized, "dav")
             if (!candidates.contains(davUrl)) {

@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
@@ -253,14 +254,14 @@ object OperationLogger {
         }
 
         val manager = securityManager ?: return
-        val encrypted = runCatching {
+        val encrypted = runCatchingObserved {
             manager.encryptTimelineSnapshot(json.encodeToString(snapshotChanges))
         }.getOrElse {
             android.util.Log.w("OperationLogger", "Skipped encrypted timeline snapshot", it)
             return
         }
 
-        runCatching {
+        runCatchingObserved {
             database.timelineVersionSnapshotDao().insert(
                 TimelineVersionSnapshot(
                     operationLogId = operationLogId,

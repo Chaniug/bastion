@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -149,7 +150,7 @@ fun DeveloperSettingsScreen(
         }
 
         scope.launch {
-            val permissionsResult = runCatching {
+            val permissionsResult = runCatchingObserved {
                 val flags =
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 context.contentResolver.takePersistableUriPermission(uri, flags)
@@ -491,7 +492,7 @@ fun DeveloperSettingsScreen(
 }
 
 private fun summarizeDocumentTreeUri(uriRaw: String): String {
-    val parsed = runCatching { Uri.parse(uriRaw) }.getOrNull()
+    val parsed = runCatchingObserved { Uri.parse(uriRaw) }.getOrNull()
     val name = parsed?.lastPathSegment
         ?.substringAfterLast(':')
         ?.substringAfterLast('/')
@@ -756,12 +757,12 @@ private object DeveloperLogDebugHelper {
     private val fileFormatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
 
     suspend fun collectLogs(context: Context): DeveloperLogSnapshot = withContext(Dispatchers.IO) {
-        runCatching { AutofillLogger.initialize(context.applicationContext) }
-        runCatching { BitwardenDiagLogger.initialize(context.applicationContext) }
-        runCatching { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
-        runCatching { MdbxDiagLogger.initialize(context.applicationContext) }
-        runCatching { SecurityDiagLogger.initialize(context.applicationContext) }
-        runCatching { SteamDiagLogger.initialize(context.applicationContext) }
+        runCatchingObserved { AutofillLogger.initialize(context.applicationContext) }
+        runCatchingObserved { BitwardenDiagLogger.initialize(context.applicationContext) }
+        runCatchingObserved { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
+        runCatchingObserved { MdbxDiagLogger.initialize(context.applicationContext) }
+        runCatchingObserved { SecurityDiagLogger.initialize(context.applicationContext) }
+        runCatchingObserved { SteamDiagLogger.initialize(context.applicationContext) }
         val autofillTagLogs = readAutofillTagLogs()
         val appProcessLogs = readLogcat(
             arrayOf(
@@ -807,42 +808,42 @@ private object DeveloperLogDebugHelper {
             }
         }.trim()
 
-        val autofillLogs = runCatching {
+        val autofillLogs = runCatchingObserved {
             AutofillLogger.exportLogs(300)
         }.getOrElse {
             "AutofillLogger unavailable: ${it.message}"
         }
-        val persistedAutofillLogs = runCatching {
+        val persistedAutofillLogs = runCatchingObserved {
             AutofillLogger.exportPersistedLogs(1200)
         }.getOrElse {
             "Autofill persisted logs unavailable: ${it.message}"
         }
-        val persistedBitwardenLogs = runCatching {
+        val persistedBitwardenLogs = runCatchingObserved {
             BitwardenDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
             "Bitwarden persisted logs unavailable: ${it.message}"
         }
-        val persistedForensicsLogs = runCatching {
+        val persistedForensicsLogs = runCatchingObserved {
             BitwardenSyncForensicsLogger.exportPersistedLogs(context, 12)
         }.getOrElse {
             "Bitwarden sync forensics logs unavailable: ${it.message}"
         }
-        val persistedMdbxLogs = runCatching {
+        val persistedMdbxLogs = runCatchingObserved {
             MdbxDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
             "MDBX persisted logs unavailable: ${it.message}"
         }
-        val persistedSecurityLogs = runCatching {
+        val persistedSecurityLogs = runCatchingObserved {
             SecurityDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
             "Security persisted logs unavailable: ${it.message}"
         }
-        val persistedSteamLogs = runCatching {
+        val persistedSteamLogs = runCatchingObserved {
             SteamDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
             "Steam persisted logs unavailable: ${it.message}"
         }
-        val persistedPasskeyLogs = runCatching {
+        val persistedPasskeyLogs = runCatchingObserved {
             PasskeyValidationDiagnostics.buildReport(context)
         }.getOrElse {
             "Passkey diagnostics unavailable: ${it.message}"
@@ -937,26 +938,26 @@ private object DeveloperLogDebugHelper {
     }
 
     suspend fun clearLogs(context: Context): ClearLogsResult = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             AutofillLogger.clear()
         }
-        runCatching {
+        runCatchingObserved {
             BitwardenDiagLogger.clear()
         }
-        runCatching {
+        runCatchingObserved {
             BitwardenSyncForensicsLogger.clear(context.applicationContext)
         }
-        runCatching {
+        runCatchingObserved {
             MdbxDiagLogger.clear()
         }
-        runCatching {
+        runCatchingObserved {
             SecurityDiagLogger.clear()
         }
-        runCatching {
+        runCatchingObserved {
             SteamDiagLogger.clear()
         }
 
-        val process = runCatching {
+        val process = runCatchingObserved {
             ProcessBuilder("logcat", "-c")
                 .redirectErrorStream(true)
                 .start()
@@ -968,7 +969,7 @@ private object DeveloperLogDebugHelper {
         }
 
         val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
-        val exitCode = runCatching { process.waitFor() }.getOrDefault(-1)
+        val exitCode = runCatchingObserved { process.waitFor() }.getOrDefault(-1)
         if (exitCode == 0) {
             ClearLogsResult(logcatCleared = true, reason = null)
         } else {
@@ -1015,22 +1016,22 @@ private object DeveloperLogDebugHelper {
         exported.sortedByDescending { it.lastModified() }
             .drop(10)
             .forEach { stale ->
-                runCatching { stale.delete() }
+                runCatchingObserved { stale.delete() }
             }
     }
 
     private fun readLogcat(command: Array<String>): String {
-        val process = runCatching {
+        val process = runCatchingObserved {
             ProcessBuilder(*command)
                 .redirectErrorStream(true)
                 .start()
         }.getOrNull() ?: return ""
 
-        val output = runCatching {
+        val output = runCatchingObserved {
             process.inputStream.bufferedReader().use { it.readText() }
         }.getOrDefault("")
 
-        runCatching { process.waitFor() }
+        runCatchingObserved { process.waitFor() }
         return output.trim()
     }
 

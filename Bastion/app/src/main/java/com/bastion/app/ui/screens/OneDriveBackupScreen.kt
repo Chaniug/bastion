@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -228,7 +229,7 @@ fun OneDriveBackupScreen(
         )
         loadingEntries = true
         browserError = null
-        runCatching {
+        runCatchingObserved {
             backupHelper.listDirectory(activeSession.accountId, targetPath)
         }.onSuccess { entries ->
             browserEntries = entries.filter { it.isDirectory }
@@ -340,9 +341,9 @@ fun OneDriveBackupScreen(
             ONEDRIVE_BACKUP_LOG_TAG,
             "Initializing OneDrive backup screen, savedConfig=${savedConfig.debugRef()}"
         )
-        val configuredSessionResult = runCatching { backupHelper.getConfiguredSession() }
+        val configuredSessionResult = runCatchingObserved { backupHelper.getConfiguredSession() }
         val configuredSession = configuredSessionResult.getOrNull()
-        val cachedSession = runCatching { authManager.getCachedSession() }.getOrNull()
+        val cachedSession = runCatchingObserved { authManager.getCachedSession() }.getOrNull()
 
         session = configuredSession ?: cachedSession
         if (configuredSessionResult.isFailure) {
@@ -455,7 +456,7 @@ fun OneDriveBackupScreen(
                                 loadingEntries = false
                                 loadingBackups = false
                                 coroutineScope.launch {
-                                    val signInResult = runCatching { authManager.signIn(activity) }
+                                    val signInResult = runCatchingObserved { authManager.signIn(activity) }
                                     signingIn = false
                                     signInResult
                                         .onSuccess { result ->
@@ -796,7 +797,7 @@ fun OneDriveBackupScreen(
                                     val securityManager = com.bastion.app.security.SecurityManager(context)
                                     val failedPasswordTitles = mutableListOf<String>()
                                     val decryptedPasswords = localPasswords.map { entry ->
-                                        runCatching {
+                                        runCatchingObserved {
                                             entry.copy(password = securityManager.decryptData(entry.password))
                                         }.getOrElse { error ->
                                             Log.w(
@@ -1031,7 +1032,7 @@ fun OneDriveBackupScreen(
                         showCreateFolderDialog = false
                         creatingFolder = true
                         coroutineScope.launch {
-                            runCatching {
+                            runCatchingObserved {
                                 backupHelper.createFolder(activeSession.accountId, currentPath, folderName)
                             }.onSuccess {
                                 loadDirectory(currentPath)

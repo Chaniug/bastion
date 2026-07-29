@@ -1,5 +1,6 @@
 package com.bastion.app.receiver
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -18,7 +19,7 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
             return
         }
 
-        runCatching {
+        runCatchingObserved {
             val settings = runBlocking {
                 SettingsManager(context).settingsFlow.first()
             }
@@ -29,7 +30,7 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
             )
         }.onFailure { error ->
             Log.w(TAG, "Failed to repair launcher entry points after package replace", error)
-            runCatching {
+            runCatchingObserved {
                 AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
                     context,
                     AppLauncherIcon.MODERN,

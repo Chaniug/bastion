@@ -1,5 +1,6 @@
 package com.bastion.app.steam.service
 
+import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -130,7 +131,7 @@ class SteamLoginImportService(
             val token = jwt?.trim().orEmpty()
             if (token.isBlank()) return null
             val payloadPart = token.split('.').getOrNull(1) ?: return null
-            return runCatching {
+            return runCatchingObserved {
                 var paddedPayload = payloadPart.replace('-', '+').replace('_', '/')
                 while (paddedPayload.length % 4 != 0) {
                     paddedPayload += "="
@@ -281,11 +282,11 @@ class SteamLoginImportService(
                 "Steam authorized-device token is invalid"
             )
 
-        runCatching {
+        runCatchingObserved {
             val rsaResponse = getWithQuery(
                 URL_RSA_KEY,
                 mapOf("account_name" to userName.trim())
-            ) ?: return@runCatching AuthorizedDeviceRevokeResult.Failure(
+            ) ?: return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                 "Could not obtain Steam password encryption key"
             )
             val rsaPayload = rsaResponse.responseObject()
@@ -293,12 +294,12 @@ class SteamLoginImportService(
             val publicKeyExp = rsaPayload?.string("publickey_exp").orEmpty()
             val timeStamp = rsaPayload?.string("timestamp").orEmpty()
             if (publicKeyMod.isBlank() || publicKeyExp.isBlank() || timeStamp.isBlank()) {
-                return@runCatching AuthorizedDeviceRevokeResult.Failure(
+                return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                     "Steam password encryption response is incomplete"
                 )
             }
             val encryptedPassword = encryptPasswordWithRsa(password, publicKeyMod, publicKeyExp)
-                ?: return@runCatching AuthorizedDeviceRevokeResult.Failure(
+                ?: return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                     "Could not encrypt the Steam password"
                 )
             val begin = beginAuthSessionViaCredentialsWithProtobuf(
@@ -306,7 +307,7 @@ class SteamLoginImportService(
                 encryptedPassword = encryptedPassword,
                 encryptionTimestamp = timeStamp,
                 throwApiErrors = true
-            ) ?: return@runCatching AuthorizedDeviceRevokeResult.Failure(
+            ) ?: return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                 "Steam rejected the device-removal authentication request"
             )
             val session = PendingAuthSession(
@@ -333,16 +334,16 @@ class SteamLoginImportService(
             ) {
                 SteamGuardSubmitResult.Accepted -> Unit
                 is SteamGuardSubmitResult.Failure -> {
-                    return@runCatching AuthorizedDeviceRevokeResult.Failure(submitted.message)
+                    return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(submitted.message)
                 }
                 SteamGuardSubmitResult.UnsupportedSession -> {
-                    return@runCatching AuthorizedDeviceRevokeResult.Failure(
+                    return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                         "Steam device-removal authentication is unsupported"
                     )
                 }
             }
             val tokens = pollForAuthorizedDeviceRevocation(session, signedTokenId)
-                ?: return@runCatching AuthorizedDeviceRevokeResult.Failure(
+                ?: return@runCatchingObserved AuthorizedDeviceRevokeResult.Failure(
                     "Steam device removal timed out"
                 )
             val cleanupRequest = SteamProtoWriter().apply {
@@ -375,14 +376,14 @@ class SteamLoginImportService(
             return@withContext LoginResult.Failure("账号或密码不能为空", retryable = false)
         }
 
-        runCatching {
+        runCatchingObserved {
             logDiag("begin login start")
             val rsaResponse = getWithQuery(
                 URL_RSA_KEY,
                 mapOf(
                     "account_name" to userName.trim()
                 )
-            ) ?: return@runCatching LoginResult.Failure("获取 Steam RSA 密钥失败")
+            ) ?: return@runCatchingObserved LoginResult.Failure("获取 Steam RSA 密钥失败")
 
             val rsaPayload = rsaResponse.responseObject()
             val rsaSuccess = rsaResponse.successBoolean() ?: (rsaPayload != null)
@@ -390,7 +391,7 @@ class SteamLoginImportService(
                 val message = rsaPayload?.messageString()
                     ?: rsaResponse.messageString()
                     ?: "Steam 登录失败（RSA）"
-                return@runCatching LoginResult.Failure(message)
+                return@runCatchingObserved LoginResult.Failure(message)
             }
 
             val publicKeyMod = rsaPayload?.string("publickey_mod").orEmpty()
@@ -398,12 +399,12 @@ class SteamLoginImportService(
             val timeStamp = rsaPayload?.string("timestamp").orEmpty()
             if (publicKeyMod.isBlank() || publicKeyExp.isBlank() || timeStamp.isBlank()) {
                 logDiag("begin login rsa incomplete")
-                return@runCatching LoginResult.Failure("Steam RSA 响应不完整")
+                return@runCatchingObserved LoginResult.Failure("Steam RSA 响应不完整")
             }
             logDiag("begin login rsa ok")
 
             val encryptedPassword = encryptPasswordWithRsa(password, publicKeyMod, publicKeyExp)
-                ?: return@runCatching LoginResult.Failure("Steam 密码加密失败")
+                ?: return@runCatchingObserved LoginResult.Failure("Steam 密码加密失败")
 
             val protobufBeginSession = beginAuthSessionViaCredentialsWithProtobuf(
                 userName = userName.trim(),
@@ -423,7 +424,7 @@ class SteamLoginImportService(
                         steamId = protobufBeginSession.steamId,
                         allowedConfirmations = protobufBeginSession.challenges
                     )
-                    return@runCatching LoginResult.ChallengeRequired(
+                    return@runCatchingObserved LoginResult.ChallengeRequired(
                         pendingSessionId = pendingSessionId,
                         steamId = protobufBeginSession.steamId,
                         challenges = protobufBeginSession.challenges,
@@ -431,7 +432,7 @@ class SteamLoginImportService(
                     )
                 }
 
-                return@runCatching pollForToken(
+                return@runCatchingObserved pollForToken(
                     protobufBeginSession.clientId,
                     protobufBeginSession.requestId,
                     protobufBeginSession.steamId,
@@ -455,7 +456,7 @@ class SteamLoginImportService(
                     "language" to "0",
                     "qos_level" to "2"
                 )
-            ) ?: return@runCatching LoginResult.Failure("Steam 登录请求失败")
+            ) ?: return@runCatchingObserved LoginResult.Failure("Steam 登录请求失败")
 
             val beginPayload = beginAuthResponse.responseObject()
             val beginSuccess = beginAuthResponse.successBoolean() ?: (beginPayload != null)
@@ -463,7 +464,7 @@ class SteamLoginImportService(
                 val message = beginPayload?.messageString()
                     ?: beginAuthResponse.messageString()
                     ?: "Steam 登录失败"
-                return@runCatching LoginResult.Failure(message)
+                return@runCatchingObserved LoginResult.Failure(message)
             }
 
             val clientId = beginPayload.stringAny("client_id", "clientId", "clientID")
@@ -479,7 +480,7 @@ class SteamLoginImportService(
                 val fallbackResult = beginLegacyLogin(userName.trim(), password, purpose)
                 if (fallbackResult !is LoginResult.Failure) {
                     android.util.Log.i(TAG, "Fallback to legacy Steam login route succeeded")
-                    return@runCatching fallbackResult
+                    return@runCatchingObserved fallbackResult
                 }
                 val intervalHint = beginPayload.intAny("interval", "poll_interval")
                 val message = beginPayload.messageString()
@@ -489,7 +490,7 @@ class SteamLoginImportService(
                     } else {
                         "Steam 登录响应不完整（可能需要额外验证或触发风控）"
                     }
-                return@runCatching LoginResult.Failure(message)
+                return@runCatchingObserved LoginResult.Failure(message)
             }
 
             val challenges = beginPayload.allowedConfirmations()
@@ -505,7 +506,7 @@ class SteamLoginImportService(
                     steamId = steamId,
                     allowedConfirmations = challenges
                 )
-                return@runCatching LoginResult.ChallengeRequired(
+                return@runCatchingObserved LoginResult.ChallengeRequired(
                     pendingSessionId = pendingSessionId,
                     steamId = steamId,
                     challenges = challenges,
@@ -535,14 +536,14 @@ class SteamLoginImportService(
         val session = pendingSessions[pendingSessionId]
             ?: return@withContext LoginResult.Failure("登录会话已过期，请重新开始", retryable = false)
 
-        runCatching {
+        runCatchingObserved {
             if (session.flow == AuthFlow.LEGACY_WEB) {
                 logDiag("submit guard code flow=legacy")
                 val legacyResult = continueLegacyLogin(session, code)
                 if (legacyResult is LoginResult.ReadyForImport || legacyResult is LoginResult.Failure) {
                     pendingSessions.remove(pendingSessionId)
                 }
-                return@runCatching legacyResult
+                return@runCatchingObserved legacyResult
             }
             if (session.flow == AuthFlow.ADD_AUTHENTICATOR_FINALIZE) {
                 logDiag("submit guard code flow=add_finalize")
@@ -550,7 +551,7 @@ class SteamLoginImportService(
                 if (finalizeResult is LoginResult.ReadyForImport) {
                     pendingSessions.remove(pendingSessionId)
                 }
-                return@runCatching finalizeResult
+                return@runCatchingObserved finalizeResult
             }
             if (session.flow == AuthFlow.REPLACE_EXISTING_AUTHENTICATOR) {
                 logDiag("submit guard code flow=replace_existing")
@@ -558,16 +559,16 @@ class SteamLoginImportService(
                 if (replaceResult is LoginResult.ReadyForImport) {
                     pendingSessions.remove(pendingSessionId)
                 }
-                return@runCatching replaceResult
+                return@runCatchingObserved replaceResult
             }
 
             logDiag("submit guard code flow=auth_api type=$confirmationType")
             when (val updateResult = submitSteamGuardCodeWithProtobuf(session, code.trim(), confirmationType)) {
                 SteamGuardSubmitResult.Accepted -> Unit
-                is SteamGuardSubmitResult.Failure -> return@runCatching LoginResult.Failure(updateResult.message)
+                is SteamGuardSubmitResult.Failure -> return@runCatchingObserved LoginResult.Failure(updateResult.message)
                 SteamGuardSubmitResult.UnsupportedSession -> {
                     val fallbackResult = submitSteamGuardCodeWithForm(session, code.trim(), confirmationType)
-                    if (fallbackResult != null) return@runCatching fallbackResult
+                    if (fallbackResult != null) return@runCatchingObserved fallbackResult
                 }
             }
 
@@ -588,10 +589,10 @@ class SteamLoginImportService(
     }
 
     suspend fun beginQrLogin(): QrLoginResult = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingObserved {
             logDiag("begin qr login start")
             val qrSession = beginAuthSessionViaQrWithProtobuf()
-                ?: return@runCatching QrLoginResult.Failure("无法创建 Steam 二维码登录会话")
+                ?: return@runCatchingObserved QrLoginResult.Failure("无法创建 Steam 二维码登录会话")
             val pendingSessionId = UUID.randomUUID().toString()
             pendingSessions[pendingSessionId] = PendingAuthSession(
                 flow = AuthFlow.AUTH_API_QR,
@@ -712,8 +713,10 @@ class SteamLoginImportService(
             android.util.Log.w(
                 TAG,
                 "BeginAuthSessionViaCredentials protobuf missing fields: fieldNumbers=${
+
                     fields.joinToString(",") { it.number.toString() }
                 }"
+
             )
             return null
         }
@@ -774,8 +777,10 @@ class SteamLoginImportService(
             android.util.Log.w(
                 TAG,
                 "BeginAuthSessionViaQR protobuf missing fields: fieldNumbers=${
+
                     fields.joinToString(",") { it.number.toString() }
                 }"
+
             )
             return null
         }
@@ -806,7 +811,7 @@ class SteamLoginImportService(
         confirmationField: Int
     ): List<SteamGuardChallenge> {
         return filter { it.number == confirmationField && it.bytes != null }.mapNotNull { field ->
-            val confirmation = runCatching {
+            val confirmation = runCatchingObserved {
                 SteamProtoReader(field.bytes ?: return@mapNotNull null).parse()
             }.getOrNull() ?: return@mapNotNull null
             val type = confirmation[1]?.asInt ?: return@mapNotNull null
@@ -1339,7 +1344,7 @@ class SteamLoginImportService(
     }
 
     private fun parseUnsigned64AsSignedLong(value: String): Long? {
-        val big = runCatching { BigInteger(value.trim()) }.getOrNull() ?: return null
+        val big = runCatchingObserved { BigInteger(value.trim()) }.getOrNull() ?: return null
         if (big < BigInteger.ZERO || big > UNSIGNED_LONG_MAX) return null
         return if (big > SIGNED_LONG_MAX) {
             big.subtract(UNSIGNED_LONG_BASE).toLong()
@@ -1365,7 +1370,7 @@ class SteamLoginImportService(
             Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
             Base64.URL_SAFE or Base64.DEFAULT
         ).firstNotNullOfOrNull { flags ->
-            runCatching { Base64.decode(trimmed, flags) }
+            runCatchingObserved { Base64.decode(trimmed, flags) }
                 .getOrNull()
                 ?.takeIf { it.isNotEmpty() }
         }
@@ -1739,7 +1744,7 @@ class SteamLoginImportService(
     }
 
     private fun SteamGuardPayload.sharedSecretOrNull(): String? {
-        return runCatching {
+        return runCatchingObserved {
             json.parseToJsonElement(steamGuardJson)
                 .jsonObject
                 .stringAny("shared_secret", "sharedSecret")
@@ -1747,7 +1752,7 @@ class SteamLoginImportService(
     }
 
     private fun SteamGuardPayload.markFullyEnrolled(): SteamGuardPayload {
-        val root = runCatching {
+        val root = runCatchingObserved {
             json.parseToJsonElement(steamGuardJson).jsonObject
         }.getOrNull() ?: return this
         val updatedPayload = buildJsonObject {
@@ -1890,7 +1895,7 @@ class SteamLoginImportService(
         }
 
         val replacementFields = fields[2]?.bytes?.let { bytes ->
-            runCatching { SteamProtoReader(bytes).parse() }.getOrNull()
+            runCatchingObserved { SteamProtoReader(bytes).parse() }.getOrNull()
         }
         val sharedSecretBytes = replacementFields?.get(1)?.bytes
         val sharedSecret = sharedSecretBytes
@@ -2180,7 +2185,7 @@ class SteamLoginImportService(
         modulusHex: String,
         exponentHex: String
     ): String? {
-        return runCatching {
+        return runCatchingObserved {
             val modulus = BigInteger(modulusHex, 16)
             val exponent = BigInteger(exponentHex, 16)
             val spec = RSAPublicKeySpec(modulus, exponent)
@@ -2213,7 +2218,7 @@ class SteamLoginImportService(
             .header("Referer", "https://steamcommunity.com/login/home/")
             .build()
 
-        return runCatching {
+        return runCatchingObserved {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     android.util.Log.w(TAG, "postForm failed: $url, code=${response.code}")
@@ -2254,7 +2259,7 @@ class SteamLoginImportService(
             .header("Accept", "application/json")
             .build()
 
-        return runCatching {
+        return runCatchingObserved {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     android.util.Log.w(TAG, "getWithQuery failed: $url, code=${response.code}")
@@ -2337,7 +2342,7 @@ class SteamLoginImportService(
             is JsonPrimitive -> {
                 val content = oauthElement.contentOrNull ?: return null
                 if (!content.trim().startsWith("{")) return null
-                runCatching {
+                runCatchingObserved {
                     json.parseToJsonElement(content).jsonObject
                 }.getOrNull()
             }

@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.builder
 
+import com.bastion.app.logging.runCatchingObserved
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -73,7 +74,7 @@ class FillResponseBuilderNg(
         var callbackCipherDatasetCount = 0
         filledData.filledPartitions.forEachIndexed { index, partition ->
             if (partition.filledItems.isEmpty()) return@forEachIndexed
-            runCatching {
+            runCatchingObserved {
                 responseBuilder.addDataset(
                     buildCipherDataset(
                         request = request,
@@ -598,7 +599,7 @@ class FillResponseBuilderNg(
     private fun extractWebDomain(uri: String?): String? =
         uri
             ?.takeIf { it.isNotBlank() }
-            ?.let { runCatching { Uri.parse(it).host }.getOrNull() }
+            ?.let { runCatchingObserved { Uri.parse(it).host }.getOrNull() }
             ?.takeIf { it.isNotBlank() }
 
     private fun attachSaveInfoIfNeeded(

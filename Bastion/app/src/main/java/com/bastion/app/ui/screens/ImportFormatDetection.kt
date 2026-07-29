@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import java.io.BufferedReader
@@ -63,7 +64,7 @@ private fun detectPasswordKeyboardFileMode(
     context: Context,
     uri: Uri
 ): PasswordKeyboardFileMode {
-    return runCatching {
+    return runCatchingObserved {
         context.contentResolver.openInputStream(uri)?.use { input ->
             BufferedReader(InputStreamReader(input, Charsets.UTF_8)).use { reader ->
                 val firstLine = reader.readLine()?.removePrefix("\uFEFF")?.trim().orEmpty()
@@ -122,8 +123,11 @@ private fun parsePasswordKeyboardCsvPreviewFields(line: String): List<String> {
         val ch = line[index]
         when (ch) {
             '"' -> {
+
                 if (inQuotes && index + 1 < line.length && line[index + 1] == '"') {
+
                     current.append('"')
+
                     index++
                 } else {
                     inQuotes = !inQuotes
