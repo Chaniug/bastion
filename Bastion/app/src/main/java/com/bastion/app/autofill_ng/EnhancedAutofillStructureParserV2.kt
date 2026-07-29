@@ -1802,8 +1802,8 @@ class EnhancedAutofillStructureParserV2 {
                 add(attrs["id"].orEmpty())
                 add(attrs["class"].orEmpty())
                 // data-* 属性（如 data-component）可能携带 search 语义
-                html.attributes?.forEach { (k, v) ->
-                    if (k.lowercase(Locale.ENGLISH).startsWith("data-")) add(v ?: "")
+                html.attributes?.forEach { attr ->
+                    if (attr.first.lowercase(Locale.ENGLISH).startsWith("data-")) add(attr.second ?: "")
                 }
             }
         }.map { it.lowercase(Locale.ENGLISH) }
@@ -1852,9 +1852,9 @@ class EnhancedAutofillStructureParserV2 {
         if (role == "search" || role == "searchbox") return true
         if ("search" in (attrs["class"].orEmpty().lowercase(Locale.ENGLISH))) return true
         if ("search" in (attrs["id"].orEmpty().lowercase(Locale.ENGLISH))) return true
-        html.attributes?.forEach { (k, v) ->
-            if (k.lowercase(Locale.ENGLISH).startsWith("data-") &&
-                (v ?: "").lowercase(Locale.ENGLISH).contains("search")
+        html.attributes?.forEach { attr ->
+            if (attr.first.lowercase(Locale.ENGLISH).startsWith("data-") &&
+                (attr.second ?: "").lowercase(Locale.ENGLISH).contains("search")
             ) return true
         }
         return false
