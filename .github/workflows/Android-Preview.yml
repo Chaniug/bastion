@@ -23,7 +23,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 concurrency:
   group: android-preview-release
@@ -190,10 +189,12 @@ jobs:
       - name: Generate preview changelog (since last preview)
         id: preview_changelog
         if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set +e
-          prev="$(git rev-parse preview 2>/dev/null || true)"
+          prev="$(gh api "repos/${{ github.repository }}/releases/tags/preview" --jq '.target_commitish' 2>/dev/null || true)"
           if [ -n "$prev" ]; then
             range="${prev}..HEAD"
             log="$(git log $range --pretty=format:'- %s (%h)')"
@@ -202,14 +203,6 @@ jobs:
           fi
           if [ -z "$log" ]; then log="- 无变更记录"; fi
           { echo "notes<<EOF"; echo "$log"; echo "EOF"; } >> "$GITHUB_OUTPUT"
-
-      - name: Move preview tag to current commit
-        if: github.event_name != 'pull_request'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa preview ${{ github.sha }} -m "Development Preview"
-          git push origin refs/tags/preview --force
 
       - name: Cleanup duplicate preview draft releases
         if: github.event_name != 'pull_request'
