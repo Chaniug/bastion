@@ -1,28 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- 磨砂玻璃主体：半透明白色径向渐变（左上偏亮，模拟光源） -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:type="radial"
-                android:centerX="0.4"
-                android:centerY="0.32"
-                android:gradientRadius="92"
-                android:startColor="#59FFFFFF"
-                android:centerColor="#3CF2F4F7"
-                android:endColor="#2CE2E6EA" />
-        </shape>
-    </item>
-
-    <!-- 玻璃边缘反光：白色半透明描边 -->
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@android:color/transparent" />
-            <stroke
-                android:width="2dp"
-                android:color="#B4FFFFFF" />
-        </shape>
-    </item>
-
-</layer-list>
+<!-- 透明底板：不绘制任何内容，让启动器背景/壁纸直接透出。
+     盾牌与金色锁孔作为前景层浮在其上，靠自身的轮廓光与投影撑起立体感，
+     更接近 Android 原生的"液态玻璃"观感（Android 无实时壁纸模糊，
+     实心白盘会被渲染成明显白贴纸，故改为全透明）。 -->
+<color xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@android:color/transparent" />

@@ -365,8 +365,18 @@ class PasswordViewModel(
                 Log.w("PasswordViewModel", "Password startup maintenance failed", error)
             }
         }
-        viewModelScope.launch(Dispatchers.Default) {
-            warmupBitwardenOfflineSecretCache()
+        // 离线密钥缓存预热：在 ViewModel init 时立即于 Dispatchers.IO（而非与首页密码列表
+        // 共用 Dispatchers.Default 的线程池）开始，抢占冷启动早期窗口把缓存尽早填热。预热只
+        // 把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences），因此不会产生 N 次
+        // apply() 引发的 QueuedWork.waitToFinish() 主线程反堵，冷启动主线程不被堵塞；而用户
+        // 点开密码时 recall() 命中内存即秒回。任何加密/安全逻辑均未改动，常规 remember() 仍
+        // 在真实查看/复制时照常写盘做离线兜底。
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                warmupBitwardenOfflineSecretCache()
+            }.onFailure { error ->
+                Log.w("PasswordViewModel", "Offline secret cache warmup skipped", error)
+            }
         }
     }
     
@@ -1137,7 +1147,7 @@ class PasswordViewModel(
             if (!entry.hasBitwardenCipherBinding() || entry.password.isBlank()) return@forEach
             val decoded = decodePasswordOrNull(entry.password)
             if (!decoded.isNullOrBlank()) {
-                cache.remember(entry, decoded)
+                cache.warmMemory(entry, decoded)
                 warmedCount += 1
             }
         }
