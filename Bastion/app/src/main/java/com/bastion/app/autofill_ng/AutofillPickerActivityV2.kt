@@ -69,6 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -1251,7 +1252,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             saveUriBinding(password)
         }
 
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.Default) {
+        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
             if (args.rememberLastFilled) {
                 rememberLastFilledCredential(password.id)
             }
@@ -1320,7 +1321,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         )
         
         // 后台保存
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        ProcessLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val database = PasswordDatabase.getDatabase(applicationContext)
                 val repository = PasswordRepository(database.passwordEntryDao())

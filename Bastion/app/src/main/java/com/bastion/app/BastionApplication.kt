@@ -21,6 +21,9 @@ import com.bastion.app.sync.SyncTaskRunner
 import com.bastion.app.utils.AppLauncherIconManager
 import com.bastion.app.security.SessionManager
 import com.bastion.app.utils.SettingsManager
+import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import com.bastion.app.security.SecurityManager
 import com.bastion.app.webdav.WebDavBackoffState
 import com.bastion.app.workers.KeePassRemoteUploadWorker
 
@@ -69,6 +72,12 @@ class BastionApplication : Application() {
             return
         }
 
+        // 后台线程预热加密单例（SecurityManager），将 Keystore / EncryptedSharedPreferences
+        // 的初始化从主线程移出（A1），避免冷启动与旋转屏幕时的主线程阻塞。
+        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            SecurityManager.prewarm(this@BastionApplication)
+        }
+
         SyncTaskRunner.installNetworkGate(AndroidSyncNetworkGate(this))
         MainThreadStallMonitor.start()
         MdbxDiagLogger.initialize(this)
@@ -107,7 +116,7 @@ class BastionApplication : Application() {
      */
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun scheduleAttachmentHousekeeping() {
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        ProcessLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val facade = AttachmentContainer.facade(this@BastionApplication)
                 facade.purgeOrphanedLocalBlobs()
@@ -117,7 +126,7 @@ class BastionApplication : Application() {
 
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun syncLauncherEntryPointsWithSettings() {
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             runCatching {
                 val settings = SettingsManager(this@BastionApplication).settingsFlow.first()
                 AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(

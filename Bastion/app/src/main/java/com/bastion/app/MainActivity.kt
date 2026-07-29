@@ -360,7 +360,7 @@ class MainActivity : BaseBastionActivity() {
 
         // Initialize dependencies
         val database = PasswordDatabase.getDatabase(this)
-        val securityManager = SecurityManager(this)
+        val securityManager = SecurityManager.instance(this)
         val mdbxRepository: MdbxRepository = MdbxVaultStore(
             this.applicationContext,
             database.localMdbxDatabaseDao(),
