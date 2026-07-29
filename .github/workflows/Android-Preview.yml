@@ -179,11 +179,10 @@ jobs:
 
       - name: Upload Preview APK artifact (fallback)
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: preview-apk
           path: Bastion/app/build/outputs/apk/release/*.APK
-          retention-days: 7
           if-no-files-found: warn
 
       - name: Generate preview changelog (since last preview)
