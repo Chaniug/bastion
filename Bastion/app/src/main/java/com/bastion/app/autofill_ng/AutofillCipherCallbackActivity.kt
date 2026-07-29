@@ -300,14 +300,14 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
 
         // 回归修复：认证填充主路径此前缺少 OTP 自动复制副作用（仅挂在 Picker Activity 上，
         // 而 vault 锁定时框架直接走 AutofillCipherCallbackActivity 完成填充，绕过 Picker）。
-        // 用 ProcessLifecycleOwner.lifecycleScope（进程级作用域）而非 Activity.lifecycleScope：
+        // 用 ProcessLifecycleOwner.get().lifecycleScope（进程级作用域）而非 Activity.lifecycleScope：
         // Activity 在 finish() 后仍可安全完成 OTP 自动复制副作用，协程在进程销毁时方被结构化取消。
         Log.d(
             "BastionOtpCopy",
             "trigger: completeCipherAutofill reached, passwordId=${passwordEntry.id}, " +
                 "hints=${callbackArgs.autofillHints}, autoCopyEnabledPathPending"
         )
-        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.Default) {
             performOtpAutofillSideEffects(
                 context = applicationContext,
                 password = passwordEntry,

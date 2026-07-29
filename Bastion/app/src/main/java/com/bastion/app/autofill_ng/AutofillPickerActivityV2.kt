@@ -1252,7 +1252,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
             saveUriBinding(password)
         }
 
-        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.Default) {
             if (args.rememberLastFilled) {
                 rememberLastFilledCredential(password.id)
             }
@@ -1321,7 +1321,7 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         )
         
         // 后台保存
-        ProcessLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val database = PasswordDatabase.getDatabase(applicationContext)
                 val repository = PasswordRepository(database.passwordEntryDao())

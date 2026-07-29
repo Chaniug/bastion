@@ -82,7 +82,7 @@
 - **C1. Composable 内直接持有 Room 单例**：`AddEditPasswordScreen.kt:233`、`PasswordListContent.kt:665`、`VaultV2Pane.kt:1422` 等 `remember { PasswordDatabase.getDatabase(context) }`。→ 收益：状态与数据解耦、可测试、避免重建抖动。→ 代价：中；迁移到 ViewModel/Repository。
 
 ### D. 稳定性 / 崩溃风险
-- **D1. GlobalScope 无结构化并发**：`BastionApplication.kt:110/120`、`AutofillCipherCallbackActivity.kt:309`、`AutofillPickerActivityV2.kt:1254/1323`。→ 收益：进程回收/销毁时可取消、可观测、防重复执行。→ 代价：低；改为 `ProcessLifecycleOwner.lifecycleScope` 或自定义 `CoroutineScope(SupervisorJob())` 在宿主销毁时 `cancel()`。
+- **D1. GlobalScope 无结构化并发**：`BastionApplication.kt:110/120`、`AutofillCipherCallbackActivity.kt:309`、`AutofillPickerActivityV2.kt:1254/1323`。→ 收益：进程回收/销毁时可取消、可观测、防重复执行。→ 代价：低；改为 `ProcessLifecycleOwner.get().lifecycleScope`（先 `get()` 取进程级 LifecycleOwner 实例再取作用域）或自定义 `CoroutineScope(SupervisorJob())` 在宿主销毁时 `cancel()`。
 - **D2. Autofill Service scope 绑定生命周期（已核实完成）**：`BastionAutofillServiceNg.kt:98` `CoroutineScope(SupervisorJob()+Main.immediate)`，`onDestroy`（L154）已 `scope.cancel()`。→ 结论：已达标，无需改动；记录以避免重复实施。
 - **D3. runCatching 静默吞异常**：`SettingsManager.kt`、`MdbxVaultStore.kt`、`BitwardenSyncService.kt`、`SteamLoginImportService.kt` 等数百处 `getOrNull()`/`getOrDefault()` 无 `onFailure`。→ 收益：暴露真实故障、减少「空白/假成功」类隐性 bug。→ 代价：中；关键路径（解锁/写入/同步）至少 `onFailure` 上报或 Toast。
 - **D4. PBKDF2 高迭代解锁时延**：`MdbxVaultCrypto.kt:205-209`（最高 360k 迭代）。→ 已确认在 `Dispatchers.IO`（`MdbxVaultStore.kt:468-475`）非主线程，非 ANR 风险，但低端机解锁可达数秒。→ 收益：解锁体验。→ 代价：中/安全权衡；确认进度 UI，评估 Argon2id 或按需下调档位。

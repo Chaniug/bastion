@@ -74,7 +74,7 @@ class BastionApplication : Application() {
 
         // 后台线程预热加密单例（SecurityManager），将 Keystore / EncryptedSharedPreferences
         // 的初始化从主线程移出（A1），避免冷启动与旋转屏幕时的主线程阻塞。
-        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
             SecurityManager.prewarm(this@BastionApplication)
         }
 
@@ -116,7 +116,7 @@ class BastionApplication : Application() {
      */
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun scheduleAttachmentHousekeeping() {
-        ProcessLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val facade = AttachmentContainer.facade(this@BastionApplication)
                 facade.purgeOrphanedLocalBlobs()
@@ -126,7 +126,7 @@ class BastionApplication : Application() {
 
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun syncLauncherEntryPointsWithSettings() {
-        ProcessLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
             runCatching {
                 val settings = SettingsManager(this@BastionApplication).settingsFlow.first()
                 AppLauncherIconManager.repairLaunchEntryPointsAfterUpgrade(
