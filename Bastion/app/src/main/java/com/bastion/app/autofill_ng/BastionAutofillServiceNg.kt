@@ -722,6 +722,29 @@ class BastionAutofillServiceNg : AutofillService() {
                     "responseStabilityKey" to responseStabilityKey,
                 )
             )
+
+            // 唯一条目 + vault 解锁 → 框架直填 dataset（不绕 AutofillCipherCallbackActivity）。
+            // 直填路径不经过 Activity，因此 OTP 自动复制副作用需在服务层触发。
+            if (passwordsForResponse.size == 1 && !effectiveAuthenticationRequired) {
+                serviceScope.launch(Dispatchers.IO) {
+                    runCatching {
+                        generateOtpCodeForPassword(applicationContext, passwordsForResponse.first())
+                    }.onSuccess { otp ->
+                        if (!otp.isNullOrBlank()) {
+                            // 复制到剪贴板 + 显示通知，对齐 Bitwarden 体验
+                            performOtpAutofillSideEffects(
+                                context = applicationContext,
+                                password = passwordsForResponse.first(),
+                                autofillHints = fillableTargets.map { it.hint.name },
+                            )
+                            Log.d(TAG, "Direct-fill OTP side effect triggered: " +
+                                "passwordId=${passwordsForResponse.first().id}, pkg=$packageName")
+                        }
+                    }.onFailure { error ->
+                        Log.w(TAG, "Direct-fill OTP side effect failed: ${error.message}", error)
+                    }
+                }
+            }
         }
         return response
     }
