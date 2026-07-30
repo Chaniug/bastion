@@ -279,8 +279,6 @@ fun SettingsScreen(
     val sharedTransitionScope = com.bastion.app.ui.LocalSharedTransitionScope.current
     val animatedVisibilityScope = com.bastion.app.ui.LocalAnimatedVisibilityScope.current
     
-    @Composable
-
     val startBiometricEnable = {
         if (activity != null) {
             biometricHelper.authenticate(

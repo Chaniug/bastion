@@ -1221,6 +1221,7 @@
     <string name="settings_security">安全</string>
     <string name="settings_data_management">数据管理</string>
     <string name="settings_about">关于</string>
+    <string name="settings_detail_placeholder">选择设置项以查看详情</string>
     <string name="settings_language_description">语言</string>
     <string name="settings_auto_lock_title">自动锁定</string>
     <string name="settings_auto_lock_description">离开应用后自动锁定</string>
