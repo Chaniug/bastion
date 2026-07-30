@@ -283,7 +283,7 @@ class FillResponseBuilderNg(
         )
 
         val hasInlinePresentation = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-            partition.inlinePresentationSpec != null
+            (partition.inlinePresentationSpec != null || !request.inlinePresentationSpecs.isNullOrEmpty())
         val callbackTargets = buildLoginCallbackTargets(request.partition.views)
 
         // 对齐 Bitwarden 行为：仅 vault 锁定 / 需二次认证时才给 dataset 挂 setAuthentication
@@ -329,7 +329,12 @@ class FillResponseBuilderNg(
             fields = fields
         ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val spec = partition.inlinePresentationSpec ?: return@create null
+                // WebView 兜底：Via 等浏览器对 menu 建议回写不兼容，但 inline（IME commitText）
+                // 100% 可靠。partition.inlinePresentationSpec 可能为 null（inline 开关关闭时），
+                // 此时从 request.inlinePresentationSpecs 取第一个兼容 spec 构建 inline。
+                val spec = partition.inlinePresentationSpec
+                    ?: request.inlinePresentationSpecs?.firstOrNull()
+                    ?: return@create null
                 AutofillDatasetBuilder.InlinePresentationBuilder.tryCreate(
                     context = context,
                     spec = spec,

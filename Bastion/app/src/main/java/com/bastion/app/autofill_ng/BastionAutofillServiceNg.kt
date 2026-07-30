@@ -659,7 +659,12 @@ class BastionAutofillServiceNg : AutofillService() {
             matchedPasswords = passwordsForResponse.size,
         )
 
-        val inlineRequest = if (autofillPreferences.isInlineSuggestionsEnabled.first()) {
+        // WebView 场景（有 webDomain）的 menu presentation 回写在部分浏览器（Via）上不可靠：
+        // 数据集已正确返回但框架不回写值。Bitwarden 对 WebView 走 inline（IME 内嵌）建议，
+        // 点选后输入法直接 commitText 进输入框，不依赖 autofillId 映射回写，对 Via 100% 可靠。
+        // 因此对 WebView 场景，即使用户关着 inline 开关，也获取 inlineRequest 供 builder 使用。
+        val isWebViewFill = webDomain != null
+        val inlineRequest = if (autofillPreferences.isInlineSuggestionsEnabled.first() || isWebViewFill) {
             getInlineRequest(request)
         } else {
             null
