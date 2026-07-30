@@ -6,6 +6,9 @@ import android.accessibilityservice.AccessibilityService
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
@@ -65,6 +68,37 @@ class BastionAccessibilityService : AccessibilityService() {
     private var temporaryClipboardActive = false
     private var temporaryClipboardExpectedText: String? = null
 
+    /**
+     * 跨进程「无障碍注入命令」接收器：autofill 进程的回调在完成框架 dataset 回填后，
+     * 把凭据写入 AccessibilityFillCommandStore 并广播本动作；此处消费命令，对当前浏览器窗口
+     * 的密码/用户名节点直接注入（框架 dataset 在部分 WebView 上回填不可靠时的兜底）。
+     * 带重试：若目标浏览器窗口尚未前台化（认证 Activity 仍在栈顶），轮询等待其就绪。
+     */
+    private val fillCommandReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != AccessibilityFillCommandStore.ACTION_FILL_COMMAND) return
+            serviceScope.launch {
+                repeat(FILL_COMMAND_MAX_RETRY) {
+                    val cmd = AccessibilityFillCommandStore.peek() ?: return@launch
+                    val ok = fillCredentialsInActiveWindow(
+                        targetPackageName = cmd.packageName,
+                        username = cmd.username,
+                        password = cmd.password,
+                        preferPasswordField = cmd.preferPasswordField,
+                    )
+                    if (ok) {
+                        AccessibilityFillCommandStore.clear()
+                        Log.d(TAG, "Accessibility fallback fill delivered for ${cmd.packageName}")
+                        return@launch
+                    }
+                    delay(FILL_COMMAND_RETRY_DELAY_MS)
+                }
+                // 超时或窗口始终不匹配：丢弃命令，避免堆积。
+                AccessibilityFillCommandStore.clear()
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "BastionAccessibility"
         private const val SCAN_THROTTLE_MS = 400L
@@ -79,6 +113,10 @@ class BastionAccessibilityService : AccessibilityService() {
         private const val ACTIVE_FILL_THROTTLE_MS = 5000L
         private const val TEMPORARY_CLIPBOARD_LABEL = "Bastion autofill"
         private const val TEMPORARY_CLIPBOARD_RESTORE_DELAY_MS = 500L
+        // 无障碍兜底：收到注入命令后，若当前窗口尚不是目标浏览器（如认证 Activity 仍在栈顶），
+        // 轮询重试直至目标窗口前台化或超时。12 × 250ms ≈ 3s 覆盖窗口切换耗时。
+        private const val FILL_COMMAND_MAX_RETRY = 12
+        private const val FILL_COMMAND_RETRY_DELAY_MS = 250L
 
         @Volatile
         private var activeInstance: BastionAccessibilityService? = null
@@ -212,6 +250,16 @@ class BastionAccessibilityService : AccessibilityService() {
         // 提供应用上下文，使 BrowserAutofillContextStore 能跨进程(:accessibility 写、
         // :autofill 读)共享同一 filesDir 文件中的浏览器填充上下文。
         BrowserAutofillContextStore.attach(applicationContext)
+        // 无障碍兜底：注册「注入命令」接收器，消费 autofill 进程回调写入的跨进程填充命令。
+        AccessibilityFillCommandStore.attach(applicationContext)
+        runCatchingObserved {
+            ContextCompat.registerReceiver(
+                this,
+                fillCommandReceiver,
+                IntentFilter(AccessibilityFillCommandStore.ACTION_FILL_COMMAND),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+        }
         serviceScope.launch {
             autofillPreferences.isActiveFillNotificationEnabled.collectLatest { enabled ->
                 activeFillNotificationEnabled = enabled
@@ -282,6 +330,7 @@ class BastionAccessibilityService : AccessibilityService() {
         if (activeInstance === this) {
             activeInstance = null
         }
+        runCatchingObserved { unregisterReceiver(fillCommandReceiver) }
         ActiveFillNotificationHelper.dismissNotification(this)
         restoreTemporaryClipboardImmediately()
         serviceScope.cancel()

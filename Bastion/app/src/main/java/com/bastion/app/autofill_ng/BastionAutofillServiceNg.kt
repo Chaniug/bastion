@@ -46,6 +46,7 @@ import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.service.BrowserAutofillContextStore
+import com.bastion.app.service.AccessibilityFillCommandStore
 import com.bastion.app.utils.DeviceUtils
 import com.bastion.app.utils.SettingsManager
 import java.security.MessageDigest
@@ -125,6 +126,8 @@ class BastionAutofillServiceNg : AutofillService() {
         // 提供应用上下文，使 BrowserAutofillContextStore 能跨进程(:accessibility 写、
         // :autofill 读)共享同一 filesDir 文件中的浏览器填充上下文。
         BrowserAutofillContextStore.attach(applicationContext)
+        // 无障碍兜底命令存储：autofill 进程(:autofill)写入、accessibility 进程(:accessibility)消费。
+        AccessibilityFillCommandStore.attach(applicationContext)
 
         val database = PasswordDatabase.getDatabase(applicationContext)
         passwordRepository = PasswordRepository(database.passwordEntryDao())

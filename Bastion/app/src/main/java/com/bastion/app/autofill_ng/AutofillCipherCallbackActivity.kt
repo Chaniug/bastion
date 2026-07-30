@@ -29,6 +29,8 @@ import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.ParsedItem
 import com.bastion.app.autofill_ng.builder.AutofillDatasetBuilder
 import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.data.PasswordDatabase
+import com.bastion.app.service.AccessibilityFillCommandStore
+import com.bastion.app.service.BastionAccessibilityService
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.BastionwordDialogAuthScreen
@@ -298,6 +300,34 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
                 putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, dataset)
             }
         )
+
+        // 无障碍兜底：部分 WebView（如 Via + PayPal）框架 dataset 回填不可靠——上文 dataset 已正确
+        // 返回，但密码/用户名框收不到值。此时改走无障碍直接注入：把凭据写入跨进程命令存储并广播
+        // 唤醒无障碍服务，由其对当前浏览器窗口的密码/用户名节点直接注入（绕开框架 autofillId 匹配）。
+        // 仅在 WebView（有 webDomain）且用户已开启无障碍服务时触发；原生 App 走框架即可，不受影响。
+        if (!callbackArgs.webDomain.isNullOrBlank() &&
+            BastionAccessibilityService.isCredentialFillAvailable(applicationContext)
+        ) {
+            AccessibilityFillCommandStore.attach(applicationContext)
+            AccessibilityFillCommandStore.write(
+                AccessibilityFillCommandStore.Command(
+                    packageName = callbackArgs.applicationId ?: "",
+                    username = accountValue,
+                    password = decryptedPassword ?: "",
+                    preferPasswordField = true,
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
+            applicationContext.sendBroadcast(
+                Intent(AccessibilityFillCommandStore.ACTION_FILL_COMMAND)
+                    .setPackage(applicationContext.packageName)
+            )
+            AutofillLogger.d(
+                "CALLBACK",
+                "Accessibility fallback command dispatched",
+                metadata = mapOf("webDomain" to (callbackArgs.webDomain ?: "none")),
+            )
+        }
 
         // 回归修复：认证填充主路径此前缺少 OTP 自动复制副作用（仅挂在 Picker Activity 上，
         // 而 vault 锁定时框架直接走 AutofillCipherCallbackActivity 完成填充，绕过 Picker）。
