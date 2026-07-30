@@ -360,7 +360,7 @@
             android:theme="@style/Theme.Bastion.AutofillCallback"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:taskAffinity="" />
+            android:launchMode="singleTop" />
         
         <!-- Autofill Picker Activity (UI Improvement) -->
         <activity
