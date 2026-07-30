@@ -26,6 +26,7 @@ object AccessibilityFillCommandStore {
         val username: String,
         val password: String,
         val preferPasswordField: Boolean,
+        val otp: String,
         val createdAt: Long,
     )
 
@@ -50,6 +51,7 @@ object AccessibilityFillCommandStore {
                     appendLine(command.username)
                     appendLine(command.password)
                     appendLine(command.preferPasswordField.toString())
+                    appendLine(command.otp)
                     appendLine(command.createdAt.toString())
                 }
             )
@@ -69,14 +71,15 @@ object AccessibilityFillCommandStore {
         if (!file.exists()) return null
         return runCatching {
             val lines = file.readLines()
-            if (lines.size < 5) return@runCatching null
+            if (lines.size < 6) return@runCatching null
             val pkg = lines[0].trim()
             val username = lines[1]
             val password = lines[2]
             val prefer = lines[3].trim().toBooleanStrictOrNull() ?: false
-            val ts = lines[4].trim().toLongOrNull() ?: return@runCatching null
+            val otp = lines[4]
+            val ts = lines[5].trim().toLongOrNull() ?: return@runCatching null
             if (System.currentTimeMillis() - ts > MAX_AGE_MS) return@runCatching null
-            Command(pkg, username, password, prefer, ts)
+            Command(pkg, username, password, prefer, otp, ts)
         }.getOrNull()
     }
 

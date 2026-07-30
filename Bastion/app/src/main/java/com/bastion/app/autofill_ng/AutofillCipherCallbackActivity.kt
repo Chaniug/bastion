@@ -309,24 +309,30 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
             BastionAccessibilityService.isCredentialFillAvailable(applicationContext)
         ) {
             AccessibilityFillCommandStore.attach(applicationContext)
-            AccessibilityFillCommandStore.write(
-                AccessibilityFillCommandStore.Command(
-                    packageName = callbackArgs.applicationId ?: "",
-                    username = accountValue,
-                    password = decryptedPassword ?: "",
-                    preferPasswordField = true,
-                    createdAt = System.currentTimeMillis(),
+            // OTP 计算需在协程内进行（涉及密钥解密 / 查库），用进程级作用域确保 Activity
+            // finish 后仍能安全完成；无障碍接收端有重试窗口，稍晚广播不影响注入。
+            ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+                val otp = runCatching { generateOtpCodeForPassword(applicationContext, passwordEntry) }.getOrNull()
+                AccessibilityFillCommandStore.write(
+                    AccessibilityFillCommandStore.Command(
+                        packageName = callbackArgs.applicationId ?: "",
+                        username = accountValue,
+                        password = decryptedPassword ?: "",
+                        preferPasswordField = true,
+                        otp = otp ?: "",
+                        createdAt = System.currentTimeMillis(),
+                    )
                 )
-            )
-            applicationContext.sendBroadcast(
-                Intent(AccessibilityFillCommandStore.ACTION_FILL_COMMAND)
-                    .setPackage(applicationContext.packageName)
-            )
-            AutofillLogger.d(
-                "CALLBACK",
-                "Accessibility fallback command dispatched",
-                metadata = mapOf("webDomain" to (callbackArgs.webDomain ?: "none")),
-            )
+                applicationContext.sendBroadcast(
+                    Intent(AccessibilityFillCommandStore.ACTION_FILL_COMMAND)
+                        .setPackage(applicationContext.packageName)
+                )
+                AutofillLogger.d(
+                    "CALLBACK",
+                    "Accessibility fallback command dispatched (otp=${if (otp.isNullOrBlank()) "none" else "present"})",
+                    metadata = mapOf("webDomain" to (callbackArgs.webDomain ?: "none")),
+                )
+            }
         }
 
         // 回归修复：认证填充主路径此前缺少 OTP 自动复制副作用（仅挂在 Picker Activity 上，

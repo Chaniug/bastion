@@ -86,6 +86,7 @@ class BastionAccessibilityService : AccessibilityService() {
                         username = cmd.username,
                         password = cmd.password,
                         preferPasswordField = cmd.preferPasswordField,
+                        otp = cmd.otp,
                     )
                     if (ok) {
                         AccessibilityFillCommandStore.clear()
@@ -182,12 +183,14 @@ class BastionAccessibilityService : AccessibilityService() {
             username: String,
             password: String,
             preferPasswordField: Boolean,
+            otp: String = "",
         ): Boolean {
             return activeInstance?.fillCredentialsInActiveWindow(
                 targetPackageName = targetPackageName,
                 username = username,
                 password = password,
-                preferPasswordField = preferPasswordField
+                preferPasswordField = preferPasswordField,
+                otp = otp
             ) ?: false
         }
 
@@ -227,6 +230,7 @@ class BastionAccessibilityService : AccessibilityService() {
     private enum class FillFieldType {
         USERNAME,
         PASSWORD,
+        OTP,
         UNKNOWN
     }
 
@@ -343,6 +347,7 @@ class BastionAccessibilityService : AccessibilityService() {
         username: String,
         password: String,
         preferPasswordField: Boolean,
+        otp: String = "",
     ): Boolean = runCatchingObserved {
         val root = rootInActiveWindow ?: return@runCatchingObserved false
         val activePackageName = root.packageName?.toString().orEmpty()
@@ -403,6 +408,23 @@ class BastionAccessibilityService : AccessibilityService() {
         if (!usernameFilled && !passwordFilled) {
             Log.d(TAG, "Accessibility fill failed: no fields accepted text")
             return@runCatchingObserved false
+        }
+
+        // Bitwarden 式 2FA：若本次凭据带 OTP，尝试直接填入识别到的验证码框（而非仅复制）。
+        // 仅匹配 OTP 类型候选，绝不错填到用户名/密码框（与 selectBestCandidate 的兜底链隔离）。
+        var otpFilled = false
+        if (otp.isNotBlank()) {
+            val otpCandidate = candidates
+                .filter { it.type == FillFieldType.OTP }
+                .maxByOrNull { it.score }
+            if (otpCandidate != null) {
+                otpFilled = setNodeText(otpCandidate.node, otp)
+            }
+            Log.d(
+                TAG,
+                "Accessibility OTP fill: present=${otp.isNotBlank()}, candidateFound=${otpCandidate != null}, " +
+                    "filled=$otpFilled, pkg=$activePackageName",
+            )
         }
 
         Log.d(
@@ -656,9 +678,25 @@ class BastionAccessibilityService : AccessibilityService() {
             usernameScore += SCORE_USERNAME_SIGNAL / 2
         }
 
+        // Bitwarden 式：识别 OTP / 验证码输入框，便于把 TOTP 直接填进 2FA 框（而非仅复制）。
+        var otpScore = 0
+        if (
+            signals.contains("otp") || signals.contains("one-time") || signals.contains("one-time-code") ||
+                signals.contains("totp") || signals.contains("2fa") || signals.contains("two-factor") ||
+                signals.contains("verification") || signals.contains("verify") ||
+                signals.contains("验证码") || signals.contains("驗證碼") || signals.contains("一次性")
+        ) {
+            otpScore += SCORE_PASSWORD_SIGNAL
+        }
+        if (signals.contains("code")) {
+            // "code" 较弱（可能是优惠码），给中等权重
+            otpScore += SCORE_USERNAME_SIGNAL / 2
+        }
+
         if (node.isFocused) {
             passwordScore += SCORE_FOCUSED_BONUS
             usernameScore += SCORE_FOCUSED_BONUS
+            otpScore += SCORE_FOCUSED_BONUS
         }
 
         // Bitwarden 式启发式：搜索框不是凭据字段，强制排除，避免把用户名/密码误填进搜索栏
@@ -686,11 +724,12 @@ class BastionAccessibilityService : AccessibilityService() {
         }
 
         val type = when {
+            otpScore > passwordScore && otpScore > usernameScore && otpScore > 0 -> FillFieldType.OTP
             passwordScore > usernameScore && passwordScore > 0 -> FillFieldType.PASSWORD
             usernameScore > passwordScore && usernameScore > 0 -> FillFieldType.USERNAME
             else -> FillFieldType.UNKNOWN
         }
-        val resolvedScore = maxOf(passwordScore, usernameScore)
+        val resolvedScore = maxOf(passwordScore, usernameScore, otpScore)
 
         return FillCandidate(
             node = node,
