@@ -54,13 +54,13 @@ abstract class BaseBastionActivity : FragmentActivity() {
                         try {
                             tempSettingsManager.settingsFlow.first().language
                         } catch (e: Exception) {
-                            Language.SYSTEM
+    Language.CHINESE
                         }
                     }
                 }
             } catch (e: Exception) {
                 // 超时或出错，回退到默认
-                Language.SYSTEM
+                Language.CHINESE
             }
             super.attachBaseContext(LocaleHelper.setLocale(newBase, language))
         } else {

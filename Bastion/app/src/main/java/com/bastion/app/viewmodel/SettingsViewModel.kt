@@ -196,10 +196,8 @@ class SettingsViewModel(
     }
 
     fun updateValidatorProgressBarStyle(style: com.bastion.app.data.ProgressBarStyle) {
-        android.util.Log.d("SettingsViewModel", "Updating progress bar style to: $style")
         viewModelScope.launch {
             settingsManager.updateValidatorProgressBarStyle(style)
-            android.util.Log.d("SettingsViewModel", "Progress bar style updated successfully")
         }
     }
 
