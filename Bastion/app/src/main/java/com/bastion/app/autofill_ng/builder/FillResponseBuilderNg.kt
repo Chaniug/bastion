@@ -640,8 +640,12 @@ private fun buildLoginCallbackTargets(views: List<AutofillView>): List<AutofillC
     val seenIds = mutableSetOf<String>()
     return views.mapNotNull { view ->
         val target = when (view) {
-            is AutofillView.Login.Username -> AutofillCallbackTarget(view.data.autofillId, "USERNAME")
-            is AutofillView.Login.Password -> AutofillCallbackTarget(view.data.autofillId, "PASSWORD")
+            // 修复字段类型折叠：AutofillView.Login.Username 同时覆盖 USERNAME/EMAIL_ADDRESS/
+            // PHONE_NUMBER 等账号类字段，必须用各自真实的 FieldHint 名称（view.data.hint.name），
+            // 不能硬编码为 "USERNAME"，否则回调里邮箱/手机号框会被误标为 USERNAME，
+            // 既降低填充精度，也可能让 WebView 框架回填错位。
+            is AutofillView.Login.Username -> AutofillCallbackTarget(view.data.autofillId, view.data.hint.name)
+            is AutofillView.Login.Password -> AutofillCallbackTarget(view.data.autofillId, view.data.hint.name)
             is AutofillView.Field -> null
         }
         target?.takeIf { seenIds.add(it.autofillId.toString()) }
@@ -651,8 +655,9 @@ private fun buildLoginCallbackTargets(views: List<AutofillView>): List<AutofillC
 private fun buildAutofillHintNames(views: List<AutofillView>): List<String> {
     return views.map { view ->
         when (view) {
-            is AutofillView.Login.Username -> "USERNAME"
-            is AutofillView.Login.Password -> "PASSWORD"
+            // 与 buildLoginCallbackTargets 一致：保留真实 FieldHint 名称，避免账号类字段被统一折叠为 "USERNAME"
+            is AutofillView.Login.Username -> view.data.hint.name
+            is AutofillView.Login.Password -> view.data.hint.name
             is AutofillView.Field -> view.hint.name
         }
     }
