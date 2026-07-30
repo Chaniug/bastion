@@ -61,11 +61,13 @@ import kotlin.math.abs
  */
 class BastionAutofillServiceNg : AutofillService() {
     private companion object {
+        private const val TAG = "BastionAutofillServiceNg"
         private val PACKAGE_NAME_REGEX =
             Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
         private const val PARSED_ITEM_ACCURACY_THRESHOLD = 1.5f
         private const val PASSWORD_ONLY_DIRECT_FILL_WINDOW_MS = 120_000L
         private const val RESPONSE_STABILITY_WINDOW_MS = 2_000L
+        private const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
         private val fillRequestSequence = AtomicLong(0L)
     }
 
@@ -107,10 +109,6 @@ class BastionAutofillServiceNg : AutofillService() {
 
     @Volatile
     private var lastDirectOtpCopyMs: Long = 0L
-
-    private companion object {
-        const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
-    }
 
     private lateinit var passwordRepository: PasswordRepository
     private lateinit var autofillPreferences: AutofillPreferences
