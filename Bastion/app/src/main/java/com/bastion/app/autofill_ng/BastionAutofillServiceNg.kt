@@ -47,6 +47,7 @@ import com.bastion.app.data.PasswordEntry
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.service.BrowserAutofillContextStore
 import com.bastion.app.service.AccessibilityFillCommandStore
+import com.bastion.app.service.BastionAccessibilityService
 import com.bastion.app.utils.DeviceUtils
 import com.bastion.app.utils.SettingsManager
 import java.security.MessageDigest
