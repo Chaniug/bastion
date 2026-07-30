@@ -26,6 +26,7 @@ import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.linkedAppBindings
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.autofill_ng.ActiveFillNotificationHelper
+import com.bastion.app.autofill_ng.PendingWebViewFillStore
 
 internal data class TemporaryClipboardSnapshot(
     val text: String?,
@@ -212,6 +213,8 @@ class BastionAccessibilityService : AccessibilityService() {
         // 提供应用上下文，使 BrowserAutofillContextStore 能跨进程(:accessibility 写、
         // :autofill 读)共享同一 filesDir 文件中的浏览器填充上下文。
         BrowserAutofillContextStore.attach(applicationContext)
+        // A: WebView 回填兜底 —— 跨进程 pending fill 的读取端（写入端在主进程 :autofill）。
+        PendingWebViewFillStore.attach(applicationContext)
         serviceScope.launch {
             autofillPreferences.isActiveFillNotificationEnabled.collectLatest { enabled ->
                 activeFillNotificationEnabled = enabled
@@ -231,6 +234,33 @@ class BastionAccessibilityService : AccessibilityService() {
             if (event.eventType !in trackedEventTypes) return
 
             val packageName = event.packageName?.toString().orEmpty()
+
+            // A: WebView 回填兜底 —— 消费跨进程 pending fill。
+            // 凭据在 AutofillCipherCallbackActivity 解密后 stash（主进程），此处焦点回到
+            // 目标 App（如 Via 浏览器）后消费，通过 ACTION_SET_TEXT 直接写聚焦节点。
+            // 放在 browserSpec 分支之前，确保浏览器包也能走此路径。
+            if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+                event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+            ) {
+                val pending = PendingWebViewFillStore.consume(packageName)
+                if (pending != null) {
+                    serviceScope.launch(Dispatchers.Default) {
+                        val ok = fillCredentialsInActiveWindow(
+                            targetPackageName = pending.packageName,
+                            username = pending.username,
+                            password = pending.password,
+                            preferPasswordField = false,
+                        )
+                        if (!ok) {
+                            // 本次聚焦不是登录框 / 填充失败：保留以便下次聚焦再试
+                            // （由 store 的时效窗口控制过期，避免无限重试）。
+                            PendingWebViewFillStore.stash(pending.packageName, pending.username, pending.password)
+                            Log.w(TAG, "Pending WebView fill not applied yet for ${pending.packageName}, will retry on next focus")
+                        }
+                    }
+                }
+            }
+
             val browserSpec = browserSpecsByPackage[packageName]
             if (browserSpec != null) {
                 // P1: URL 基本只在窗口切换(TYPE_WINDOW_STATE_CHANGED)时变化；
