@@ -435,6 +435,8 @@ fun ColorSchemeSelectionScreen(
     }
 }
 
+}
+
 @Composable
 fun ColorSchemeOption(
     colorScheme: ColorScheme,
