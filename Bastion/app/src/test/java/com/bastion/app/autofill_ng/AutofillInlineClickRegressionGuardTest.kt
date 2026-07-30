@@ -16,21 +16,22 @@ class AutofillInlineClickRegressionGuardTest {
             .substringBefore("private fun buildStrongPasswordSuggestionDataset(")
 
         assertTrue(
-            "Inline suggestions should still create the real callback PendingIntent for keyboards that launch the slice PendingIntent.",
-            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication || hasInlinePresentation)") &&
+            "Locked inline suggestions should still create the real callback PendingIntent for keyboards that launch the slice PendingIntent.",
+            cipherDatasetBody.contains("val attachAuth = partition.requiresAuthentication") &&
                 cipherDatasetBody.contains("createCipherAuthPendingIntent(")
         )
         assertTrue(
-            "The real callback PendingIntent should be wired to the inline presentation itself.",
-            cipherDatasetBody.contains("pendingIntent = authPendingIntent ?: return@create null")
+            "The real callback PendingIntent should be wired to the inline presentation itself when present.",
+            cipherDatasetBody.contains("val intent = authPendingIntent ?: return@create null") &&
+                cipherDatasetBody.contains("pendingIntent = intent")
         )
         assertFalse(
             "Inline suggestion clicks must not be wired to a no-op PendingIntent, because some keyboards launch it instead of applying dataset values.",
             cipherDatasetBody.contains("createNoopPendingIntent")
         )
         assertTrue(
-            "Inline alone must not wrap direct-fill suggestions; Dataset authentication is only for locked authenticated suggestions.",
-            cipherDatasetBody.contains("if (partition.requiresAuthentication && authPendingIntent != null)") &&
+            "Dataset authentication is only attached for locked authenticated suggestions; unlocked suggestions fill directly (Bitwarden-style).",
+            cipherDatasetBody.contains("if (attachAuth && authPendingIntent != null)") &&
                 cipherDatasetBody.contains("datasetBuilder.setAuthentication(authPendingIntent.intentSender)")
         )
     }
