@@ -28,7 +28,6 @@ import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.FieldHint
 import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.ParsedItem
 import com.bastion.app.autofill_ng.builder.AutofillDatasetBuilder
 import com.bastion.app.autofill_ng.core.AutofillLogger
-import com.bastion.app.service.BastionAccessibilityService
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
@@ -225,41 +224,6 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
             encryptedOrPlain = passwordEntry.password,
             logTag = TAG,
         )
-
-        // A: WebView 回填兜底。WebView（如 Via 浏览器）不 Honor 框架 Dataset 回填，
-        // 改为由无障碍服务在焦点回到目标 App 后通过 ACTION_SET_TEXT 直接写聚焦节点
-        // （与 Bitwarden 同款做法）。仅当目标是 WebView（webDomain 非空）且无障碍服务已
-        // 启用时委托；否则回退到原框架路径（保证无障碍关闭时仍有框架尝试）。
-        val isWebViewTarget = !callbackArgs.webDomain.isNullOrBlank()
-        if (isWebViewTarget && BastionAccessibilityService.isServiceEnabled(applicationContext)) {
-            val user = accountValue
-            val pass = decryptedPassword.orEmpty()
-            val targetPkg = callbackArgs.applicationId
-            if (!targetPkg.isNullOrBlank() && (user.isNotBlank() || pass.isNotBlank())) {
-                // 与原路径一致的记忆更新，保持“上次填充”行为
-                withContext(Dispatchers.IO) {
-                    rememberLastFilledCredential(
-                        passwordId = passwordEntry.id,
-                        primaryIdentifier = callbackArgs.interactionIdentifier,
-                        aliases = callbackArgs.interactionIdentifierAliases.orEmpty(),
-                    )
-                    rememberLearnedFieldSignature(callbackArgs.fieldSignatureKey)
-                }
-                PendingWebViewFillStore.attach(applicationContext)
-                PendingWebViewFillStore.stash(packageName = targetPkg, username = user, password = pass)
-                AutofillLogger.i(
-                    "CALLBACK",
-                    "Delegated WebView fill to accessibility service",
-                    metadata = mapOf(
-                        "webDomain" to (callbackArgs.webDomain ?: "none"),
-                        "package" to targetPkg,
-                    )
-                )
-                finishWithoutAnimation()
-                return
-            }
-        }
-
         val resolvedTargets = resolveAutofillTargets(callbackArgs)
         if (resolvedTargets.ids.isEmpty()) {
             cancelAndFinish("missing_autofill_ids")
