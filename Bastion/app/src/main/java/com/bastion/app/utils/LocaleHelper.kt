@@ -11,11 +11,7 @@ object LocaleHelper {
     fun setLocale(context: Context, language: Language): Context {
         val locale = when (language) {
             Language.SYSTEM -> getSystemLocale()
-            Language.ENGLISH -> Locale.ENGLISH
-            Language.CHINESE -> Locale.CHINA  // 使用 Locale.CHINA 代替 SIMPLIFIED_CHINESE
-            Language.VIETNAMESE -> Locale("vi", "VN")  // 越南语
-            Language.JAPANESE -> Locale.JAPAN  // 日本語
-            Language.RUSSIAN -> Locale("ru", "RU")  // Русский
+            Language.CHINESE -> Locale.CHINA
         }
         
         return updateResources(context, locale)
@@ -47,20 +43,6 @@ object LocaleHelper {
     }
     
     fun getCurrentLanguage(context: Context): Language {
-        val currentLocale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            context.resources.configuration.locales[0]
-        } else {
-            @Suppress("DEPRECATION")
-            context.resources.configuration.locale
-        }
-        
-        return when (currentLocale.language) {
-            "zh" -> Language.CHINESE
-            "en" -> Language.ENGLISH
-            "vi" -> Language.VIETNAMESE
-            "ja" -> Language.JAPANESE
-            "ru" -> Language.RUSSIAN
-            else -> Language.SYSTEM
-        }
+        return Language.CHINESE
     }
 }

@@ -84,6 +84,8 @@ import com.bastion.app.ui.components.OutlinedTextField
 import java.io.File
 import java.util.Locale
 
+private const val UPDATE_APK_DIR = "update_apk"
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SettingsScreen(
@@ -134,7 +136,6 @@ fun SettingsScreen(
     var clearDataPasswordInput by remember { mutableStateOf("") }
     
     var showThemeDialog by remember { mutableStateOf(false) }
-    var showLanguageDialog by remember { mutableStateOf(false) }
     var showVersionInfoDialog by remember { mutableStateOf(false) }
     var showUpdateCheckDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
@@ -202,7 +203,7 @@ fun SettingsScreen(
             updateDownloadProgress = null
             coroutineScope.launch {
                 val apkName = result.apkAssetName ?: "Bastion-${result.latestVersion}.apk"
-                val outputDir = File(context.cacheDir, "update_apk")
+                val outputDir = File(context.cacheDir, UPDATE_APK_DIR)
                 UpdateChecker.downloadApk(downloadUrl, outputDir, apkName) { progress ->
                     withContext(Dispatchers.Main.immediate) {
                         updateDownloadProgress = progress
@@ -279,14 +280,9 @@ fun SettingsScreen(
     val animatedVisibilityScope = com.bastion.app.ui.LocalAnimatedVisibilityScope.current
     
     @Composable
-    fun getSharedModifier(key: String): Modifier {
-        // Disable card-to-page shared bounds for settings entries.
-        return Modifier
-    }
 
     val startBiometricEnable = {
         if (activity != null) {
-            android.util.Log.d("SettingsScreen", "Starting biometric authentication...")
             biometricHelper.authenticate(
                 activity = activity,
                 title = context.getString(R.string.biometric_login_title),
@@ -294,7 +290,6 @@ fun SettingsScreen(
                 description = context.getString(R.string.biometric_login_description),
                 negativeButtonText = context.getString(R.string.cancel),
                 onSuccess = {
-                    android.util.Log.d("SettingsScreen", "Biometric authentication SUCCESS")
                     biometricSwitchState = true
                     viewModel.updateBiometricEnabled(true)
                     Toast.makeText(
@@ -304,7 +299,6 @@ fun SettingsScreen(
                     ).show()
                 },
                 onError = { errorCode, errorMsg ->
-                    android.util.Log.e("SettingsScreen", "Biometric authentication ERROR: code=$errorCode, msg=$errorMsg")
                     biometricSwitchState = false
                     Toast.makeText(
                         context,
@@ -313,7 +307,6 @@ fun SettingsScreen(
                     ).show()
                 },
                 onCancel = {
-                    android.util.Log.d("SettingsScreen", "Biometric authentication CANCELLED")
                     biometricSwitchState = false
                     Toast.makeText(
                         context,
@@ -323,7 +316,6 @@ fun SettingsScreen(
                 }
             )
         } else {
-            android.util.Log.e("SettingsScreen", "Activity is NULL! Cannot authenticate")
             biometricSwitchState = false
             Toast.makeText(
                 context,
@@ -368,7 +360,6 @@ fun SettingsScreen(
         context = context
     )
     val colorSchemeSubtitle = getColorSchemeDisplayName(settings.colorScheme, context)
-    val languageSubtitle = getLanguageDisplayName(settings.language, context)
 
     fun searchTexts(vararg resIds: Int): Array<String> = resIds.map(context::getString).toTypedArray()
 
@@ -386,10 +377,6 @@ fun SettingsScreen(
         com.bastion.app.data.ColorScheme.values().forEach { scheme ->
             add(getColorSchemeDisplayName(scheme, context))
         }
-    }.toTypedArray()
-
-    val languageSearchTexts = Language.values().map { language ->
-        getLanguageDisplayName(language, context)
     }.toTypedArray()
 
     val syncBackupSubSettingsSearchTexts = searchTexts(
@@ -580,11 +567,6 @@ fun SettingsScreen(
         *extraSearchTexts
     )
 
-    val showBastionPlusCard = false && matchesSettingsSearch(
-        settingsSearchQuery,
-        context.getString(R.string.bastion_plus_title),
-        context.getString(R.string.bastion_plus_card_desc)
-    )
     val showSecurityAnalysisCard = matchesSettingsSearch(
         settingsSearchQuery,
         securityTitle,
@@ -662,12 +644,6 @@ fun SettingsScreen(
         colorSchemeSubtitle,
         *colorSchemeSearchTexts
     )
-    val showLanguageItem = matchesSettingsItem(
-        appearanceTitle,
-        context.getString(R.string.language),
-        languageSubtitle,
-        *languageSearchTexts
-    )
     val showBottomNavItem = matchesSettingsItem(
         appearanceTitle,
         context.getString(R.string.bottom_nav_settings),
@@ -689,7 +665,6 @@ fun SettingsScreen(
     val showAppearanceSection = listOf(
         showThemeItem,
         showColorSchemeItem,
-        showLanguageItem,
         showBottomNavItem,
         showExtensionsItem,
         showPageCustomizationItem
@@ -719,7 +694,6 @@ fun SettingsScreen(
         *developerSubSettingsSearchTexts
     )
     val hasVisibleResults = listOf(
-        showBastionPlusCard,
         showSecurityAnalysisCard,
         showSecuritySection,
         showDataManagementSection,
@@ -795,23 +769,11 @@ fun SettingsScreen(
             }
 
             // Bastion Plus card is moved to Extensions page after activation.
-            if (showBastionPlusCard) {
-                com.bastion.app.ui.components.BastionPlusCard(
-                    onClick = {
-                        android.util.Log.d("SettingsScreen", "Bastion Plus card clicked")
-                        onNavigateToBastionPlus()
-                    },
-                    modifier = getSharedModifier("bastion_plus_card")
-                )
-            }
-
-            // 安全分析入口卡片 - 置顶显示
             if (showSecurityAnalysisCard) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
-                        .then(getSharedModifier("security_analysis_card"))
                         .clickable { onSecurityAnalysis() },
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -859,7 +821,6 @@ fun SettingsScreen(
                             title = masterPasswordLockingTitle,
                             subtitle = masterPasswordLockingDescription,
                             onClick = onNavigateToMasterPasswordLocking,
-                            modifier = getSharedModifier("master_password_locking_card")
                         )
                     }
 
@@ -880,7 +841,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.permission_management_title),
                             subtitle = context.getString(R.string.permission_management_subtitle),
                             onClick = onNavigateToPermissionManagement,
-                            modifier = getSharedModifier("permission_settings_card")
                         )
                     }
                 }
@@ -894,7 +854,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.sync_backup_title),
                             subtitle = context.getString(R.string.sync_backup_description),
                             onClick = onNavigateToSyncBackup,
-                            modifier = getSharedModifier("sync_settings_card")
                         )
                     }
 
@@ -904,7 +863,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.autofill),
                             subtitle = context.getString(R.string.autofill_subtitle),
                             onClick = onNavigateToAutofill,
-                            modifier = getSharedModifier("autofill_settings_card")
                         )
                     }
 
@@ -950,16 +908,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.color_scheme),
                             subtitle = colorSchemeSubtitle,
                             onClick = { onNavigateToColorScheme() },
-                            modifier = getSharedModifier("color_scheme_card")
-                        )
-                    }
-
-                    if (showLanguageItem) {
-                        SettingsItem(
-                            icon = Icons.Default.Language,
-                            title = context.getString(R.string.language),
-                            subtitle = languageSubtitle,
-                            onClick = { showLanguageDialog = true }
                         )
                     }
 
@@ -969,7 +917,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.bottom_nav_settings),
                             subtitle = context.getString(R.string.bottom_nav_settings_entry_subtitle),
                             onClick = onNavigateToBottomNavSettings,
-                            modifier = getSharedModifier("bottom_nav_settings_card")
                         )
                     }
 
@@ -979,7 +926,6 @@ fun SettingsScreen(
                             title = context.getString(R.string.extensions_title),
                             subtitle = context.getString(R.string.extensions_description),
                             onClick = onNavigateToExtensions,
-                            modifier = getSharedModifier("extensions_settings_card")
                         )
                     }
 
@@ -1093,12 +1039,10 @@ fun SettingsScreen(
                             icon = Icons.Default.Code,
                             title = stringResource(R.string.developer_settings),
                             subtitle = stringResource(R.string.developer_settings_subtitle),
-                            modifier = getSharedModifier("developer_settings_card"),
                             onClick = {
                                 val hasActivity = activity != null
                                 val biometricEnabled = settings.biometricEnabled
                                 val biometricAvailableNow = hasActivity && biometricEnabled && biometricHelper.isBiometricAvailable()
-                                android.util.Log.d(
                                     "SettingsScreen",
                                     "Developer settings tapped. hasActivity=$hasActivity, biometricEnabled=$biometricEnabled, biometricAvailable=$biometricAvailableNow"
                                 )
@@ -1128,7 +1072,6 @@ fun SettingsScreen(
                                             description = context.getString(R.string.biometric_login_description),
                                             negativeButtonText = context.getString(R.string.use_master_password),
                                             onSuccess = {
-                                                android.util.Log.d(
                                                     "SettingsScreen",
                                                     "Developer biometric authentication succeeded"
                                                 )
@@ -1150,7 +1093,6 @@ fun SettingsScreen(
                                                 showDeveloperVerifyDialog = true
                                             },
                                             onCancel = {
-                                                android.util.Log.d(
                                                     "SettingsScreen",
                                                     "Developer biometric canceled by user"
                                                 )
@@ -1164,7 +1106,6 @@ fun SettingsScreen(
                                         )
                                     }
                                     else -> {
-                                        android.util.Log.d(
                                             "SettingsScreen",
                                             "Biometric unavailable, showing password dialog for developer settings"
                                         )
@@ -1230,26 +1171,6 @@ fun SettingsScreen(
                 viewModel.updateOledPureBlackEnabled(enabled)
             },
             onDismiss = { showThemeDialog = false }
-        )
-    }
-    
-    // Language Selection Dialog
-    if (showLanguageDialog) {
-        LanguageSelectionDialog(
-            currentLanguage = settings.language,
-            onLanguageSelected = { language ->
-                coroutineScope.launch {
-                    viewModel.updateLanguage(language)
-                    showLanguageDialog = false
-                    // 等待DataStore保存完成
-                    delay(200)
-                    // Restart activity to apply language change
-                    if (context is Activity) {
-                        context.recreate()
-                    }
-                }
-            },
-            onDismiss = { showLanguageDialog = false }
         )
     }
     
@@ -2560,44 +2481,6 @@ fun AppearanceSelectionSheet(
     }
 }
 
-@Composable
-fun LanguageSelectionDialog(
-    currentLanguage: Language,
-    onLanguageSelected: (Language) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(context.getString(R.string.language)) },
-        text = {
-            Column {
-                Language.values().forEach { language ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = language == currentLanguage,
-                            onClick = { onLanguageSelected(language) }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(getLanguageDisplayName(language, context))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(context.getString(R.string.ok))
-            }
-        }
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoLockSelectionSheet(
@@ -2817,11 +2700,7 @@ private fun getAppearanceDisplayName(
 private fun getLanguageDisplayName(language: Language, context: android.content.Context): String {
     return when (language) {
         Language.SYSTEM -> context.getString(R.string.language_system)
-        Language.ENGLISH -> context.getString(R.string.language_english)
         Language.CHINESE -> context.getString(R.string.language_chinese)
-        Language.VIETNAMESE -> context.getString(R.string.language_vietnamese)
-        Language.JAPANESE -> context.getString(R.string.language_japanese)
-        Language.RUSSIAN -> context.getString(R.string.language_russian)
     }
 }
 
@@ -2901,15 +2780,6 @@ fun BottomNavSettingsScreen(
     val animatedVisibilityScope = com.bastion.app.ui.LocalAnimatedVisibilityScope.current
     
     var sharedModifier: Modifier = Modifier
-    if (false && sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope!!) {
-            sharedModifier = Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "bottom_nav_settings_card"),
-                animatedVisibilityScope = animatedVisibilityScope!!,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-            )
-        }
-    }
 
     Scaffold(
         modifier = sharedModifier,
@@ -3023,7 +2893,6 @@ fun ProgressBarStyleDialog(
                         RadioButton(
                             selected = style == currentStyle,
                             onClick = { 
-                                android.util.Log.d("ProgressBarStyleDialog", "User selected style: $style")
                                 onStyleSelected(style)
                             }
                         )

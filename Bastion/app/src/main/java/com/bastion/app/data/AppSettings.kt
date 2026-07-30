@@ -29,7 +29,7 @@ enum class ColorScheme {
 }
 
 enum class Language {
-    SYSTEM, ENGLISH, CHINESE, VIETNAMESE, JAPANESE, RUSSIAN
+    SYSTEM, CHINESE
 }
 
 enum class ProgressBarStyle {
@@ -498,7 +498,7 @@ data class AppSettings(
     val customTertiaryColor: Long = 0xFF7D5260, // 默认粉色
     val customNeutralColor: Long = 0xFF605D66, // 默认中性色
     val customNeutralVariantColor: Long = 0xFF625B71, // 默认中性变体色
-    val language: Language = Language.SYSTEM,
+    val language: Language = Language.CHINESE,
     val biometricEnabled: Boolean = false, // 生物识别认证默认关闭
     val autoLockMinutes: Int = 5, // Auto lock after X minutes of inactivity
     val screenshotProtectionEnabled: Boolean = false, // Prevent screenshots by default

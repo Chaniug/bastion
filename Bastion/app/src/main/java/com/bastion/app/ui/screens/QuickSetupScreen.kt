@@ -1503,11 +1503,7 @@ private fun IconSurface(icon: ImageVector) {
 @StringRes
 private fun languageLabelRes(language: Language): Int = when (language) {
     Language.SYSTEM -> R.string.qs_lang_system
-    Language.ENGLISH -> R.string.qs_lang_english
     Language.CHINESE -> R.string.qs_lang_chinese
-    Language.VIETNAMESE -> R.string.qs_lang_vietnamese
-    Language.JAPANESE -> R.string.qs_lang_japanese
-    Language.RUSSIAN -> R.string.qs_lang_russian
 }
 
 @StringRes

@@ -18361,7 +18361,6 @@
         errorLine1="    &lt;string name=&quot;note_detail_updated_at&quot;>最終更新&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="538"
             column="5"/>
         <location
@@ -18377,7 +18376,6 @@
         errorLine1="    &lt;string name=&quot;note_detail_updated_at&quot;>Cập nhật lần cuối&lt;/string>"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="540"
             column="5"/>
         <location
@@ -25460,7 +25458,6 @@
         errorLine1="    &lt;string name=&quot;numbers&quot;>Số (0-9)&lt;/string>"
         errorLine2="                           ~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="126"
             column="28"/>
     </issue>
@@ -25471,7 +25468,6 @@
         errorLine1="    &lt;string name=&quot;numbers_09&quot;>Số (0-9)&lt;/string>"
         errorLine2="                              ~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="127"
             column="31"/>
     </issue>
@@ -25482,7 +25478,6 @@
         errorLine1="    &lt;string name=&quot;numbers&quot;>数字 (0-9)&lt;/string>"
         errorLine2="                           ~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="132"
             column="28"/>
     </issue>
@@ -25493,7 +25488,6 @@
         errorLine1="    &lt;string name=&quot;numbers_09&quot;>数字 (0-9)&lt;/string>"
         errorLine2="                              ~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="133"
             column="31"/>
     </issue>
@@ -25504,7 +25498,6 @@
         errorLine1="    &lt;string name=&quot;postal_code_placeholder&quot;>例：100-0000&lt;/string>"
         errorLine2="                                           ~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="208"
             column="44"/>
     </issue>
@@ -25559,7 +25552,6 @@
         errorLine1="    &lt;string name=&quot;generator_include_numbers&quot;>数字を含む (0-9)&lt;/string>"
         errorLine2="                                             ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="551"
             column="46"/>
     </issue>
@@ -25581,7 +25573,6 @@
         errorLine1="    &lt;string name=&quot;generator_include_numbers&quot;>Bao gồm số (0-9)&lt;/string>"
         errorLine2="                                             ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="868"
             column="46"/>
     </issue>
@@ -25592,7 +25583,6 @@
         errorLine1="    &lt;string name=&quot;suggestion_add_digits&quot;>数字を追加 (0-9)&lt;/string>"
         errorLine2="                                         ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1109"
             column="42"/>
     </issue>
@@ -25603,7 +25593,6 @@
         errorLine1="    &lt;string name=&quot;suggestion_add_digits&quot;>Thêm số (0-9)&lt;/string>"
         errorLine2="                                         ~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1115"
             column="42"/>
     </issue>
@@ -25614,7 +25603,6 @@
         errorLine1="    &lt;string name=&quot;include_numbers&quot;>数字を含む (0-9)&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1157"
             column="36"/>
     </issue>
@@ -25625,7 +25613,6 @@
         errorLine1="    &lt;string name=&quot;include_numbers&quot;>Bao gồm số (0-9)&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1163"
             column="36"/>
     </issue>
@@ -25636,7 +25623,6 @@
         errorLine1="    &lt;string name=&quot;send_valid_days&quot;>有効日数（1-30）&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1347"
             column="36"/>
     </issue>
@@ -25647,7 +25633,6 @@
         errorLine1="    &lt;string name=&quot;send_valid_days&quot;>Số ngày hiệu lực (1-30)&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1353"
             column="36"/>
     </issue>
@@ -25757,7 +25742,6 @@
         errorLine1="    &lt;string name=&quot;search_passwords&quot;>Tìm kiếm mật khẩu...&lt;/string>"
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="76"
             column="37"/>
     </issue>
@@ -25768,7 +25752,6 @@
         errorLine1="    &lt;string name=&quot;search_passwords&quot;>パスワードを検索...&lt;/string>"
         errorLine2="                                    ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="77"
             column="37"/>
     </issue>
@@ -25790,7 +25773,6 @@
         errorLine1="    &lt;string name=&quot;symbols&quot;>Ký hiệu (!@#$...)&lt;/string>"
         errorLine2="                           ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="128"
             column="28"/>
     </issue>
@@ -25801,7 +25783,6 @@
         errorLine1="    &lt;string name=&quot;symbols&quot;>記号 (!@#$...)&lt;/string>"
         errorLine2="                           ~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="134"
             column="28"/>
     </issue>
@@ -25834,7 +25815,6 @@
         errorLine1="    &lt;string name=&quot;totp_import_uri_dialog_hint&quot;>otpauth://totp/...&lt;/string>"
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="152"
             column="48"/>
     </issue>
@@ -25845,7 +25825,6 @@
         errorLine1="    &lt;string name=&quot;totp_import_uri_dialog_hint&quot;>otpauth://totp/...&lt;/string>"
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="158"
             column="48"/>
     </issue>
@@ -25856,7 +25835,6 @@
         errorLine1="    &lt;string name=&quot;notes_placeholder&quot;>メモ情報を追加...&lt;/string>"
         errorLine2="                                     ~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="212"
             column="38"/>
     </issue>
@@ -25867,7 +25845,6 @@
         errorLine1="    &lt;string name=&quot;notes_placeholder&quot;>Thêm ghi chú...&lt;/string>"
         errorLine2="                                     ~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="229"
             column="38"/>
     </issue>
@@ -25922,7 +25899,6 @@
         errorLine1="    &lt;string name=&quot;exporting&quot;>エクスポート中...&lt;/string>"
         errorLine2="                             ~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="298"
             column="30"/>
     </issue>
@@ -25933,7 +25909,6 @@
         errorLine1="    &lt;string name=&quot;importing&quot;>インポート中...&lt;/string>"
         errorLine2="                             ~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="303"
             column="30"/>
     </issue>
@@ -25944,7 +25919,6 @@
         errorLine1="    &lt;string name=&quot;exporting&quot;>Đang xuất...&lt;/string>"
         errorLine2="                             ~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="315"
             column="30"/>
     </issue>
@@ -25955,7 +25929,6 @@
         errorLine1="    &lt;string name=&quot;importing&quot;>Đang nhập...&lt;/string>"
         errorLine2="                             ~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="320"
             column="30"/>
     </issue>
@@ -26032,7 +26005,6 @@
         errorLine1="    &lt;string name=&quot;note_content_placeholder&quot;>意味のあることを書いてください...&lt;/string>"
         errorLine2="                                            ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="515"
             column="45"/>
     </issue>
@@ -26043,7 +26015,6 @@
         errorLine1="    &lt;string name=&quot;note_content_placeholder&quot;>Viết điều quan trọng cần nhớ...&lt;/string>"
         errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="515"
             column="45"/>
     </issue>
@@ -26054,7 +26025,6 @@
         errorLine1="    &lt;string name=&quot;generator_include_symbols&quot;>記号を含む (!@#$...)&lt;/string>"
         errorLine2="                                             ~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="552"
             column="46"/>
     </issue>
@@ -26087,7 +26057,6 @@
         errorLine1="    &lt;string name=&quot;generator_include_symbols&quot;>Bao gồm ký hiệu (!@#$...)&lt;/string>"
         errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="869"
             column="46"/>
     </issue>
@@ -26098,7 +26067,6 @@
         errorLine1="    &lt;string name=&quot;autofill_status_more_issues&quot;>Còn %d vấn đề khác...&lt;/string>"
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="999"
             column="48"/>
     </issue>
@@ -26109,7 +26077,6 @@
         errorLine1="    &lt;string name=&quot;autofill_status_more_issues&quot;>他に%d個の問題があります...&lt;/string>"
         errorLine2="                                               ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1000"
             column="48"/>
     </issue>
@@ -26120,7 +26087,6 @@
         errorLine1="    &lt;string name=&quot;developer_loading_logs&quot;>ログを読み込み中...&lt;/string>"
         errorLine2="                                          ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1087"
             column="43"/>
     </issue>
@@ -26131,7 +26097,6 @@
         errorLine1="    &lt;string name=&quot;developer_loading_logs&quot;>Đang tải nhật ký...&lt;/string>"
         errorLine2="                                          ~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1093"
             column="43"/>
     </issue>
@@ -26142,7 +26107,6 @@
         errorLine1="    &lt;string name=&quot;topbar_search_hint&quot;>検索...&lt;/string>"
         errorLine2="                                      ~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1364"
             column="39"/>
     </issue>
@@ -26153,7 +26117,6 @@
         errorLine1="    &lt;string name=&quot;loading_default&quot;>読み込み中...&lt;/string>"
         errorLine2="                                   ~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1366"
             column="36"/>
     </issue>
@@ -26164,7 +26127,6 @@
         errorLine1="    &lt;string name=&quot;topbar_search_hint&quot;>Tìm kiếm...&lt;/string>"
         errorLine2="                                      ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1370"
             column="39"/>
     </issue>
@@ -26175,7 +26137,6 @@
         errorLine1="    &lt;string name=&quot;loading_default&quot;>Đang tải...&lt;/string>"
         errorLine2="                                   ~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1372"
             column="36"/>
     </issue>
@@ -26197,7 +26158,6 @@
         errorLine1="    &lt;string name=&quot;sync_status_syncing_full&quot;>同期中...&lt;/string>"
         errorLine2="                                            ~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1386"
             column="45"/>
     </issue>
@@ -26208,7 +26168,6 @@
         errorLine1="    &lt;string name=&quot;sync_status_syncing_full&quot;>Đang đồng bộ...&lt;/string>"
         errorLine2="                                            ~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1392"
             column="45"/>
     </issue>
@@ -26230,7 +26189,6 @@
         errorLine1="    &lt;string name=&quot;app_selector_loading&quot;>アプリ一覧を読み込み中...&lt;/string>"
         errorLine2="                                        ~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1456"
             column="41"/>
     </issue>
@@ -26241,7 +26199,6 @@
         errorLine1="    &lt;string name=&quot;app_selector_loading&quot;>Đang tải danh sách ứng dụng...&lt;/string>"
         errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1462"
             column="41"/>
     </issue>
@@ -26252,7 +26209,6 @@
         errorLine1="    &lt;string name=&quot;custom_field_value_placeholder&quot;>内容を入力...&lt;/string>"
         errorLine2="                                                  ~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1478"
             column="51"/>
     </issue>
@@ -26274,7 +26230,6 @@
         errorLine1="    &lt;string name=&quot;custom_field_value_placeholder&quot;>Nhập nội dung...&lt;/string>"
         errorLine2="                                                  ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1484"
             column="51"/>
     </issue>
@@ -26296,7 +26251,6 @@
         errorLine1="    &lt;string name=&quot;password_field_customization_address_info_subtitle&quot;>Duong pho, thanh pho, quoc gia...&lt;/string>"
         errorLine2="                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1591"
             column="71"/>
     </issue>
@@ -26318,7 +26272,6 @@
         errorLine1="    &lt;string name=&quot;webdav_compress_status_preparing&quot;>準備中...&lt;/string>"
         errorLine2="                                                    ~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1673"
             column="53"/>
     </issue>
@@ -26329,7 +26282,6 @@
         errorLine1="    &lt;string name=&quot;webdav_compress_status_processing&quot;>圧縮中 %1$d/%2$d...&lt;/string>"
         errorLine2="                                                     ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1674"
             column="54"/>
     </issue>
@@ -26340,7 +26292,6 @@
         errorLine1="    &lt;string name=&quot;webdav_optimizing_images&quot;>画像を最適化中...&lt;/string>"
         errorLine2="                                            ~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1677"
             column="45"/>
     </issue>
@@ -26351,7 +26302,6 @@
         errorLine1="    &lt;string name=&quot;webdav_compress_status_preparing&quot;>Dang chuan bi...&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1679"
             column="53"/>
     </issue>
@@ -26362,7 +26312,6 @@
         errorLine1="    &lt;string name=&quot;webdav_compress_status_processing&quot;>Dang nen %1$d/%2$d...&lt;/string>"
         errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1680"
             column="54"/>
     </issue>
@@ -26373,7 +26322,6 @@
         errorLine1="    &lt;string name=&quot;webdav_optimizing_images&quot;>Dang toi uu hinh anh...&lt;/string>"
         errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1683"
             column="45"/>
     </issue>
@@ -26384,7 +26332,6 @@
         errorLine1="    &lt;string name=&quot;webdav_restore_summary_more_logs&quot;>...詳細はログを確認してください&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1700"
             column="53"/>
     </issue>
@@ -26395,7 +26342,6 @@
         errorLine1="    &lt;string name=&quot;webdav_restore_summary_more_logs&quot;>...xem nhat ky de biet them&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1706"
             column="53"/>
     </issue>
@@ -26406,7 +26352,6 @@
         errorLine1="    &lt;string name=&quot;keepass_webdav_status_connecting&quot;>接続中...&lt;/string>"
         errorLine2="                                                    ~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1711"
             column="53"/>
     </issue>
@@ -26417,7 +26362,6 @@
         errorLine1="    &lt;string name=&quot;keepass_webdav_status_connecting&quot;>Dang ket noi...&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1717"
             column="53"/>
     </issue>
@@ -26428,7 +26372,6 @@
         errorLine1="    &lt;string name=&quot;bastion_plus_features_placeholder&quot;>さらに多くの機能を準備中です...&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-ja/strings.xml"
             line="1760"
             column="53"/>
     </issue>
@@ -26439,7 +26382,6 @@
         errorLine1="    &lt;string name=&quot;bastion_plus_features_placeholder&quot;>Them tinh nang se duoc cap nhat som...&lt;/string>"
         errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values-vi/strings.xml"
             line="1766"
             column="53"/>
     </issue>

@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.bastion.app.R
 import com.bastion.app.ui.common.layout.DetailPane
 import com.bastion.app.ui.common.layout.ListPane
 import com.bastion.app.ui.screens.SettingsScreen
@@ -87,7 +90,7 @@ internal fun SettingsTabContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Select a setting to view details",
+                        text = stringResource(R.string.settings_detail_placeholder),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
