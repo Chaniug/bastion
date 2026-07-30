@@ -565,7 +565,16 @@ class EnhancedAutofillStructureParserV2 {
         val allowOnlyWebViewItems = rawStructure?.webView == true
         var candidateItems = rawStructure?.items.orEmpty()
         if (allowOnlyWebViewItems) {
-            candidateItems = candidateItems.filter { it.parentWebViewNodeId != null }
+            // 仅保留挂在 WebView 节点下的字段；但密码类 / 含密码术语的字段即使没有
+            // parentWebViewNodeId 也保留——PayPal 等站点的登录框常为 iframe / 动态插入，
+            // 其密码框未必能拿到 WebView 节点 id 而被直接丢弃（导致只弹条目、密码框填不进）。
+            // 密码是登录最强信号，且只放行密码相关字段，不会误伤搜索框 / 其他站点。
+            candidateItems = candidateItems.filter {
+                it.parentWebViewNodeId != null ||
+                    it.hint == InternalHint.PASSWORD ||
+                    it.hint == InternalHint.NEW_PASSWORD ||
+                    it.hasPasswordTerm
+            }
         }
 
         val confidenceFilteredItems = candidateItems.let { list ->
