@@ -362,6 +362,12 @@ class BastionAccessibilityService : AccessibilityService() {
             return@runCatchingObserved false
         }
 
+        Log.d(
+            TAG,
+            "Accessibility fill candidates in $activePackageName: " +
+                candidates.joinToString { it.type.name },
+        )
+
         val focusedCandidate = candidates.firstOrNull { it.isFocused }
         val passwordCandidate = selectBestCandidate(
             candidates = candidates,
@@ -401,7 +407,9 @@ class BastionAccessibilityService : AccessibilityService() {
 
         Log.d(
             TAG,
-            "Accessibility fill success: usernameFilled=$usernameFilled, passwordFilled=$passwordFilled, preferPassword=$preferPasswordField"
+            "Accessibility fill success: pkg=$activePackageName, usernameFilled=$usernameFilled, " +
+                "passwordFilled=$passwordFilled, preferPassword=$preferPasswordField, " +
+                "candidates=${candidates.joinToString { it.type.name }}"
         )
         if (preferPasswordField) {
             passwordFilled || (password.isBlank() && usernameFilled)
@@ -653,6 +661,30 @@ class BastionAccessibilityService : AccessibilityService() {
             usernameScore += SCORE_FOCUSED_BONUS
         }
 
+        // Bitwarden 式启发式：搜索框不是凭据字段，强制排除，避免把用户名/密码误填进搜索栏
+        // （Via 等浏览器的地址/搜索栏常与登录字段混淆）。仅当字段不是密码/邮箱类输入时才排除。
+        val isSearchBox = (signals.contains("search") || signals.contains("query")) &&
+            !node.isPassword &&
+            !(
+                inputClass == InputType.TYPE_CLASS_TEXT && (
+                    variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                        variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD ||
+                        variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                        variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS ||
+                        variation == InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS
+                    )
+                )
+        if (isSearchBox) {
+            return FillCandidate(
+                node = node,
+                type = FillFieldType.UNKNOWN,
+                score = 0,
+                isFocused = node.isFocused,
+                top = bounds.top,
+                left = bounds.left,
+            )
+        }
+
         val type = when {
             passwordScore > usernameScore && passwordScore > 0 -> FillFieldType.PASSWORD
             usernameScore > passwordScore && usernameScore > 0 -> FillFieldType.USERNAME
@@ -721,6 +753,10 @@ class BastionAccessibilityService : AccessibilityService() {
 
     private fun setNodeText(node: AccessibilityNodeInfo?, text: String): Boolean {
         if (node == null || text.isBlank()) return false
+        // Bitwarden 式幂等：节点已含目标文本则视为已填，直接返回成功，跳过重复注入，
+        // 避免与框架 dataset 回填叠加造成双填（个别 WebView 框架已填、兜底又注一遍）。
+        val currentText = runCatchingObserved { node.text?.toString().orEmpty() }.getOrDefault("")
+        if (currentText == text) return true
         if (!node.isFocused) {
             // P6: performAction 是 Binder IPC，目标节点所属进程已死亡时抛 DeadObjectException，忽略即可
             runCatchingObserved { node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) }.getOrDefault(false)
