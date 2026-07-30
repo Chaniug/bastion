@@ -675,7 +675,16 @@ class BastionAutofillServiceNg : AutofillService() {
         if (!autofillAuthRequired) {
             AutofillSessionGrants.clear()
         }
-        val effectiveAuthenticationRequired = autofillAuthRequired && !grantActive
+        // 单条匹配降级：response 级认证解锁（buildLockedResponse）在部分 WebView（Via）上
+        // 解锁后的 EXTRA_AUTHENTICATION_RESULT 回灌不可靠，导致填充失败。单条匹配时退而求其次：
+        // 走 dataset 级 setAuthentication（AutofillCipherCallbackActivity 认证），
+        // 它内含 a11y 兜底 + OTP 自动复制，兼容所有 WebView。
+        // 多匹配仍走 response 级认证 + Picker（Picker 有独立认证，不影响 Via 多匹配场景）。
+        val effectiveAuthenticationRequired = if (passwordsForResponse.size == 1) {
+            false
+        } else {
+            autofillAuthRequired && !grantActive
+        }
         AutofillLogger.i(
             "AUTH",
             "Autofill authentication policy resolved",
@@ -734,9 +743,11 @@ class BastionAutofillServiceNg : AutofillService() {
                 )
             )
 
-            // 唯一条目 + vault 解锁 → 框架直填 dataset（不绕 AutofillCipherCallbackActivity）。
-            // 直填路径不经过 Activity，因此 OTP 自动复制副作用需在服务层触发。
-            if (passwordsForResponse.size == 1 && !effectiveAuthenticationRequired) {
+            // 唯一条目 → 框架填充（直填或 dataset 级认证回灌），OTP 自动复制在服务层触发。
+            // 不论认证状态如何（settingEnabled=true/false），单条匹配都应触发 OTP 复制，
+            // 因为 buildLockedResponse（response 级认证）没有 OTP 复制逻辑，
+            // 而单条直填路径不经过 Activity 回调。
+            if (passwordsForResponse.size == 1) {
                 val passwordId = passwordsForResponse.first().id
                 val now = System.currentTimeMillis()
                 val shouldCopyOtp = passwordId != lastDirectOtpCopyPasswordId ||
