@@ -99,6 +99,19 @@ class BastionAutofillServiceNg : AutofillService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    // 直填路径 OTP 自动复制去重：该副作用由服务层按「每次构建 FillResponse」触发，
+    // 而 onFillRequest 在同一登录屏可能多次回调，需按 (passwordId, 时间窗) 节流，
+    // 避免反复刷剪贴板 / 重复弹通知（对齐「用户点选一次复制一次」的预期）。
+    @Volatile
+    private var lastDirectOtpCopyPasswordId: Long = -1L
+
+    @Volatile
+    private var lastDirectOtpCopyMs: Long = 0L
+
+    private companion object {
+        const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
+    }
+
     private lateinit var passwordRepository: PasswordRepository
     private lateinit var autofillPreferences: AutofillPreferences
     private lateinit var settingsManager: SettingsManager
@@ -726,22 +739,30 @@ class BastionAutofillServiceNg : AutofillService() {
             // 唯一条目 + vault 解锁 → 框架直填 dataset（不绕 AutofillCipherCallbackActivity）。
             // 直填路径不经过 Activity，因此 OTP 自动复制副作用需在服务层触发。
             if (passwordsForResponse.size == 1 && !effectiveAuthenticationRequired) {
-                serviceScope.launch(Dispatchers.IO) {
-                    runCatching {
-                        generateOtpCodeForPassword(applicationContext, passwordsForResponse.first())
-                    }.onSuccess { otp ->
-                        if (!otp.isNullOrBlank()) {
-                            // 复制到剪贴板 + 显示通知，对齐 Bitwarden 体验
-                            performOtpAutofillSideEffects(
-                                context = applicationContext,
-                                password = passwordsForResponse.first(),
-                                autofillHints = fillableTargets.map { it.hint.name },
-                            )
-                            Log.d(TAG, "Direct-fill OTP side effect triggered: " +
-                                "passwordId=${passwordsForResponse.first().id}, pkg=$packageName")
+                val passwordId = passwordsForResponse.first().id
+                val now = System.currentTimeMillis()
+                val shouldCopyOtp = passwordId != lastDirectOtpCopyPasswordId ||
+                    now - lastDirectOtpCopyMs >= DIRECT_OTP_COPY_THROTTLE_MS
+                if (shouldCopyOtp) {
+                    scope.launch(Dispatchers.IO) {
+                        runCatching {
+                            generateOtpCodeForPassword(applicationContext, passwordsForResponse.first())
+                        }.onSuccess { otp ->
+                            if (!otp.isNullOrBlank()) {
+                                // 复制到剪贴板 + 显示通知，对齐 Bitwarden 体验
+                                performOtpAutofillSideEffects(
+                                    context = applicationContext,
+                                    password = passwordsForResponse.first(),
+                                    autofillHints = fillableTargets.map { it.hint.name },
+                                )
+                                lastDirectOtpCopyPasswordId = passwordId
+                                lastDirectOtpCopyMs = System.currentTimeMillis()
+                                Log.d(TAG, "Direct-fill OTP side effect triggered: " +
+                                    "passwordId=$passwordId, pkg=$packageName")
+                            }
+                        }.onFailure { error ->
+                            Log.w(TAG, "Direct-fill OTP side effect failed: ${error.message}", error)
                         }
-                    }.onFailure { error ->
-                        Log.w(TAG, "Direct-fill OTP side effect failed: ${error.message}", error)
                     }
                 }
             }
