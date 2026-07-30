@@ -47,6 +47,7 @@ import com.bastion.app.data.PasswordEntry
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.service.BrowserAutofillContextStore
 import com.bastion.app.service.AccessibilityFillCommandStore
+import com.bastion.app.service.BastionAccessibilityService
 import com.bastion.app.utils.DeviceUtils
 import com.bastion.app.utils.SettingsManager
 import java.security.MessageDigest
@@ -61,11 +62,13 @@ import kotlin.math.abs
  */
 class BastionAutofillServiceNg : AutofillService() {
     private companion object {
+        private const val TAG = "BastionAutofillServiceNg"
         private val PACKAGE_NAME_REGEX =
             Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
         private const val PARSED_ITEM_ACCURACY_THRESHOLD = 1.5f
         private const val PASSWORD_ONLY_DIRECT_FILL_WINDOW_MS = 120_000L
         private const val RESPONSE_STABILITY_WINDOW_MS = 2_000L
+        private const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
         private val fillRequestSequence = AtomicLong(0L)
     }
 
@@ -98,6 +101,15 @@ class BastionAutofillServiceNg : AutofillService() {
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    // 直填路径 OTP 自动复制去重：该副作用由服务层按「每次构建 FillResponse」触发，
+    // 而 onFillRequest 在同一登录屏可能多次回调，需按 (passwordId, 时间窗) 节流，
+    // 避免反复刷剪贴板 / 重复弹通知（对齐「用户点选一次复制一次」的预期）。
+    @Volatile
+    private var lastDirectOtpCopyPasswordId: Long = -1L
+
+    @Volatile
+    private var lastDirectOtpCopyMs: Long = 0L
 
     private lateinit var passwordRepository: PasswordRepository
     private lateinit var autofillPreferences: AutofillPreferences
@@ -648,7 +660,12 @@ class BastionAutofillServiceNg : AutofillService() {
             matchedPasswords = passwordsForResponse.size,
         )
 
-        val inlineRequest = if (autofillPreferences.isInlineSuggestionsEnabled.first()) {
+        // WebView 场景（有 webDomain）的 menu presentation 回写在部分浏览器（Via）上不可靠：
+        // 数据集已正确返回但框架不回写值。Bitwarden 对 WebView 走 inline（IME 内嵌）建议，
+        // 点选后输入法直接 commitText 进输入框，不依赖 autofillId 映射回写，对 Via 100% 可靠。
+        // 因此对 WebView 场景，即使用户关着 inline 开关，也获取 inlineRequest 供 builder 使用。
+        val isWebViewFill = webDomain != null
+        val inlineRequest = if (autofillPreferences.isInlineSuggestionsEnabled.first() || isWebViewFill) {
             getInlineRequest(request)
         } else {
             null
@@ -664,7 +681,16 @@ class BastionAutofillServiceNg : AutofillService() {
         if (!autofillAuthRequired) {
             AutofillSessionGrants.clear()
         }
-        val effectiveAuthenticationRequired = autofillAuthRequired && !grantActive
+        // 单条匹配降级：response 级认证解锁（buildLockedResponse）在部分 WebView（Via）上
+        // 解锁后的 EXTRA_AUTHENTICATION_RESULT 回灌不可靠，导致填充失败。单条匹配时退而求其次：
+        // 走 dataset 级 setAuthentication（AutofillCipherCallbackActivity 认证），
+        // 它内含 a11y 兜底 + OTP 自动复制，兼容所有 WebView。
+        // 多匹配仍走 response 级认证 + Picker（Picker 有独立认证，不影响 Via 多匹配场景）。
+        val effectiveAuthenticationRequired = if (passwordsForResponse.size == 1) {
+            false
+        } else {
+            autofillAuthRequired && !grantActive
+        }
         AutofillLogger.i(
             "AUTH",
             "Autofill authentication policy resolved",
@@ -722,6 +748,77 @@ class BastionAutofillServiceNg : AutofillService() {
                     "responseStabilityKey" to responseStabilityKey,
                 )
             )
+
+            // 唯一条目 → 框架填充（直填或 dataset 级认证回灌），OTP 自动复制在服务层触发。
+            // 不论认证状态如何（settingEnabled=true/false），单条匹配都应触发 OTP 复制，
+            // 因为 buildLockedResponse（response 级认证）没有 OTP 复制逻辑，
+            // 而单条直填路径不经过 Activity 回调。
+            if (passwordsForResponse.size == 1) {
+                val passwordId = passwordsForResponse.first().id
+                val now = System.currentTimeMillis()
+                val shouldCopyOtp = passwordId != lastDirectOtpCopyPasswordId ||
+                    now - lastDirectOtpCopyMs >= DIRECT_OTP_COPY_THROTTLE_MS
+                if (shouldCopyOtp) {
+                    scope.launch(Dispatchers.IO) {
+                        runCatching {
+                            generateOtpCodeForPassword(applicationContext, passwordsForResponse.first())
+                        }.onSuccess { otp ->
+                            if (!otp.isNullOrBlank()) {
+                                // 复制到剪贴板 + 显示通知，对齐 Bitwarden 体验
+                                performOtpAutofillSideEffects(
+                                    context = applicationContext,
+                                    password = passwordsForResponse.first(),
+                                    autofillHints = fillableTargets.map { it.hint.name },
+                                )
+                                lastDirectOtpCopyPasswordId = passwordId
+                                lastDirectOtpCopyMs = System.currentTimeMillis()
+                                Log.d(TAG, "Direct-fill OTP side effect triggered: " +
+                                    "passwordId=$passwordId, pkg=$packageName")
+                            }
+                        }.onFailure { error ->
+                            Log.w(TAG, "Direct-fill OTP side effect failed: ${error.message}", error)
+                        }
+                    }
+                }
+
+                // WebView 场景（如 Via + PayPal）的 menu 建议回写不可靠，inline 建议
+                // 又受 ROM 限制（HarmonyOS / MIUI < 12 等）不可用。此时走无障碍直接注入兜底：
+                // 把凭据写入跨进程命令存储并广播唤醒无障碍服务，由其对当前窗口的密码框
+                // 直接注入文字——这绕开了框架 autofillId 回写，对任何 WebView 都可靠。
+                if (isWebViewFill && BastionAccessibilityService.isCredentialFillAvailable(applicationContext)) {
+                    val entry = passwordsForResponse.first()
+                    AccessibilityFillCommandStore.attach(applicationContext)
+                    val accountValue = com.bastion.app.autofill_ng.AccountFillPolicy
+                        .resolveAccountIdentifier(entry, com.bastion.app.security.SecurityManager(applicationContext))
+                    val decryptedPassword = com.bastion.app.autofill_ng.AutofillSecretResolver.decryptPasswordOrNull(
+                        securityManager = com.bastion.app.security.SecurityManager(applicationContext),
+                        encryptedOrPlain = entry.password,
+                        logTag = TAG,
+                    )
+                    scope.launch(Dispatchers.IO) {
+                        val otp = runCatching {
+                            generateOtpCodeForPassword(applicationContext, entry)
+                        }.getOrNull()
+                        AccessibilityFillCommandStore.write(
+                            AccessibilityFillCommandStore.Command(
+                                packageName = packageName,
+                                username = accountValue,
+                                password = decryptedPassword ?: "",
+                                preferPasswordField = true,
+                                otp = otp ?: "",
+                                createdAt = System.currentTimeMillis(),
+                            )
+                        )
+                        applicationContext.sendBroadcast(
+                            Intent(AccessibilityFillCommandStore.ACTION_FILL_COMMAND)
+                                .setPackage(applicationContext.packageName)
+                        )
+                        Log.d(TAG, "WebView accessibility fallback dispatched: " +
+                            "pkg=$packageName, webDomain=$webDomain, " +
+                            "passwordId=${entry.id}, otp=${if (otp.isNullOrBlank()) "none" else "present"}")
+                    }
+                }
+            }
         }
         return response
     }

@@ -393,12 +393,62 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
         val callbackIds = callbackArgs.autofillIds?.distinct().orEmpty()
         val callbackHints = callbackArgs.autofillHints.orEmpty()
 
-        // 优先采用 FillResponse 构建时烘焙进 PendingIntent 的目标（callback_args）：
-        // 构建期流水线（selectFillableTargets + buildFocusedSyntheticItems）能恢复
-        // 原始 re-parse 找不到的账号框——例如 Edge WebView 不暴露 username 的 autofill
-        // hint，只有“聚焦文本域 + 密码上下文”合成才能定位账号框。直接 re-parse assist
-        // structure 会漏掉合成出的账号框，导致只填充密码、不填充用户名。
-        // 这里信任 callback_args，并仅对当前结构做有效性校验，避免注入已销毁的 id。
+        // Bitwarden 对齐：优先从当前 AssistStructure 重新解析 autofillId。
+        // WebView（尤其是 Via 等第三方浏览器）的 autofillId 可能在 FillResponse
+        // 构建时与 callback 回调时不一致（DOM 节点复用导致 id 变化），使用烘焙进
+        // PendingIntent 的旧 id 会导致数据集写回静默失败。
+        //
+        // 策略（对齐 Bitwarden AutofillCompletionManagerImpl）：
+        // 1. 优先从当前 AssistStructure re-parse，获取"活的" autofillId
+        // 2. 按 hint 类型匹配 callbackArgs 的 hints，保持构建期合成逻辑的优势
+        // 3. re-parse 失败时回退到 callback_args 的旧 id（兼容性保障）
+        if (assistStructure != null) {
+            val parsedTargets = runCatchingObserved {
+                val parser = EnhancedAutofillStructureParserV2()
+                val parsed = parser.parse(assistStructure, respectAutofillOff = false)
+                selectLoginFillableTargets(parsed.items)
+            }.getOrDefault(emptyList())
+
+            if (parsedTargets.isNotEmpty()) {
+                // 按 hint 类型匹配：re-parse 的 autofillId（活的）+ callback_args 的 hint（更准）
+                // 当两者数量不一致时（如构建期合成了 username 但 re-parse 没找到），
+                // 以 re-parse 为准（因为 id 必须有效），hint 用 re-parse 自身的。
+                val mergedTargets = if (parsedTargets.size == callbackHints.size) {
+                    // 数量一致：直接按索引覆盖 hints
+                    parsedTargets.mapIndexed { index, target ->
+                        target.id to (
+                            callbackHints.getOrNull(index)
+                                ?.takeIf { it.isNotBlank() }
+                                ?: target.hint.name
+                        )
+                    }
+                } else {
+                    // 数量不一致：按 hint 类型做最佳匹配
+                    val callbackHintSet = callbackHints.toSet()
+                    parsedTargets.map { target ->
+                        val matchedHint = if (callbackHintSet.contains(target.hint.name)) {
+                            target.hint.name  // re-parse hint 在 callback 集合中，保持一致
+                        } else {
+                            // 尝试模糊匹配：password → PASSWORD, username → USERNAME
+                            callbackHints.firstOrNull { ch ->
+                                ch.equals(target.hint.name, ignoreCase = true) ||
+                                    target.hint.name.contains(ch, ignoreCase = true) ||
+                                    ch.contains(target.hint.name, ignoreCase = true)
+                            } ?: target.hint.name
+                        }
+                        target.id to matchedHint
+                    }
+                }
+                return ResolvedAutofillTargets(
+                    ids = mergedTargets.map { it.first },
+                    hints = mergedTargets.map { it.second },
+                    source = "assist_structure_fresh",
+                )
+            }
+        }
+
+        // 回退：assist structure 不可用或 re-parse 无结果时，使用 callback_args 的旧 id。
+        // 对旧 id 做有效性校验，过滤掉已销毁的节点。
         if (callbackIds.isNotEmpty()) {
             val idHintPairs = callbackIds.mapIndexed { index, id ->
                 id to callbackHints.getOrNull(index).orEmpty()
@@ -413,24 +463,7 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
                 return ResolvedAutofillTargets(
                     ids = validPairs.map { it.first },
                     hints = validPairs.map { it.second },
-                    source = "callback_args",
-                )
-            }
-        }
-
-        // 回退：当 PendingIntent 未携带可用目标时，才 re-parse 当前结构。
-        if (assistStructure != null) {
-            val parsedTargets = runCatchingObserved {
-                val parser = EnhancedAutofillStructureParserV2()
-                val parsed = parser.parse(assistStructure, respectAutofillOff = false)
-                selectLoginFillableTargets(parsed.items)
-            }.getOrDefault(emptyList())
-
-            if (parsedTargets.isNotEmpty()) {
-                return ResolvedAutofillTargets(
-                    ids = parsedTargets.map { it.id },
-                    hints = parsedTargets.map { it.hint.name },
-                    source = "assist_structure",
+                    source = "callback_args_fallback",
                 )
             }
         }
