@@ -3,6 +3,7 @@ package com.bastion.app.ui.screens
 import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -107,7 +108,8 @@ fun SettingsScreen(
     onNavigateToPageCustomization: () -> Unit = {},
     onNavigateToMdbx: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { _, _, _, _, _, _ -> },
-    showTopBar: Boolean = true  // 添加参数控制是否显示顶栏
+    showTopBar: Boolean = true,  // 添加参数控制是否显示顶栏
+    onSectionSelected: ((String) -> Unit)? = null  // 宽屏模式下 section 被选中时回调
 ) {
     val context = LocalContext.current
     val openExternalLink: (String) -> Unit = { url ->
@@ -812,7 +814,8 @@ fun SettingsScreen(
             }
             
             if (showSecuritySection) {
-                SettingsSection(title = securityTitle) {
+                SettingsSection(title = securityTitle,
+                    onClick = onSectionSelected?.let { cb -> { cb(securityTitle) } }) {
                     if (showMasterPasswordLockingItem) {
                         SettingsItem(
                             icon = Icons.Default.Lock,
@@ -845,7 +848,8 @@ fun SettingsScreen(
             }
             
             if (showDataManagementSection) {
-                SettingsSection(title = dataManagementTitle) {
+                SettingsSection(title = dataManagementTitle,
+                    onClick = onSectionSelected?.let { cb -> { cb(dataManagementTitle) } }) {
                     if (showSyncBackupItem) {
                         SettingsItem(
                             icon = Icons.Default.Sync,
@@ -890,7 +894,8 @@ fun SettingsScreen(
             }
             
             if (showAppearanceSection) {
-                SettingsSection(title = appearanceTitle) {
+                SettingsSection(title = appearanceTitle,
+                    onClick = onSectionSelected?.let { cb -> { cb(appearanceTitle) } }) {
                     if (showThemeItem) {
                         SettingsItem(
                             icon = Icons.Default.Palette,
@@ -939,7 +944,8 @@ fun SettingsScreen(
             }
 
             if (showVersionItem || showUpdateCheckItem) {
-                SettingsSection(title = aboutTitle) {
+                SettingsSection(title = aboutTitle,
+                    onClick = onSectionSelected?.let { cb -> { cb(aboutTitle) } }) {
                     if (showVersionItem) {
                         SettingsItem(
                             icon = Icons.Default.Info,
@@ -2080,14 +2086,26 @@ private fun PasswordBatchTransferProgressCard(
 @Composable
 fun SettingsSection(
     title: String,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
+    onClick: (() -> Unit)? = null
 ) {
     Column {
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 8.dp)
+            modifier = Modifier
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(
+                            onClick = onClick,
+                            role = Role.Button
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(16.dp, 16.dp, 16.dp, 8.dp)
         )
         content()
         Spacer(modifier = Modifier.height(8.dp))
