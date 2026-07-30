@@ -408,30 +408,29 @@ fun ColorSchemeSelectionScreen(
                     secondaryColor = Color(0xFFA6E3A1),
                     tertiaryColor = Color(0xFFF2CDCD),
                     isSelected = previewColorScheme == ColorScheme.CATPPUCCIN_MOCHA,
-                    onClick = {                    onClick = {
+                    onClick = {
                         if (!isNavigatingOut) {
                             previewColorScheme = ColorScheme.CATPPUCCIN_MOCHA
                             settingsViewModel.updateColorScheme(ColorScheme.CATPPUCCIN_MOCHA)
                         }
                     }
                 )
-            }
 
                 ColorSchemeOption(
                     colorScheme = ColorScheme.CUSTOM,
-                name = stringResource(R.string.custom_color_scheme),
-                primaryColor = Color(settings.customPrimaryColor),
-                secondaryColor = Color(settings.customSecondaryColor),
-                tertiaryColor = Color(settings.customTertiaryColor),
-                customPreviewScheme = customPreviewScheme,
-                isSelected = previewColorScheme == ColorScheme.CUSTOM,
-                onClick = { 
-                    // 导航到自定义颜色设置界面
-                    if (!isNavigatingOut) {
-                        onNavigateToCustomColors()
+                    name = stringResource(R.string.custom_color_scheme),
+                    primaryColor = Color(settings.customPrimaryColor),
+                    secondaryColor = Color(settings.customSecondaryColor),
+                    tertiaryColor = Color(settings.customTertiaryColor),
+                    customPreviewScheme = customPreviewScheme,
+                    isSelected = previewColorScheme == ColorScheme.CUSTOM,
+                    onClick = {
+                        // 导航到自定义颜色设置界面
+                        if (!isNavigatingOut) {
+                            onNavigateToCustomColors()
+                        }
                     }
-                }
-            )
+                )
         }
     }
 }
