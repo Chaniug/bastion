@@ -148,6 +148,7 @@ fun SettingsScreen(
     var developerPasswordError by remember { mutableStateOf(false) }
     var showWeakBiometricWarning by remember { mutableStateOf(false) }
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
+    var advancedSectionExpanded by rememberSaveable { mutableStateOf(false) }
 
     val startUpdateCheck: () -> Unit = {
         if (!isCheckingUpdate) {
@@ -1033,8 +1034,51 @@ fun SettingsScreen(
                 }
             }
             
-            if (showPreviewFeaturesItem || showDeveloperSettingsItem) {
-                SettingsSection(title = developerTitle) {
+            // 高级设置：默认收起，搜索时自动展开，避免干扰普通用户
+            val advancedVisible = showPreviewFeaturesItem || showDeveloperSettingsItem
+            val advancedShouldExpand = advancedSectionExpanded || settingsSearchQuery.isNotBlank()
+            if (advancedVisible) {
+                val (headerIcon, headerTitle, headerSubtitle) = Triple(
+                    Icons.Default.Build,
+                    context.getString(R.string.advanced_settings_title),
+                    context.getString(R.string.advanced_settings_subtitle)
+                )
+                // 折叠态：只显示一行可点击标题
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { advancedSectionExpanded = !advancedSectionExpanded }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = headerIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = headerTitle,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = headerSubtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = if (advancedShouldExpand) {
+                            Icons.Default.ExpandLess
+                        } else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (advancedShouldExpand) {
                     if (showPreviewFeaturesItem) {
                         SettingsItem(
                             icon = Icons.Default.Science,

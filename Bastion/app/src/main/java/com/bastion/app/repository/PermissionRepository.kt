@@ -53,15 +53,15 @@ class PermissionRepository(private val context: Context) {
      * Load all permissions and check their status
      */
     private fun loadPermissions(): List<PermissionInfo> {
+        // 仅保留用户真正需要手动授予/检查的权限。
+        // 以下“普通权限”在安装时自动授予且全项目无功能依赖，列为卡片纯属噪声，已移除：
+        //   INTERNET / ACCESS_NETWORK_STATE / VIBRATE（永远 GRANTED）
+        //   READ_PHONE_STATE（无人使用）
         return listOf(
             createBiometricPermission(),
             createCameraPermission(),
             createStoragePermission(),
-            createInternetPermission(),
-            createNetworkStatePermission(),
-            createVibratePermission(),
             createNotificationPermission(),
-            createPhoneStatePermission(),
             createAutofillPermission(),
             createAccessibilityPermission()
         ).map { permission ->
@@ -84,10 +84,6 @@ class PermissionRepository(private val context: Context) {
             "BIOMETRIC" -> checkBiometricStatus()
             "AUTOFILL" -> checkAutofillStatus()
             "ACCESSIBILITY" -> checkAccessibilityStatus()
-            "INTERNET", "NETWORK_STATE", "VIBRATE" -> {
-                // 这些权限在安装时自动授予
-                PermissionStatus.GRANTED
-            }
             "NOTIFICATION" -> {
                 if (Build.VERSION.SDK_INT >= 33) {
                     val result = ContextCompat.checkSelfPermission(
@@ -175,11 +171,39 @@ class PermissionRepository(private val context: Context) {
     }
 
     /**
-     * 按分类分组权限
-     * Group permissions by category
+     * 按分类分组权限（固定分类顺序，仅显示非空分类；卡内按“未授予优先 + 重要性”排序）
+     * Group permissions by category with a stable order; within a category,
+     * denied/unknown permissions (that need user action) are shown first.
      */
     fun getPermissionsByCategory(): Map<PermissionCategory, List<PermissionInfo>> {
-        return getAllPermissions().groupBy { it.category }
+        val all = getAllPermissions()
+        val grouped = all.groupBy { it.category }
+        val orderedCategories = PermissionCategory.values().filter { grouped.containsKey(it) }
+        val result = linkedMapOf<PermissionCategory, List<PermissionInfo>>()
+        for (category in orderedCategories) {
+            val sorted = grouped[category].orEmpty().sortedWith(
+                compareBy<PermissionInfo> { statusAttentionPriority(it.status) }
+                    .thenByDescending { importanceRank(it.importance) }
+            )
+            result[category] = sorted
+        }
+        return result
+    }
+
+    /**
+     * 需要用户关注的权限排前面：未授予 > 未知 > 不可用 > 已授予
+     */
+    private fun statusAttentionPriority(status: PermissionStatus): Int = when (status) {
+        PermissionStatus.DENIED -> 0
+        PermissionStatus.UNKNOWN -> 1
+        PermissionStatus.UNAVAILABLE -> 2
+        PermissionStatus.GRANTED -> 3
+    }
+
+    private fun importanceRank(importance: PermissionImportance): Int = when (importance) {
+        PermissionImportance.REQUIRED -> 2
+        PermissionImportance.RECOMMENDED -> 1
+        PermissionImportance.OPTIONAL -> 0
     }
 
     /**
@@ -242,36 +266,6 @@ class PermissionRepository(private val context: Context) {
         importance = PermissionImportance.RECOMMENDED
     )
 
-    private fun createInternetPermission() = PermissionInfo(
-        id = "INTERNET",
-        androidPermission = Manifest.permission.INTERNET,
-        icon = Icons.Default.Language,
-        nameResId = R.string.permission_internet_name,
-        descriptionResId = R.string.permission_internet_description,
-        category = PermissionCategory.NETWORK,
-        importance = PermissionImportance.OPTIONAL
-    )
-
-    private fun createNetworkStatePermission() = PermissionInfo(
-        id = "NETWORK_STATE",
-        androidPermission = Manifest.permission.ACCESS_NETWORK_STATE,
-        icon = Icons.Default.NetworkCheck,
-        nameResId = R.string.permission_network_state_name,
-        descriptionResId = R.string.permission_network_state_description,
-        category = PermissionCategory.NETWORK,
-        importance = PermissionImportance.RECOMMENDED
-    )
-
-    private fun createVibratePermission() = PermissionInfo(
-        id = "VIBRATE",
-        androidPermission = Manifest.permission.VIBRATE,
-        icon = Icons.Default.Vibration,
-        nameResId = R.string.permission_vibrate_name,
-        descriptionResId = R.string.permission_vibrate_description,
-        category = PermissionCategory.DEVICE,
-        importance = PermissionImportance.OPTIONAL
-    )
-
     private fun createNotificationPermission() = PermissionInfo(
         id = "NOTIFICATION",
         androidPermission = if (Build.VERSION.SDK_INT >= 33) {
@@ -284,16 +278,6 @@ class PermissionRepository(private val context: Context) {
         descriptionResId = R.string.permission_notification_description,
         category = PermissionCategory.DEVICE,
         importance = PermissionImportance.RECOMMENDED
-    )
-
-    private fun createPhoneStatePermission() = PermissionInfo(
-        id = "PHONE_STATE",
-        androidPermission = Manifest.permission.READ_PHONE_STATE,
-        icon = Icons.Default.PhoneAndroid,
-        nameResId = R.string.permission_phone_state_name,
-        descriptionResId = R.string.permission_phone_state_description,
-        category = PermissionCategory.DEVICE,
-        importance = PermissionImportance.OPTIONAL
     )
 
     private fun createAutofillPermission() = PermissionInfo(

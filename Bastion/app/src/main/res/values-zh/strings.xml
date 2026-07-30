@@ -158,6 +158,7 @@
     <!-- Autofill Authentication -->
     <string name="autofill_auth_required">自动填充验证</string>
     <string name="autofill_auth_required_desc">进入自动填充前需要生物识别或密码验证</string>
+    <string name="autofill_auth_required_via_hint">关闭后，可在 Via 等浏览器中直接填充而无需开启无障碍权限；开启则会多一步验证以提高安全性。</string>
     <string name="autofill_auth_waiting">正在等待验证…</string>
 
     
@@ -1386,6 +1387,7 @@
     <!-- Color Scheme -->
     <string name="color_scheme">配色方案</string>
     <string name="color_scheme_description">为应用选择一个配色方案</string>
+    <string name="more_color_schemes">更多配色</string>
     <string name="default_color_scheme">默认</string>
     <string name="ocean_blue_scheme">海洋蓝</string>
     <string name="sunset_orange_scheme">日落橙</string>
@@ -2008,6 +2010,8 @@
     <string name="preview_features_description">体验实验性功能</string>
     <string name="developer_settings">开发者设置</string>
     <string name="developer_settings_subtitle">日志查看、开发者调试工具</string>
+    <string name="advanced_settings_title">高级设置</string>
+    <string name="advanced_settings_subtitle">预览功能与开发者工具</string>
     <string name="developer_settings_back">返回</string>
     <string name="developer_log_debugging">日志调试</string>
     <string name="developer_view_logs">查看日志</string>
@@ -2240,6 +2244,7 @@
     <!-- Permission Info Card -->
     <string name="permission_info_title">权限管理</string>
     <string name="permission_info_message">在这里您可以查看Bastion使用的所有权限及其当前状态。点击任何权限可在系统设置中管理。</string>
+    <string name="permission_basic_auto_granted_note">基础权限（网络、振动等）随安装自动授予，上方不再单独列出。</string>
 
     <!-- 选择性备份 -->
     <string name="selective_backup_title">备份内容选择</string>

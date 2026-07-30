@@ -125,6 +125,7 @@
     <!-- Autofill Authentication -->
     <string name="autofill_auth_required">Autofill Verification</string>
     <string name="autofill_auth_required_desc">Require biometric or password verification before accessing autofill</string>
+    <string name="autofill_auth_required_via_hint">Turn off to fill directly in browsers like Via without enabling Accessibility. Turning on adds a verification step for better security.</string>
     <string name="autofill_auth_waiting">Waiting for verification…</string>
     
     <string name="notification_validator_ready">Authenticator notification is starting...</string>
@@ -1405,6 +1406,7 @@
     <!-- Color Scheme -->
     <string name="color_scheme">Color Scheme</string>
     <string name="color_scheme_description">Select a color scheme for the app</string>
+    <string name="more_color_schemes">More Color Schemes</string>
     <string name="default_color_scheme">Default</string>
     <string name="ocean_blue_scheme">Ocean Blue</string>
     <string name="sunset_orange_scheme">Sunset Orange</string>
@@ -2160,6 +2162,8 @@
     <string name="preview_features_description">Try out experimental features</string>
     <string name="developer_settings">Developer Settings</string>
     <string name="developer_settings_subtitle">Log viewing and developer debugging tools</string>
+    <string name="advanced_settings_title">Advanced</string>
+    <string name="advanced_settings_subtitle">Preview features and developer tools</string>
     <string name="developer_settings_back">Back</string>
     <string name="developer_log_debugging">Log Debugging</string>
     <string name="developer_view_logs">View Logs</string>
@@ -2392,6 +2396,9 @@
     <!-- Permission Info Card -->
     <string name="permission_info_title">Permission Management</string>
     <string name="permission_info_message">See Bastion\'s permissions and status. Tap one to manage it in system settings.</string>
+
+    <!-- Permission Footnote -->
+    <string name="permission_basic_auto_granted_note">Basic permissions (network, vibration) are granted automatically at install and not listed above.</string>
 
     <!-- Selective Backup -->
     <string name="selective_backup_title">Backup Content Selection</string>

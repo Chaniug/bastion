@@ -310,6 +310,29 @@ fun AutofillSettingsV2Screen(
             }
 
             SectionCard(
+                title = stringResource(R.string.autofill_auth_required),
+                icon = Icons.Outlined.Lock,
+                iconTint = MaterialTheme.colorScheme.primary,
+            ) {
+                SwitchSettingItem(
+                    icon = Icons.Outlined.Lock,
+                    title = stringResource(R.string.autofill_auth_required),
+                    subtitle = stringResource(R.string.autofill_auth_required_desc),
+                    checked = autofillAuthRequired,
+                    onCheckedChange = { enabled ->
+                        scope.launch { settingsManager.updateAutofillAuthRequired(enabled) }
+                    },
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                Text(
+                    text = stringResource(R.string.autofill_auth_required_via_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                )
+            }
+
+            SectionCard(
                 title = stringResource(R.string.autofill_v2_default_scope_title),
                 icon = Icons.Outlined.AccountTree,
                 iconTint = MaterialTheme.colorScheme.tertiary,
@@ -527,16 +550,6 @@ fun AutofillSettingsV2Screen(
                     checked = activeFillNotificationEnabled,
                     onCheckedChange = { enabled ->
                         scope.launch { preferences.setActiveFillNotificationEnabled(enabled) }
-                    },
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                SwitchSettingItem(
-                    icon = Icons.Outlined.Lock,
-                    title = stringResource(R.string.autofill_auth_required),
-                    subtitle = stringResource(R.string.autofill_auth_required_desc),
-                    checked = autofillAuthRequired,
-                    onCheckedChange = { enabled ->
-                        scope.launch { settingsManager.updateAutofillAuthRequired(enabled) }
                     },
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

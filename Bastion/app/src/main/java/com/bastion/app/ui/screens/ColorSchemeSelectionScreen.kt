@@ -15,6 +15,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -70,6 +72,8 @@ fun ColorSchemeSelectionScreen(
     
     // 用于即时预览的颜色方案
     var previewColorScheme by remember { mutableStateOf(settings.colorScheme) }
+    // 更多配色（莫奈 + Catppuccin）默认折叠，降低主列表长度
+    var showMoreColorSchemes by remember { mutableStateOf(false) }
     
     // 防止在返回动画期间误触
     var isNavigatingOut by remember { mutableStateOf(false) }
@@ -239,6 +243,27 @@ fun ColorSchemeSelectionScreen(
                 }
             )
 
+            // 更多配色（莫奈 + Catppuccin）默认折叠
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showMoreColorSchemes = !showMoreColorSchemes }
+                    .padding(horizontal = 4.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.more_color_schemes),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (showMoreColorSchemes) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (showMoreColorSchemes) {
             // Monet Impressionist Schemes (全部免费开放)
             ColorSchemeOption(
                     colorScheme = ColorScheme.WATER_LILIES,
@@ -390,24 +415,26 @@ fun ColorSchemeSelectionScreen(
                         }
                     }
                 )
-            
-            ColorSchemeOption(
-                colorScheme = ColorScheme.CUSTOM,
-                name = stringResource(R.string.custom_color_scheme),
-                primaryColor = Color(settings.customPrimaryColor),
-                secondaryColor = Color(settings.customSecondaryColor),
-                tertiaryColor = Color(settings.customTertiaryColor),
-                customPreviewScheme = customPreviewScheme,
-                isSelected = previewColorScheme == ColorScheme.CUSTOM,
-                onClick = { 
-                    // 导航到自定义颜色设置界面
-                    if (!isNavigatingOut) {
-                        onNavigateToCustomColors()
+
+                ColorSchemeOption(
+                    colorScheme = ColorScheme.CUSTOM,
+                    name = stringResource(R.string.custom_color_scheme),
+                    primaryColor = Color(settings.customPrimaryColor),
+                    secondaryColor = Color(settings.customSecondaryColor),
+                    tertiaryColor = Color(settings.customTertiaryColor),
+                    customPreviewScheme = customPreviewScheme,
+                    isSelected = previewColorScheme == ColorScheme.CUSTOM,
+                    onClick = {
+                        // 导航到自定义颜色设置界面
+                        if (!isNavigatingOut) {
+                            onNavigateToCustomColors()
+                        }
                     }
-                }
-            )
+                )
         }
     }
+}
+
 }
 
 @Composable

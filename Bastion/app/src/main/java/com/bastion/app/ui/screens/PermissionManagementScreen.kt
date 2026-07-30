@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -109,12 +110,40 @@ fun PermissionManagementScreen(
                     )
                 }
 
-                // 权限统计
+                // 权限统计（紧凑一行，不再使用大卡片）
                 permissionStats?.let { stats ->
-                    PermissionStatsCard(stats = stats)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.permission_stats_total,
+                                stats.grantedPermissions,
+                                stats.totalPermissions
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        LinearProgressIndicator(
+                            progress = {
+                                if (stats.totalPermissions > 0) {
+                                    stats.grantedPermissions.toFloat() / stats.totalPermissions.toFloat()
+                                } else 0f
+                            },
+                            modifier = Modifier
+                                .width(88.dp)
+                                .height(6.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
                 }
 
-                // 按分类显示权限
+                // 按分类显示权限（已在 Repository 内按“未授予优先 + 重要性”排序）
                 permissionsByCategory.forEach { (category, permissions) ->
                     PermissionCategorySection(
                         category = category,
@@ -125,7 +154,17 @@ fun PermissionManagementScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                // 基础权限脚注
+                Text(
+                    text = stringResource(R.string.permission_basic_auto_granted_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             // 加载指示器
