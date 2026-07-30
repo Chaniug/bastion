@@ -2086,8 +2086,8 @@ private fun PasswordBatchTransferProgressCard(
 @Composable
 fun SettingsSection(
     title: String,
-    content: @Composable () -> Unit,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
 ) {
     Column {
         Text(
