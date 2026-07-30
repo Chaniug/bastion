@@ -779,6 +779,44 @@ class BastionAutofillServiceNg : AutofillService() {
                         }
                     }
                 }
+
+                // WebView 场景（如 Via + PayPal）的 menu 建议回写不可靠，inline 建议
+                // 又受 ROM 限制（HarmonyOS / MIUI < 12 等）不可用。此时走无障碍直接注入兜底：
+                // 把凭据写入跨进程命令存储并广播唤醒无障碍服务，由其对当前窗口的密码框
+                // 直接注入文字——这绕开了框架 autofillId 回写，对任何 WebView 都可靠。
+                if (isWebViewFill && BastionAccessibilityService.isCredentialFillAvailable(applicationContext)) {
+                    val entry = passwordsForResponse.first()
+                    AccessibilityFillCommandStore.attach(applicationContext)
+                    val accountValue = com.bastion.app.autofill_ng.AccountFillPolicy
+                        .resolveAccountIdentifier(entry, com.bastion.app.security.SecurityManager(applicationContext))
+                    val decryptedPassword = com.bastion.app.autofill_ng.AutofillSecretResolver.decryptPasswordOrNull(
+                        securityManager = com.bastion.app.security.SecurityManager(applicationContext),
+                        encryptedOrPlain = entry.password,
+                        logTag = TAG,
+                    )
+                    scope.launch(Dispatchers.IO) {
+                        val otp = runCatching {
+                            generateOtpCodeForPassword(applicationContext, entry)
+                        }.getOrNull()
+                        AccessibilityFillCommandStore.write(
+                            AccessibilityFillCommandStore.Command(
+                                packageName = packageName,
+                                username = accountValue,
+                                password = decryptedPassword ?: "",
+                                preferPasswordField = true,
+                                otp = otp ?: "",
+                                createdAt = System.currentTimeMillis(),
+                            )
+                        )
+                        applicationContext.sendBroadcast(
+                            Intent(AccessibilityFillCommandStore.ACTION_FILL_COMMAND)
+                                .setPackage(applicationContext.packageName)
+                        )
+                        Log.d(TAG, "WebView accessibility fallback dispatched: " +
+                            "pkg=$packageName, webDomain=$webDomain, " +
+                            "passwordId=${entry.id}, otp=${if (otp.isNullOrBlank()) "none" else "present"}")
+                    }
+                }
             }
         }
         return response
