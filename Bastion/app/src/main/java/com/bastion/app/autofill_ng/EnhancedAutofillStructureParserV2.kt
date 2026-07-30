@@ -603,11 +603,14 @@ class EnhancedAutofillStructureParserV2 {
         //    阶段把搜索框等判为 Unused。Bastion 的 TYPE_TEXT_VARIATION_NORMAL fallback
         //    比 bitwarden 宽松（会把纯 text 判为 USERNAME:LOWEST），但电影猎手等真登录
         //    场景的确定 bug优先于假设性的搜索框误弹（后者可用黑名单兜底）。
-        val effectiveItems = if (allowWeakTargets) {
-            promotePasswordTermCandidates(confidenceFilteredItems)
-        } else {
-            confidenceFilteredItems
-        }
+        // 密码术语提升（借鉴 bitwarden updateForMissingPasswordFields）无条件执行，不依赖
+        // allowWeakTargets：Via 等轻量 WebView 浏览器常把密码框报成
+        // TYPE_TEXT_VARIATION_WEB_EDIT_TEXT（被兜底判为 USERNAME:LOWEST），仅靠弱目标二次解析
+        // 会在「首轮已识别到账号框」时被跳过（firstPassTargets 非空不触发弱解析），
+        // 导致密码框被 loginFilteredItems 以 accuracy<MEDIUM 丢弃，最终密码输入框无法填充。
+        // Bitwarden 的缺失密码字段恢复本就是无条件执行的，这里对齐该行为——仅提升「含密码术语」
+        // 的候选为 PASSWORD，不会误伤搜索框（搜索字段不含密码术语）。
+        val effectiveItems = promotePasswordTermCandidates(confidenceFilteredItems)
         val hasPasswordInItems = effectiveItems.any {
             it.hint == InternalHint.PASSWORD || it.hint == InternalHint.NEW_PASSWORD
         }
@@ -1861,11 +1864,14 @@ class EnhancedAutofillStructureParserV2 {
     }
 
     /**
-     * 弱目标模式下的密码字段提升（借鉴 bitwarden updateForMissingPasswordFields）：
+     * 密码字段提升（借鉴 bitwarden updateForMissingPasswordFields，已改为无条件执行）：
      * 当候选里无 PASSWORD 时，把含 password 术语但被识别为其它 hint（通常是 USERNAME:LOWEST，
-     * 因 inputType 非标准所致）的候选提升为 PASSWORD:LOW。提升后 hasPasswordInItems=true，
-     * 低精度账号字段自然保留并弹窗；无 password 术语的（如 QQ 搜索框）不受影响，仍按原逻辑过滤。
-     * 仅在 allowWeakTargets=true 时调用。
+     * 因 inputType 非标准所致，如 Via 等轻量 WebView 浏览器把密码框报成 WEB_EDIT_TEXT）的候选
+     * 提升为 PASSWORD:LOW。提升后 hasPasswordInItems=true，低精度账号字段自然保留并弹窗；
+     * 无 password 术语的（如 QQ 搜索框）不受影响，仍按原逻辑过滤。
+     * 注意：此提升已在 parse() 内无条件调用（不再依赖 allowWeakTargets），以对齐 Bitwarden
+     * 「缺失密码字段恢复」的始终执行语义——否则在「首轮已识别账号框」的 Via 场景下会被跳过，
+     * 导致密码框被 loginFilteredItems 丢弃、无法填充。
      */
     private fun promotePasswordTermCandidates(items: List<RawParsedItem>): List<RawParsedItem> {
         val hasPassword = items.any {
