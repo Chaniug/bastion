@@ -1043,9 +1043,6 @@ fun SettingsScreen(
                                 val hasActivity = activity != null
                                 val biometricEnabled = settings.biometricEnabled
                                 val biometricAvailableNow = hasActivity && biometricEnabled && biometricHelper.isBiometricAvailable()
-                                    "SettingsScreen",
-                                    "Developer settings tapped. hasActivity=$hasActivity, biometricEnabled=$biometricEnabled, biometricAvailable=$biometricAvailableNow"
-                                )
 
                                 developerPasswordInput = ""
                                 developerPasswordError = false
@@ -1072,9 +1069,6 @@ fun SettingsScreen(
                                             description = context.getString(R.string.biometric_login_description),
                                             negativeButtonText = context.getString(R.string.use_master_password),
                                             onSuccess = {
-                                                    "SettingsScreen",
-                                                    "Developer biometric authentication succeeded"
-                                                )
                                                 showDeveloperVerifyDialog = false
                                                 developerPasswordInput = ""
                                                 developerPasswordError = false
@@ -1093,9 +1087,6 @@ fun SettingsScreen(
                                                 showDeveloperVerifyDialog = true
                                             },
                                             onCancel = {
-                                                    "SettingsScreen",
-                                                    "Developer biometric canceled by user"
-                                                )
                                                 Toast.makeText(
                                                     context,
                                                     context.getString(R.string.use_master_password),
@@ -1106,9 +1097,6 @@ fun SettingsScreen(
                                         )
                                     }
                                     else -> {
-                                            "SettingsScreen",
-                                            "Biometric unavailable, showing password dialog for developer settings"
-                                        )
                                         if (biometricEnabled) {
                                             Toast.makeText(
                                                 context,
