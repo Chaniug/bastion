@@ -35,7 +35,7 @@ class SettingsViewModel(
 ) : ViewModel() {
     /**
      * 统一的事务包装：在 viewModelScope 中把变更提交到 SettingsManager。
-     * 所有 update*/add*/delete* 等委托方法复用它，消除重复的 launch 样板。
+     * 所有 update/add/delete 等委托方法复用它，消除重复的 launch 样板。
      */
     private inline fun commitUpdate(block: suspend SettingsManager.() -> Unit) =
         viewModelScope.launch { settingsManager.block() }

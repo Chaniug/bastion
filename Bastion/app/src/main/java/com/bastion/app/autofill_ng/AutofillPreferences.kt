@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import com.bastion.app.autofill_ng.core.AutofillLogger
+import com.bastion.app.utils.dataStore
 
 /**
  * 自动填充配置管理
@@ -36,8 +37,9 @@ class AutofillPreferences(private val context: Context) {
 
     
     companion object {
-        // 统一存储：与 SettingsManager 共用 "settings" DataStore（两套 key 无重叠，零冲突）
-        private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+        // 统一存储：与 SettingsManager 共用 "settings" DataStore（两套 key 无重叠，零冲突）。
+        // 委托本身声明在 com.bastion.app.utils.AppDataStore，全模块唯一，
+        // 禁止在此重复声明 preferencesDataStore(name = "settings")。
 
         // 旧版 "autofill_settings" DataStore（迁移来源，迁移完成后不再写入）
         private val Context.legacyAutofillDataStore: DataStore<Preferences> by preferencesDataStore(name = "autofill_settings")
