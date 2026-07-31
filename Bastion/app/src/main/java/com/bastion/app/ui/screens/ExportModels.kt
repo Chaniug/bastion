@@ -5,6 +5,5 @@ package com.bastion.app.ui.screens
  */
 enum class ExportOption {
     ZIP_BACKUP,
-    KDBX,
-    STEAM_MAFILE
+    KDBX
 }

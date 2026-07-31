@@ -19,7 +19,7 @@ import com.bastion.app.ui.screens.GeneratorScreen
 import com.bastion.app.ui.screens.NoteListScreen
 import com.bastion.app.ui.screens.PasskeyListScreen
 import com.bastion.app.ui.screens.SendScreen
-import com.bastion.app.steam.ui.SteamScreen
+
 import com.bastion.app.ui.vaultv2.VaultV2Pane
 import com.bastion.app.ui.vaultv2.VaultV2PaneState
 import com.bastion.app.viewmodel.BankCardViewModel
@@ -75,10 +75,6 @@ internal fun CompactDraggableTabContent(
     totpViewModel: com.bastion.app.viewmodel.TotpViewModel,
     onTotpOpen: (Long) -> Unit,
     onNavigateToQuickTotpScan: () -> Unit,
-    pendingSteamQrResult: String? = null,
-    pendingSteamQrAccountId: Long? = null,
-    onConsumePendingSteamQrResult: () -> Unit = {},
-    onScanSteamQrCode: (Long?) -> Unit = {},
     onNavigateToFidoQrScan: () -> Unit,
     onTotpSelectionModeChange: (
         Boolean,
@@ -356,17 +352,6 @@ internal fun CompactDraggableTabContent(
                     onBitwardenEvent = onSendBitwardenEvent,
                     showStandaloneSettingsEntry = showStandaloneSettingsEntry,
                     onOpenStandaloneSettings = onOpenStandaloneSettings
-                )
-            }
-            BottomNavItem.Steam -> {
-                SteamScreen(
-                    showStandaloneSettingsEntry = showStandaloneSettingsEntry,
-                    onOpenStandaloneSettings = onOpenStandaloneSettings,
-                    pendingSteamQrResult = pendingSteamQrResult,
-                    pendingSteamQrAccountId = pendingSteamQrAccountId,
-                    onConsumePendingSteamQrResult = onConsumePendingSteamQrResult,
-                    onScanSteamQrCode = onScanSteamQrCode,
-                    modifier = Modifier.fillMaxSize()
                 )
             }
             BottomNavItem.Settings -> {

@@ -1154,9 +1154,6 @@ private fun BackupItem(
                     if (stats.passkeyImported > 0) {
                         summaryParts += "通行密钥 ${stats.passkeyImported}"
                     }
-                    if (stats.steamAccountImported > 0) {
-                        summaryParts += "Steam maFile ${stats.steamAccountImported}"
-                    }
                     append(
                         context.getString(
                             R.string.webdav_restore_summary_success,

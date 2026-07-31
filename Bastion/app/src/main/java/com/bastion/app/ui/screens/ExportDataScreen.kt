@@ -24,8 +24,6 @@ import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.launch
 import com.bastion.app.R
 import com.bastion.app.data.BackupPreferences
-import com.bastion.app.data.PreparedSteamMaFileExport
-import com.bastion.app.data.SteamMaFileExportCandidate
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.M3IdentityVerifyDialog
 import com.bastion.app.ui.components.OutlinedTextField
@@ -49,16 +47,7 @@ fun ExportDataScreen(
         Result.failure(Exception("Not implemented"))
     },
     onExportKdbx: suspend (Uri, String) -> Result<String> = { _, _ -> Result.failure(Exception("Not implemented")) },
-    biometricEnabled: Boolean = false,
-    onLoadSteamMaFileCandidates: suspend () -> Result<List<SteamMaFileExportCandidate>> = {
-        Result.success(emptyList())
-    },
-    onPrepareSteamMaFileExport: suspend (Set<Long>) -> Result<PreparedSteamMaFileExport> = {
-        Result.failure(Exception("Not implemented"))
-    },
-    onWritePreparedSteamMaFileExport: suspend (Uri, PreparedSteamMaFileExport) -> Result<String> = { _, _ ->
-        Result.failure(Exception("Not implemented"))
-    }
+    biometricEnabled: Boolean = false
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -81,18 +70,6 @@ fun ExportDataScreen(
     var zipBackupExpanded by remember { mutableStateOf(false) }
     var pendingPreparedZipBackup by remember { mutableStateOf<Pair<File, String>?>(null) }
 
-    // Steam maFile 导出
-    var steamMaFileExpanded by remember { mutableStateOf(false) }
-    var steamMaFileCandidates by remember { mutableStateOf<List<SteamMaFileExportCandidate>>(emptyList()) }
-    var selectedSteamMaFileAccountIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var isLoadingSteamMaFileCandidates by remember { mutableStateOf(false) }
-    var hasLoadedSteamMaFileCandidates by remember { mutableStateOf(false) }
-    var showSteamMaFileRiskDialog by remember { mutableStateOf(false) }
-    var showSteamMaFileIdentityDialog by remember { mutableStateOf(false) }
-    var steamMaFilePasswordInput by remember { mutableStateOf("") }
-    var steamMaFilePasswordError by remember { mutableStateOf(false) }
-    var pendingPreparedSteamMaFileExport by remember { mutableStateOf<PreparedSteamMaFileExport?>(null) }
-    
     // 检测 WebDAV 是否已配置
     val webDavHelper = remember { WebDavHelper(context) }
     val isWebDavConfigured = remember { webDavHelper.isConfigured() }
@@ -111,37 +88,9 @@ fun ExportDataScreen(
         }
     }
 
-    fun loadSteamMaFileCandidates() {
-        if (isLoadingSteamMaFileCandidates) return
-        isLoadingSteamMaFileCandidates = true
-        scope.launch {
-            onLoadSteamMaFileCandidates().fold(
-                onSuccess = { accounts ->
-                    hasLoadedSteamMaFileCandidates = true
-                    steamMaFileCandidates = accounts
-                    val availableIds = accounts.map { it.id }.toSet()
-                    selectedSteamMaFileAccountIds = if (selectedSteamMaFileAccountIds.isEmpty()) {
-                        availableIds
-                    } else {
-                        selectedSteamMaFileAccountIds.intersect(availableIds)
-                    }
-                    isLoadingSteamMaFileCandidates = false
-                },
-                onFailure = { error ->
-                    hasLoadedSteamMaFileCandidates = false
-                    isLoadingSteamMaFileCandidates = false
-                    snackbarHostState.showSnackbar(
-                        error.message ?: context.getString(R.string.export_data_error)
-                    )
-                }
-            )
-        }
-    }
-
     suspend fun handleExportUri(safeUri: Uri) {
         isExporting = true
         val preparedZipBackup = pendingPreparedZipBackup
-        val preparedSteamMaFileExport = pendingPreparedSteamMaFileExport
         try {
             val result = when (selectedOption) {
                 ExportOption.ZIP_BACKUP -> if (preparedZipBackup != null) {
@@ -150,9 +99,6 @@ fun ExportDataScreen(
                     onExportZip(safeUri, backupPreferences)
                 }
                 ExportOption.KDBX -> onExportKdbx(safeUri, kdbxPassword)
-                ExportOption.STEAM_MAFILE -> preparedSteamMaFileExport?.let {
-                    onWritePreparedSteamMaFileExport(safeUri, it)
-                } ?: Result.failure(Exception(context.getString(R.string.export_data_error)))
             }
 
             isExporting = false
@@ -178,10 +124,6 @@ fun ExportDataScreen(
             if (preparedZipBackup != null) {
                 pendingPreparedZipBackup = null
             }
-            preparedSteamMaFileExport?.file?.delete()
-            if (preparedSteamMaFileExport != null) {
-                pendingPreparedSteamMaFileExport = null
-            }
         }
     }
 
@@ -192,8 +134,6 @@ fun ExportDataScreen(
         if (result.resultCode != Activity.RESULT_OK) {
             pendingPreparedZipBackup?.first?.delete()
             pendingPreparedZipBackup = null
-            pendingPreparedSteamMaFileExport?.file?.delete()
-            pendingPreparedSteamMaFileExport = null
             isExporting = false
             return@rememberLauncherForActivityResult
         }
@@ -201,45 +141,11 @@ fun ExportDataScreen(
         if (safeUri == null) {
             pendingPreparedZipBackup?.first?.delete()
             pendingPreparedZipBackup = null
-            pendingPreparedSteamMaFileExport?.file?.delete()
-            pendingPreparedSteamMaFileExport = null
             isExporting = false
             return@rememberLauncherForActivityResult
         }
         scope.launch {
             handleExportUri(safeUri)
-        }
-    }
-
-    fun launchSteamMaFileCreateDocument() {
-        isExporting = true
-        scope.launch {
-            val prepared = onPrepareSteamMaFileExport(selectedSteamMaFileAccountIds)
-            prepared.onSuccess { export ->
-                pendingPreparedSteamMaFileExport = export
-                val createDocumentIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = export.mimeType
-                    putExtra(Intent.EXTRA_TITLE, export.fileName)
-                }
-                try {
-                    filePickerLauncher.launch(createDocumentIntent)
-                } catch (e: Exception) {
-                    pendingPreparedSteamMaFileExport?.file?.delete()
-                    pendingPreparedSteamMaFileExport = null
-                    isExporting = false
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            context.getString(R.string.error_launch_export, e.message ?: "unknown")
-                        )
-                    }
-                }
-            }.onFailure { error ->
-                isExporting = false
-                snackbarHostState.showSnackbar(
-                    error.message ?: context.getString(R.string.export_data_error)
-                )
-            }
         }
     }
 
@@ -268,28 +174,6 @@ fun ExportDataScreen(
     
     // 启动导出
     fun startExport() {
-        if (selectedOption == ExportOption.STEAM_MAFILE) {
-            if (isLoadingSteamMaFileCandidates) return
-            if (!hasLoadedSteamMaFileCandidates) {
-                loadSteamMaFileCandidates()
-                return
-            }
-            if (steamMaFileCandidates.isEmpty()) {
-                scope.launch {
-                    snackbarHostState.showSnackbar(context.getString(R.string.steam_mafile_export_empty))
-                }
-                return
-            }
-            if (selectedSteamMaFileAccountIds.isEmpty()) {
-                scope.launch {
-                    snackbarHostState.showSnackbar(context.getString(R.string.steam_mafile_export_no_selection))
-                }
-                return
-            }
-            showSteamMaFileRiskDialog = true
-            return
-        }
-
         // KDBX 导出需要密码
         if (selectedOption == ExportOption.KDBX) {
             if (kdbxPassword.isEmpty()) {
@@ -372,123 +256,6 @@ fun ExportDataScreen(
                 TextButton(onClick = { showKdbxPasswordDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
-            }
-        )
-    }
-
-    if (showSteamMaFileRiskDialog) {
-        val selectedAccounts = steamMaFileCandidates.filter { it.id in selectedSteamMaFileAccountIds }
-        AlertDialog(
-            onDismissRequest = { showSteamMaFileRiskDialog = false },
-            icon = {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            },
-            title = { Text(stringResource(R.string.steam_mafile_export_confirm_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        stringResource(
-                            R.string.steam_mafile_export_confirm_message,
-                            selectedAccounts.size
-                        )
-                    )
-                    Text(
-                        selectedAccounts.joinToString("\n") { account ->
-                            "- ${account.title} (${account.subtitle})"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSteamMaFileRiskDialog = false
-                        showSteamMaFileIdentityDialog = true
-                    }
-                ) {
-                    Text(stringResource(R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSteamMaFileRiskDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
-    if (showSteamMaFileIdentityDialog) {
-        val biometricAction = if (
-            activity != null &&
-            biometricEnabled &&
-            biometricHelper.isBiometricAvailable()
-        ) {
-            {
-                biometricHelper.authenticate(
-                    activity = activity,
-                    title = context.getString(R.string.verify_identity),
-                    subtitle = context.getString(R.string.steam_mafile_export_verify_subtitle),
-                    onSuccess = {
-                        showSteamMaFileIdentityDialog = false
-                        steamMaFilePasswordInput = ""
-                        steamMaFilePasswordError = false
-                        launchSteamMaFileCreateDocument()
-                    },
-                    onError = { error ->
-                        scope.launch {
-                            snackbarHostState.showSnackbar(error)
-                        }
-                    },
-                    onFailed = {}
-                )
-            }
-        } else {
-            null
-        }
-        M3IdentityVerifyDialog(
-            title = context.getString(R.string.verify_identity),
-            message = context.getString(R.string.steam_mafile_export_verify_message),
-            passwordValue = steamMaFilePasswordInput,
-            onPasswordChange = {
-                steamMaFilePasswordInput = it
-                steamMaFilePasswordError = false
-            },
-            onDismiss = {
-                showSteamMaFileIdentityDialog = false
-                steamMaFilePasswordInput = ""
-                steamMaFilePasswordError = false
-            },
-            onConfirm = {
-                val verified = if (securityManager.isMasterPasswordSet()) {
-                    securityManager.verifyMasterPassword(steamMaFilePasswordInput)
-                } else {
-                    true
-                }
-                if (verified) {
-                    showSteamMaFileIdentityDialog = false
-                    steamMaFilePasswordInput = ""
-                    steamMaFilePasswordError = false
-                    launchSteamMaFileCreateDocument()
-                } else {
-                    steamMaFilePasswordError = true
-                }
-            },
-            confirmText = context.getString(R.string.start_export),
-            confirmEnabled = !securityManager.isMasterPasswordSet() || steamMaFilePasswordInput.isNotBlank(),
-            destructiveConfirm = false,
-            isPasswordError = steamMaFilePasswordError,
-            passwordErrorText = context.getString(R.string.current_password_incorrect),
-            onBiometricClick = biometricAction,
-            biometricHintText = if (biometricAction == null) {
-                context.getString(R.string.biometric_not_available)
-            } else {
-                null
             }
         )
     }
@@ -596,49 +363,6 @@ fun ExportDataScreen(
                 onClick = { selectedOption = ExportOption.KDBX }
             )
 
-            ExportOptionCard(
-                icon = Icons.Default.VerifiedUser,
-                title = stringResource(R.string.export_option_steam_mafile),
-                description = stringResource(R.string.export_option_steam_mafile_desc),
-                selected = selectedOption == ExportOption.STEAM_MAFILE,
-                onClick = {
-                    if (selectedOption == ExportOption.STEAM_MAFILE) {
-                        steamMaFileExpanded = !steamMaFileExpanded
-                    } else {
-                        selectedOption = ExportOption.STEAM_MAFILE
-                        steamMaFileExpanded = true
-                        if (!hasLoadedSteamMaFileCandidates) {
-                            loadSteamMaFileCandidates()
-                        }
-                    }
-                },
-                expandable = true,
-                expanded = selectedOption == ExportOption.STEAM_MAFILE && steamMaFileExpanded,
-                expandedContent = {
-                    SteamMaFileExportOptionsContent(
-                        candidates = steamMaFileCandidates,
-                        selectedIds = selectedSteamMaFileAccountIds,
-                        isLoading = isLoadingSteamMaFileCandidates,
-                        onToggle = { id ->
-                            selectedSteamMaFileAccountIds = if (id in selectedSteamMaFileAccountIds) {
-                                selectedSteamMaFileAccountIds - id
-                            } else {
-                                selectedSteamMaFileAccountIds + id
-                            }
-                        },
-                        onSelectAll = {
-                            selectedSteamMaFileAccountIds = steamMaFileCandidates.map { it.id }.toSet()
-                        },
-                        onClear = {
-                            selectedSteamMaFileAccountIds = emptySet()
-                        },
-                        onRefresh = {
-                            loadSteamMaFileCandidates()
-                        }
-                    )
-                }
-            )
-            
             Spacer(modifier = Modifier.weight(1f))
             
             // 导出按钮
@@ -695,92 +419,6 @@ fun ExportDataScreen(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun SteamMaFileExportOptionsContent(
-    candidates: List<SteamMaFileExportCandidate>,
-    selectedIds: Set<Long>,
-    isLoading: Boolean,
-    onToggle: (Long) -> Unit,
-    onSelectAll: () -> Unit,
-    onClear: () -> Unit,
-    onRefresh: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.steam_mafile_export_selected_count, selectedIds.size),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(onClick = onSelectAll, enabled = candidates.isNotEmpty()) {
-                Text(stringResource(R.string.steam_mafile_export_select_all))
-            }
-            TextButton(onClick = onClear, enabled = selectedIds.isNotEmpty()) {
-                Text(stringResource(R.string.steam_mafile_export_clear))
-            }
-            IconButton(onClick = onRefresh, enabled = !isLoading) {
-                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
-            }
-        }
-
-        if (isLoading) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                Text(
-                    text = stringResource(R.string.steam_mafile_export_loading),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        } else if (candidates.isEmpty()) {
-            Text(
-                text = stringResource(R.string.steam_mafile_export_empty),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-            )
-        } else {
-            candidates.forEach { account ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = account.id in selectedIds,
-                        onCheckedChange = { onToggle(account.id) },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary,
-                            uncheckedColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                        )
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = account.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = account.subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                        )
-                    }
-                }
-            }
         }
     }
 }

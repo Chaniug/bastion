@@ -137,7 +137,6 @@ import com.bastion.app.ui.screens.MdbxWebDavOpenScreen
 import com.bastion.app.ui.screens.KeePassKdbxViewModel
 import com.bastion.app.ui.theme.BastionTheme
 import com.bastion.app.utils.LocaleHelper
-import com.bastion.app.steam.ui.SteamQrScannerScreen
 import com.bastion.app.viewmodel.BankCardViewModel
 import com.bastion.app.viewmodel.BillingAddressViewModel
 import com.bastion.app.viewmodel.DocumentViewModel
@@ -1043,12 +1042,6 @@ fun BastionContent(
             val mainQrResult = navController.currentBackStackEntry
                 ?.savedStateHandle
                 ?.get<String>("qr_result")
-            val steamQrResult = navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.get<String>("steam_qr_result")
-            val steamQrAccountId = navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.get<Long>("steam_qr_account_id")
 
             androidx.compose.runtime.CompositionLocalProvider(
                 com.bastion.app.ui.LocalAnimatedVisibilityScope provides this
@@ -1091,21 +1084,6 @@ fun BastionContent(
                 },
                 onNavigateToQuickTotpScan = {
                     navController.navigate(Screen.QuickTotpScan.route)
-                },
-                pendingSteamQrResult = steamQrResult,
-                pendingSteamQrAccountId = steamQrAccountId,
-                onConsumePendingSteamQrResult = {
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.remove<String>("steam_qr_result")
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.remove<Long>("steam_qr_account_id")
-                },
-                onScanSteamQrCode = { accountId ->
-                    navController.navigate(Screen.SteamQrScan.createRoute(accountId)) {
-                        launchSingleTop = true
-                    }
                 },
                 pendingPasswordAuthenticatorQrResult = mainQrResult,
                 onConsumePendingPasswordAuthenticatorQrResult = {
@@ -2344,41 +2322,6 @@ fun BastionContent(
             )
         }
 
-        composable(
-            route = Screen.SteamQrScan.route,
-            arguments = listOf(
-                navArgument(Screen.SteamQrScan.ARG_ACCOUNT_ID) {
-                    type = NavType.LongType
-                    defaultValue = 0L
-                }
-            ),
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) { backStackEntry ->
-            val initialSteamAccountId = backStackEntry.arguments
-                ?.getLong(Screen.SteamQrScan.ARG_ACCOUNT_ID)
-                ?.takeIf { it != 0L }
-            SteamQrScannerScreen(
-                initialAccountId = initialSteamAccountId,
-                onQrCodeScanned = { qrData, accountId ->
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("steam_qr_result", qrData)
-                    if (accountId != null) {
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("steam_qr_account_id", accountId)
-                    }
-                    navController.popBackStack()
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
         composable(Screen.FidoQrScan.route) {
             val context = LocalContext.current
             com.bastion.app.ui.screens.QrScannerScreen(
@@ -2603,16 +2546,7 @@ fun BastionContent(
                         Result.failure(Exception("无法打开文件"))
                     }
                 },
-                biometricEnabled = settings.biometricEnabled,
-                onLoadSteamMaFileCandidates = {
-                    dataExportImportViewModel.loadSteamMaFileExportCandidates()
-                },
-                onPrepareSteamMaFileExport = { accountIds ->
-                    dataExportImportViewModel.prepareSteamMaFileExport(accountIds)
-                },
-                onWritePreparedSteamMaFileExport = { uri, preparedExport ->
-                    dataExportImportViewModel.writePreparedSteamMaFileExport(uri, preparedExport)
-                }
+                biometricEnabled = settings.biometricEnabled
             )
         }
 
@@ -2655,23 +2589,6 @@ fun BastionContent(
                 },
                 onImportEncryptedAegis = { uri, password ->
                     dataExportImportViewModel.importEncryptedAegisJson(uri, password)
-                },
-                onImportSteamMaFile = { uri ->
-                    dataExportImportViewModel.importSteamMaFile(uri)
-                },
-                onBeginSteamLoginImport = { userName, password, customName ->
-                    dataExportImportViewModel.beginSteamLoginImport(userName, password, customName)
-                },
-                onSubmitSteamLoginImportCode = { pendingSessionId, code, confirmationType, customName ->
-                    dataExportImportViewModel.submitSteamLoginImportCode(
-                        pendingSessionId = pendingSessionId,
-                        code = code,
-                        confirmationType = confirmationType,
-                        customName = customName
-                    )
-                },
-                onClearSteamLoginImportSession = { sessionId ->
-                    dataExportImportViewModel.clearSteamLoginImportSession(sessionId)
                 },
                 onImportZip = { uri, password ->
                     dataExportImportViewModel.importZipBackup(uri, password)
@@ -3442,10 +3359,6 @@ fun BastionContent(
                 passwordDetailSecurityAnalysisEnabled = settings.passwordDetailSecurityAnalysisEnabled,
                 onPasswordDetailSecurityAnalysisEnabledChange = { enabled ->
                     settingsViewModel.updatePasswordDetailSecurityAnalysisEnabled(enabled)
-                },
-                steamMiniProfileBackgroundEnabled = settings.steamMiniProfileBackgroundEnabled,
-                onSteamMiniProfileBackgroundEnabledChange = { enabled ->
-                    settingsViewModel.updateSteamMiniProfileBackgroundEnabled(enabled)
                 },
                 passwordSwipeSelectionMode = settings.passwordSwipeSelectionMode,
                 onPasswordSwipeSelectionModeChange = { mode ->

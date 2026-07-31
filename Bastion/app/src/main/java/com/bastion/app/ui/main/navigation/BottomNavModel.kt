@@ -30,7 +30,6 @@ sealed class BottomNavItem(
     object Notes : BottomNavItem(BottomNavContentTab.NOTES, Icons.Default.Note)
     object Send : BottomNavItem(BottomNavContentTab.SEND, Icons.Default.Send)
     object Passkey : BottomNavItem(BottomNavContentTab.PASSKEY, Icons.Default.Key)
-    object Steam : BottomNavItem(BottomNavContentTab.STEAM, SteamDockIcon)
     object Settings : BottomNavItem(null, Icons.Default.Settings)
 }
 
@@ -43,7 +42,6 @@ fun BottomNavContentTab.toBottomNavItem(): BottomNavItem = when (this) {
     BottomNavContentTab.NOTES -> BottomNavItem.Notes
     BottomNavContentTab.SEND -> BottomNavItem.Send
     BottomNavContentTab.PASSKEY -> BottomNavItem.Passkey
-    BottomNavContentTab.STEAM -> BottomNavItem.Steam
 }
 
 fun BottomNavItem.fullLabelRes(): Int = when (this) {
@@ -55,7 +53,6 @@ fun BottomNavItem.fullLabelRes(): Int = when (this) {
     BottomNavItem.Notes -> R.string.nav_notes
     BottomNavItem.Send -> R.string.nav_v2_send
     BottomNavItem.Passkey -> R.string.nav_passkey
-    BottomNavItem.Steam -> R.string.nav_steam
     BottomNavItem.Settings -> R.string.nav_settings
 }
 
@@ -68,7 +65,6 @@ fun BottomNavItem.shortLabelRes(): Int = when (this) {
     BottomNavItem.Notes -> R.string.nav_notes_short
     BottomNavItem.Send -> R.string.nav_v2_send_short
     BottomNavItem.Passkey -> R.string.nav_passkey_short
-    BottomNavItem.Steam -> R.string.nav_steam_short
     BottomNavItem.Settings -> R.string.nav_settings_short
 }
 

@@ -63,8 +63,7 @@ enum class BottomNavContentTab {
     GENERATOR,
     NOTES,
     SEND,         // 发送（安全分享）
-    PASSKEY,  // 通行密钥
-    STEAM;    // Steam local guard
+    PASSKEY;  // 通行密钥
 
     companion object {
         val DEFAULT_ORDER: List<BottomNavContentTab> = listOf(
@@ -74,8 +73,7 @@ enum class BottomNavContentTab {
             CARD_WALLET,
             PASSKEY,
             NOTES,
-            SEND,
-            STEAM
+            SEND
         )
 
         fun sanitizeOrder(order: List<BottomNavContentTab>): List<BottomNavContentTab> {
@@ -105,7 +103,6 @@ data class BottomNavVisibility(
     val notes: Boolean = true,        // 笔记功能默认开启
     val send: Boolean = false,        // 发送功能默认关闭
     val passkey: Boolean = true,      // 通行密钥功能默认开启
-    val steam: Boolean = false        // Steam 功能默认隐藏
 ) {
     fun isVisible(tab: BottomNavContentTab): Boolean = when (tab) {
         BottomNavContentTab.VAULT_V2 -> vaultV2
@@ -117,7 +114,6 @@ data class BottomNavVisibility(
         BottomNavContentTab.NOTES -> notes
         BottomNavContentTab.SEND -> send
         BottomNavContentTab.PASSKEY -> passkey
-        BottomNavContentTab.STEAM -> steam
     }
 
     fun visibleCount(): Int = listOf(
@@ -127,8 +123,7 @@ data class BottomNavVisibility(
         cardWallet,
         generator,
         notes,
-        send,
-        steam
+        send
     ).count { it }
 }
 
@@ -521,7 +516,6 @@ data class AppSettings(
     val hideFabOnScroll: Boolean = false, // 滚动时隐藏悬浮按钮
     val securityAnalysisAutoEnabled: Boolean = false, // 安全分析自动分析
     val passwordDetailSecurityAnalysisEnabled: Boolean = true,
-    val steamMiniProfileBackgroundEnabled: Boolean = false,
     val bitwardenBottomStatusBarEnabled: Boolean = false, // Bitwarden 底部状态栏（实验）
     val copyNextCodeWhenExpiring: Boolean = true, // 倒计时<=5秒时复制下一个验证码（默认开启）
     val notificationValidatorEnabled: Boolean = false, // 通知栏验证器开关

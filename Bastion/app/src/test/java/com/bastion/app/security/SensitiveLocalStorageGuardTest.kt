@@ -100,7 +100,6 @@ class SensitiveLocalStorageGuardTest {
 
         assertFalse(importViewModel.contains("成功插入到PasswordEntry表: ${'$'}{exportItem.title}"))
         assertFalse(importViewModel.contains("跳过重复条目: ${'$'}{aegisEntry.name}"))
-        assertFalse(importViewModel.contains("成功插入Steam Guard: ${'$'}title"))
         assertFalse(imageManager.contains("uri=${'$'}uri"))
         assertFalse(imageManager.contains("path=${'$'}{file.absolutePath}"))
         assertFalse(noteScreen.contains("tempPath=${'$'}tempPath"))

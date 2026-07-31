@@ -98,7 +98,6 @@ data class PageAdjustmentSettingsSnapshot(
     val bottomNavVisibilityNotes: Boolean = false,
     val bottomNavVisibilitySend: Boolean = false,
     val bottomNavVisibilityPasskey: Boolean = true,
-    val bottomNavVisibilitySteam: Boolean = false,
     val useDraggableBottomNav: Boolean = false,
     val autoHideBottomNavWhenSingleTab: Boolean = false,
     val passwordListQuickAccessEnabled: Boolean = true,
@@ -119,7 +118,6 @@ data class PageAdjustmentSettingsSnapshot(
     val copyNextCodeWhenExpiring: Boolean = false,
     val securityAnalysisAutoEnabled: Boolean = false,
     val passwordDetailSecurityAnalysisEnabled: Boolean = true,
-    val steamMiniProfileBackgroundEnabled: Boolean = false,
     val autofillAuthRequired: Boolean = true,
     val iconCardsEnabled: Boolean = true,
     val appLauncherIcon: String = com.bastion.app.data.AppLauncherIcon.MODERN.name,
@@ -172,7 +170,6 @@ class SettingsManager(private val context: Context) {
         private val SHOW_GENERATOR_TAB_KEY = booleanPreferencesKey("show_generator_tab")  // 添加生成器标签键
         private val SHOW_SEND_TAB_KEY = booleanPreferencesKey("show_send_tab")
         private val SHOW_PASSKEY_TAB_KEY = booleanPreferencesKey("show_passkey_tab")  // 添加 Passkey 标签键
-        private val SHOW_STEAM_TAB_KEY = booleanPreferencesKey("show_steam_tab")
         private val DYNAMIC_COLOR_ENABLED_KEY = booleanPreferencesKey("dynamic_color_enabled")
         private val BOTTOM_NAV_ORDER_KEY = stringPreferencesKey("bottom_nav_order")
         private val USE_DRAGGABLE_BOTTOM_NAV_KEY = booleanPreferencesKey("use_draggable_bottom_nav")
@@ -240,8 +237,6 @@ class SettingsManager(private val context: Context) {
         private val SECURITY_ANALYSIS_AUTO_ENABLED_KEY = booleanPreferencesKey("security_analysis_auto_enabled") // 安全分析自动分析
         private val PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY =
             booleanPreferencesKey("password_detail_security_analysis_enabled")
-        private val STEAM_MINI_PROFILE_BACKGROUND_ENABLED_KEY =
-            booleanPreferencesKey("steam_mini_profile_background_enabled")
         private val NOTE_GRID_LAYOUT_KEY = booleanPreferencesKey("note_grid_layout") // 笔记网格布局
         private val NOTE_CODE_BLOCK_COLLAPSE_MODE_KEY = stringPreferencesKey("note_code_block_collapse_mode") // 笔记代码块折叠模式
         private val AUTOFILL_AUTH_REQUIRED_KEY = booleanPreferencesKey("autofill_auth_required") // 自动填充验证
@@ -529,8 +524,7 @@ class SettingsManager(private val context: Context) {
                 generator = preferences[SHOW_GENERATOR_TAB_KEY] ?: false,
                 notes = preferences[SHOW_NOTES_TAB_KEY] ?: false,
                 send = preferences[SHOW_SEND_TAB_KEY] ?: false,
-                passkey = preferences[SHOW_PASSKEY_TAB_KEY] ?: true,
-                steam = preferences[SHOW_STEAM_TAB_KEY] ?: false
+                passkey = preferences[SHOW_PASSKEY_TAB_KEY] ?: true
             ),
             bottomNavOrder = sanitizedOrder,
             useDraggableBottomNav = preferences[USE_DRAGGABLE_BOTTOM_NAV_KEY] ?: false,
@@ -561,8 +555,6 @@ class SettingsManager(private val context: Context) {
             securityAnalysisAutoEnabled = preferences[SECURITY_ANALYSIS_AUTO_ENABLED_KEY] ?: false,
             passwordDetailSecurityAnalysisEnabled =
                 preferences[PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY] ?: true,
-            steamMiniProfileBackgroundEnabled =
-                preferences[STEAM_MINI_PROFILE_BACKGROUND_ENABLED_KEY] ?: false,
             bitwardenBottomStatusBarEnabled = preferences[BITWARDEN_BOTTOM_STATUS_BAR_ENABLED_KEY] ?: false,
             copyNextCodeWhenExpiring = preferences[COPY_NEXT_CODE_WHEN_EXPIRING_KEY] ?: false,
             // Temporarily hard-disabled for stability.
@@ -786,7 +778,6 @@ class SettingsManager(private val context: Context) {
                 BottomNavContentTab.NOTES -> preferences[SHOW_NOTES_TAB_KEY] = visible
                 BottomNavContentTab.SEND -> preferences[SHOW_SEND_TAB_KEY] = visible
                 BottomNavContentTab.PASSKEY -> preferences[SHOW_PASSKEY_TAB_KEY] = visible
-                BottomNavContentTab.STEAM -> preferences[SHOW_STEAM_TAB_KEY] = visible
             }
         }
     }
@@ -895,12 +886,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updatePasswordDetailSecurityAnalysisEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateSteamMiniProfileBackgroundEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[STEAM_MINI_PROFILE_BACKGROUND_ENABLED_KEY] = enabled
         }
     }
 
@@ -1251,7 +1236,6 @@ class SettingsManager(private val context: Context) {
             bottomNavVisibilityNotes = settings.bottomNavVisibility.notes,
             bottomNavVisibilitySend = settings.bottomNavVisibility.send,
             bottomNavVisibilityPasskey = settings.bottomNavVisibility.passkey,
-            bottomNavVisibilitySteam = settings.bottomNavVisibility.steam,
             useDraggableBottomNav = settings.useDraggableBottomNav,
             autoHideBottomNavWhenSingleTab = settings.autoHideBottomNavWhenSingleTab,
             passwordListQuickAccessEnabled = settings.passwordListQuickAccessEnabled,
@@ -1273,7 +1257,6 @@ class SettingsManager(private val context: Context) {
             copyNextCodeWhenExpiring = settings.copyNextCodeWhenExpiring,
             securityAnalysisAutoEnabled = settings.securityAnalysisAutoEnabled,
             passwordDetailSecurityAnalysisEnabled = settings.passwordDetailSecurityAnalysisEnabled,
-            steamMiniProfileBackgroundEnabled = settings.steamMiniProfileBackgroundEnabled,
             autofillAuthRequired = settings.autofillAuthRequired,
             iconCardsEnabled = settings.iconCardsEnabled,
             appLauncherIcon = settings.appLauncherIcon.name,
@@ -1421,7 +1404,6 @@ class SettingsManager(private val context: Context) {
                 preferences[SHOW_NOTES_TAB_KEY] = snapshot.bottomNavVisibilityNotes
                 preferences[SHOW_SEND_TAB_KEY] = snapshot.bottomNavVisibilitySend
                 preferences[SHOW_PASSKEY_TAB_KEY] = snapshot.bottomNavVisibilityPasskey
-                preferences[SHOW_STEAM_TAB_KEY] = snapshot.bottomNavVisibilitySteam
                 preferences[USE_DRAGGABLE_BOTTOM_NAV_KEY] = snapshot.useDraggableBottomNav
                 preferences[AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY] =
                     snapshot.autoHideBottomNavWhenSingleTab
@@ -1451,8 +1433,6 @@ class SettingsManager(private val context: Context) {
             preferences[SECURITY_ANALYSIS_AUTO_ENABLED_KEY] = snapshot.securityAnalysisAutoEnabled
             preferences[PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY] =
                 snapshot.passwordDetailSecurityAnalysisEnabled
-            preferences[STEAM_MINI_PROFILE_BACKGROUND_ENABLED_KEY] =
-                snapshot.steamMiniProfileBackgroundEnabled
             preferences[AUTOFILL_AUTH_REQUIRED_KEY] = snapshot.autofillAuthRequired
             preferences[ICON_CARDS_ENABLED_KEY] = snapshot.iconCardsEnabled
             val parsedAppLauncherIcon = runCatchingObserved {

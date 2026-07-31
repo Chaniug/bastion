@@ -10,9 +10,7 @@ import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.security.SecurityManager
-import com.bastion.app.steam.core.SteamTotp
-import com.bastion.app.steam.data.SteamAccountRepository
-import com.bastion.app.steam.data.SteamDatabase
+
 import com.bastion.app.util.TotpDataResolver
 import com.bastion.app.util.TotpGenerator
 import com.bastion.app.autofill_ng.service.AutofillOtpNotificationService
@@ -71,18 +69,8 @@ suspend fun performOtpAutofillSideEffects(
             return
         }
 
-        // Steam Guard 快捷通道：独立于常规 TOTP 存储，resolveOtpDataForPassword 查不到。
-        val steamCode = resolveSteamGuardCodeForPassword(context, password)
-        if (steamCode != null) {
-            if (autoCopy) {
-                writeClipboard(context, steamCode)
-                Log.i(TAG, "copied Steam Guard code (len=${steamCode.length}), passwordId=${password.id}")
-            }
-            if (showNotification) {
-                Log.d(TAG, "Steam Guard: live notification refresh not supported, skipped")
-            }
-            return
-        }
+        // 密码库本身已原生支持 Steam TOTP（OtpType.STEAM / TotpGenerator.generateSteamCode），
+        // 不需要再查独立 Steam 模块。
 
         val totpData = resolveOtpDataForPassword(context, password)
         if (totpData == null) {
@@ -120,7 +108,6 @@ suspend fun performOtpAutofillSideEffects(
 
 /** 供填充 OTP 字段时直接生成验证码（不复制）。 */
 suspend fun generateOtpCodeForPassword(context: Context, password: PasswordEntry): String? {
-    resolveSteamGuardCodeForPassword(context, password)?.let { return it }
     val totpData = resolveOtpDataForPassword(context, password)
     if (totpData == null) {
         Log.w(TAG, "generateOtpCodeForPassword: no TOTP resolved, passwordId=${password.id}")
@@ -156,46 +143,6 @@ private suspend fun resolveOtpDataForPassword(context: Context, password: Passwo
         .takeIf { it.isNotBlank() }
         ?.let { parsePasswordAuthenticatorTotpData(context, it) }
     return resolveOtpFromExistingValidators(context, password, passwordTotpData) ?: passwordTotpData
-}
-
-/**
- * 解析 Steam Guard 验证码：Steam 共享密钥存储在独立的 steam_accounts 表，
- * 仅当密码条目与 Steam 相关且自身无可解析常规 TOTP 时作为兜底通道。
- */
-private suspend fun resolveSteamGuardCodeForPassword(context: Context, password: PasswordEntry): String? {
-    val isSteamEntry = password.appPackageName?.contains("steam", ignoreCase = true) ?: false
-        || password.website?.contains("steam", ignoreCase = true) ?: false
-        || password.appName?.contains("steam", ignoreCase = true) ?: false
-        || password.title?.contains("steam", ignoreCase = true) ?: false
-    if (!isSteamEntry) return null
-
-    val hasResolvableTotp = try {
-        resolveOtpDataForPassword(context, password) != null
-    } catch (_: Throwable) {
-        false
-    }
-    if (hasResolvableTotp) return null
-
-    return runCatchingObserved {
-        val securityManager = SecurityManager(context)
-        val steamRepo = SteamAccountRepository(
-            SteamDatabase.getDatabase(context).steamAccountDao(),
-            securityManager
-        )
-        val accounts = steamRepo.getAccounts()
-        if (accounts.isEmpty()) return@runCatchingObserved null
-        val matched = accounts.firstOrNull { acct ->
-            acct.accountName.equals(password.username, ignoreCase = true)
-                || acct.displayName.equals(password.username, ignoreCase = true)
-                || acct.accountName.equals(password.title, ignoreCase = true)
-                || acct.displayName.equals(password.title, ignoreCase = true)
-        } ?: accounts.firstOrNull { it.selected } ?: accounts.firstOrNull()
-        matched?.let {
-            SteamTotp.generateAuthCode(it.sharedSecret, System.currentTimeMillis() / 1000)
-        }
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to resolve Steam Guard code, passwordId=${password.id}", e)
-    }.getOrNull()
 }
 
 private suspend fun resolveOtpFromExistingValidators(

@@ -152,16 +152,6 @@ sealed class Screen(val route: String) {
     object QrScanner : Screen("qr_scanner")
     object FidoQrScan : Screen("fido_qr_scan")
     object QuickTotpScan : Screen("quick_totp_scan")  // 快速扫码添加验证器
-    object SteamQrScan : Screen("steam_qr_scan?accountId={accountId}") {
-        const val ARG_ACCOUNT_ID = "accountId"
-        fun createRoute(accountId: Long? = null): String {
-            return if (accountId != null) {
-                "steam_qr_scan?accountId=$accountId"
-            } else {
-                "steam_qr_scan"
-            }
-        }
-    }
     object Settings : Screen("settings")
     object ResetPassword : Screen("reset_password?skipCurrentPassword={skipCurrentPassword}") {
         fun createRoute(skipCurrentPassword: Boolean = false): String {

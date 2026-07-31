@@ -44,14 +44,6 @@ fun ImportDataScreen(
     onImportAegis: suspend (Uri) -> Result<Int>,  // Aegis JSON导入
     onImportEncryptedAegis: suspend (Uri, String) -> Result<Int>,  // 加密的Aegis JSON导入
     onImportStratum: suspend (Uri, String?) -> Result<Int> = { _, _ -> Result.failure(Exception("Not implemented")) }, // Stratum 导入
-    onImportSteamMaFile: suspend (Uri) -> Result<Int>,  // Steam maFile导入
-    onBeginSteamLoginImport: suspend (String, String, String?) -> DataExportImportViewModel.SteamLoginImportState = { _, _, _ ->
-        DataExportImportViewModel.SteamLoginImportState.Failure("Not implemented")
-    }, // Steam 登录导入（开始）
-    onSubmitSteamLoginImportCode: suspend (String, String, Int, String?) -> DataExportImportViewModel.SteamLoginImportState = { _, _, _, _ ->
-        DataExportImportViewModel.SteamLoginImportState.Failure("Not implemented")
-    }, // Steam 登录导入（提交验证码）
-    onClearSteamLoginImportSession: (String) -> Unit = {}, // 清理 Steam 登录会话
     onImportZip: suspend (Uri, String?) -> Result<Int>,  // Bastion ZIP导入
     onImportKdbx: suspend (Uri, String, Uri?) -> Result<Int> = { _, _, _ -> Result.failure(Exception("Not implemented")) },  // KDBX导入
     onImportKeePassCsv: suspend (Uri) -> Result<Int> = onImport,  // KeePass CSV导入
@@ -97,19 +89,6 @@ fun ImportDataScreen(
         }
     }
 
-    var steamImportMode by remember { mutableStateOf("mafile") } // mafile / login
-    var steamDeviceIdInput by remember { mutableStateOf("") }
-    var steamGuardJsonInput by remember { mutableStateOf("") }
-    var steamCustomNameInput by remember { mutableStateOf("") }
-    var steamLoginUserNameInput by remember { mutableStateOf("") }
-    var steamLoginPasswordInput by remember { mutableStateOf("") }
-    var steamLoginPasswordVisible by remember { mutableStateOf(false) }
-    var steamLoginChallengeCodeInput by remember { mutableStateOf("") }
-    var steamLoginPendingSessionId by remember { mutableStateOf<String?>(null) }
-    var steamLoginChallengeType by remember { mutableStateOf(0) }
-    var steamLoginChallengeHint by remember { mutableStateOf("") }
-    var showSteamPasswordPicker by remember { mutableStateOf(false) }
-
     val pickerSecurityManager = remember { com.bastion.app.security.SecurityManager(context) }
     val passwordDatabase = remember(context) { PasswordDatabase.getDatabase(context) }
     val passwordEntriesForPicker by passwordDatabase.passwordEntryDao()
@@ -120,7 +99,6 @@ fun ImportDataScreen(
     val csvImportTypes = csvImportTypeOptions()
 
     val effectiveImportType = if (importType == "csv_group") csvImportType else importType
-    val isSteamLoginMode = effectiveImportType == "steam" && steamImportMode == "login"
     
     val currentTypeInfo = if (importType == "csv_group") {
         csvImportTypes.find { it.key == csvImportType } ?: csvImportTypes[0]
@@ -201,75 +179,11 @@ fun ImportDataScreen(
                     // 导入按钮
                     Button(
                         onClick = {
-                            if (isSteamLoginMode) {
+                            selectedFileUri?.let { uri ->
                                 scope.launch {
                                     isImporting = true
                                     try {
-                                        val customName = steamCustomNameInput.trim().takeIf { it.isNotBlank() }
-                                        val loginState = if (steamLoginPendingSessionId.isNullOrBlank()) {
-                                            onBeginSteamLoginImport(
-                                                steamLoginUserNameInput.trim(),
-                                                steamLoginPasswordInput,
-                                                customName
-                                            )
-                                        } else {
-                                            onSubmitSteamLoginImportCode(
-                                                steamLoginPendingSessionId.orEmpty(),
-                                                steamLoginChallengeCodeInput.trim(),
-                                                steamLoginChallengeType,
-                                                customName
-                                            )
-                                        }
-
-                                        when (loginState) {
-                                            is DataExportImportViewModel.SteamLoginImportState.ChallengeRequired -> {
-                                                steamLoginPendingSessionId = loginState.pendingSessionId
-                                                steamLoginChallengeType = loginState.challenges.firstOrNull()?.confirmationType ?: 0
-                                                steamLoginChallengeHint = loginState.challenges.firstOrNull()?.associatedMessage.orEmpty()
-                                                // 每次进入挑战阶段都清空输入框，避免二次提交用到旧验证码
-                                                steamLoginChallengeCodeInput = ""
-                                                snackbarHostState.showSnackbar(
-                                                    loginState.message
-                                                        ?: context.getString(R.string.import_type_steam_login_challenge_required)
-                                                )
-                                            }
-
-                                            is DataExportImportViewModel.SteamLoginImportState.Imported -> {
-                                                steamLoginPendingSessionId = null
-                                                steamLoginChallengeType = 0
-                                                steamLoginChallengeCodeInput = ""
-                                                steamLoginChallengeHint = ""
-                                                handleImportResult(
-                                                    Result.success(loginState.count),
-                                                    context,
-                                                    snackbarHostState,
-                                                    effectiveImportType,
-                                                    onNavigateBack
-                                                )
-                                            }
-
-                                            is DataExportImportViewModel.SteamLoginImportState.Failure -> {
-                                                snackbarHostState.showSnackbar(loginState.message)
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        android.util.Log.e("ImportDataScreen", "导入异常", e)
-                                        snackbarHostState.showSnackbar(
-                                            context.getString(
-                                                R.string.import_data_error_exception,
-                                                e.message ?: context.getString(R.string.import_data_unknown_error)
-                                            )
-                                        )
-                                    } finally {
-                                        isImporting = false
-                                    }
-                                }
-                            } else {
-                                selectedFileUri?.let { uri ->
-                                    scope.launch {
-                                        isImporting = true
-                                        try {
-                                            when (effectiveImportType) {
+                                        when (effectiveImportType) {
                                                 "bastion_zip" -> {
                                                     isImporting = false
                                                     showZipRestoreConfirmDialog = true
@@ -307,11 +221,6 @@ fun ImportDataScreen(
                                                             handleImportResult(Result.failure(error), context, snackbarHostState, effectiveImportType, onNavigateBack)
                                                         }
                                                     }
-                                                }
-                                                "steam" -> {
-                                                    // Steam maFile导入
-                                                    val result = onImportSteamMaFile(uri)
-                                                    handleImportResult(result, context, snackbarHostState, effectiveImportType, onNavigateBack)
                                                 }
                                                 "kdbx" -> {
                                                     // KDBX 导入需要密码
@@ -382,22 +291,11 @@ fun ImportDataScreen(
                                         }
                                     }
                                 }
-                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        enabled = if (isSteamLoginMode) {
-                            if (steamLoginPendingSessionId.isNullOrBlank()) {
-                                steamLoginUserNameInput.isNotBlank() &&
-                                    steamLoginPasswordInput.isNotBlank() &&
-                                    !isImporting
-                            } else {
-                                steamLoginChallengeCodeInput.isNotBlank() && !isImporting
-                            }
-                        } else {
-                            selectedFileUri != null && !isImporting
-                        },
+                        enabled = selectedFileUri != null && !isImporting,
                         shape = MaterialTheme.shapes.large
                     ) {
                         if (isImporting) {
@@ -412,10 +310,7 @@ fun ImportDataScreen(
                             Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (isSteamLoginMode && !steamLoginPendingSessionId.isNullOrBlank())
-                                    stringResource(R.string.import_type_steam_login_submit_code)
-                                else
-                                    stringResource(R.string.start_import),
+                                stringResource(R.string.start_import),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -468,17 +363,10 @@ fun ImportDataScreen(
                         info = typeInfo,
                         selected = importType == typeInfo.key,
                         onClick = { 
-                            if (steamLoginPendingSessionId != null) {
-                                onClearSteamLoginImportSession(steamLoginPendingSessionId.orEmpty())
-                            }
                             importType = typeInfo.key
                             // 切换类型时清除已选文件
                             selectedFileUri = null
                             selectedFileName = null
-                            steamLoginPendingSessionId = null
-                            steamLoginChallengeType = 0
-                            steamLoginChallengeCodeInput = ""
-                            steamLoginChallengeHint = ""
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -517,287 +405,121 @@ fun ImportDataScreen(
                 }
             }
 
-            if (effectiveImportType == "steam") {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.import_type_steam_mode_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = steamImportMode == "mafile",
-                                onClick = {
-                                    if (steamLoginPendingSessionId != null) {
-                                        onClearSteamLoginImportSession(steamLoginPendingSessionId.orEmpty())
-                                    }
-                                    steamImportMode = "mafile"
-                                    steamDeviceIdInput = ""
-                                    steamGuardJsonInput = ""
-                                    steamCustomNameInput = ""
-                                    steamLoginPendingSessionId = null
-                                    steamLoginChallengeType = 0
-                                    steamLoginChallengeCodeInput = ""
-                                    steamLoginChallengeHint = ""
-                                },
-                                label = { Text(stringResource(R.string.import_type_steam_mode_mafile)) }
-                            )
-                            FilterChip(
-                                selected = steamImportMode == "login",
-                                onClick = {
-                                    steamImportMode = "login"
-                                    selectedFileUri = null
-                                    selectedFileName = null
-                                    steamDeviceIdInput = ""
-                                    steamGuardJsonInput = ""
-                                    steamLoginChallengeCodeInput = ""
-                                    steamLoginChallengeHint = ""
-                                },
-                                label = { Text(stringResource(R.string.import_type_steam_mode_login)) }
-                            )
-                        }
-
-                        if (steamImportMode == "login") {
-                            Text(
-                                stringResource(R.string.import_type_steam_login_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            OutlinedButton(
-                                onClick = { showSteamPasswordPicker = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = steamLoginPendingSessionId.isNullOrBlank()
-                            ) {
-                                Icon(Icons.Default.Key, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.autofill_select_password))
-                            }
-                            OutlinedTextField(
-                                value = steamLoginUserNameInput,
-                                onValueChange = { steamLoginUserNameInput = it },
-                                label = { Text(stringResource(R.string.import_type_steam_login_username_label)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = steamLoginPendingSessionId.isNullOrBlank()
-                            )
-                            OutlinedTextField(
-                                value = steamLoginPasswordInput,
-                                onValueChange = { steamLoginPasswordInput = it },
-                                label = { Text(stringResource(R.string.import_type_steam_login_password_label)) },
-                                visualTransformation = if (steamLoginPasswordVisible) {
-                                    VisualTransformation.None
-                                } else {
-                                    PasswordVisualTransformation()
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { steamLoginPasswordVisible = !steamLoginPasswordVisible }) {
-                                        Icon(
-                                            imageVector = if (steamLoginPasswordVisible) {
-                                                Icons.Default.VisibilityOff
-                                            } else {
-                                                Icons.Default.Visibility
-                                            },
-                                            contentDescription = if (steamLoginPasswordVisible) {
-                                                stringResource(R.string.hide_password)
-                                            } else {
-                                                stringResource(R.string.show_password)
-                                            }
-                                        )
-                                    }
-                                },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = steamLoginPendingSessionId.isNullOrBlank()
-                            )
-                            if (!steamLoginPendingSessionId.isNullOrBlank()) {
-                                if (steamLoginChallengeHint.isNotBlank()) {
-                                    Text(
-                                        steamLoginChallengeHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                OutlinedTextField(
-                                    value = steamLoginChallengeCodeInput,
-                                    onValueChange = { steamLoginChallengeCodeInput = it },
-                                    label = { Text(stringResource(R.string.import_type_steam_login_code_label)) },
-                                    placeholder = { Text(stringResource(R.string.import_type_steam_login_code_hint)) },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                            OutlinedTextField(
-                                value = steamCustomNameInput,
-                                onValueChange = { steamCustomNameInput = it },
-                                label = { Text(stringResource(R.string.import_type_steam_custom_name_label)) },
-                                placeholder = { Text(stringResource(R.string.import_type_steam_custom_name_hint)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-            
             Spacer(modifier = Modifier.height(8.dp))
             
-            if (!isSteamLoginMode) {
-                // 文件选择区域
-                Text(
-                    stringResource(R.string.import_data_select_file),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            // 文件选择区域
+            Text(
+                stringResource(R.string.import_data_select_file),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            // 选择文件卡片
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    activity?.let { act ->
+                        // 根据导入类型选择不同的文件过滤器
+                        when (effectiveImportType) {
+                            "bastion_zip" -> FileOperationHelper.importFromZip(act)
+                            "kdbx" -> FileOperationHelper.importFromKdbx(act)
+                            "keepass_csv" -> FileOperationHelper.importFromCsv(act)
+                            "bitwarden_csv" -> FileOperationHelper.importFromCsv(act)
+                            "proton_pass_csv" -> FileOperationHelper.importFromCsv(act)
+                            "chrome_csv" -> FileOperationHelper.importFromCsv(act)
+                            "password_keyboard_csv" -> FileOperationHelper.importFromCsv(act)
+                            "aegis" -> FileOperationHelper.importFromJson(act)
+                            "stratum" -> FileOperationHelper.importFromStratum(act)
+                            else -> FileOperationHelper.importFromCsv(act)
+                        }
+                    } ?: run {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                context.getString(
+                                    R.string.error_launch_export,
+                                    context.getString(R.string.import_data_operation_unavailable)
+                                )
+                            )
+                        }
+                    }
+                },
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = if (selectedFileUri != null)
+                        MaterialTheme.colorScheme.secondaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                 )
-
-                // 选择文件卡片
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        activity?.let { act ->
-                            // 根据导入类型选择不同的文件过滤器
-                            when (effectiveImportType) {
-                                "bastion_zip" -> FileOperationHelper.importFromZip(act)
-                                "kdbx" -> FileOperationHelper.importFromKdbx(act)
-                                "keepass_csv" -> FileOperationHelper.importFromCsv(act)
-                                "bitwarden_csv" -> FileOperationHelper.importFromCsv(act)
-                                "proton_pass_csv" -> FileOperationHelper.importFromCsv(act)
-                                "chrome_csv" -> FileOperationHelper.importFromCsv(act)
-                                "password_keyboard_csv" -> FileOperationHelper.importFromCsv(act)
-                                "aegis" -> FileOperationHelper.importFromJson(act)
-                                "stratum" -> FileOperationHelper.importFromStratum(act)
-                                "steam" -> FileOperationHelper.importFromMaFile(act)
-                                else -> FileOperationHelper.importFromCsv(act)
-                            }
-                        } ?: run {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    context.getString(
-                                        R.string.error_launch_export,
-                                        context.getString(R.string.import_data_operation_unavailable)
-                                    )
-                                )
-                            }
-                        }
-                    },
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = if (selectedFileUri != null)
-                            MaterialTheme.colorScheme.secondaryContainer
-                        else
-                            MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // 文件图标
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (selectedFileUri != null)
+                            MaterialTheme.colorScheme.secondary
+                        else
+                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        // 文件图标
-                        Surface(
-                            shape = MaterialTheme.shapes.medium,
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (selectedFileUri != null) Icons.Default.InsertDriveFile else Icons.Default.FileOpen,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (selectedFileUri != null)
+                                    MaterialTheme.colorScheme.onSecondary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            if (selectedFileUri != null) {
+                                stringResource(R.string.import_data_file_selected)
+                            } else {
+                                stringResource(R.string.import_data_tap_to_select_file)
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
                             color = if (selectedFileUri != null)
-                                MaterialTheme.colorScheme.secondary
-                            else
-                                MaterialTheme.colorScheme.surfaceContainerHighest,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    if (selectedFileUri != null) Icons.Default.InsertDriveFile else Icons.Default.FileOpen,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = if (selectedFileUri != null)
-                                        MaterialTheme.colorScheme.onSecondary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (selectedFileUri != null) {
-                                    stringResource(R.string.import_data_file_selected)
-                                } else {
-                                    stringResource(R.string.import_data_tap_to_select_file)
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = if (selectedFileUri != null)
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                selectedFileName ?: currentTypeInfo.fileHint,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (selectedFileUri != null)
-                                    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = if (selectedFileUri != null)
                                 MaterialTheme.colorScheme.onSecondaryContainer
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            selectedFileName ?: currentTypeInfo.fileHint,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedFileUri != null)
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = if (selectedFileUri != null)
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             
             // 底部留白，避免被底部栏遮挡
             Spacer(modifier = Modifier.height(80.dp))
         }
-    }
-
-    if (showSteamPasswordPicker) {
-        PasswordEntryPickerBottomSheet(
-            visible = true,
-            title = stringResource(R.string.select_password_to_bind),
-            passwords = passwordEntriesForPicker.filter { !it.isDeleted && !it.isArchived },
-            onDismiss = { showSteamPasswordPicker = false },
-            onSelect = { entry ->
-                val resolvedUsername = runCatchingObserved { pickerSecurityManager.decryptData(entry.username) }
-                    .getOrNull()
-                    ?.trim()
-                    .takeUnless { it.isNullOrBlank() }
-                    ?: entry.username.trim()
-                val resolvedPassword = runCatchingObserved { pickerSecurityManager.decryptData(entry.password) }
-                    .getOrNull()
-                    ?.trim()
-                    .takeUnless { it.isNullOrBlank() }
-                    ?: entry.password.trim()
-
-                steamLoginUserNameInput = resolvedUsername
-                steamLoginPasswordInput = resolvedPassword
-                showSteamPasswordPicker = false
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.steam_login_fill_from_password_applied),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        )
     }
 
     if (showPasswordKeyboardTagDialog) {
@@ -1092,7 +814,6 @@ private suspend fun handleImportResult(
         val message = when (importType) {
             "aegis" -> context.getString(R.string.import_data_aegis_import_success_count, count)
             "stratum" -> context.getString(R.string.import_data_stratum_import_success_count, count)
-            "steam" -> context.getString(R.string.import_data_steam_import_success)
             else -> context.getString(R.string.import_data_success_normal, count)
         }
         snackbarHostState.showSnackbar(message)
