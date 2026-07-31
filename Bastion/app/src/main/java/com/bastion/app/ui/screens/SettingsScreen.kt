@@ -47,7 +47,6 @@ import androidx.fragment.app.FragmentActivity
 import com.bastion.app.BuildConfig
 import com.bastion.app.R
 import com.bastion.app.data.AppSettings
-import com.bastion.app.data.BottomNavContentTab
 import com.bastion.app.data.Language
 import com.bastion.app.data.ItemType
 import com.bastion.app.ui.components.TrashSettingsSheet
@@ -96,8 +95,7 @@ fun SettingsScreen(
     onNavigateToSyncBackup: () -> Unit = {},
     onNavigateToAutofill: () -> Unit = {},
     onNavigateToPasskeySettings: () -> Unit = {},
-    onNavigateToBottomNavSettings: () -> Unit = {},
-    onNavigateToColorScheme: () -> Unit = {},
+    onNavigateToThemeAndColorScheme: () -> Unit = {},
     onSecurityAnalysis: () -> Unit = {},
     onNavigateToDeveloperSettings: () -> Unit = {},
     onNavigateToPermissionManagement: () -> Unit = {},
@@ -134,8 +132,7 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     var showClearDataDialog by remember { mutableStateOf(false) }
     var clearDataPasswordInput by remember { mutableStateOf("") }
-    
-    var showThemeDialog by remember { mutableStateOf(false) }
+
     var showVersionInfoDialog by remember { mutableStateOf(false) }
     var showUpdateCheckDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
@@ -352,25 +349,16 @@ fun SettingsScreen(
     } else {
         context.getString(R.string.trash_status_disabled_permanent_delete)
     }
-    val themeSubtitle = getAppearanceDisplayName(
-        theme = settings.themeMode,
-        oledPureBlackEnabled = settings.oledPureBlackEnabled,
-        context = context
-    )
-    val colorSchemeSubtitle = getColorSchemeDisplayName(settings.colorScheme, context)
-
     fun searchTexts(vararg resIds: Int): Array<String> = resIds.map(context::getString).toTypedArray()
 
-    val themeSearchTexts = buildList {
+    val themeAndColorSchemeSubSettingsSearchTexts = buildList {
+        add(context.getString(R.string.theme_and_color_scheme))
         ThemeMode.values().forEach { theme ->
             add(getThemeDisplayName(theme, context))
         }
         add(context.getString(R.string.oled_pure_black))
         add(context.getString(R.string.oled_pure_black_description))
         add(context.getString(R.string.oled_pure_black_dark_mode_hint))
-    }.toTypedArray()
-
-    val colorSchemeSearchTexts = buildList {
         add(context.getString(R.string.color_scheme_description))
         com.bastion.app.data.ColorScheme.values().forEach { scheme ->
             add(getColorSchemeDisplayName(scheme, context))
@@ -445,16 +433,6 @@ fun SettingsScreen(
         R.string.autofill_blocked_fields_title,
         R.string.autofill_blocked_fields_manage
     )
-
-    val bottomNavSubSettingsSearchTexts = buildList {
-        add(context.getString(R.string.bottom_nav_reorder_hint))
-        add(context.getString(R.string.bottom_nav_toggle_subtitle))
-        BottomNavContentTab.values()
-            .filterNot { it == BottomNavContentTab.PASSKEY }
-            .forEach { tab ->
-            add(context.getString(tab.toLabelRes()))
-        }
-    }.toTypedArray()
 
     val extensionsSubSettingsSearchTexts = searchTexts(
         R.string.display_options_menu_title,
@@ -630,23 +608,11 @@ fun SettingsScreen(
         showClearDataItem
     ).any { it }
 
-    val showThemeItem = matchesSettingsItem(
+    val showThemeAndColorSchemeItem = matchesSettingsItem(
         appearanceTitle,
-        context.getString(R.string.theme),
-        themeSubtitle,
-        *themeSearchTexts
-    )
-    val showColorSchemeItem = matchesSettingsItem(
-        appearanceTitle,
-        context.getString(R.string.color_scheme),
-        colorSchemeSubtitle,
-        *colorSchemeSearchTexts
-    )
-    val showBottomNavItem = matchesSettingsItem(
-        appearanceTitle,
-        context.getString(R.string.bottom_nav_settings),
-        context.getString(R.string.bottom_nav_settings_entry_subtitle),
-        *bottomNavSubSettingsSearchTexts
+        context.getString(R.string.theme_and_color_scheme),
+        context.getString(R.string.color_scheme_description),
+        *themeAndColorSchemeSubSettingsSearchTexts
     )
     val showExtensionsItem = matchesSettingsItem(
         appearanceTitle,
@@ -661,9 +627,7 @@ fun SettingsScreen(
         *pageCustomizationSubSettingsSearchTexts
     )
     val showAppearanceSection = listOf(
-        showThemeItem,
-        showColorSchemeItem,
-        showBottomNavItem,
+        showThemeAndColorSchemeItem,
         showExtensionsItem,
         showPageCustomizationItem
     ).any { it }
@@ -894,30 +858,12 @@ fun SettingsScreen(
             if (showAppearanceSection) {
                 SettingsSection(title = appearanceTitle,
                     onClick = onSectionSelected?.let { cb -> { cb(appearanceTitle) } }) {
-                    if (showThemeItem) {
+                    if (showThemeAndColorSchemeItem) {
                         SettingsItem(
                             icon = Icons.Default.Palette,
-                            title = context.getString(R.string.theme),
-                            subtitle = themeSubtitle,
-                            onClick = { showThemeDialog = true }
-                        )
-                    }
-
-                    if (showColorSchemeItem) {
-                        SettingsItem(
-                            icon = Icons.Default.Colorize,
-                            title = context.getString(R.string.color_scheme),
-                            subtitle = colorSchemeSubtitle,
-                            onClick = { onNavigateToColorScheme() },
-                        )
-                    }
-
-                    if (showBottomNavItem) {
-                        SettingsItem(
-                            icon = Icons.Default.ViewWeek,
-                            title = context.getString(R.string.bottom_nav_settings),
-                            subtitle = context.getString(R.string.bottom_nav_settings_entry_subtitle),
-                            onClick = onNavigateToBottomNavSettings,
+                            title = context.getString(R.string.theme_and_color_scheme),
+                            subtitle = context.getString(R.string.color_scheme_description),
+                            onClick = onNavigateToThemeAndColorScheme,
                         )
                     }
 
@@ -933,7 +879,7 @@ fun SettingsScreen(
                     if (showPageCustomizationItem) {
                         SettingsItem(
                             icon = Icons.Default.Tune,
-                            title = context.getString(R.string.page_adjust_custom_title),
+                            title = context.getString(R.string.interface_layout),
                             subtitle = context.getString(R.string.page_adjust_custom_subtitle),
                             onClick = onNavigateToPageCustomization
                         )
@@ -1147,21 +1093,6 @@ fun SettingsScreen(
             // Bottom padding spacer for edge-to-edge scrolling
             Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
         }
-    }
-    
-    // Theme Selection Dialog
-    if (showThemeDialog) {
-        AppearanceSelectionSheet(
-            currentTheme = settings.themeMode,
-            oledPureBlackEnabled = settings.oledPureBlackEnabled,
-            onThemeSelected = { theme ->
-                viewModel.updateThemeMode(theme)
-            },
-            onOledPureBlackChanged = { enabled ->
-                viewModel.updateOledPureBlackEnabled(enabled)
-            },
-            onDismiss = { showThemeDialog = false }
-        )
     }
     
     // Developer Settings Verification Dialog

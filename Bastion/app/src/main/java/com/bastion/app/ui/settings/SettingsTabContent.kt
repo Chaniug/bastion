@@ -44,14 +44,13 @@ internal fun SettingsTabContent(
     onNavigateToSyncBackup: () -> Unit,
     onNavigateToAutofill: () -> Unit,
     onNavigateToPasskeySettings: () -> Unit,
-    onNavigateToBottomNavSettings: () -> Unit,
-    onNavigateToColorScheme: () -> Unit,
     onSecurityAnalysis: () -> Unit,
     onNavigateToDeveloperSettings: () -> Unit,
     onNavigateToPermissionManagement: () -> Unit,
     onNavigateToBastionPlus: () -> Unit,
     onNavigateToExtensions: () -> Unit,
     onNavigateToPageCustomization: () -> Unit,
+    onNavigateToThemeAndColorScheme: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -68,14 +67,13 @@ internal fun SettingsTabContent(
             onNavigateToSyncBackup = onNavigateToSyncBackup,
             onNavigateToAutofill = onNavigateToAutofill,
             onNavigateToPasskeySettings = onNavigateToPasskeySettings,
-            onNavigateToBottomNavSettings = onNavigateToBottomNavSettings,
-            onNavigateToColorScheme = onNavigateToColorScheme,
             onSecurityAnalysis = onSecurityAnalysis,
             onNavigateToDeveloperSettings = onNavigateToDeveloperSettings,
             onNavigateToPermissionManagement = onNavigateToPermissionManagement,
             onNavigateToBastionPlus = onNavigateToBastionPlus,
             onNavigateToExtensions = onNavigateToExtensions,
             onNavigateToPageCustomization = onNavigateToPageCustomization,
+            onNavigateToThemeAndColorScheme = onNavigateToThemeAndColorScheme,
             onClearAllData = onClearAllData,
             showTopBar = false,
             onSectionSelected = if (isCompactWidth) null else { section -> selectedSection = section }

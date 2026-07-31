@@ -133,12 +133,13 @@ fun PageAdjustmentCustomizationScreen(
     onNavigateToPasswordCardAdjustment: () -> Unit,
     onNavigateToAuthenticatorCardAdjustment: () -> Unit,
     onNavigateToPasswordFieldCustomization: () -> Unit,
-    onNavigateToIconSettings: () -> Unit
+    onNavigateToIconSettings: () -> Unit,
+    onNavigateToBottomNavSettings: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.page_adjust_custom_title)) },
+                title = { Text(stringResource(R.string.interface_layout)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -197,6 +198,13 @@ fun PageAdjustmentCustomizationScreen(
                 subtitle = stringResource(R.string.icon_settings_subtitle),
                 icon = Icons.Default.Key,
                 onClick = onNavigateToIconSettings
+            )
+
+            PageAdjustmentEntryCard(
+                title = stringResource(R.string.bottom_nav_settings),
+                subtitle = stringResource(R.string.bottom_nav_settings_entry_subtitle),
+                icon = Icons.Default.ViewWeek,
+                onClick = onNavigateToBottomNavSettings
             )
         }
     }

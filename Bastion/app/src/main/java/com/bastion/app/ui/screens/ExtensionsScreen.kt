@@ -44,8 +44,6 @@ fun ExtensionsScreen(
     onPasswordDetailSecurityAnalysisEnabledChange: (Boolean) -> Unit = {},
     passwordSwipeSelectionMode: PasswordSwipeSelectionMode = PasswordSwipeSelectionMode.DEFAULT,
     onPasswordSwipeSelectionModeChange: (PasswordSwipeSelectionMode) -> Unit = {},
-    passwordCardDisplayMode: com.bastion.app.data.PasswordCardDisplayMode = com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL,
-    onPasswordCardDisplayModeChange: (com.bastion.app.data.PasswordCardDisplayMode) -> Unit = {},
     validatorUnifiedProgressBar: com.bastion.app.data.UnifiedProgressBarMode = com.bastion.app.data.UnifiedProgressBarMode.DISABLED,
     onValidatorUnifiedProgressBarChange: (com.bastion.app.data.UnifiedProgressBarMode) -> Unit = {},
     // 通知栏验证器参数
@@ -58,58 +56,9 @@ fun ExtensionsScreen(
     onNotificationValidatorSelected: (Long) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
-    
-    // 密码卡片显示模式选择对话框
-    var showDisplayModeDialog by remember { mutableStateOf(false) }
+
     var showClipboardAutoClearDialog by remember { mutableStateOf(false) }
     val clipboardAutoClearOptions = remember { listOf(0, 10, 20, 30, 60) }
-    
-    if (showDisplayModeDialog) {
-        AlertDialog(
-            onDismissRequest = { showDisplayModeDialog = false },
-            title = { Text(stringResource(R.string.password_card_display_mode_title)) },
-            text = {
-                Column {
-                    com.bastion.app.data.PasswordCardDisplayMode.values().forEach { mode ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onPasswordCardDisplayModeChange(mode)
-                                    showDisplayModeDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (mode == passwordCardDisplayMode),
-                                onClick = {
-                                    onPasswordCardDisplayModeChange(mode)
-                                    showDisplayModeDialog = false
-                                }
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = when (mode) {
-                                    com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL -> 
-                                        stringResource(R.string.display_mode_all)
-                                    com.bastion.app.data.PasswordCardDisplayMode.TITLE_USERNAME -> 
-                                        stringResource(R.string.display_mode_title_username)
-                                    com.bastion.app.data.PasswordCardDisplayMode.TITLE_ONLY -> 
-                                        stringResource(R.string.display_mode_title_only)
-                                }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showDisplayModeDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
 
     if (showClipboardAutoClearDialog) {
         AlertDialog(
@@ -242,45 +191,6 @@ fun ExtensionsScreen(
             }
             
             ExtensionSection(title = stringResource(R.string.display_options_menu_title)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showDisplayModeDialog = true }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Dns,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.password_card_display_mode_title),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = when (passwordCardDisplayMode) {
-                                com.bastion.app.data.PasswordCardDisplayMode.SHOW_ALL -> 
-                                    stringResource(R.string.display_mode_all)
-                                com.bastion.app.data.PasswordCardDisplayMode.TITLE_USERNAME -> 
-                                    stringResource(R.string.display_mode_title_username)
-                                com.bastion.app.data.PasswordCardDisplayMode.TITLE_ONLY -> 
-                                    stringResource(R.string.display_mode_title_only)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ExtensionSwitchItem(
                     icon = Icons.Default.CallMerge,
                     title = stringResource(R.string.smart_deduplication),
