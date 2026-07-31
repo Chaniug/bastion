@@ -23,10 +23,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import javax.crypto.Cipher
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
-import javax.crypto.spec.IvParameterSpec
+import androidx.security.crypto.EncryptedFile
+import androidx.security.crypto.MasterKey
 
 /**
  * 图片管理器
@@ -43,14 +41,8 @@ class ImageManager(private val context: Context) {
         private const val TAG = "ImageManager"
         private const val IMAGE_DIR = "secure_images"
         private const val TEMP_IMAGE_DIR = "temp_share"
-        private const val ALGORITHM = "AES/CBC/PKCS5Padding"
-        private const val KEY_ALGORITHM = "AES"
         private const val MAX_STORED_IMAGE_DIMENSION = 2048
         private const val DEFAULT_LOAD_MAX_DIMENSION = 1600
-        
-        // 简单的加密密钥（实际应用中应该使用更安全的密钥管理方案）
-        private val ENCRYPTION_KEY = "BastionSecureKey1".toByteArray()
-        private val IV = "BastionSecureIV16".toByteArray()
     }
     
     private val imageDirectory: File by lazy {
@@ -59,6 +51,16 @@ class ImageManager(private val context: Context) {
     
     private val tempPhotoDirectory: File by lazy {
         ensureDirectoriesExist(context.cacheDir, TEMP_IMAGE_DIR)
+    }
+
+    /**
+     * 图片加密主密钥，由 Android Keystore 通过 [MasterKey]（AES256-GCM）托管。
+     * 取代原先硬编码且长度非法的密钥，从根本上消除「密钥随 APK 泄露」与「加解密直接抛异常」的风险。
+     */
+    private val imageMasterKey: MasterKey by lazy {
+        MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
     }
 
     private fun createTempPhotoFile(): File {
@@ -183,10 +185,9 @@ class ImageManager(private val context: Context) {
                     compressionQuality = safeQuality
                 )
 
-                // 加密并保存
-                val encryptedData = encrypt(byteArray)
-                FileOutputStream(file).use { fos ->
-                    fos.write(encryptedData)
+                // 加密并保存（使用 Android Keystore 托管的密钥，经 EncryptedFile 做 AES-GCM）
+                encryptedFileFor(file).openFileOutput().use { out ->
+                    out.write(byteArray)
                 }
             } finally {
                 if (normalizedBitmap !== bitmap && !normalizedBitmap.isRecycled) {
@@ -248,11 +249,8 @@ class ImageManager(private val context: Context) {
                 return@withContext null
             }
             
-            // 读取加密数据
-            val encryptedData = file.readBytes()
-            
-            // 解密
-            val decryptedData = decrypt(encryptedData)
+            // 读取并解密（EncryptedFile + Android Keystore 托管密钥）
+            val decryptedData = encryptedFileFor(file).openFileInput().use { it.readBytes() }
 
             decodeSampledBitmapFromBytes(
                 data = decryptedData,
@@ -487,25 +485,18 @@ class ImageManager(private val context: Context) {
     }
     
     /**
-     * 加密数据
+     * 为指定文件构造 [EncryptedFile] 实例。
+     *
+     * 加密密钥由 Android Keystore 经 [MasterKey]（AES256-GCM）托管，
+     * 不再使用硬编码密钥，避免密钥随 APK 泄露且长度非法导致加解密失败。
      */
-    private fun encrypt(data: ByteArray): ByteArray {
-        val secretKey: SecretKey = SecretKeySpec(ENCRYPTION_KEY, KEY_ALGORITHM)
-        val cipher = Cipher.getInstance(ALGORITHM)
-        val ivSpec = IvParameterSpec(IV)
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
-        return cipher.doFinal(data)
-    }
-    
-    /**
-     * 解密数据
-     */
-    private fun decrypt(encryptedData: ByteArray): ByteArray {
-        val secretKey: SecretKey = SecretKeySpec(ENCRYPTION_KEY, KEY_ALGORITHM)
-        val cipher = Cipher.getInstance(ALGORITHM)
-        val ivSpec = IvParameterSpec(IV)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
-        return cipher.doFinal(encryptedData)
+    private fun encryptedFileFor(file: File): EncryptedFile {
+        return EncryptedFile.Builder(
+            context,
+            file,
+            imageMasterKey,
+            EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+        ).build()
     }
     
     /**
