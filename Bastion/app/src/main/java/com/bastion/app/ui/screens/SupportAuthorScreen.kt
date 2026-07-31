@@ -97,7 +97,7 @@ fun SupportAuthorScreen(
     LaunchedEffect(Unit) {
         hasStoragePermission = ContextCompat.checkSelfPermission(context, storagePermission) == PackageManager.PERMISSION_GRANTED
         try {
-            val inputStream = context.assets.open("support_author.jpg")
+            val inputStream = context.assets.open("support_author.webp")
             val bitmap = BitmapFactory.decodeStream(inputStream)
             originalBitmap = bitmap
             imageBitmap = bitmap.asImageBitmap()

@@ -108,6 +108,9 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        // 仅保留应用实际使用的语言资源（en 兜底 + zh），剥离所有依赖库
+        // 自带的大量无用语言资源，缩小 Release 产物体积。
+        resourceConfigs "en", "zh"
         // 单测中 android.util.Log 等未 mock 框架方法返回默认值而非抛异常，
         // 避免历史单测因 "Method ... not mocked" 失败导致 CI 假绿（exit code 1 误导标注）。
         testOptions {
@@ -209,6 +212,11 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
             excludes += 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
         }
+        // .so 以压缩形式存入 APK（配合 Manifest 的 extractNativeLibs=false），
+        // 减小下载/安装包体积；安装时由系统按需解压，minSdk 26 满足。
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
@@ -298,7 +306,8 @@ dependencies {
     // TOTP and QR Code
     implementation libs.zxing.core
     implementation libs.zxing.android.embedded
-    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+    // 扫码统一走 zxing（zxing.android.embedded + zxing.core），不再依赖 mlkit
+    // 的 Vision 原生库，以缩减原生库体积。
     
     // Camera
     implementation libs.androidx.camera.core
