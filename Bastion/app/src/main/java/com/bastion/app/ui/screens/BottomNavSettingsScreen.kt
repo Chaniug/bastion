@@ -2,7 +2,6 @@ package com.bastion.app.ui.screens
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.gestures.longPressDraggableHandle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
