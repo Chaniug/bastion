@@ -36,7 +36,14 @@ class AutofillPreferences(private val context: Context) {
 
     
     companion object {
-        private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "autofill_settings")
+        // 统一存储：与 SettingsManager 共用 "settings" DataStore（两套 key 无重叠，零冲突）
+        private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+        // 旧版 "autofill_settings" DataStore（迁移来源，迁移完成后不再写入）
+        private val Context.legacyAutofillDataStore: DataStore<Preferences> by preferencesDataStore(name = "autofill_settings")
+
+        // 迁移完成标记（写入统一后的 "settings" store，确保幂等）
+        private val KEY_AUTOFILL_MIGRATION_DONE = booleanPreferencesKey("autofill_settings_migrated_v1")
         
         // 配置键
         private val KEY_AUTOFILL_ENABLED = booleanPreferencesKey("autofill_enabled")
@@ -98,7 +105,28 @@ class AutofillPreferences(private val context: Context) {
             "com.unionpay"              // 云闪付
         )
     }
-    
+
+    /**
+     * 一次性迁移：把旧版 "autofill_settings" DataStore 中的值并入统一的 "settings" DataStore。
+     * 幂等——已迁移则直接返回。旧 store 文件保留不删，避免意外数据丢失。
+     */
+    suspend fun migrateLegacyStoreIfNeeded() {
+        val target = context.dataStore
+        val targetPrefs = target.data.first()
+        if (targetPrefs[KEY_AUTOFILL_MIGRATION_DONE] == true) return
+        val legacy = context.legacyAutofillDataStore
+        val legacyPrefs = legacy.data.first()
+        target.edit { t ->
+            legacyPrefs.asMap().forEach { (key, value) ->
+                if (key != KEY_AUTOFILL_MIGRATION_DONE) {
+                    @Suppress("UNCHECKED_CAST")
+                    t[key as Preferences.Key<Any?>] = value
+                }
+            }
+            t[KEY_AUTOFILL_MIGRATION_DONE] = true
+        }
+    }
+
     /**
      * 是否启用自动填充服务
      */
