@@ -4,7 +4,6 @@ import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,7 +37,8 @@ import com.bastion.app.data.ThemeMode
 import com.bastion.app.data.UnifiedProgressBarMode
 import com.bastion.app.data.AutofillSource
 
-private val Context.dataStore by preferencesDataStore("settings")
+// "settings" DataStore 委托统一声明在同包的 AppDataStore.kt，此处直接复用，
+// 避免重复声明导致 "multiple DataStore active for the same file" 运行时崩溃。
 
 data class RememberedStorageTarget(
     val categoryId: Long? = null,

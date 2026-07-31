@@ -18,6 +18,7 @@ import com.bastion.app.sync.SyncTaskRunner
 import com.bastion.app.utils.AppLauncherIconManager
 import com.bastion.app.security.SessionManager
 import com.bastion.app.utils.SettingsManager
+import com.bastion.app.autofill_ng.AutofillPreferences
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.bastion.app.security.SecurityManager
@@ -75,6 +76,7 @@ class BastionApplication : Application() {
         WebDavBackoffState.attachPersistence(this)
         scheduleKeePassRemoteUploadRecovery()
         scheduleAttachmentHousekeeping()
+        migrateLegacyAutofillStoreIfNeeded()
     }
     
     private fun scheduleKeePassRemoteUploadRecovery() {
@@ -98,6 +100,20 @@ class BastionApplication : Application() {
                 val facade = AttachmentContainer.facade(this@BastionApplication)
                 facade.purgeOrphanedLocalBlobs()
             }.onFailure { Log.w(TAG, "Attachment housekeeping failed", it) }
+        }
+    }
+
+    /**
+     * 自动填充配置存储统一：把旧版 "autofill_settings" DataStore 迁移到统一的 "settings" DataStore。
+     * 在独立协程中执行，失败不影响启动。
+     */
+    private fun migrateLegacyAutofillStoreIfNeeded() {
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            runCatchingObserved {
+                AutofillPreferences(this@BastionApplication).migrateLegacyStoreIfNeeded()
+            }.onFailure { error ->
+                Log.w(TAG, "Failed to migrate legacy autofill store", error)
+            }
         }
     }
 
