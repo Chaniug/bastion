@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.AlertDialog
