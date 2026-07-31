@@ -23,7 +23,6 @@ import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.Result
-import com.google.zxing.ResultMetadataType
 import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -245,13 +244,8 @@ internal fun buildZxingHints(formats: Collection<BarcodeFormat>): Map<DecodeHint
 }
 
 internal fun buildCandidates(result: Result): List<String> {
-    val list = mutableListOf<String>()
-    result.text?.trim()?.takeIf { it.isNotBlank() }?.let { list.add(it) }
-    @Suppress("UNCHECKED_CAST")
-    (result.resultMetadata?.get(ResultMetadataType.URI) as? List<String>)?.forEach { uri ->
-        uri.trim().takeIf { it.isNotBlank() }?.let { list.add(it) }
-    }
-    return list.distinct()
+    val text = result.text?.trim().takeIf { it.isNotBlank() } ?: return emptyList()
+    return listOf(text)
 }
 
 internal fun decodeBitmapZxing(bitmap: android.graphics.Bitmap, formats: Collection<BarcodeFormat>): List<String> {
