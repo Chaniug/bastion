@@ -5,36 +5,62 @@
       <stop offset="0.55" stop-color="#070C22"/>
       <stop offset="1" stop-color="#04060F"/>
     </linearGradient>
-    <radialGradient id="halo" cx="72%" cy="50%" r="58%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.20"/>
-      <stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.10"/>
+    <radialGradient id="halo" cx="72%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.22"/>
+      <stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.12"/>
       <stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.45"/>
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/>
       <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
-      <stop offset="0.5" stop-color="#7FB6FF" stop-opacity="0.07"/>
-      <stop offset="1" stop-color="#4A78C8" stop-opacity="0.12"/>
+    <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7FD0FF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#7FD0FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="0.5" stop-color="#7FB6FF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#4A78C8" stop-opacity="0.16"/>
     </linearGradient>
     <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FBE7A6"/>
       <stop offset="0.5" stop-color="#F5B942"/>
       <stop offset="1" stop-color="#B9760F"/>
     </linearGradient>
-    <radialGradient id="key" cx="40%" cy="35%" r="70%">
+    <linearGradient id="key" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FFF3D2"/>
-      <stop offset="0.55" stop-color="#F5B942"/>
+      <stop offset="0.5" stop-color="#F5B942"/>
       <stop offset="1" stop-color="#A8650C"/>
+    </linearGradient>
+    <radialGradient id="keyGlow" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#FFF3D2"/>
+      <stop offset="0.6" stop-color="#F5B942"/>
+      <stop offset="1" stop-color="#B9760F"/>
     </radialGradient>
+    <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F5B942"/>
+    </linearGradient>
     <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
       <circle cx="2" cy="2" r="1" fill="#9FD4FF" fill-opacity="0.06"/>
     </pattern>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
 
     <path id="shield" d="M -120 -150 L 120 -150 L 120 0 C 120 92, 74 148, 0 182 C -74 148, -120 92, -120 0 Z"/>
+    <path id="spark" d="M 0 -13 C 1.6 -3.2, 3.2 -1.6, 13 0 C 3.2 1.6, 1.6 3.2, 0 13 C -1.6 3.2, -3.2 1.6, -13 0 C -3.2 -1.6, -1.6 -3.2, 0 -13 Z"/>
+
+    <!-- 金色钥匙（局部坐标：bow 在原点，向右延伸） -->
+    <g id="akey">
+      <circle r="30" fill="none" stroke="url(#rim)" stroke-width="10" filter="url(#soft)" opacity="0.6"/>
+      <circle r="26" fill="url(#keyGlow)" stroke="#C98A1E" stroke-width="1.5"/>
+      <circle r="11" fill="#0A1438"/>
+      <rect x="24" y="-6.5" width="132" height="13" rx="6" fill="url(#key)"/>
+      <rect x="150" y="2" width="20" height="16" rx="3" fill="url(#key)"/>
+      <rect x="166" y="2" width="16" height="22" rx="3" fill="url(#key)"/>
+      <rect x="140" y="2" width="12" height="12" rx="2.5" fill="url(#key)"/>
+    </g>
   </defs>
 
   <!-- 背景 -->
@@ -42,32 +68,43 @@
   <rect width="1280" height="640" fill="url(#halo)"/>
   <rect width="1280" height="640" fill="url(#dots)"/>
 
-  <!-- 右侧金色光晕 -->
-  <ellipse cx="930" cy="330" rx="360" ry="360" fill="url(#glowGold)" filter="url(#soft)"/>
+  <!-- 光晕 -->
+  <ellipse cx="930" cy="330" rx="370" ry="370" fill="url(#glowGold)" filter="url(#soft)"/>
 
-  <!-- 同心环（层次） -->
-  <g transform="translate(930 330)" fill="none" stroke="#7FD0FF" stroke-opacity="0.10" stroke-width="1.5">
-    <circle r="250"/>
-    <circle r="300"/>
-    <circle r="352"/>
+  <!-- 环绕轨道 + 粒子 -->
+  <g transform="translate(930 322) rotate(-18)">
+    <ellipse rx="248" ry="98" fill="none" stroke="#7FD0FF" stroke-opacity="0.18" stroke-width="1.5" stroke-dasharray="3 12"/>
+    <circle cx="248" cy="0" r="9" fill="#F5B942" filter="url(#soft2)"/>
+    <circle cx="248" cy="0" r="4.5" fill="#FFF3D2"/>
+    <circle cx="-124" cy="85" r="7" fill="#7FD0FF" filter="url(#soft2)"/>
+    <circle cx="-124" cy="85" r="3.5" fill="#EAF6FF"/>
+    <circle cx="-150" cy="-60" r="6" fill="#F5B942" filter="url(#soft2)"/>
+    <circle cx="-150" cy="-60" r="3" fill="#FFF3D2"/>
   </g>
 
-  <!-- 玻璃盾牌 + 金色锁孔 -->
+  <!-- 玻璃盾牌 -->
   <g transform="translate(930 322)">
-    <use href="#shield" fill="none" stroke="url(#rim)" stroke-width="10" filter="url(#soft)" opacity="0.7"/>
+    <use href="#shield" fill="none" stroke="url(#rim)" stroke-width="10" filter="url(#soft)" opacity="0.65"/>
     <use href="#shield" fill="url(#glass)"/>
     <use href="#shield" fill="none" stroke="url(#rim)" stroke-width="3"/>
-    <path d="M -104 -138 L 104 -138" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
-    <path d="M -98 -120 L 98 -120 L 98 -4 C 98 70, 60 116, 0 146 C -60 116, -98 70, -98 -4 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1.5"/>
+    <path d="M -104 -138 L 104 -138" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"/>
+    <path d="M -98 -120 L 98 -120 L 98 -4 C 98 70, 60 116, 0 146 C -60 116, -98 70, -98 -4 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.20" stroke-width="1.5"/>
+    <!-- 盾内发光核 -->
+    <ellipse cx="0" cy="20" rx="70" ry="80" fill="url(#glowGold)" opacity="0.5" filter="url(#soft)"/>
+  </g>
 
-    <!-- 锁孔 -->
-    <g transform="translate(0 -8)">
-      <circle r="40" fill="url(#glowGold)" filter="url(#soft)"/>
-      <circle r="34" fill="url(#key)" stroke="#C98A1E" stroke-width="1.5"/>
-      <circle cx="-11" cy="-22" r="11" fill="#0A1438"/>
-      <path d="M -9 -14 L 9 -14 L 13 22 L -13 22 Z" fill="#0A1438"/>
-      <ellipse cx="-11" cy="-26" rx="4" ry="3" fill="#FFFFFF" fill-opacity="0.6"/>
-    </g>
+  <!-- 金色钥匙斜插 -->
+  <g transform="translate(900 268) rotate(40)">
+    <use href="#akey"/>
+  </g>
+
+  <!-- 星光点缀 -->
+  <g opacity="0.9">
+    <use href="#spark" transform="translate(792 196) scale(1.5)" fill="url(#sparkGrad)"/>
+    <use href="#spark" transform="translate(1058 250) scale(1.1)" fill="url(#sparkGrad)"/>
+    <use href="#spark" transform="translate(1040 470) scale(1.8)" fill="url(#sparkGrad)"/>
+    <use href="#spark" transform="translate(812 430) scale(1.0)" fill="url(#sparkGrad)"/>
+    <use href="#spark" transform="translate(960 150) scale(0.8)" fill="url(#sparkGrad)"/>
   </g>
 
   <!-- 左侧文字 -->
