@@ -322,7 +322,10 @@ internal fun buildZxingHints(formats: Collection<BarcodeFormat>): Map<DecodeHint
 }
 
 internal fun buildCandidates(result: Result): List<String> {
-    val text = result.text?.trim().takeIf { it.isNotBlank() } ?: return emptyList()
+    // zxing Result.getText() 是 Java 平台类型（String!），需先 trim 再判空，
+    // 不能用 takeIf { it.isNotBlank() }（it 会被推断为可空 String? 而报错）。
+    val text = result.text?.trim()
+    if (text.isNullOrBlank()) return emptyList()
     return listOf(text)
 }
 
