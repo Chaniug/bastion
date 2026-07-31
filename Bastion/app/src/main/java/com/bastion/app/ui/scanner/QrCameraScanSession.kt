@@ -16,7 +16,13 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
-import androidx.camera.core.toBitmap
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.Matrix
+import android.graphics.Rect
+import android.graphics.YuvImage
+import android.media.Image
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
@@ -24,6 +30,7 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.Result
 import com.google.zxing.common.HybridBinarizer
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -228,12 +235,83 @@ internal class QrCameraScanSession(
 }
 
 private fun decodeFrameZxing(imageProxy: ImageProxy, formats: Collection<BarcodeFormat>): List<String> {
-    val bitmap = runCatchingObserved { imageProxy.toBitmap() }.getOrNull() ?: return emptyList()
+    val bitmap = runCatchingObserved { imageProxyToBitmap(imageProxy) }.getOrNull() ?: return emptyList()
     return try {
         decodeBitmapZxing(bitmap, formats)
     } finally {
         bitmap.recycle()
     }
+}
+
+/**
+ * 将 ImageAnalysis 产出的 YUV_420_888 [ImageProxy] 转为可解码的 [Bitmap]。
+ * camera-core 1.5.x 未提供 ImageProxy.toBitmap() 扩展，这里手动完成
+ * YUV -> NV21 -> JPEG -> Bitmap 的转换，并按传感器旋转角校正方向。
+ */
+private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
+    val mediaImage = imageProxy.image ?: return null
+    val width = mediaImage.width
+    val height = mediaImage.height
+    val nv21 = yuv420ToNv21(mediaImage)
+    val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+    val out = ByteArrayOutputStream()
+    yuvImage.compressToJpeg(Rect(0, 0, width, height), 90, out)
+    val jpeg = out.toByteArray()
+    val raw = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size) ?: return null
+    val rotation = imageProxy.imageInfo.rotationDegrees.toFloat()
+    if (rotation == 0f) return raw
+    val matrix = Matrix().apply { postRotate(rotation) }
+    val rotated = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, matrix, true)
+    raw.recycle()
+    return rotated
+}
+
+/**
+ * 把 YUV_420_888 的三平面数据紧凑为 NV21（Y 平面 + 交错 VU），
+ * 兼容不同设备的 rowStride / pixelStride 布局。
+ */
+private fun yuv420ToNv21(image: Image): ByteArray {
+    val width = image.width
+    val height = image.height
+    val planes = image.planes
+    val yPlane = planes[0]
+    val uPlane = planes[1]
+    val vPlane = planes[2]
+    val yBuffer = yPlane.buffer
+    val uBuffer = uPlane.buffer
+    val vBuffer = vPlane.buffer
+    val yRowStride = yPlane.rowStride
+    val yPixelStride = yPlane.pixelStride
+    val uRowStride = uPlane.rowStride
+    val uPixelStride = uPlane.pixelStride
+    val vRowStride = vPlane.rowStride
+    val vPixelStride = vPlane.pixelStride
+
+    val nv21 = ByteArray(width * height + (width * height) / 2)
+    var pos = 0
+    val yRow = ByteArray(yRowStride)
+    for (row in 0 until height) {
+        yBuffer.position(row * yRowStride)
+        yBuffer.get(yRow, 0, yRowStride)
+        for (col in 0 until width) {
+            nv21[pos++] = yRow[col * yPixelStride]
+        }
+    }
+    val uvHeight = height / 2
+    val uvWidth = width / 2
+    val uRowArr = ByteArray(uRowStride)
+    val vRowArr = ByteArray(vRowStride)
+    for (row in 0 until uvHeight) {
+        uBuffer.position(row * uRowStride)
+        uBuffer.get(uRowArr, 0, uRowStride)
+        vBuffer.position(row * vRowStride)
+        vBuffer.get(vRowArr, 0, vRowStride)
+        for (col in 0 until uvWidth) {
+            nv21[pos++] = vRowArr[col * vPixelStride]
+            nv21[pos++] = uRowArr[col * uPixelStride]
+        }
+    }
+    return nv21
 }
 
 internal fun buildZxingHints(formats: Collection<BarcodeFormat>): Map<DecodeHintType, Any> {
