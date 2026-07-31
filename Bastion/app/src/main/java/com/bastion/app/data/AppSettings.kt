@@ -63,7 +63,7 @@ enum class BottomNavContentTab {
     GENERATOR,
     NOTES,
     SEND,         // 发送（安全分享）
-    PASSKEY,  // 通行密钥
+    PASSKEY;  // 通行密钥
 
     companion object {
         val DEFAULT_ORDER: List<BottomNavContentTab> = listOf(

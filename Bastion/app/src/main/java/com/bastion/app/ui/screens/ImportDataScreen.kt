@@ -291,7 +291,6 @@ fun ImportDataScreen(
                                         }
                                     }
                                 }
-                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
