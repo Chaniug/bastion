@@ -241,20 +241,25 @@ fun AutofillSettingsV2Screen(
                 status.isSystemEnabled && status.isAppEnabled
             } ?: false
 
-            val statusContainerColor = if (statusEnabled) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.errorContainer
+            // 已启用但未达到「完全正常」（如服务声明缺失、存在兼容性问题）时，
+            // 用独立的警告态呈现，避免出现「绿色卡片 + 异常摘要」的自相矛盾。
+            val statusNeedsAttention = statusEnabled &&
+                serviceStatus?.isFullyOperational() == false
+
+            val statusContainerColor = when {
+                !statusEnabled -> MaterialTheme.colorScheme.errorContainer
+                statusNeedsAttention -> MaterialTheme.colorScheme.tertiaryContainer
+                else -> MaterialTheme.colorScheme.primaryContainer
             }
-            val statusContentColor = if (statusEnabled) {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            } else {
-                MaterialTheme.colorScheme.onErrorContainer
+            val statusContentColor = when {
+                !statusEnabled -> MaterialTheme.colorScheme.onErrorContainer
+                statusNeedsAttention -> MaterialTheme.colorScheme.onTertiaryContainer
+                else -> MaterialTheme.colorScheme.onPrimaryContainer
             }
-            val statusIconTint = if (statusEnabled) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.error
+            val statusIconTint = when {
+                !statusEnabled -> MaterialTheme.colorScheme.error
+                statusNeedsAttention -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.primary
             }
 
             Card(
@@ -296,15 +301,21 @@ fun AutofillSettingsV2Screen(
                         style = MaterialTheme.typography.bodySmall,
                         color = statusContentColor.copy(alpha = 0.9f),
                     )
-                    serviceStatus?.let { status ->
+                    // 摘要仅在带来增量信息时显示：完全正常时它等同于上一行描述，
+                    // 重复展示只会让卡片啰嗦。
+                    serviceStatus?.takeIf { !it.isFullyOperational() }?.let { status ->
                         Text(
                             text = status.getSummary(context),
                             style = MaterialTheme.typography.bodySmall,
                             color = statusContentColor.copy(alpha = 0.9f),
                         )
                     }
-                    TextButton(onClick = ::openSystemAutofillSettings) {
-                        Text(stringResource(R.string.autofill_v2_set_system_service))
+                    // 行动按钮只在「尚未设为系统服务」时出现。已启用时它既与下方
+                    //「系统设置」入口完全重复，语义上也与「已设置为默认服务」冲突。
+                    if (!statusEnabled) {
+                        TextButton(onClick = ::openSystemAutofillSettings) {
+                            Text(stringResource(R.string.autofill_status_go_to_settings))
+                        }
                     }
                 }
             }
