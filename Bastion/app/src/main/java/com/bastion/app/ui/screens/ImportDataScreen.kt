@@ -408,113 +408,112 @@ fun ImportDataScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             // 文件选择区域
-                Text(
-                    stringResource(R.string.import_data_select_file),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            Text(
+                stringResource(R.string.import_data_select_file),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            // 选择文件卡片
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    activity?.let { act ->
+                        // 根据导入类型选择不同的文件过滤器
+                        when (effectiveImportType) {
+                            "bastion_zip" -> FileOperationHelper.importFromZip(act)
+                            "kdbx" -> FileOperationHelper.importFromKdbx(act)
+                            "keepass_csv" -> FileOperationHelper.importFromCsv(act)
+                            "bitwarden_csv" -> FileOperationHelper.importFromCsv(act)
+                            "proton_pass_csv" -> FileOperationHelper.importFromCsv(act)
+                            "chrome_csv" -> FileOperationHelper.importFromCsv(act)
+                            "password_keyboard_csv" -> FileOperationHelper.importFromCsv(act)
+                            "aegis" -> FileOperationHelper.importFromJson(act)
+                            "stratum" -> FileOperationHelper.importFromStratum(act)
+                            else -> FileOperationHelper.importFromCsv(act)
+                        }
+                    } ?: run {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                context.getString(
+                                    R.string.error_launch_export,
+                                    context.getString(R.string.import_data_operation_unavailable)
+                                )
+                            )
+                        }
+                    }
+                },
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = if (selectedFileUri != null)
+                        MaterialTheme.colorScheme.secondaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                 )
-
-                // 选择文件卡片
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        activity?.let { act ->
-                            // 根据导入类型选择不同的文件过滤器
-                            when (effectiveImportType) {
-                                "bastion_zip" -> FileOperationHelper.importFromZip(act)
-                                "kdbx" -> FileOperationHelper.importFromKdbx(act)
-                                "keepass_csv" -> FileOperationHelper.importFromCsv(act)
-                                "bitwarden_csv" -> FileOperationHelper.importFromCsv(act)
-                                "proton_pass_csv" -> FileOperationHelper.importFromCsv(act)
-                                "chrome_csv" -> FileOperationHelper.importFromCsv(act)
-                                "password_keyboard_csv" -> FileOperationHelper.importFromCsv(act)
-                                "aegis" -> FileOperationHelper.importFromJson(act)
-                                "stratum" -> FileOperationHelper.importFromStratum(act)
-                                else -> FileOperationHelper.importFromCsv(act)
-                            }
-                        } ?: run {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    context.getString(
-                                        R.string.error_launch_export,
-                                        context.getString(R.string.import_data_operation_unavailable)
-                                    )
-                                )
-                            }
-                        }
-                    },
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = if (selectedFileUri != null)
-                            MaterialTheme.colorScheme.secondaryContainer
-                        else
-                            MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // 文件图标
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (selectedFileUri != null)
+                            MaterialTheme.colorScheme.secondary
+                        else
+                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        // 文件图标
-                        Surface(
-                            shape = MaterialTheme.shapes.medium,
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (selectedFileUri != null) Icons.Default.InsertDriveFile else Icons.Default.FileOpen,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (selectedFileUri != null)
+                                    MaterialTheme.colorScheme.onSecondary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            if (selectedFileUri != null) {
+                                stringResource(R.string.import_data_file_selected)
+                            } else {
+                                stringResource(R.string.import_data_tap_to_select_file)
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
                             color = if (selectedFileUri != null)
-                                MaterialTheme.colorScheme.secondary
-                            else
-                                MaterialTheme.colorScheme.surfaceContainerHighest,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    if (selectedFileUri != null) Icons.Default.InsertDriveFile else Icons.Default.FileOpen,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = if (selectedFileUri != null)
-                                        MaterialTheme.colorScheme.onSecondary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (selectedFileUri != null) {
-                                    stringResource(R.string.import_data_file_selected)
-                                } else {
-                                    stringResource(R.string.import_data_tap_to_select_file)
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = if (selectedFileUri != null)
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                selectedFileName ?: currentTypeInfo.fileHint,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (selectedFileUri != null)
-                                    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = if (selectedFileUri != null)
                                 MaterialTheme.colorScheme.onSecondaryContainer
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            selectedFileName ?: currentTypeInfo.fileHint,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedFileUri != null)
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = if (selectedFileUri != null)
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             
