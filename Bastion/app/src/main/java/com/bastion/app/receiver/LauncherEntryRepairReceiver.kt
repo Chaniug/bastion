@@ -19,8 +19,6 @@ import com.bastion.app.utils.SettingsManager
 
 class LauncherEntryRepairReceiver : BroadcastReceiver() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != Intent.ACTION_MY_PACKAGE_REPLACED) {
             return
@@ -28,7 +26,9 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
 
         // 使用 goAsync() 避免主线程阻塞；升级后事件只触发一次，但 DataStore 读取
         // 仍可能慢，用 withTimeout 兜底防止 ANR。
+        // scope 作为本次 onReceive 的局部变量，在 finally 中 finish 后取消，避免泄漏。
         val pendingResult = goAsync()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope.launch {
             try {
                 val settings = withTimeout(200) {
@@ -50,13 +50,9 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
                 }
             } finally {
                 pendingResult.finish()
+                scope.cancel()
             }
         }
-    }
-
-    override fun onDetached() {
-        super.onDetached()
-        scope.cancel()
     }
 
     companion object {

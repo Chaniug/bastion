@@ -1,6 +1,7 @@
 package com.bastion.app.passkey
 
 import com.bastion.app.logging.runCatchingObserved
+import com.bastion.app.logging.logSwallowed
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -548,12 +549,14 @@ class PasskeyCreateActivity : FragmentActivity() {
                                 showMasterPasswordDialog.value = false
                                 repository.logAudit("PASSKEY_CREATE_MASTER_PASSWORD_SUCCESS", pendingRpId)
                                 recordPasskeyEvent(stage = "master_password_success")
-                                createPasskey(
-                                    pendingRequestJson,
-                                    pendingRpId,
-                                    pendingUserName,
-                                    pendingUserDisplayName,
-                                )
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    createPasskey(
+                                        pendingRequestJson,
+                                        pendingRpId,
+                                        pendingUserName,
+                                        pendingUserDisplayName,
+                                    )
+                                }
                             } else {
                                 masterPasswordError.value = true
                                 repository.logAudit("PASSKEY_CREATE_MASTER_PASSWORD_FAILED", pendingRpId)
@@ -954,12 +957,12 @@ class PasskeyCreateActivity : FragmentActivity() {
         }
     }
 
-    private fun rollbackCreatedPasskeyIfNeeded(
+    private suspend fun rollbackCreatedPasskeyIfNeeded(
         credentialId: String?,
         boundPasswordId: Long?
     ) {
         if (credentialId.isNullOrBlank()) return
-        runCatchingObserved {
+        try {
             val createdPasskey = database.passkeyDao().getPasskeyById(credentialId)
             if (createdPasskey != null) {
                 val deleteResult = keepassPasskeyDeleteExecutor.delete(
@@ -986,8 +989,9 @@ class PasskeyCreateActivity : FragmentActivity() {
                 "$credentialId|boundPasswordId=${boundPasswordId ?: "null"}"
             )
             Log.w(TAG, "Rolled back passkey creation")
-        }.onFailure { rollbackError ->
+        } catch (rollbackError: Exception) {
             Log.e(TAG, "Failed to rollback created passkey", rollbackError)
+            logSwallowed(TAG, Log.WARN, rollbackError)
         }
     }
 
