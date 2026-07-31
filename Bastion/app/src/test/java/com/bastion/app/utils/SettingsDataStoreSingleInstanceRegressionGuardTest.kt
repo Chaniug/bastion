@@ -6,20 +6,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 回归守卫：进程内 "settings" DataStore 必须只有一个委托声明。
+ * 回归守卫：DataStore 的两条硬性约束。
  *
- * 背景：AutofillPreferences 从 "autofill_settings" 迁移到统一的 "settings" 存储时，
- * 曾在自己的 companion 里又声明了一次 preferencesDataStore(name = "settings")，
- * 导致同一文件出现两个 DataStore 实例，进入"自动填充设置"页面时直接崩溃。
+ * 1) 同一进程内，同一个 DataStore 文件只能有一个实例。曾因 AutofillPreferences
+ *    重复声明 preferencesDataStore("settings") 导致进入「自动填充设置」直接崩溃。
+ *
+ * 2) DataStore 不支持多进程。自动填充配置会被独立进程 :accessibility 读取，
+ *    因此必须留在独立的 "autofill_settings" 存储中，不得并入主进程高频写入的
+ *    "settings"，否则 :accessibility 会永久缓存到过期快照，
+ *    导致「主动填充通知」静默失效。
  */
 class SettingsDataStoreSingleInstanceRegressionGuardTest {
 
     @Test
     fun settingsDataStoreIsDeclaredExactlyOnceInMainSources() {
         val declarations = mainSourceFiles()
-            .filter { file ->
-                SETTINGS_STORE_DECLARATION.containsMatchIn(file.readText())
-            }
+            .filter { storeDeclaration("settings").containsMatchIn(it.readText()) }
             .map { it.name }
             .sorted()
 
@@ -31,42 +33,47 @@ class SettingsDataStoreSingleInstanceRegressionGuardTest {
     }
 
     @Test
-    fun sharedDelegateIsInternalAndReusedByConsumers() {
-        val appDataStore = projectFile(
-            "app/src/main/java/com/bastion/app/utils/AppDataStore.kt"
-        ).readText()
-        assertTrue(
-            appDataStore.contains(
-                "internal val Context.dataStore: DataStore<Preferences> " +
-                    "by preferencesDataStore(name = \"settings\")"
-            )
-        )
+    fun everyDataStoreFileNameIsDeclaredOnlyOnce() {
+        val occurrences = mutableMapOf<String, MutableList<String>>()
+        mainSourceFiles().forEach { file ->
+            ANY_STORE_DECLARATION.findAll(file.readText()).forEach { match ->
+                occurrences.getOrPut(match.groupValues[1]) { mutableListOf() }.add(file.name)
+            }
+        }
+        val duplicated = occurrences.filterValues { it.size > 1 }
 
-        val autofillPreferences = projectFile(
-            "app/src/main/java/com/bastion/app/autofill_ng/AutofillPreferences.kt"
-        ).readText()
-        assertTrue(autofillPreferences.contains("import com.bastion.app.utils.dataStore"))
-        assertTrue(autofillPreferences.contains("context.dataStore"))
+        assertEquals(
+            "每个 DataStore 文件名只能声明一次，重复的有：$duplicated",
+            emptyMap<String, List<String>>(),
+            duplicated
+        )
     }
 
     @Test
-    fun legacyAutofillStoreStillMigratesOnce() {
+    fun autofillPreferencesStaysOnItsOwnStoreForCrossProcessSafety() {
         val autofillPreferences = projectFile(
             "app/src/main/java/com/bastion/app/autofill_ng/AutofillPreferences.kt"
         ).readText()
 
         assertTrue(
-            autofillPreferences.contains("preferencesDataStore(name = \"autofill_settings\")")
+            "自动填充配置必须使用独立的 autofill_settings 存储",
+            storeDeclaration("autofill_settings").containsMatchIn(autofillPreferences)
         )
-        assertTrue(autofillPreferences.contains("suspend fun migrateLegacyStoreIfNeeded()"))
         assertTrue(
-            autofillPreferences.contains("if (targetPrefs[KEY_AUTOFILL_MIGRATION_DONE] == true) return")
+            "AutofillPreferences 不得复用主进程的 settings 委托（:accessibility 跨进程读会拿到过期快照）",
+            !autofillPreferences.contains("import com.bastion.app.utils.dataStore")
         )
+    }
 
-        val application = projectFile(
-            "app/src/main/java/com/bastion/app/BastionApplication.kt"
-        ).readText()
-        assertTrue(application.contains("migrateLegacyAutofillStoreIfNeeded()"))
+    @Test
+    fun accessibilityServiceRunsInItsOwnProcess() {
+        // 该断言是上面跨进程约束成立的前提；若将来无障碍服务改回主进程，
+        // 这条会失败，提示重新评估存储是否可以合并。
+        val manifest = projectFile("app/src/main/AndroidManifest.xml").readText()
+        assertTrue(
+            "BastionAccessibilityService 预期运行在 :accessibility 独立进程",
+            manifest.contains("android:process=\":accessibility\"")
+        )
     }
 
     private fun mainSourceFiles(): List<File> =
@@ -88,7 +95,10 @@ class SettingsDataStoreSingleInstanceRegressionGuardTest {
     }
 
     private companion object {
-        val SETTINGS_STORE_DECLARATION =
-            Regex("""by\s+preferencesDataStore\(\s*(?:name\s*=\s*)?"settings"\s*\)""")
+        fun storeDeclaration(name: String) =
+            Regex("""by\s+preferencesDataStore\(\s*(?:name\s*=\s*)?"$name"\s*\)""")
+
+        val ANY_STORE_DECLARATION =
+            Regex("""by\s+preferencesDataStore\(\s*(?:name\s*=\s*)?"([^"]+)"\s*\)""")
     }
 }

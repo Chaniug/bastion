@@ -12,7 +12,11 @@ import androidx.datastore.preferences.preferencesDataStore
  * preferencesDataStore(name = "settings") 会在运行时抛出
  * IllegalStateException: There are multiple DataStore active for the same file。
  *
- * 因此所有需要访问 settings 存储的组件（SettingsManager、AutofillPreferences 等）
- * 都必须复用这里的扩展属性，禁止再各自声明。
+ * 因此所有需要访问 settings 存储的组件都必须复用这里的扩展属性，禁止再各自声明。
+ *
+ * 注意：这个存储由主进程持有。DataStore 不支持多进程，运行在 :accessibility
+ * 独立进程中的组件（如 BastionAccessibilityService）不得读写这里的数据，
+ * 它们的配置应当放在各自独立的存储中（例如 AutofillPreferences 的
+ * "autofill_settings"）。
  */
 internal val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
