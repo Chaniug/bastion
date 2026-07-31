@@ -33,6 +33,13 @@ class SettingsViewModel(
     private val settingsManager: SettingsManager,
     private val secureItemRepository: SecureItemRepository? = null
 ) : ViewModel() {
+    /**
+     * 统一的事务包装：在 viewModelScope 中把变更提交到 SettingsManager。
+     * 所有 update*/add*/delete* 等委托方法复用它，消除重复的 launch 样板。
+     */
+    private inline fun commitUpdate(block: suspend SettingsManager.() -> Unit) =
+        viewModelScope.launch { settingsManager.block() }
+
     
     val settings: StateFlow<AppSettings> = settingsManager.settingsFlow
         .stateIn(
@@ -57,77 +64,29 @@ class SettingsViewModel(
             initialValue = emptyList()
         ) ?: kotlinx.coroutines.flow.MutableStateFlow(emptyList())
     
-    fun updateThemeMode(themeMode: ThemeMode) {
-        viewModelScope.launch {
-            settingsManager.updateThemeMode(themeMode)
-        }
-    }
+    fun updateThemeMode(themeMode: ThemeMode) = commitUpdate { updateThemeMode(themeMode) }
 
-    fun updateOledPureBlackEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateOledPureBlackEnabled(enabled)
-        }
-    }
+    fun updateOledPureBlackEnabled(enabled: Boolean) = commitUpdate { updateOledPureBlackEnabled(enabled) }
 
-    fun updateColorScheme(colorScheme: ColorScheme) {
-        viewModelScope.launch {
-            settingsManager.updateColorScheme(colorScheme)
-        }
-    }
+    fun updateColorScheme(colorScheme: ColorScheme) = commitUpdate { updateColorScheme(colorScheme) }
     
-    fun updateLanguage(language: Language) {
-        viewModelScope.launch {
-            settingsManager.updateLanguage(language)
-        }
-    }
+    fun updateLanguage(language: Language) = commitUpdate { updateLanguage(language) }
     
-    fun updateBiometricEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBiometricEnabled(enabled)
-        }
-    }
+    fun updateBiometricEnabled(enabled: Boolean) = commitUpdate { updateBiometricEnabled(enabled) }
 
-    fun updateQuickSetupCompleted(completed: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateQuickSetupCompleted(completed)
-        }
-    }
+    fun updateQuickSetupCompleted(completed: Boolean) = commitUpdate { updateQuickSetupCompleted(completed) }
     
-    fun updateAutoLockMinutes(minutes: Int) {
-        viewModelScope.launch {
-            settingsManager.updateAutoLockMinutes(minutes)
-        }
-    }
+    fun updateAutoLockMinutes(minutes: Int) = commitUpdate { updateAutoLockMinutes(minutes) }
     
-    fun updateScreenshotProtectionEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateScreenshotProtectionEnabled(enabled)
-        }
-    }
+    fun updateScreenshotProtectionEnabled(enabled: Boolean) = commitUpdate { updateScreenshotProtectionEnabled(enabled) }
 
-    fun updateClipboardAutoClearSeconds(seconds: Int) {
-        viewModelScope.launch {
-            settingsManager.updateClipboardAutoClearSeconds(seconds)
-        }
-    }
+    fun updateClipboardAutoClearSeconds(seconds: Int) = commitUpdate { updateClipboardAutoClearSeconds(seconds) }
 
-    fun updateDynamicColorEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateDynamicColorEnabled(enabled)
-        }
-    }
+    fun updateDynamicColorEnabled(enabled: Boolean) = commitUpdate { updateDynamicColorEnabled(enabled) }
 
-    fun updateBottomNavVisibility(tab: BottomNavContentTab, visible: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBottomNavVisibility(tab, visible)
-        }
-    }
+    fun updateBottomNavVisibility(tab: BottomNavContentTab, visible: Boolean) = commitUpdate { updateBottomNavVisibility(tab, visible) }
 
-    fun updateBottomNavOrder(order: List<BottomNavContentTab>) {
-        viewModelScope.launch {
-            settingsManager.updateBottomNavOrder(order)
-        }
-    }
+    fun updateBottomNavOrder(order: List<BottomNavContentTab>) = commitUpdate { updateBottomNavOrder(order) }
 
     fun updateCustomColors(
         primary: Long,
@@ -135,448 +94,164 @@ class SettingsViewModel(
         tertiary: Long,
         neutral: Long = primary,
         neutralVariant: Long = secondary
-    ) {
-        viewModelScope.launch {
-            settingsManager.updateCustomColors(primary, secondary, tertiary, neutral, neutralVariant)
-        }
-    }
+    ) = commitUpdate { updateCustomColors(primary, secondary, tertiary, neutral, neutralVariant) }
 
-    fun updateStackCardMode(mode: String) {
-        viewModelScope.launch {
-            settingsManager.updateStackCardMode(mode)
-        }
-    }
+    fun updateStackCardMode(mode: String) = commitUpdate { updateStackCardMode(mode) }
 
-    fun updatePasswordGroupMode(mode: String) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordGroupMode(mode)
-        }
-    }
+    fun updatePasswordGroupMode(mode: String) = commitUpdate { updatePasswordGroupMode(mode) }
 
-    fun updatePasswordWebsiteStackMatchMode(mode: String) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordWebsiteStackMatchMode(mode)
-        }
-    }
+    fun updatePasswordWebsiteStackMatchMode(mode: String) = commitUpdate { updatePasswordWebsiteStackMatchMode(mode) }
 
-    fun updatePasswordSwipeSelectionMode(mode: PasswordSwipeSelectionMode) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordSwipeSelectionMode(mode)
-        }
-    }
+    fun updatePasswordSwipeSelectionMode(mode: PasswordSwipeSelectionMode) = commitUpdate { updatePasswordSwipeSelectionMode(mode) }
 
-    fun updateDisablePasswordVerification(disabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateDisablePasswordVerification(disabled)
-        }
-    }
+    fun updateDisablePasswordVerification(disabled: Boolean) = commitUpdate { updateDisablePasswordVerification(disabled) }
 
-    fun updatePasskeyHyperOsBiometricBypassEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasskeyHyperOsBiometricBypassEnabled(enabled)
-        }
-    }
+    fun updatePasskeyHyperOsBiometricBypassEnabled(enabled: Boolean) = commitUpdate { updatePasskeyHyperOsBiometricBypassEnabled(enabled) }
 
-    fun updateBitwardenSyncForensicsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBitwardenSyncForensicsEnabled(enabled)
-        }
-    }
+    fun updateBitwardenSyncForensicsEnabled(enabled: Boolean) = commitUpdate { updateBitwardenSyncForensicsEnabled(enabled) }
 
-    fun updateBitwardenSyncForensicsDirectoryUri(uri: String?) {
-        viewModelScope.launch {
-            settingsManager.updateBitwardenSyncForensicsDirectoryUri(uri)
-        }
-    }
+    fun updateBitwardenSyncForensicsDirectoryUri(uri: String?) = commitUpdate { updateBitwardenSyncForensicsDirectoryUri(uri) }
 
-    fun updateBitwardenSyncForensicsRawCaptureEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBitwardenSyncForensicsRawCaptureEnabled(enabled)
-        }
-    }
+    fun updateBitwardenSyncForensicsRawCaptureEnabled(enabled: Boolean) = commitUpdate { updateBitwardenSyncForensicsRawCaptureEnabled(enabled) }
 
-    fun updateValidatorProgressBarStyle(style: com.bastion.app.data.ProgressBarStyle) {
-        viewModelScope.launch {
-            settingsManager.updateValidatorProgressBarStyle(style)
-        }
-    }
+    fun updateValidatorProgressBarStyle(style: com.bastion.app.data.ProgressBarStyle) = commitUpdate { updateValidatorProgressBarStyle(style) }
 
-    fun updateValidatorUnifiedProgressBar(mode: com.bastion.app.data.UnifiedProgressBarMode) {
-        viewModelScope.launch {
-            settingsManager.updateValidatorUnifiedProgressBar(mode)
-        }
-    }
+    fun updateValidatorUnifiedProgressBar(mode: com.bastion.app.data.UnifiedProgressBarMode) = commitUpdate { updateValidatorUnifiedProgressBar(mode) }
 
-    fun updateValidatorSmoothProgress(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateValidatorSmoothProgress(enabled)
-        }
-    }
+    fun updateValidatorSmoothProgress(enabled: Boolean) = commitUpdate { updateValidatorSmoothProgress(enabled) }
 
-    fun updateValidatorVibrationEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateValidatorVibrationEnabled(enabled)
-        }
-    }
+    fun updateValidatorVibrationEnabled(enabled: Boolean) = commitUpdate { updateValidatorVibrationEnabled(enabled) }
 
-    fun updateHideFabOnScroll(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateHideFabOnScroll(enabled)
-        }
-    }
+    fun updateHideFabOnScroll(enabled: Boolean) = commitUpdate { updateHideFabOnScroll(enabled) }
 
-    fun updateSecurityAnalysisAutoEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateSecurityAnalysisAutoEnabled(enabled)
-        }
-    }
+    fun updateSecurityAnalysisAutoEnabled(enabled: Boolean) = commitUpdate { updateSecurityAnalysisAutoEnabled(enabled) }
 
-    fun updatePasswordDetailSecurityAnalysisEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordDetailSecurityAnalysisEnabled(enabled)
-        }
-    }
+    fun updatePasswordDetailSecurityAnalysisEnabled(enabled: Boolean) = commitUpdate { updatePasswordDetailSecurityAnalysisEnabled(enabled) }
 
-    fun updateSteamMiniProfileBackgroundEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateSteamMiniProfileBackgroundEnabled(enabled)
-        }
-    }
+    fun updateSteamMiniProfileBackgroundEnabled(enabled: Boolean) = commitUpdate { updateSteamMiniProfileBackgroundEnabled(enabled) }
 
-    fun updateBitwardenBottomStatusBarEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBitwardenBottomStatusBarEnabled(enabled)
-        }
-    }
+    fun updateBitwardenBottomStatusBarEnabled(enabled: Boolean) = commitUpdate { updateBitwardenBottomStatusBarEnabled(enabled) }
 
-    fun updateCopyNextCodeWhenExpiring(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateCopyNextCodeWhenExpiring(enabled)
-        }
-    }
+    fun updateCopyNextCodeWhenExpiring(enabled: Boolean) = commitUpdate { updateCopyNextCodeWhenExpiring(enabled) }
 
-    fun updateNotificationValidatorEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateNotificationValidatorEnabled(enabled)
-        }
-    }
+    fun updateNotificationValidatorEnabled(enabled: Boolean) = commitUpdate { updateNotificationValidatorEnabled(enabled) }
 
-    fun updateNotificationValidatorId(id: Long) {
-        viewModelScope.launch {
-            settingsManager.updateNotificationValidatorId(id)
-        }
-    }
+    fun updateNotificationValidatorId(id: Long) = commitUpdate { updateNotificationValidatorId(id) }
 
-    fun updateNotificationValidatorAutoMatch(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateNotificationValidatorAutoMatch(enabled)
-        }
-    }
+    fun updateNotificationValidatorAutoMatch(enabled: Boolean) = commitUpdate { updateNotificationValidatorAutoMatch(enabled) }
 
-    fun updatePlusActivated(activated: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePlusActivated(activated)
-        }
-    }
+    fun updatePlusActivated(activated: Boolean) = commitUpdate { updatePlusActivated(activated) }
     
-    fun updateUseDraggableBottomNav(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateUseDraggableBottomNav(enabled)
-        }
-    }
+    fun updateUseDraggableBottomNav(enabled: Boolean) = commitUpdate { updateUseDraggableBottomNav(enabled) }
 
-    fun updateAutoHideBottomNavWhenSingleTab(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateAutoHideBottomNavWhenSingleTab(enabled)
-        }
-    }
+    fun updateAutoHideBottomNavWhenSingleTab(enabled: Boolean) = commitUpdate { updateAutoHideBottomNavWhenSingleTab(enabled) }
     
     // 回收站设置
-    fun updateTrashEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateTrashEnabled(enabled)
-        }
-    }
+    fun updateTrashEnabled(enabled: Boolean) = commitUpdate { updateTrashEnabled(enabled) }
     
-    fun updateTrashAutoDeleteDays(days: Int) {
-        viewModelScope.launch {
-            settingsManager.updateTrashAutoDeleteDays(days)
-        }
-    }
+    fun updateTrashAutoDeleteDays(days: Int) = commitUpdate { updateTrashAutoDeleteDays(days) }
 
-    fun updateIconCardsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateIconCardsEnabled(enabled)
-        }
-    }
+    fun updateIconCardsEnabled(enabled: Boolean) = commitUpdate { updateIconCardsEnabled(enabled) }
 
-    fun updateAppLauncherIcon(icon: AppLauncherIcon) {
-        viewModelScope.launch {
-            settingsManager.updateAppLauncherIcon(icon)
-        }
-    }
+    fun updateAppLauncherIcon(icon: AppLauncherIcon) = commitUpdate { updateAppLauncherIcon(icon) }
 
-    fun updateAppLauncherLabel(label: AppLauncherLabel) {
-        viewModelScope.launch {
-            settingsManager.updateAppLauncherLabel(label)
-        }
-    }
+    fun updateAppLauncherLabel(label: AppLauncherLabel) = commitUpdate { updateAppLauncherLabel(label) }
 
-    fun updatePasswordPageIconEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordPageIconEnabled(enabled)
-        }
-    }
+    fun updatePasswordPageIconEnabled(enabled: Boolean) = commitUpdate { updatePasswordPageIconEnabled(enabled) }
 
-    fun updateAuthenticatorPageIconEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateAuthenticatorPageIconEnabled(enabled)
-        }
-    }
+    fun updateAuthenticatorPageIconEnabled(enabled: Boolean) = commitUpdate { updateAuthenticatorPageIconEnabled(enabled) }
 
-    fun updatePasskeyPageIconEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasskeyPageIconEnabled(enabled)
-        }
-    }
+    fun updatePasskeyPageIconEnabled(enabled: Boolean) = commitUpdate { updatePasskeyPageIconEnabled(enabled) }
 
-    fun updateUnmatchedIconHandlingStrategy(strategy: com.bastion.app.data.UnmatchedIconHandlingStrategy) {
-        viewModelScope.launch {
-            settingsManager.updateUnmatchedIconHandlingStrategy(strategy)
-        }
-    }
+    fun updateUnmatchedIconHandlingStrategy(strategy: com.bastion.app.data.UnmatchedIconHandlingStrategy) = commitUpdate { updateUnmatchedIconHandlingStrategy(strategy) }
 
-    fun updatePasswordCardDisplayMode(mode: com.bastion.app.data.PasswordCardDisplayMode) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordCardDisplayMode(mode)
-        }
-    }
+    fun updatePasswordCardDisplayMode(mode: com.bastion.app.data.PasswordCardDisplayMode) = commitUpdate { updatePasswordCardDisplayMode(mode) }
 
-    fun updatePasswordCardDisplayFields(fields: List<com.bastion.app.data.PasswordCardDisplayField>) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordCardDisplayFields(fields)
-        }
-    }
+    fun updatePasswordCardDisplayFields(fields: List<com.bastion.app.data.PasswordCardDisplayField>) = commitUpdate { updatePasswordCardDisplayFields(fields) }
 
-    fun updatePasswordCardShowAuthenticator(show: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordCardShowAuthenticator(show)
-        }
-    }
+    fun updatePasswordCardShowAuthenticator(show: Boolean) = commitUpdate { updatePasswordCardShowAuthenticator(show) }
 
-    fun updatePasswordCardHideOtherContentWhenAuthenticator(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordCardHideOtherContentWhenAuthenticator(enabled)
-        }
-    }
+    fun updatePasswordCardHideOtherContentWhenAuthenticator(enabled: Boolean) = commitUpdate { updatePasswordCardHideOtherContentWhenAuthenticator(enabled) }
 
-    fun updateAuthenticatorCardDisplayFields(fields: List<com.bastion.app.data.AuthenticatorCardDisplayField>) {
-        viewModelScope.launch {
-            settingsManager.updateAuthenticatorCardDisplayFields(fields)
-        }
-    }
+    fun updateAuthenticatorCardDisplayFields(fields: List<com.bastion.app.data.AuthenticatorCardDisplayField>) = commitUpdate { updateAuthenticatorCardDisplayFields(fields) }
 
-    fun updateAuthenticatorCardHideCodeByDefault(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateAuthenticatorCardHideCodeByDefault(enabled)
-        }
-    }
+    fun updateAuthenticatorCardHideCodeByDefault(enabled: Boolean) = commitUpdate { updateAuthenticatorCardHideCodeByDefault(enabled) }
 
-    fun updatePasswordListQuickFiltersEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickFiltersEnabled(enabled)
-        }
-    }
+    fun updatePasswordListQuickFiltersEnabled(enabled: Boolean) = commitUpdate { updatePasswordListQuickFiltersEnabled(enabled) }
 
-    fun updatePasswordListQuickFilterItems(items: List<com.bastion.app.data.PasswordListQuickFilterItem>) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickFilterItems(items)
-        }
-    }
+    fun updatePasswordListQuickFilterItems(items: List<com.bastion.app.data.PasswordListQuickFilterItem>) = commitUpdate { updatePasswordListQuickFilterItems(items) }
 
-    fun updatePasswordListCategoryQuickFiltersEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListCategoryQuickFiltersEnabled(enabled)
-        }
-    }
+    fun updatePasswordListCategoryQuickFiltersEnabled(enabled: Boolean) = commitUpdate { updatePasswordListCategoryQuickFiltersEnabled(enabled) }
 
-    fun updatePasswordListQuickFoldersEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickFoldersEnabled(enabled)
-        }
-    }
+    fun updatePasswordListQuickFoldersEnabled(enabled: Boolean) = commitUpdate { updatePasswordListQuickFoldersEnabled(enabled) }
 
-    fun updatePasswordListQuickFolderStyle(style: com.bastion.app.data.PasswordListQuickFolderStyle) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickFolderStyle(style)
-        }
-    }
+    fun updatePasswordListQuickFolderStyle(style: com.bastion.app.data.PasswordListQuickFolderStyle) = commitUpdate { updatePasswordListQuickFolderStyle(style) }
 
-    fun updatePasswordListQuickFolderPathBannerEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickFolderPathBannerEnabled(enabled)
-        }
-    }
+    fun updatePasswordListQuickFolderPathBannerEnabled(enabled: Boolean) = commitUpdate { updatePasswordListQuickFolderPathBannerEnabled(enabled) }
 
-    fun updatePasswordListSystemBackToParentFolderEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListSystemBackToParentFolderEnabled(enabled)
-        }
-    }
+    fun updatePasswordListSystemBackToParentFolderEnabled(enabled: Boolean) = commitUpdate { updatePasswordListSystemBackToParentFolderEnabled(enabled) }
 
-    fun updateAddButtonBehaviorMode(mode: AddButtonBehaviorMode) {
-        viewModelScope.launch {
-            settingsManager.updateAddButtonBehaviorMode(mode)
-        }
-    }
+    fun updateAddButtonBehaviorMode(mode: AddButtonBehaviorMode) = commitUpdate { updateAddButtonBehaviorMode(mode) }
 
-    fun updateAddButtonMenuOrder(order: List<AddButtonMenuAction>) {
-        viewModelScope.launch {
-            settingsManager.updateAddButtonMenuOrder(order)
-        }
-    }
+    fun updateAddButtonMenuOrder(order: List<AddButtonMenuAction>) = commitUpdate { updateAddButtonMenuOrder(order) }
 
-    fun updateAddButtonMenuEnabledActions(actions: List<AddButtonMenuAction>) {
-        viewModelScope.launch {
-            settingsManager.updateAddButtonMenuEnabledActions(actions)
-        }
-    }
+    fun updateAddButtonMenuEnabledActions(actions: List<AddButtonMenuAction>) = commitUpdate { updateAddButtonMenuEnabledActions(actions) }
 
-    fun updatePasswordPageAggregateEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordPageAggregateEnabled(enabled)
-        }
-    }
+    fun updatePasswordPageAggregateEnabled(enabled: Boolean) = commitUpdate { updatePasswordPageAggregateEnabled(enabled) }
 
-    fun updatePasswordPageVisibleContentTypes(types: List<PasswordPageContentType>) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordPageVisibleContentTypes(types)
-        }
-    }
+    fun updatePasswordPageVisibleContentTypes(types: List<PasswordPageContentType>) = commitUpdate { updatePasswordPageVisibleContentTypes(types) }
 
-    fun updateCategorySelectionUiMode(mode: CategorySelectionUiMode) {
-        viewModelScope.launch {
-            settingsManager.updateCategorySelectionUiMode(mode)
-        }
-    }
+    fun updateCategorySelectionUiMode(mode: CategorySelectionUiMode) = commitUpdate { updateCategorySelectionUiMode(mode) }
 
-    fun updatePasswordListQuickAccessEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListQuickAccessEnabled(enabled)
-        }
-    }
+    fun updatePasswordListQuickAccessEnabled(enabled: Boolean) = commitUpdate { updatePasswordListQuickAccessEnabled(enabled) }
 
-    fun updatePasswordListTopModulesOrder(order: List<com.bastion.app.data.PasswordListTopModule>) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordListTopModulesOrder(order)
-        }
-    }
+    fun updatePasswordListTopModulesOrder(order: List<com.bastion.app.data.PasswordListTopModule>) = commitUpdate { updatePasswordListTopModulesOrder(order) }
 
-    fun updateNoteGridLayout(isGrid: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateNoteGridLayout(isGrid)
-        }
-    }
+    fun updateNoteGridLayout(isGrid: Boolean) = commitUpdate { updateNoteGridLayout(isGrid) }
 
-    fun updatePasswordFieldVisibility(field: String, visible: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updatePasswordFieldVisibility(field, visible)
-        }
-    }
+    fun updatePasswordFieldVisibility(field: String, visible: Boolean) = commitUpdate { updatePasswordFieldVisibility(field, visible) }
     
     // ==================== 预设自定义字段管理 ====================
     
-    fun addPresetCustomField(field: PresetCustomField) {
-        viewModelScope.launch {
-            settingsManager.addPresetCustomField(field)
-        }
-    }
+    fun addPresetCustomField(field: PresetCustomField) = commitUpdate { addPresetCustomField(field) }
     
-    fun updatePresetCustomField(field: PresetCustomField) {
-        viewModelScope.launch {
-            settingsManager.updatePresetCustomField(field)
-        }
-    }
+    fun updatePresetCustomField(field: PresetCustomField) = commitUpdate { updatePresetCustomField(field) }
     
-    fun deletePresetCustomField(fieldId: String) {
-        viewModelScope.launch {
-            settingsManager.deletePresetCustomField(fieldId)
-        }
-    }
+    fun deletePresetCustomField(fieldId: String) = commitUpdate { deletePresetCustomField(fieldId) }
     
-    fun reorderPresetCustomFields(fieldIds: List<String>) {
-        viewModelScope.launch {
-            settingsManager.reorderPresetCustomFields(fieldIds)
-        }
-    }
+    fun reorderPresetCustomFields(fieldIds: List<String>) = commitUpdate { reorderPresetCustomFields(fieldIds) }
     
-    fun clearAllPresetCustomFields() {
-        viewModelScope.launch {
-            settingsManager.clearAllPresetCustomFields()
-        }
-    }
+    fun clearAllPresetCustomFields() = commitUpdate { clearAllPresetCustomFields() }
     
     /**
      * 更新减少动画设置
      * 开启后将禁用共享元素动画，改为简单的淡入淡出效果
      * 主要用于解决 HyperOS 2 / Android 15 等设备上的动画卡顿问题
      */
-    fun updateReduceAnimations(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateReduceAnimations(enabled)
-        }
-    }
+    fun updateReduceAnimations(enabled: Boolean) = commitUpdate { updateReduceAnimations(enabled) }
 
-    fun updateSmartDeduplicationEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateSmartDeduplicationEnabled(enabled)
-        }
-    }
+    fun updateSmartDeduplicationEnabled(enabled: Boolean) = commitUpdate { updateSmartDeduplicationEnabled(enabled) }
 
-    fun updateSeparateUsernameAccountEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateSeparateUsernameAccountEnabled(enabled)
-        }
-    }
+    fun updateSeparateUsernameAccountEnabled(enabled: Boolean) = commitUpdate { updateSeparateUsernameAccountEnabled(enabled) }
 
-    fun updateKeepassDxLikeMutationEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateKeepassDxLikeMutationEnabled(enabled)
-        }
-    }
+    fun updateKeepassDxLikeMutationEnabled(enabled: Boolean) = commitUpdate { updateKeepassDxLikeMutationEnabled(enabled) }
 
     fun categoryFilterStateFlow(scope: String): Flow<SavedCategoryFilterState> {
         return settingsManager.categoryFilterStateFlow(scope)
     }
 
-    fun updateCategoryFilterState(scope: String, state: SavedCategoryFilterState) {
-        viewModelScope.launch {
-            settingsManager.updateCategoryFilterState(scope, state)
-        }
-    }
+    fun updateCategoryFilterState(scope: String, state: SavedCategoryFilterState) = commitUpdate { updateCategoryFilterState(scope, state) }
 
-    fun updateBitwardenUploadAll(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsManager.updateBitwardenUploadAll(enabled)
-        }
-    }
+    fun updateBitwardenUploadAll(enabled: Boolean) = commitUpdate { updateBitwardenUploadAll(enabled) }
     
     /**
      * 更新自动填充数据源
      */
-    fun updateAutofillSources(sources: Set<com.bastion.app.data.AutofillSource>) {
-        viewModelScope.launch {
-            settingsManager.updateAutofillSources(sources)
-        }
-    }
+    fun updateAutofillSources(sources: Set<com.bastion.app.data.AutofillSource>) = commitUpdate { updateAutofillSources(sources) }
     
     /**
      * 更新自动填充优先级
      */
-    fun updateAutofillPriority(priority: List<com.bastion.app.data.AutofillSource>) {
-        viewModelScope.launch {
-            settingsManager.updateAutofillPriority(priority)
-        }
-    }
+    fun updateAutofillPriority(priority: List<com.bastion.app.data.AutofillSource>) = commitUpdate { updateAutofillPriority(priority) }
     
 }
