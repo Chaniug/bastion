@@ -411,6 +411,9 @@
     <string name="otp_type_hotp">基于计数器 (HOTP)</string>
     <string name="otp_type_yandex">Yandex</string>
     <string name="otp_type_motp">Mobile-OTP</string>
+    <string name="otp_type_steam">Steam Guard</string>
+    <string name="steam_uses_5_chars">Steam使用5位字符码</string>
+    <string name="otp_type_description_steam">Steam Guard使用的5位字符验证码</string>
     <string name="initial_counter">初始计数器</string>
     <string name="counter_value">计数器: %d</string>
     <string name="generate_next">生成下一个</string>
