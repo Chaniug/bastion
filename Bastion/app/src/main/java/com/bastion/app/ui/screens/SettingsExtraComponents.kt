@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import android.widget.Toast
 import com.bastion.app.R
 import com.bastion.app.data.SecureItem
 import com.bastion.app.ui.components.TrashSettingsSheet
