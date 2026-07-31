@@ -36,9 +36,13 @@ class SettingsViewModel(
     /**
      * 统一的事务包装：在 viewModelScope 中把变更提交到 SettingsManager。
      * 所有 update/add/delete 等委托方法复用它，消除重复的 launch 样板。
+     *
+     * 注意：不能标记为 inline —— suspend 类型的 lambda 参数无法在非 suspend 的
+     * inline 函数中内联；返回 Unit 而非 Job，保持这些委托方法原有的公开签名。
      */
-    private inline fun commitUpdate(block: suspend SettingsManager.() -> Unit) =
+    private fun commitUpdate(block: suspend SettingsManager.() -> Unit) {
         viewModelScope.launch { settingsManager.block() }
+    }
 
     
     val settings: StateFlow<AppSettings> = settingsManager.settingsFlow
