@@ -655,14 +655,7 @@ class DedupMergeService(
                     data.counter.toString(),
                     decryptComparablePassword(data.pin),
                     normalizeText(data.link),
-                    normalizeText(data.associatedApp),
-                    data.steamFingerprint.trim(),
-                    data.steamDeviceId.trim(),
-                    data.steamSerialNumber.trim(),
-                    data.steamSharedSecretBase64.trim(),
-                    data.steamRevocationCode.trim(),
-                    data.steamIdentitySecret.trim(),
-                    data.steamTokenGid.trim()
+                    normalizeText(data.associatedApp)
                 ).joinToString("\u0001")
             }
             ItemType.BANK_CARD -> decodeBankCardData(item)?.let { data ->

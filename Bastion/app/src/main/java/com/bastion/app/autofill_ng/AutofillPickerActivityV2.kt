@@ -104,9 +104,6 @@ import com.bastion.app.repository.CustomFieldRepository
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.security.SecurityManager
-import com.bastion.app.steam.core.SteamTotp
-import com.bastion.app.steam.data.SteamAccountRepository
-import com.bastion.app.steam.data.SteamDatabase
 import com.bastion.app.ui.theme.BastionTheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.bastion.app.data.model.TotpData

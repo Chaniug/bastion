@@ -90,7 +90,6 @@ import com.bastion.app.mdbx.MdbxDiagLogger
 import com.bastion.app.passkey.PasskeyValidationDiagnostics
 import com.bastion.app.security.SecurityDiagLogger
 import com.bastion.app.security.SessionManager
-import com.bastion.app.steam.diagnostics.SteamDiagLogger
 import com.bastion.app.viewmodel.SettingsViewModel
 
 /**
@@ -762,7 +761,6 @@ private object DeveloperLogDebugHelper {
         runCatchingObserved { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
         runCatchingObserved { MdbxDiagLogger.initialize(context.applicationContext) }
         runCatchingObserved { SecurityDiagLogger.initialize(context.applicationContext) }
-        runCatchingObserved { SteamDiagLogger.initialize(context.applicationContext) }
         val autofillTagLogs = readAutofillTagLogs()
         val appProcessLogs = readLogcat(
             arrayOf(
@@ -838,11 +836,6 @@ private object DeveloperLogDebugHelper {
         }.getOrElse {
             "Security persisted logs unavailable: ${it.message}"
         }
-        val persistedSteamLogs = runCatchingObserved {
-            SteamDiagLogger.exportPersistedLogs(2000)
-        }.getOrElse {
-            "Steam persisted logs unavailable: ${it.message}"
-        }
         val persistedPasskeyLogs = runCatchingObserved {
             PasskeyValidationDiagnostics.buildReport(context)
         }.getOrElse {
@@ -902,13 +895,6 @@ private object DeveloperLogDebugHelper {
                 appendLine(persistedSecurityLogs.trim())
             }
             appendLine()
-            appendLine("=== Steam Persisted Logs ===")
-            if (persistedSteamLogs.isBlank()) {
-                appendLine(context.getString(R.string.developer_no_logs))
-            } else {
-                appendLine(persistedSteamLogs.trim())
-            }
-            appendLine()
             appendLine("=== Passkey Persisted Logs ===")
             if (persistedPasskeyLogs.isBlank()) {
                 appendLine(context.getString(R.string.developer_no_logs))
@@ -923,10 +909,8 @@ private object DeveloperLogDebugHelper {
         val parsedForensics = parseLines(persistedForensicsLogs)
         val parsedMdbx = parseLines(persistedMdbxLogs)
         val parsedSecurity = parseLines(persistedSecurityLogs)
-        val parsedSteam = parseLines(persistedSteamLogs)
         val parsed = when {
             parsedSystem.isNotEmpty() -> parsedSystem
-            parsedSteam.isNotEmpty() -> parsedSteam
             parsedMdbx.isNotEmpty() -> parsedMdbx
             parsedSecurity.isNotEmpty() -> parsedSecurity
             parsedForensics.isNotEmpty() -> parsedForensics
@@ -952,9 +936,6 @@ private object DeveloperLogDebugHelper {
         }
         runCatchingObserved {
             SecurityDiagLogger.clear()
-        }
-        runCatchingObserved {
-            SteamDiagLogger.clear()
         }
 
         val process = runCatchingObserved {

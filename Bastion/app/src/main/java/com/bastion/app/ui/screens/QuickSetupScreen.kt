@@ -106,7 +106,6 @@ import com.bastion.app.data.Language
 import com.bastion.app.data.PasswordCardDisplayField
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
-import com.bastion.app.ui.main.navigation.SteamDockIcon
 import com.bastion.app.data.UnifiedProgressBarMode
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.security.SecurityManager
@@ -1547,7 +1546,6 @@ private fun tabLabelRes(tab: BottomNavContentTab): Int = when (tab) {
     BottomNavContentTab.NOTES -> R.string.nav_notes
     BottomNavContentTab.SEND -> R.string.nav_v2_send
     BottomNavContentTab.PASSKEY -> R.string.nav_passkey
-    BottomNavContentTab.STEAM -> R.string.nav_steam
 }
 
 @StringRes
@@ -1560,7 +1558,6 @@ private fun tabShortLabelRes(tab: BottomNavContentTab): Int = when (tab) {
     BottomNavContentTab.NOTES -> R.string.nav_notes_short
     BottomNavContentTab.SEND -> R.string.nav_v2_send_short
     BottomNavContentTab.PASSKEY -> R.string.nav_passkey_short
-    BottomNavContentTab.STEAM -> R.string.nav_steam_short
 }
 
 private fun tabIcon(tab: BottomNavContentTab): ImageVector = when (tab) {
@@ -1572,5 +1569,4 @@ private fun tabIcon(tab: BottomNavContentTab): ImageVector = when (tab) {
     BottomNavContentTab.NOTES -> Icons.Default.Note
     BottomNavContentTab.SEND -> Icons.Default.Send
     BottomNavContentTab.PASSKEY -> Icons.Default.Key
-    BottomNavContentTab.STEAM -> SteamDockIcon
 }

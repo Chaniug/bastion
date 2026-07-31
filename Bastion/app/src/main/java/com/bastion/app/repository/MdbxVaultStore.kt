@@ -48,7 +48,6 @@ private const val MDBX_LEGACY_DRAFT_FORMAT_VERSION = "MDBX-1-DRAFT"
 private const val MDBX_OFFICIAL_RELEASE_LABEL = "MDBX-1.0"
 private const val MDBX_ANDROID_CAPABILITY_FLAGS =
     "android-official-1.0,sky-portable,tiga-selectable,legacy-test-compatible"
-private const val STEAM_MAFILE_ENTRY_TYPE = "steam-mafile"
 
 data class MdbxVaultDiagnostics(
     val databaseId: Long,
@@ -1880,48 +1879,6 @@ class MdbxVaultStore(
         deleteEntryMutations(passkeys.mapNotNull { passkeyEntryDeleteMutation(it) })
     }
 
-    override suspend fun listSteamMaFileEntries(databaseId: Long): List<MdbxStoredVaultEntry> {
-        return readStoredEntries(databaseId)
-            .filterNot { it.deleted }
-            .filter { entry ->
-                entry.entryType.equals(STEAM_MAFILE_ENTRY_TYPE, ignoreCase = true) ||
-                    entry.entryType.equals("steam_mafile", ignoreCase = true)
-            }
-    }
-
-    override suspend fun upsertSteamMaFileEntry(
-        databaseId: Long,
-        entryId: String?,
-        title: String,
-        maFileJson: String
-    ): String {
-        val resolvedEntryId = entryId?.takeIf { it.isNotBlank() }
-            ?: steamMaFileObjectId(maFileJson)
-        val payload = JSONObject()
-            .put("kind", "steam_mafile")
-            .put("steamid", steamIdFromSteamMaFileJson(maFileJson).orEmpty())
-            .put("account_name", accountNameFromSteamMaFileJson(maFileJson).orEmpty())
-            .put("mafile_json", maFileJson)
-        upsertEntryMutations(
-            listOf(
-                MdbxEntryMutation(
-                    databaseId = databaseId,
-                    projectId = resolvedEntryId,
-                    entryId = resolvedEntryId,
-                    entryType = STEAM_MAFILE_ENTRY_TYPE,
-                    title = title,
-                    payloadJson = payload.toString(),
-                    deleted = false
-                )
-            )
-        )
-        return resolvedEntryId
-    }
-
-    override suspend fun deleteSteamMaFileEntry(databaseId: Long, entryId: String) {
-        if (entryId.isBlank()) return
-        deleteEntryMutations(listOf(MdbxEntryDeleteMutation(databaseId, entryId)))
-    }
 
     private suspend fun passwordEntryMutation(entry: PasswordEntry): MdbxEntryMutation? {
         val databaseId = entry.mdbxDatabaseId ?: return null
@@ -6612,26 +6569,6 @@ class MdbxVaultStore(
         }.getOrDefault(payloadJson.take(120))
     }
 
-    private fun steamMaFileObjectId(maFileJson: String): String {
-        val steamId = steamIdFromSteamMaFileJson(maFileJson)
-        if (!steamId.isNullOrBlank()) return "steam-mafile:$steamId"
-        return "steam-mafile:${sha256Hex(maFileJson.toByteArray(Charsets.UTF_8)).take(32)}"
-    }
-
-    private fun steamIdFromSteamMaFileJson(maFileJson: String): String? {
-        val root = runCatchingObserved { JSONObject(maFileJson) }.getOrNull() ?: return null
-        return root.optString("steamid").ifBlank { root.optString("steam_id") }
-            .ifBlank { root.optString("SteamID") }
-            .ifBlank { root.optString("steam64") }
-            .takeIf { it.isNotBlank() }
-    }
-
-    private fun accountNameFromSteamMaFileJson(maFileJson: String): String? {
-        val root = runCatchingObserved { JSONObject(maFileJson) }.getOrNull() ?: return null
-        return root.optString("account_name").ifBlank { root.optString("accountName") }
-            .ifBlank { root.optString("AccountName") }
-            .takeIf { it.isNotBlank() }
-    }
 
     private fun passwordObjectId(entry: PasswordEntry): String =
         entry.replicaGroupId

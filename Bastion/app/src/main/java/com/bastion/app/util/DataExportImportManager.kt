@@ -64,7 +64,6 @@ class DataExportImportManager(private val context: Context) {
     )
 
     companion object {
-        private val STEAM_DEVICE_ID_REGEX = Regex("^android:[0-9a-f-]+$", RegexOption.IGNORE_CASE)
     }
 
     /**
@@ -1491,21 +1490,6 @@ class DataExportImportManager(private val context: Context) {
         val digits: Int,
         val period: Int
     )
-
-    data class SteamGuardImportEntry(
-        val name: String,
-        val issuer: String = "Steam",
-        val note: String = "",
-        val secretBase32: String,
-        val deviceId: String,
-        val serialNumber: String,
-        val sharedSecretBase64: String,
-        val revocationCode: String,
-        val identitySecret: String,
-        val tokenGid: String,
-        val rawSteamGuardJson: String,
-        val fingerprint: String
-    )
     
     /**
      * 检查文件是否为加密的Aegis文件
@@ -1686,195 +1670,9 @@ class DataExportImportManager(private val context: Context) {
         }
     }
     
-    /**
-     * 从Steam maFile导入验证器数据
-     * @param inputUri 输入文件的URI
-     * @return 导入的AegisEntry
-     */
-    suspend fun importSteamMaFileWithMetadata(
-        inputUri: Uri,
-        customName: String? = null
-    ): Result<SteamGuardImportEntry> = withContext(Dispatchers.IO) {
-        try {
-            val inputStream = context.contentResolver.openInputStream(inputUri)
-                ?: return@withContext Result.failure(Exception("无法读取文件，请检查文件是否存在"))
-
-            inputStream.use { input ->
-                val content = BufferedReader(InputStreamReader(input, Charsets.UTF_8)).readText()
-                val json = Json { ignoreUnknownKeys = true }
-                val root = json.parseToJsonElement(content).jsonObject
-                parseSteamGuardPayload(
-                    root = root,
-                    rawSteamGuardJson = content,
-                    deviceIdInput = root["device_id"]?.jsonPrimitive?.contentOrNull,
-                    customName = customName,
-                    requireDeviceId = false
-                )
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("SteamImport", "导入失败", e)
-            Result.failure(Exception("导入失败：${e.message ?: "未知错误"}"))
-        }
-    }
-
-    suspend fun importSteamAppCoexist(
-        deviceIdInput: String,
-        steamGuardJson: String,
-        customName: String? = null
-    ): Result<SteamGuardImportEntry> = withContext(Dispatchers.IO) {
-        try {
-            val json = Json { ignoreUnknownKeys = true }
-            val root = json.parseToJsonElement(steamGuardJson).jsonObject
-            parseSteamGuardPayload(
-                root = root,
-                rawSteamGuardJson = steamGuardJson,
-                deviceIdInput = deviceIdInput,
-                customName = customName,
-                requireDeviceId = true
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("SteamImport", "Steam App 共存导入失败", e)
-            Result.failure(Exception("导入失败：${e.message ?: "未知错误"}"))
-        }
-    }
-
-    /**
-     * 从Steam maFile导入验证器数据（兼容旧调用，返回简化Aegis条目）
-     */
-    suspend fun importSteamMaFile(
-        inputUri: Uri
-    ): Result<AegisEntry> = withContext(Dispatchers.IO) {
-        importSteamMaFileWithMetadata(inputUri).map { entry ->
-            AegisEntry(
-                uuid = java.util.UUID.randomUUID().toString(),
-                name = entry.name,
-                issuer = entry.issuer,
-                note = entry.note,
-                secret = entry.secretBase32,
-                algorithm = "SHA1",
-                digits = 5,
-                period = 30
-            )
-        }
-    }
-
-    private fun parseSteamGuardPayload(
-        root: JsonObject,
-        rawSteamGuardJson: String,
-        deviceIdInput: String?,
-        customName: String?,
-        requireDeviceId: Boolean
-    ): Result<SteamGuardImportEntry> {
-        val sharedSecret = root["shared_secret"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-        if (sharedSecret.isBlank()) {
-            return Result.failure(Exception("无效的 SteamGuard 内容：缺少 shared_secret"))
-        }
-
-        val serialNumber = root["serial_number"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-        if (serialNumber.isBlank()) {
-            return Result.failure(Exception("无效的 SteamGuard 内容：缺少 serial_number"))
-        }
-
-        val normalizedDeviceId = normalizeSteamDeviceId(deviceIdInput?.takeIf { it.isNotBlank() })
-            ?: if (requireDeviceId) null else buildFallbackSteamDeviceId(sharedSecret, serialNumber)
-        if (normalizedDeviceId == null) {
-            return Result.failure(Exception("无效的设备ID（格式应为 android:xxxx）"))
-        }
-
-        val decodedBytes = decodeSteamSharedSecret(sharedSecret)
-            ?: return Result.failure(Exception("无效的 Steam shared_secret 格式"))
-
-        val secretBase32 = base32Encode(decodedBytes)
-        val accountName = customName?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: root["account_name"]?.jsonPrimitive?.contentOrNull?.trim()
-                ?.takeIf { it.isNotBlank() }
-            ?: "Steam Guard"
-
-        val revocationCode = root["revocation_code"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-        val identitySecret = root["identity_secret"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-        val tokenGid = root["token_gid"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-        val fingerprint = buildSteamFingerprint(sharedSecret, normalizedDeviceId, serialNumber)
-
-        return Result.success(
-            SteamGuardImportEntry(
-                name = accountName,
-                secretBase32 = secretBase32,
-                deviceId = normalizedDeviceId,
-                serialNumber = serialNumber,
-                sharedSecretBase64 = sharedSecret,
-                revocationCode = revocationCode,
-                identitySecret = identitySecret,
-                tokenGid = tokenGid,
-                rawSteamGuardJson = rawSteamGuardJson,
-                fingerprint = fingerprint
-            )
-        )
-    }
-
-    private fun normalizeSteamDeviceId(rawInput: String?): String? {
-        if (rawInput.isNullOrBlank()) return null
-        val candidate = extractUuidFromXml(rawInput.trim()) ?: rawInput.trim()
-        val normalized = if (candidate.startsWith("android:", ignoreCase = true)) {
-            candidate
-        } else {
-            "android:$candidate"
-        }.lowercase(Locale.US)
-
-        return normalized.takeIf { STEAM_DEVICE_ID_REGEX.matches(it) }
-    }
-
-    private fun extractUuidFromXml(input: String): String? {
-        if (!input.contains("<") && !input.contains("?xml", ignoreCase = true)) return null
-
-        runCatchingObserved {
-            val factory = DocumentBuilderFactory.newInstance()
-            val builder = factory.newDocumentBuilder()
-            val doc = builder.parse(InputSource(StringReader(input)))
-            val nodes = doc.getElementsByTagName("string")
-            for (index in 0 until nodes.length) {
-                val node = nodes.item(index)
-                val attrs = node.attributes ?: continue
-                val nameAttr = attrs.getNamedItem("name")?.nodeValue ?: continue
-                if (nameAttr == "uuidKey") {
-                    return node.textContent?.trim()
-                }
-            }
-        }.getOrNull()
-
-        val regex = Regex("<string\\s+name\\s*=\\s*['\"]uuidKey['\"][^>]*>([^<]+)</string>", RegexOption.IGNORE_CASE)
-        return regex.find(input)?.groupValues?.getOrNull(1)?.trim()
-    }
-
-    private fun decodeSteamSharedSecret(sharedSecret: String): ByteArray? {
-        return runCatchingObserved {
-            android.util.Base64.decode(sharedSecret, android.util.Base64.DEFAULT)
-        }.getOrElse {
-            runCatchingObserved {
-                android.util.Base64.decode(
-                    sharedSecret,
-                    android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING
-                )
-            }.getOrNull()
-        }
-    }
-
-    private fun buildSteamFingerprint(sharedSecret: String, deviceId: String, serialNumber: String): String {
-        val source = "$sharedSecret|$deviceId|$serialNumber"
-        val digest = MessageDigest.getInstance("SHA-256").digest(source.toByteArray(Charsets.UTF_8))
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
-    private fun buildFallbackSteamDeviceId(sharedSecret: String, serialNumber: String): String {
-        val source = "$sharedSecret|$serialNumber"
-        val digest = MessageDigest.getInstance("MD5").digest(source.toByteArray(Charsets.UTF_8))
-        val hex = digest.joinToString("") { "%02x".format(it) }
-        val uuidLike = "${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}"
-        return "android:$uuidLike"
-    }
     
     /**
-     * Base32编码（用于将Steam的Base64密钥转换为TOTP标准的Base32格式）
+     * Base32编码（用于将Base64密钥转换为TOTP标准的Base32格式）
      */
     private fun base32Encode(data: ByteArray): String {
         val base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"

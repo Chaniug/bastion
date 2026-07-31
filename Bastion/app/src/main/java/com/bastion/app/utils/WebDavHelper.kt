@@ -35,11 +35,6 @@ import com.bastion.app.data.model.TotpData
 import com.bastion.app.data.model.CardWalletDataCodec
 import com.bastion.app.data.model.isEmpty
 import com.bastion.app.security.SecurityManager
-import com.bastion.app.steam.data.SteamAccountRepository
-import com.bastion.app.steam.data.SteamDatabase
-import com.bastion.app.steam.importer.SteamMaFileBackupCodec
-import com.bastion.app.steam.importer.SteamMaFileParser
-import com.bastion.app.steam.importer.SteamMaFilePayload
 import com.bastion.app.util.TotpDataResolver
 import com.bastion.app.util.DataExportImportManager
 import kotlinx.serialization.json.Json
@@ -197,11 +192,6 @@ private data class TotpBackupEntry(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val categoryName: String? = null
-)
-
-private data class SteamMaFileBackupEntry(
-    val fileName: String,
-    val content: String
 )
 
 @Serializable
@@ -526,8 +516,6 @@ class WebDavHelper(
         private const val KEY_BACKUP_INCLUDE_WEBDAV_CONFIG = "backup_include_webdav_config"
         private const val KEY_BACKUP_INCLUDE_LOCAL_KEEPASS = "backup_include_local_keepass"
         private const val BACKUP_FOLDER_NAME = "Bastion_Backups"
-        private const val STEAM_MAFILE_BACKUP_DIR = "steam/mafiles"
-        private const val STEAM_MAFILE_BACKUP_TYPE = "Steam maFile"
     }
     
     // 
@@ -1115,18 +1103,7 @@ class WebDavHelper(
             var successPasswordCount = 0
             var successNoteCount = 0
             var successImageCount = 0
-            var successSteamMaFileCount = 0
             val securityManager = SecurityManager(context)
-            val steamMaFileBackups = if (preferences.includeAuthenticators) {
-                runCatchingObserved { createSteamMaFileBackups(securityManager) }
-                    .onFailure { error ->
-                        android.util.Log.w("WebDavHelper", "Failed to prepare Steam maFile backups: ${error.message}")
-                        warnings.add("Steam maFile备份失败: ${error.message}")
-                    }
-                    .getOrDefault(emptyList())
-            } else {
-                emptyList()
-            }
 
             // 1. 创建临时导出文件/目录
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -1574,27 +1551,6 @@ class WebDavHelper(
                 ZipOutputStream(FileOutputStream(zipFile)).use { zipOut ->
                     if (foldersRootDir.exists()) {
                         addDirectoryToZip(zipOut, foldersRootDir, "folders")
-                    }
-                    if (steamMaFileBackups.isNotEmpty()) {
-                        val steamMaFilesDir = File(cacheBackupDir, "steam_mafiles")
-                        if (!steamMaFilesDir.exists()) steamMaFilesDir.mkdirs()
-                        steamMaFileBackups.forEach { backup ->
-                            try {
-                                val maFile = File(steamMaFilesDir, backup.fileName)
-                                maFile.writeText(backup.content, Charsets.UTF_8)
-                                addFileToZip(zipOut, maFile, "$STEAM_MAFILE_BACKUP_DIR/${backup.fileName}")
-                                successSteamMaFileCount++
-                            } catch (e: Exception) {
-                                failedItems.add(
-                                    FailedItem(
-                                        id = 0,
-                                        type = STEAM_MAFILE_BACKUP_TYPE,
-                                        title = backup.fileName,
-                                        reason = "写入失败: ${e.message}"
-                                    )
-                                )
-                            }
-                        }
                     }
                     if (preferences.includePasswords && passwordsCsvFile.exists()) {
                         addFileToZip(zipOut, passwordsCsvFile, passwordsCsvFile.name)
@@ -2323,7 +2279,6 @@ class WebDavHelper(
                     documents = cardWalletItems.count { it.itemType == ItemType.DOCUMENT },
                     billingAddresses = cardWalletItems.count { it.itemType == ItemType.BILLING_ADDRESS },
                     paymentAccounts = cardWalletItems.count { it.itemType == ItemType.PAYMENT_ACCOUNT },
-                    steamMaFiles = steamMaFileBackups.size,
                     images = totalImageCount
                 )
                 val successCounts = ItemCounts(
@@ -2334,7 +2289,6 @@ class WebDavHelper(
                     documents = cardWalletItems.count { it.itemType == ItemType.DOCUMENT },
                     billingAddresses = cardWalletItems.count { it.itemType == ItemType.BILLING_ADDRESS },
                     paymentAccounts = cardWalletItems.count { it.itemType == ItemType.PAYMENT_ACCOUNT },
-                    steamMaFiles = successSteamMaFileCount,
                     images = successImageCount
                 )
                 val report = BackupReport(
@@ -2349,7 +2303,6 @@ class WebDavHelper(
                     "Backup zip created: scope=$contentScope, " +
                         "passwords=${successCounts.passwords}/${totalCounts.passwords}, " +
                         "totp=${successCounts.totp}/${totalCounts.totp}, " +
-                        "steamMaFiles=${successCounts.steamMaFiles}/${totalCounts.steamMaFiles}, " +
                         "notes=${successCounts.notes}/${totalCounts.notes}, warnings=${warnings.size}, failures=${failedItems.size}"
                 )
 
@@ -2580,40 +2533,6 @@ class WebDavHelper(
         
         return imageFileNames
     }
-
-    private suspend fun createSteamMaFileBackups(
-        securityManager: SecurityManager
-    ): List<SteamMaFileBackupEntry> {
-        val repository = SteamAccountRepository(
-            SteamDatabase.getDatabase(context).steamAccountDao(),
-            securityManager
-        )
-        return repository.getAccounts()
-            .filter { it.steamId.isNotBlank() && it.sharedSecret.isNotBlank() }
-            .map { account ->
-                SteamMaFileBackupEntry(
-                    fileName = SteamMaFileBackupCodec.fileName(account),
-                    content = SteamMaFileBackupCodec.encode(account)
-                )
-            }
-    }
-
-    private fun isSteamMaFileBackupEntry(normalizedEntryName: String): Boolean {
-        val lowerName = normalizedEntryName.lowercase(Locale.ROOT)
-        return lowerName.startsWith("$STEAM_MAFILE_BACKUP_DIR/") &&
-            (lowerName.endsWith(".mafile") || lowerName.endsWith(".json"))
-    }
-
-    private fun restoreSteamMaFilePayload(file: File): SteamMaFilePayload? {
-        return runCatchingObserved {
-            SteamMaFileParser().parse(
-                maFileContent = file.readText(Charsets.UTF_8),
-                fileName = file.name
-            )
-        }.onFailure { error ->
-            android.util.Log.w("WebDavHelper", "Failed to parse Steam maFile ${file.name}: ${error.message}")
-        }.getOrNull()
-    }
     
     /**
      * 异常：需要密码
@@ -2658,14 +2577,12 @@ class WebDavHelper(
     }
 
     private suspend fun clearLocalDataForOverwriteRestore(
-        backupFileName: String,
-        clearSteamAccounts: Boolean = false
+        backupFileName: String
     ): Result<Unit> {
         return try {
             android.util.Log.d(
                 "WebDavHelper",
-                "Overwrite restore validated, clearing Bastion local data only: file=$backupFileName, " +
-                    "clearSteamAccounts=$clearSteamAccounts"
+                "Overwrite restore validated, clearing Bastion local data only: file=$backupFileName"
             )
             val database = com.bastion.app.data.PasswordDatabase.getDatabase(context)
             database.passwordEntryDao().deleteAllLocalPasswordEntries()
@@ -2676,9 +2593,6 @@ class WebDavHelper(
             database.secureItemDao().deleteAllLocalItemsByType(com.bastion.app.data.ItemType.PAYMENT_ACCOUNT)
             database.secureItemDao().deleteAllLocalItemsByType(com.bastion.app.data.ItemType.NOTE)
             database.passkeyDao().deleteAllLocalPasskeys()
-            if (clearSteamAccounts) {
-                SteamDatabase.getDatabase(context).steamAccountDao().deleteAll()
-            }
             android.util.Log.d("WebDavHelper", "Bastion local data cleared successfully for overwrite restore")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -2712,7 +2626,6 @@ class WebDavHelper(
             var backupPaymentAccountCount = 0
             var backupImageCount = 0
             var backupPasskeyCount = 0
-            var backupSteamMaFileCount = 0
             var restoredPasswordCount = 0
             var restoredNoteCount = 0
             var restoredCardCount = 0
@@ -2721,7 +2634,6 @@ class WebDavHelper(
             var restoredPaymentAccountCount = 0
             var restoredImageCount = 0
             var restoredPasskeyCount = 0
-            var restoredSteamMaFileCount = 0
             var detectedBastionConfigEntries = emptyList<String>()
 
             // 1. 检测是否加密
@@ -2779,7 +2691,6 @@ class WebDavHelper(
                 val passwords = mutableListOf<PasswordEntry>()
                 val secureItems = mutableListOf<DataExportImportManager.ExportItem>()
                 val passkeys = mutableListOf<PasskeyEntry>()
-                val steamMaFiles = mutableListOf<SteamMaFilePayload>()
                 val passwordHistory = mutableListOf<PasswordHistoryBackupEntry>()
                 val pendingAttachments = mutableListOf<com.bastion.app.attachments.backup.AttachmentBackupCodec.Entry>()
                 val pendingPortableAttachmentEntries =
@@ -2930,23 +2841,6 @@ class WebDavHelper(
                                             title = entryName,
                                             reason = "JSON解析失败"
                                         ))
-                                    }
-                                }
-                                isSteamMaFileBackupEntry(normalizedEntryName) -> {
-                                    backupSteamMaFileCount++
-                                    val payload = restoreSteamMaFilePayload(tempFile)
-                                    if (payload != null) {
-                                        steamMaFiles.add(payload)
-                                        restoredSteamMaFileCount++
-                                    } else {
-                                        failedItems.add(
-                                            FailedItem(
-                                                id = 0,
-                                                type = STEAM_MAFILE_BACKUP_TYPE,
-                                                title = entryName,
-                                                reason = "maFile解析失败"
-                                            )
-                                        )
                                     }
                                 }
                                 normalizedEntryName.contains("/authenticators/") ||
@@ -4032,7 +3926,6 @@ class WebDavHelper(
                     documents = if (backupDocCount > 0) backupDocCount else docItems,
                     billingAddresses = if (backupBillingAddressCount > 0) backupBillingAddressCount else billingAddressItems,
                     paymentAccounts = if (backupPaymentAccountCount > 0) backupPaymentAccountCount else paymentAccountItems,
-                    steamMaFiles = backupSteamMaFileCount,
                     images = backupImageCount
                 )
                 
@@ -4044,7 +3937,6 @@ class WebDavHelper(
                     documents = if (restoredDocCount > 0) restoredDocCount else docItems,
                     billingAddresses = if (restoredBillingAddressCount > 0) restoredBillingAddressCount else billingAddressItems,
                     paymentAccounts = if (restoredPaymentAccountCount > 0) restoredPaymentAccountCount else paymentAccountItems,
-                    steamMaFiles = restoredSteamMaFileCount,
                     images = restoredImageCount
                 )
 
@@ -4055,15 +3947,14 @@ class WebDavHelper(
                 val hasRestorableCoreData =
                     passwords.isNotEmpty() ||
                         normalizedSecureItems.isNotEmpty() ||
-                        passkeys.isNotEmpty() ||
-                        steamMaFiles.isNotEmpty()
+                        passkeys.isNotEmpty()
 
                 if (overwrite) {
                     android.util.Log.d(
                         "WebDavHelper",
                         "Overwrite restore requested after parse: file=${backupFile.name}, " +
                             "passwords=${passwords.size}, secureItems=${normalizedSecureItems.size}, " +
-                            "passkeys=${passkeys.size}, steamMaFiles=${steamMaFiles.size}, " +
+                            "passkeys=${passkeys.size}, " +
                             "failedItems=${failedItems.size}, warnings=${warnings.size}"
                     )
                     if (failedItems.isNotEmpty()) {
@@ -4076,14 +3967,7 @@ class WebDavHelper(
                             Exception("备份中没有可恢复的数据，已阻止替换本地数据以避免数据丢失")
                         )
                     }
-                    val clearResult = if (steamMaFiles.isNotEmpty()) {
-                        clearLocalDataForOverwriteRestore(
-                            backupFileName = backupFile.name,
-                            clearSteamAccounts = true
-                        )
-                    } else {
-                        clearLocalDataForOverwriteRestore(backupFile.name)
-                    }
+                    val clearResult = clearLocalDataForOverwriteRestore(backupFile.name)
                     clearResult.getOrElse { error ->
                         return@withContext Result.failure(error)
                     }
@@ -4102,7 +3986,6 @@ class WebDavHelper(
                         passwords = passwords,
                         secureItems = normalizedSecureItems,
                         passkeys = passkeys,
-                        steamMaFiles = steamMaFiles,
                         customFieldsMap = pendingCustomFields.toMap(),
                         passwordHistory = passwordHistory,
                         attachments = pendingAttachments.toList(),
@@ -5483,7 +5366,6 @@ data class BackupContent(
     val passwords: List<PasswordEntry>,
     val secureItems: List<DataExportImportManager.ExportItem>,
     val passkeys: List<PasskeyEntry> = emptyList(),
-    val steamMaFiles: List<SteamMaFilePayload> = emptyList(),
     val customFieldsMap: Map<Long, List<CustomFieldBackupEntry>> = emptyMap(),
     val passwordHistory: List<PasswordHistoryBackupEntry> = emptyList(),
     val portableAttachments: com.bastion.app.attachments.backup.PortableAttachmentBackup.RestorePlan =

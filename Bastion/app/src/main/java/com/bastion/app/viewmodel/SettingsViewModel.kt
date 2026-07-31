@@ -132,8 +132,6 @@ class SettingsViewModel(
 
     fun updatePasswordDetailSecurityAnalysisEnabled(enabled: Boolean) = commitUpdate { updatePasswordDetailSecurityAnalysisEnabled(enabled) }
 
-    fun updateSteamMiniProfileBackgroundEnabled(enabled: Boolean) = commitUpdate { updateSteamMiniProfileBackgroundEnabled(enabled) }
-
     fun updateBitwardenBottomStatusBarEnabled(enabled: Boolean) = commitUpdate { updateBitwardenBottomStatusBarEnabled(enabled) }
 
     fun updateCopyNextCodeWhenExpiring(enabled: Boolean) = commitUpdate { updateCopyNextCodeWhenExpiring(enabled) }

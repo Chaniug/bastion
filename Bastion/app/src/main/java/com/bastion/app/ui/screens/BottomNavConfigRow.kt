@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.BottomNavContentTab
-import com.bastion.app.ui.main.navigation.SteamDockIcon
 
 @Composable
 internal fun BottomNavConfigRow(
@@ -96,7 +95,6 @@ internal fun BottomNavContentTab.toIcon(): ImageVector = when (this) {
     BottomNavContentTab.NOTES -> Icons.Default.Note
     BottomNavContentTab.PASSKEY -> Icons.Default.Key
     BottomNavContentTab.SEND -> Icons.AutoMirrored.Default.Send
-    BottomNavContentTab.STEAM -> SteamDockIcon
 }
 
 internal fun BottomNavContentTab.toLabelRes(): Int = when (this) {
@@ -108,5 +106,4 @@ internal fun BottomNavContentTab.toLabelRes(): Int = when (this) {
     BottomNavContentTab.NOTES -> R.string.nav_notes
     BottomNavContentTab.PASSKEY -> R.string.nav_passkey
     BottomNavContentTab.SEND -> R.string.nav_v2_send
-    BottomNavContentTab.STEAM -> R.string.nav_steam
 }

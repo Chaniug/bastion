@@ -52,15 +52,6 @@ interface MdbxRepository {
         passkeys.forEach { deletePasskey(it) }
     }
 
-    suspend fun listSteamMaFileEntries(databaseId: Long): List<MdbxStoredVaultEntry>
-    suspend fun upsertSteamMaFileEntry(
-        databaseId: Long,
-        entryId: String?,
-        title: String,
-        maFileJson: String
-    ): String
-    suspend fun deleteSteamMaFileEntry(databaseId: Long, entryId: String)
-
     suspend fun getVaultDiagnostics(databaseId: Long): MdbxVaultDiagnostics
     suspend fun getPendingSyncCount(databaseId: Long): Int
 

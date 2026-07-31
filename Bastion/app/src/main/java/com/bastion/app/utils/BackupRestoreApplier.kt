@@ -14,8 +14,6 @@ import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.passkey.PasskeyPrivateKeyStore
 import com.bastion.app.util.TotpDataResolver
-import com.bastion.app.steam.data.SteamAccountRepository
-import com.bastion.app.steam.data.SteamDatabase
 
 data class RestoreApplyStats(
     val passwordImported: Int,
@@ -29,10 +27,8 @@ data class RestoreApplyStats(
     val passkeyFailed: Int,
     val failedPasswordDetails: List<String>,
     val failedSecureItemDetails: List<String>,
-    val steamAccountImported: Int = 0,
-    val steamAccountFailed: Int = 0
 ) {
-    fun totalImported(): Int = passwordImported + secureItemImported + passkeyImported + steamAccountImported
+    fun totalImported(): Int = passwordImported + secureItemImported + passkeyImported
 }
 
 object BackupRestoreApplier {
@@ -49,14 +45,12 @@ object BackupRestoreApplier {
         val passwordHistory = content.passwordHistory
         val secureItems = content.secureItems
         val passkeys = content.passkeys
-        val steamMaFiles = content.steamMaFiles
         val securityManager = SecurityManager(context)
 
         android.util.Log.d(logTag, "===== 开始恢复 =====")
         android.util.Log.d(logTag, "备份中密码数量: ${passwords.size}")
         android.util.Log.d(logTag, "备份中安全项数量: ${secureItems.size}")
         android.util.Log.d(logTag, "备份中通行密钥数量: ${passkeys.size}")
-        android.util.Log.d(logTag, "备份中Steam maFile数量: ${steamMaFiles.size}")
         android.util.Log.d(logTag, "报告: ${restoreResult.report.getSummary()}")
 
         val passwordIdMap = mutableMapOf<Long, Long>()
@@ -432,27 +426,6 @@ object BackupRestoreApplier {
             }
         }
 
-        var steamAccountImported = 0
-        var steamAccountFailed = 0
-        if (steamMaFiles.isNotEmpty()) {
-            val steamRepository = SteamAccountRepository(
-                SteamDatabase.getDatabase(context).steamAccountDao(),
-                securityManager
-            )
-            steamMaFiles.forEach { payload ->
-                try {
-                    steamRepository.upsertFromMaFile(payload)
-                    steamAccountImported++
-                } catch (e: Exception) {
-                    steamAccountFailed++
-                    android.util.Log.e(
-                        logTag,
-                        "Failed to import Steam maFile for steamId=${payload.steamId}: ${e.message}"
-                    )
-                }
-            }
-        }
-
         android.util.Log.d(logTag, "===== 导入统计 =====")
         android.util.Log.d(logTag, "成功导入密码: $passwordCount")
         android.util.Log.d(logTag, "跳过重复密码: $passwordSkipped")
@@ -463,8 +436,6 @@ object BackupRestoreApplier {
         android.util.Log.d(logTag, "成功导入通行密钥: $passkeyCountImported")
         android.util.Log.d(logTag, "跳过重复通行密钥: $passkeySkipped")
         android.util.Log.d(logTag, "导入失败通行密钥: $passkeyFailed")
-        android.util.Log.d(logTag, "成功导入Steam maFile: $steamAccountImported")
-        android.util.Log.d(logTag, "导入失败Steam maFile: $steamAccountFailed")
         android.util.Log.d(logTag, "总计: ${passwordCount + passwordSkipped + passwordFailed} vs 备份中: ${passwords.size}")
 
         return RestoreApplyStats(
@@ -477,8 +448,6 @@ object BackupRestoreApplier {
             passkeyImported = passkeyCountImported,
             passkeySkipped = passkeySkipped,
             passkeyFailed = passkeyFailed,
-            steamAccountImported = steamAccountImported,
-            steamAccountFailed = steamAccountFailed,
             failedPasswordDetails = failedPasswordDetails,
             failedSecureItemDetails = failedSecureItemDetails
         )

@@ -17,15 +17,11 @@ import com.bastion.app.data.SecureItem
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.CustomField
 import com.bastion.app.data.PasswordDatabase
-import com.bastion.app.data.PreparedSteamMaFileExport
-import com.bastion.app.data.SteamMaFileExportCandidate
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.CustomFieldRepository
 import com.bastion.app.security.SecurityManager
-import com.bastion.app.steam.data.SteamAccountRepository
-import com.bastion.app.steam.data.SteamDatabase
 import com.bastion.app.utils.BackupRestoreApplier
 import com.bastion.app.utils.FieldChange
 import com.bastion.app.utils.ImportedPasswordSnapshot
@@ -38,9 +34,6 @@ import com.bastion.app.notes.domain.NoteContentCodec
 import com.bastion.app.utils.BackupContentScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.bastion.app.steam.diagnostics.SteamDiagLogger
-import com.bastion.app.steam.importer.SteamMaFileBackupCodec
-import com.bastion.app.steam.service.SteamLoginImportService
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -68,14 +61,9 @@ class DataExportImportViewModel(
     )
 
     private val exportManager = DataExportImportManager(context)
-    private val steamLoginImportService = SteamLoginImportService()
     private val securityManager by lazy { SecurityManager(context) }
     private val customFieldRepository by lazy {
         CustomFieldRepository(PasswordDatabase.getDatabase(context).customFieldDao())
-    }
-
-    init {
-        SteamDiagLogger.initialize(context.applicationContext)
     }
 
     private fun parseStoredTotpData(itemData: String, fallbackIssuer: String = ""): TotpData? {
@@ -214,22 +202,6 @@ class DataExportImportViewModel(
         return "成功导出备份，包含 ${report.successItems.passwords} 个密码和 ${report.successItems.images} 张图片"
     }
 
-    sealed class SteamLoginImportState {
-        data class ChallengeRequired(
-            val pendingSessionId: String,
-            val steamId: String,
-            val challenges: List<SteamLoginImportService.SteamGuardChallenge>,
-            val message: String? = null
-        ) : SteamLoginImportState()
-
-        data class Imported(
-            val count: Int
-        ) : SteamLoginImportState()
-
-        data class Failure(
-            val message: String
-        ) : SteamLoginImportState()
-    }
 
     /**
      * 导入数据
@@ -897,196 +869,6 @@ class DataExportImportViewModel(
             Result.failure(e)
         }
     }
-    
-    /**
-     * 导入Steam maFile
-     */
-    suspend fun importSteamMaFile(inputUri: Uri): Result<Int> {
-        return try {
-            exportManager.importSteamMaFileWithMetadata(inputUri).fold(
-                onSuccess = { steamEntry ->
-                    insertSteamGuardEntry(steamEntry)
-                },
-                onFailure = { error ->
-                    android.util.Log.e("SteamImport", "导入失败: ${error.message}", error)
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("SteamImport", "导入异常: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * 导入 Steam App 共存令牌（设备ID + SteamGuard JSON）
-     */
-    suspend fun importSteamAppCoexist(
-        deviceIdInput: String,
-        steamGuardJson: String,
-        customName: String?
-    ): Result<Int> {
-        return try {
-            exportManager.importSteamAppCoexist(deviceIdInput, steamGuardJson, customName).fold(
-                onSuccess = { steamEntry ->
-                    insertSteamGuardEntry(steamEntry)
-                },
-                onFailure = { error ->
-                    android.util.Log.e("SteamImport", "共存导入失败: ${error.message}", error)
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            android.util.Log.e("SteamImport", "共存导入异常: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Steam 登录导入（第一阶段）：账号密码登录并返回挑战状态或 token
-     */
-    suspend fun beginSteamLoginImport(
-        userName: String,
-        password: String,
-        customName: String? = null
-    ): SteamLoginImportState {
-        val result = steamLoginImportService.beginLogin(userName, password)
-        return consumeSteamLoginResult(result, customName)
-    }
-
-    /**
-     * Steam 登录导入（第一阶段）：提交挑战验证码
-     */
-    suspend fun submitSteamLoginImportCode(
-        pendingSessionId: String,
-        code: String,
-        confirmationType: Int,
-        customName: String? = null
-    ): SteamLoginImportState {
-        val result = steamLoginImportService.submitSteamGuardCode(
-            pendingSessionId = pendingSessionId,
-            code = code,
-            confirmationType = confirmationType
-        )
-        return consumeSteamLoginResult(result, customName)
-    }
-
-    fun clearSteamLoginImportSession(sessionId: String) {
-        steamLoginImportService.clearPendingSession(sessionId)
-    }
-
-    private suspend fun consumeSteamLoginResult(
-        result: SteamLoginImportService.LoginResult,
-        customName: String?
-    ): SteamLoginImportState {
-        return when (result) {
-            is SteamLoginImportService.LoginResult.ChallengeRequired -> {
-                SteamLoginImportState.ChallengeRequired(
-                    pendingSessionId = result.pendingSessionId,
-                    steamId = result.steamId,
-                    challenges = result.challenges,
-                    message = result.message
-                )
-            }
-
-            is SteamLoginImportService.LoginResult.ReadyForImport -> {
-                val importResult = importSteamAppCoexist(
-                    deviceIdInput = result.payload.deviceId,
-                    steamGuardJson = result.payload.steamGuardJson,
-                    customName = customName
-                )
-                importResult.fold(
-                    onSuccess = { count ->
-                        SteamLoginImportState.Imported(count = count)
-                    },
-                    onFailure = { error ->
-                        SteamLoginImportState.Failure(error.message ?: "导入失败")
-                    }
-                )
-            }
-
-            is SteamLoginImportService.LoginResult.Failure -> {
-                SteamLoginImportState.Failure(result.message)
-            }
-        }
-    }
-
-    private suspend fun insertSteamGuardEntry(
-        steamEntry: DataExportImportManager.SteamGuardImportEntry
-    ): Result<Int> {
-        val existingItems = secureItemRepository.getItemsByType(ItemType.TOTP).first()
-        val normalizedName = steamEntry.name.trim()
-        val isDuplicate = existingItems.any { item ->
-            try {
-                val totpData = parseStoredTotpData(item) ?: return@any false
-                if (totpData.otpType != com.bastion.app.data.model.OtpType.STEAM) {
-                    return@any false
-                }
-
-                if (totpData.steamFingerprint.isNotBlank() &&
-                    totpData.steamFingerprint == steamEntry.fingerprint
-                ) {
-                    return@any true
-                }
-
-                totpData.secret == steamEntry.secretBase32 &&
-                    totpData.issuer.equals(steamEntry.issuer, ignoreCase = true) &&
-                    totpData.accountName.trim().equals(normalizedName, ignoreCase = true)
-            } catch (_: Exception) {
-                false
-            }
-        }
-
-        if (isDuplicate) {
-            android.util.Log.d("SteamImport", "跳过重复条目")
-            return Result.failure(Exception("该Steam Guard验证器已存在"))
-        }
-
-        val totpData = TotpData(
-            secret = steamEntry.secretBase32,
-            issuer = steamEntry.issuer,
-            accountName = steamEntry.name,
-            period = 30,
-            digits = 5,
-            algorithm = "SHA1",
-            otpType = com.bastion.app.data.model.OtpType.STEAM,
-            steamFingerprint = steamEntry.fingerprint,
-            steamDeviceId = steamEntry.deviceId,
-            steamSerialNumber = steamEntry.serialNumber,
-            steamSharedSecretBase64 = steamEntry.sharedSecretBase64,
-            steamRevocationCode = steamEntry.revocationCode,
-            steamIdentitySecret = steamEntry.identitySecret,
-            steamTokenGid = steamEntry.tokenGid,
-            steamRawJson = steamEntry.rawSteamGuardJson
-        )
-
-        val itemData = Json.encodeToString(totpData)
-        val title = if (steamEntry.name.isNotBlank()) {
-            "Steam: ${steamEntry.name}"
-        } else {
-            "Steam Guard"
-        }
-
-        val secureItem = SecureItem(
-            id = 0,
-            itemType = ItemType.TOTP,
-            title = title,
-            itemData = encodeSecureItemDataForLocalStorage(ItemType.TOTP, itemData),
-            notes = "",
-            isFavorite = false,
-            imagePaths = "",
-            createdAt = Date(),
-            updatedAt = Date()
-        )
-
-        secureItemRepository.insertItem(secureItem)
-        android.util.Log.d("SteamImport", "成功插入Steam Guard")
-        logImportSummary(
-            source = "STEAM_GUARD",
-            importedCount = 1
-        )
-        return Result.success(1)
-    }
 
     /**
      * 导出完整备份 (ZIP格式，WebDAV兼容)
@@ -1173,140 +955,6 @@ class DataExportImportViewModel(
             Result.failure(e)
         } finally {
             preparedFile?.delete()
-        }
-    }
-
-    suspend fun loadSteamMaFileExportCandidates(): Result<List<SteamMaFileExportCandidate>> = withContext(Dispatchers.IO) {
-        try {
-            val repository = SteamAccountRepository(
-                SteamDatabase.getDatabase(context).steamAccountDao(),
-                securityManager
-            )
-            val candidates = repository.getAccounts()
-                .filter { account -> account.sharedSecret.isNotBlank() }
-                .map { account ->
-                    val title = account.displayName
-                        .ifBlank { account.accountName }
-                        .ifBlank { "Steam" }
-                    val subtitle = account.visibleSteamId
-                        .ifBlank { account.accountName }
-                        .ifBlank { context.getString(R.string.steam_mafile_export_unknown_account) }
-                    SteamMaFileExportCandidate(
-                        id = account.id,
-                        title = title,
-                        subtitle = subtitle
-                    )
-                }
-            Result.success(candidates)
-        } catch (e: Exception) {
-            android.util.Log.e("DataExport", "加载Steam maFile导出账号失败: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun prepareSteamMaFileExport(accountIds: Set<Long>): Result<PreparedSteamMaFileExport> = withContext(Dispatchers.IO) {
-        try {
-            val selectedIds = accountIds.filter { it > 0L }.toSet()
-            if (selectedIds.isEmpty()) {
-                return@withContext Result.failure(Exception(context.getString(R.string.steam_mafile_export_no_selection)))
-            }
-
-            val repository = SteamAccountRepository(
-                SteamDatabase.getDatabase(context).steamAccountDao(),
-                securityManager
-            )
-            val selectedAccounts = repository.getAccounts()
-                .filter { account -> account.id in selectedIds && account.sharedSecret.isNotBlank() }
-
-            if (selectedAccounts.isEmpty()) {
-                return@withContext Result.failure(Exception(context.getString(R.string.steam_mafile_export_empty)))
-            }
-
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val prepared = if (selectedAccounts.size == 1) {
-                val account = selectedAccounts.first()
-                val fileName = SteamMaFileBackupCodec.fileName(account)
-                val tempFile = File(context.cacheDir, "steam_mafile_export_${System.nanoTime()}_$fileName")
-                tempFile.writeText(SteamMaFileBackupCodec.encode(account), Charsets.UTF_8)
-                if (!tempFile.isFile || tempFile.length() <= 0L) {
-                    throw IOException("导出的 maFile 为空")
-                }
-                PreparedSteamMaFileExport(
-                    file = tempFile,
-                    fileName = fileName,
-                    mimeType = "application/json",
-                    successMessage = context.getString(R.string.steam_mafile_export_success_single),
-                    accountCount = 1
-                )
-            } else {
-                val fileName = "steam_mafiles_$timestamp.zip"
-                val tempFile = File(context.cacheDir, "steam_mafile_export_${System.nanoTime()}.zip")
-                val usedFileNames = mutableSetOf<String>()
-                ZipOutputStream(tempFile.outputStream()).use { zip ->
-                    selectedAccounts.forEach { account ->
-                        val entryName = uniqueSteamMaFileName(
-                            SteamMaFileBackupCodec.fileName(account),
-                            usedFileNames
-                        )
-                        val bytes = SteamMaFileBackupCodec.encode(account).toByteArray(Charsets.UTF_8)
-                        zip.putNextEntry(ZipEntry(entryName))
-                        zip.write(bytes)
-                        zip.closeEntry()
-                    }
-                }
-                validatePlainZipFile(tempFile)
-                PreparedSteamMaFileExport(
-                    file = tempFile,
-                    fileName = fileName,
-                    mimeType = "application/zip",
-                    successMessage = context.getString(
-                        R.string.steam_mafile_export_success_multi,
-                        selectedAccounts.size
-                    ),
-                    accountCount = selectedAccounts.size
-                )
-            }
-
-            Result.success(prepared)
-        } catch (e: Exception) {
-            android.util.Log.e("DataExport", "准备Steam maFile导出失败: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun writePreparedSteamMaFileExport(
-        outputUri: Uri,
-        preparedExport: PreparedSteamMaFileExport
-    ): Result<String> {
-        return try {
-            val validator: ((InputStream) -> Unit)? = if (preparedExport.fileName.endsWith(".zip", ignoreCase = true)) {
-                ::validatePlainZipStream
-            } else {
-                { input ->
-                    if (input.readBytes().isEmpty()) {
-                        throw IOException("导出的 maFile 为空")
-                    }
-                }
-            }
-            copyPlainFileToOutputUri(preparedExport.file, outputUri, validator)
-            Result.success(preparedExport.successMessage)
-        } catch (e: Exception) {
-            android.util.Log.e("DataExport", "写入Steam maFile导出失败: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    private fun uniqueSteamMaFileName(fileName: String, usedNames: MutableSet<String>): String {
-        if (usedNames.add(fileName)) return fileName
-
-        val extensionIndex = fileName.lastIndexOf('.').takeIf { it > 0 } ?: fileName.length
-        val baseName = fileName.substring(0, extensionIndex).ifBlank { "steam" }
-        val extension = fileName.substring(extensionIndex)
-        var suffix = 2
-        while (true) {
-            val candidate = "$baseName-$suffix$extension"
-            if (usedNames.add(candidate)) return candidate
-            suffix++
         }
     }
 

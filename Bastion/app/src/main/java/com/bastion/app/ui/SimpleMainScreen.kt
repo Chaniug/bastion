@@ -146,7 +146,7 @@ import com.bastion.app.ui.screens.DocumentDetailScreen
 import com.bastion.app.ui.screens.HistoryTab
 import com.bastion.app.ui.screens.TimelineScreen
 import com.bastion.app.ui.screens.PasskeyListScreen
-import com.bastion.app.steam.ui.SteamScreen
+
 import com.bastion.app.ui.gestures.SwipeActions
 import com.bastion.app.ui.haptic.rememberHapticFeedback
 import kotlin.math.absoluteValue
@@ -706,10 +706,6 @@ fun SimpleMainScreen(
     onNavigateToAddSshKey: (Long?) -> Unit = {},
     onNavigateToAddTotp: (Long?) -> Unit,
     onNavigateToQuickTotpScan: () -> Unit,
-    pendingSteamQrResult: String? = null,
-    pendingSteamQrAccountId: Long? = null,
-    onConsumePendingSteamQrResult: () -> Unit = {},
-    onScanSteamQrCode: (Long?) -> Unit = {},
     pendingPasswordAuthenticatorQrResult: String? = null,
     onConsumePendingPasswordAuthenticatorQrResult: () -> Unit = {},
     onScanPasswordAuthenticatorQrCode: () -> Unit = {},
@@ -1919,10 +1915,6 @@ fun SimpleMainScreen(
                     onTotpOpen = handleTotpOpen,
                     onNavigateToAddTotp = onNavigateToAddTotp,
                     onNavigateToQuickTotpScan = onNavigateToQuickTotpScan,
-                    pendingSteamQrResult = pendingSteamQrResult,
-                    pendingSteamQrAccountId = pendingSteamQrAccountId,
-                    onConsumePendingSteamQrResult = onConsumePendingSteamQrResult,
-                    onScanSteamQrCode = onScanSteamQrCode,
                     onNavigateToFidoQrScan = onNavigateToFidoQrScan,
                     onTotpSelectionModeChange = { isSelectionMode, count, onExit, onSelectAll, onMoveToCategory, onDelete ->
                         isTotpSelectionMode = isSelectionMode
@@ -2395,17 +2387,6 @@ fun SimpleMainScreen(
                         onOpenStandaloneSettings = onNavigateToStandaloneSettings
                     )
                 }
-                BottomNavItem.Steam -> {
-                    SteamScreen(
-                        showStandaloneSettingsEntry = shouldHideBottomNavigation,
-                        onOpenStandaloneSettings = onNavigateToStandaloneSettings,
-                        pendingSteamQrResult = pendingSteamQrResult,
-                        pendingSteamQrAccountId = pendingSteamQrAccountId,
-                        onConsumePendingSteamQrResult = onConsumePendingSteamQrResult,
-                        onScanSteamQrCode = onScanSteamQrCode,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
                 BottomNavItem.Settings -> {
                     SettingsTabContent(
                         viewModel = settingsViewModel,
@@ -2806,17 +2787,6 @@ fun SimpleMainScreen(
                             onBitwardenEvent = handleSendBitwardenEvent,
                             showStandaloneSettingsEntry = shouldHideBottomNavigation,
                             onOpenStandaloneSettings = onNavigateToStandaloneSettings
-                        )
-                    }
-                    BottomNavItem.Steam -> {
-                        SteamScreen(
-                            showStandaloneSettingsEntry = shouldHideBottomNavigation,
-                            onOpenStandaloneSettings = onNavigateToStandaloneSettings,
-                            pendingSteamQrResult = pendingSteamQrResult,
-                            pendingSteamQrAccountId = pendingSteamQrAccountId,
-                            onConsumePendingSteamQrResult = onConsumePendingSteamQrResult,
-                            onScanSteamQrCode = onScanSteamQrCode,
-                            modifier = Modifier.fillMaxSize()
                         )
                     }
                     BottomNavItem.Settings -> {
