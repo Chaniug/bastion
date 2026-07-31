@@ -534,7 +534,7 @@ data class AppSettings(
     val passwordPageIconEnabled: Boolean = true, // 密码页图标开关
     val authenticatorPageIconEnabled: Boolean = true, // 验证器页图标开关
     val passkeyPageIconEnabled: Boolean = true, // 通行密钥页图标开关
-    val unmatchedIconHandlingStrategy: UnmatchedIconHandlingStrategy = UnmatchedIconHandlingStrategy.DEFAULT_ICON, // 无匹配图标处理策略
+    val unmatchedIconHandlingStrategy: UnmatchedIconHandlingStrategy = UnmatchedIconHandlingStrategy.WEBSITE_OR_TITLE_INITIAL, // 无匹配图标处理策略（默认显示首字母头像）
     val passwordCardDisplayMode: PasswordCardDisplayMode = PasswordCardDisplayMode.SHOW_ALL, // 卡片显示模式
     val passwordCardDisplayFields: List<PasswordCardDisplayField> = PasswordCardDisplayField.DEFAULT_ORDER, // 卡片显示字段（顺序即展示顺序）
     val passwordCardShowAuthenticator: Boolean = true, // 密码卡片显示绑定验证器（默认开启）

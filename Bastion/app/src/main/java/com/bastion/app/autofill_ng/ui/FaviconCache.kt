@@ -41,6 +41,9 @@ object FaviconCache {
     /**
      * Get icon for domain.
      * This function should be called from a coroutine.
+     *
+     * 多源顺序尝试：DuckDuckGo -> Google S2 -> 备选。
+     * 任一源成功即返回并写入缓存；全部失败返回 null（最终落到首字母头像兜底）。
      */
     suspend fun getIcon(context: Context, url: String): ImageBitmap? {
         val domain = getDomainFromUrl(url) ?: return null
@@ -51,87 +54,98 @@ object FaviconCache {
             return it
         }
 
-        try {
-            // Using Google S2 service for favicons
-            // sz=64 requests 64x64 icon
-            val faviconUrl = "https://www.google.com/s2/favicons?domain=$domain&sz=64"
-
-            return withContext(Dispatchers.IO) {
-                memoryCache.get(cacheKey)?.let { cached ->
-                    return@withContext cached
+        // 2. Check disk cache
+        val cacheDir = File(context.cacheDir, CACHE_DIR_NAME)
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs()
+        }
+        val cacheFile = File(cacheDir, "$cacheKey.png")
+        if (cacheFile.exists()) {
+            try {
+                val bitmap = BitmapFactory.decodeFile(cacheFile.absolutePath)
+                if (bitmap != null) {
+                    val imageBitmap = bitmap.asImageBitmap()
+                    memoryCache.put(cacheKey, imageBitmap)
+                    return imageBitmap
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error reading favicon disk cache: ${e.message}")
+            }
+        }
 
-                // 2. Check disk cache (IO thread)
-                val cacheDir = File(context.cacheDir, CACHE_DIR_NAME)
-                if (!cacheDir.exists()) {
-                    cacheDir.mkdirs()
-                }
-                val cacheFile = File(cacheDir, "$cacheKey.png")
-                if (cacheFile.exists()) {
+        return withContext(Dispatchers.IO) {
+            memoryCache.get(cacheKey)?.let { cached ->
+                return@withContext cached
+            }
+
+            // 3. 多源顺序尝试，第一个成功即返回
+            for (candidate in buildFaviconCandidates(domain)) {
+                val bitmap = fetchFaviconFromUrl(candidate, connectTimeoutMs = 3000, readTimeoutMs = 3500)
+                if (bitmap != null) {
                     try {
-                        val bitmap = BitmapFactory.decodeFile(cacheFile.absolutePath)
-                        if (bitmap != null) {
-                            val imageBitmap = bitmap.asImageBitmap()
-                            memoryCache.put(cacheKey, imageBitmap)
-                            return@withContext imageBitmap
-                        }
+                        val out = FileOutputStream(cacheFile)
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                        out.flush()
+                        out.close()
                     } catch (e: Exception) {
-                        Log.w(TAG, "Error reading favicon disk cache: ${e.message}")
+                        Log.w(TAG, "Error saving favicon disk cache: ${e.message}")
                     }
-                }
-
-                // 3. Fetch from network
-                val connection = URL(faviconUrl).openConnection() as HttpURLConnection
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-
-                try {
-                    if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                        val inputStream = connection.inputStream
-                        val bitmap = BitmapFactory.decodeStream(inputStream)
-                        inputStream.close()
-
-                        if (bitmap != null) {
-                            // Save to disk
-                            try {
-                                val out = FileOutputStream(cacheFile)
-                                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                                out.flush()
-                                out.close()
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Error saving favicon disk cache: ${e.message}")
-                            }
-
-                            // Save to memory
-                            val imageBitmap = bitmap.asImageBitmap()
-                            memoryCache.put(cacheKey, imageBitmap)
-                            imageBitmap
-                        } else {
-                            null
-                        }
-                    } else {
-                        null
-                    }
-                } finally {
-                    connection.disconnect()
+                    val imageBitmap = bitmap.asImageBitmap()
+                    memoryCache.put(cacheKey, imageBitmap)
+                    return@withContext imageBitmap
                 }
             }
+            null
+        }
+    }
+
+    /**
+     * 按优先级生成 favicon 候选源。
+     * DuckDuckGo 在国内通常比 Google S2 更可达；Google S2 作为海外兜底。
+     */
+    private fun buildFaviconCandidates(domain: String): List<String> = listOf(
+        "https://icons.duckduckgo.com/ip3/$domain.ico",
+        "https://www.google.com/s2/favicons?domain=$domain&sz=64",
+        "https://www.google.com/s2/favicons?domain=$domain&sz=128"
+    )
+
+    /**
+     * 从单个 URL 拉取 favicon 位图；任何网络异常都返回 null，由调用方尝试下一个源。
+     */
+    private fun fetchFaviconFromUrl(
+        faviconUrl: String,
+        connectTimeoutMs: Int,
+        readTimeoutMs: Int
+    ): Bitmap? {
+        return try {
+            val connection = URL(faviconUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = connectTimeoutMs
+            connection.readTimeout = readTimeoutMs
+            try {
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    connection.inputStream.use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                } else {
+                    null
+                }
+            } finally {
+                connection.disconnect()
+            }
         } catch (e: CancellationException) {
-            // Composable left composition; this is expected during fast list updates/navigation.
-            return null
+            // Composable left composition; expected during fast list updates/navigation.
+            throw e
         } catch (e: Exception) {
             val commonNetworkIssue = e is UnknownHostException ||
                 e is SocketTimeoutException ||
                 e is SSLException ||
                 e is IOException
-
             if (commonNetworkIssue) {
-                // Non-fatal and common on unstable networks/captive portals; avoid noisy red logs.
-                Log.w(TAG, "Favicon fetch skipped for $domain: ${e.javaClass.simpleName}")
+                Log.w(TAG, "Favicon source skipped for $faviconUrl: ${e.javaClass.simpleName}")
             } else {
-                Log.w(TAG, "Unexpected favicon fetch failure for $domain", e)
+                Log.w("FaviconCache", "Unexpected favicon fetch failure for $faviconUrl", e)
             }
-            return null
+            null
         }
     }
 

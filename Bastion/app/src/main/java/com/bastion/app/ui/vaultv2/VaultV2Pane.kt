@@ -3848,7 +3848,7 @@ private fun VaultV2ItemCard(
 		VaultV2ItemType.BANK_CARD -> Icons.Default.CreditCard
 		VaultV2ItemType.DOCUMENT -> Icons.Default.Badge
 	}
-	val unmatchedIconStrategy = UnmatchedIconHandlingStrategy.DEFAULT_ICON
+	val unmatchedIconStrategy = appSettings.unmatchedIconHandlingStrategy
 
 	val passwordIconSource = item.passwordEntry ?: boundPassword
 	val totpData = remember(item.totpItem?.itemData, item.totpItem?.title, securityManager) {
