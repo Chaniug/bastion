@@ -6,6 +6,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -18,9 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.bastion.app.R
 import com.bastion.app.data.SecureItem
 import com.bastion.app.ui.components.TrashSettingsSheet
+import com.bastion.app.ui.components.UnifiedMoveAction
+import kotlinx.coroutines.launch
+import java.util.Locale
 import com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState
 import com.bastion.app.ui.password.PasswordBatchDeleteProgressTracker
 import com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState
