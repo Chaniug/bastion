@@ -42,21 +42,22 @@
 （其中 `tencent/wechat/qq`、`netease/163/126`、`meituan/dianping/waimai`、`feishu/larksuite` 等为同一品牌不同入口，按品牌主 slug 打包即可。）
 
 ### 资产放置规范
-与现有 Stratum 资产一致，放到：
+与现有 Stratum 资产一致，放到（**注意：资产已统一为 lossless WebP**，见 `scripts/convert_stratum_icons_to_webp.sh`）：
 ```
-app/src/main/assets/stratum_icons/icons/<slug>.png
-app/src/main/assets/stratum_icons/icons/<slug>_dark.png   # 深色模式变体
+app/src/main/assets/stratum_icons/icons/<slug>.webp
+app/src/main/assets/stratum_icons/icons/<slug>_dark.webp   # 深色模式变体
 ```
 - 建议尺寸：256×256 或 512×512（现有加载逻辑会按容器缩放）。
-- 风格：尽量与现有 Stratum 图标一致（单色/品牌色字形，透明底）。现有 `fetchSimpleIconBitmap` 优先读取 `<slug>_dark.png`（深色）再回退 `<slug>.png`。
+- 风格：尽量与现有 Stratum 图标一致（单色/品牌色字形，透明底）。`fetchSimpleIconBitmap` 优先读取 `<slug>_dark.webp`（深色）再回退 `<slug>.webp`，并兼容残留 `.png`。
+- **不要**再提交 `.png` 资产；新增图标请直接栅格化为 lossless WebP。
 
 ### 资产来源建议（需做版权合规确认）
-- **simple-icons**（CC0，含大量中国品牌：wechat、weibo、alipay、taobao、baidu、bilibili、zhihu、douyin、xiaohongshu、jd、netease 等）→ 取 SVG 后栅格化为 PNG。
+- **simple-icons**（CC0，含大量中国品牌：wechat、weibo、alipay、taobao、baidu、bilibili、zhihu、douyin、xiaohongshu、jd、netease 等）→ 取 SVG 后栅格化为 **lossless WebP**（不要 PNG）。
 - 部分品牌（如 12306、各银行、钉钉、飞书）simple-icons 可能未收录，需从官方品牌资源或合规渠道获取并确认授权。
 - 所有引入需记录来源与许可证，避免商标/版权风险。
 
 ### 验证方式
-1. 将 PNG 放入上述目录（light + dark）。
+1. 将 WebP 放入上述目录（light + dark，lossless）。
 2. 在代码中临时 `SimpleIconCatalog.getSlugs(context)` 打印，确认新 slug 已加载；或直接在 App 内新增对应条目（如标题“微信”、网址 `weixin.qq.com`、包名 `com.tencent.mm`），确认自动点亮真实图标。
 3. 跑一次 GitHub Actions（Android CI debug）确保资产打包无误、无重复 slug 冲突。
 

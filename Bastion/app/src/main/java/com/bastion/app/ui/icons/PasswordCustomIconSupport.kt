@@ -86,8 +86,11 @@ object SimpleIconCatalog {
     private fun collectSlugs(context: Context, assetDir: String, output: MutableSet<String>) {
         val files = runCatchingObserved { context.assets.list(assetDir).orEmpty() }.getOrDefault(emptyArray())
         files.forEach { name ->
-            if (!name.endsWith(".png", ignoreCase = true)) return@forEach
-            val raw = name.removeSuffix(".png")
+            val raw = when {
+                name.endsWith(".webp", ignoreCase = true) -> name.removeSuffix(".webp")
+                name.endsWith(".png", ignoreCase = true) -> name.removeSuffix(".png")
+                else -> return@forEach
+            }
             val normalized = if (raw.endsWith("_dark")) raw.removeSuffix("_dark") else raw
             if (normalized.isNotBlank()) {
                 output.add(normalized.lowercase(Locale.ROOT))
@@ -567,30 +570,29 @@ private object SimpleIconCache {
     }
 
     private fun fetchSimpleIconBitmap(context: Context, normalizedSlug: String, darkTheme: Boolean): Bitmap? {
-        val candidates = if (darkTheme) {
-            listOf(
-                "$STRATUM_ICON_ASSET_MAIN_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_MAIN_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/$normalizedSlug.png"
-            )
+        // Icons are stored as lossless WebP (see scripts/convert_stratum_icons_to_webp.sh).
+        // A .png fallback is kept so any stray/contributed PNG still resolves.
+        val dirs = listOf(STRATUM_ICON_ASSET_MAIN_DIR, STRATUM_ICON_ASSET_EXTRA_DIR)
+        val exts = listOf("webp", "png")
+        val slugVariants = if (darkTheme) {
+            listOf("${normalizedSlug}_dark", normalizedSlug)
         } else {
-            listOf(
-                "$STRATUM_ICON_ASSET_MAIN_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_MAIN_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/${normalizedSlug}_dark.png"
-            )
+            listOf(normalizedSlug, "${normalizedSlug}_dark")
         }
 
-        for (assetPath in candidates) {
-            val bitmap = runCatchingObserved {
-                context.assets.open(assetPath).use { stream ->
-                    BitmapFactory.decodeStream(stream)
+        for (slugVariant in slugVariants) {
+            for (dir in dirs) {
+                for (ext in exts) {
+                    val assetPath = "$dir/$slugVariant.$ext"
+                    val bitmap = runCatchingObserved {
+                        context.assets.open(assetPath).use { stream ->
+                            BitmapFactory.decodeStream(stream)
+                        }
+                    }.getOrNull()
+                    if (bitmap != null) {
+                        return bitmap
+                    }
                 }
-            }.getOrNull()
-            if (bitmap != null) {
-                return bitmap
             }
         }
         return null
