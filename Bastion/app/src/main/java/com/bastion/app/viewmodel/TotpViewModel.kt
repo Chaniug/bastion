@@ -1547,6 +1547,11 @@ class TotpViewModel(
                     )
                 }
             } catch (e: Exception) {
+                Log.e(
+                    "TotpViewModel",
+                    "unbindTotpFromPassword failed passwordId=$passwordId secret=${if (secret != null) "***" else "null"} error=${e::class.java.simpleName}: ${e.message}",
+                    e
+                )
             }
         }
     }
@@ -1778,6 +1783,11 @@ class TotpViewModel(
                 
                 repository.updateItem(updatedItem)
             } catch (e: Exception) {
+                Log.e(
+                    "TotpViewModel",
+                    "incrementHotpCounter failed itemId=$itemId error=${e::class.java.simpleName}: ${e.message}",
+                    e
+                )
             }
         }
     }
@@ -1830,6 +1840,11 @@ class TotpViewModel(
                         )
                     }
                 } catch (e: Exception) {
+                    Log.e(
+                        "TotpViewModel",
+                        "moveToCategory failed for id=$id categoryId=$categoryId error=${e::class.java.simpleName}: ${e.message}",
+                        e
+                    )
                 }
             }
         }
