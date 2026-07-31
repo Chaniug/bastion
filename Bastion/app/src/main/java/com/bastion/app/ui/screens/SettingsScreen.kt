@@ -2081,6 +2081,7 @@ private fun PasswordBatchTransferProgressCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceSelectionSheet(
     currentTheme: ThemeMode,
