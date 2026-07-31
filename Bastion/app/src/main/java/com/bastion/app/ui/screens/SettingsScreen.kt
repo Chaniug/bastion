@@ -55,7 +55,6 @@ import com.bastion.app.data.ThemeMode
 import com.bastion.app.ui.components.M3IdentityVerifyDialog
 import com.bastion.app.ui.components.MarkdownPreviewText
 import com.bastion.app.ui.components.UnifiedMoveAction
-import com.bastion.app.ui.main.navigation.SteamDockIcon
 import com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState
 import com.bastion.app.ui.password.PasswordBatchDeleteProgressTracker
 import com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState
@@ -2082,104 +2081,6 @@ private fun PasswordBatchTransferProgressCard(
     }
 }
 
-@Composable
-private fun BottomNavConfigRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    switchEnabled: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    showDragHandle: Boolean = true,
-    dragHandleModifier: Modifier = Modifier,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (showDragHandle) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .then(dragHandleModifier),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DragIndicator,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                enabled = switchEnabled
-            )
-        }
-    }
-}
-
-private fun BottomNavContentTab.toIcon(): ImageVector = when (this) {
-    BottomNavContentTab.VAULT_V2 -> Icons.Default.Home
-    BottomNavContentTab.PASSWORDS -> Icons.Default.Lock
-    BottomNavContentTab.AUTHENTICATOR -> Icons.Default.Security
-    BottomNavContentTab.CARD_WALLET -> Icons.Default.Wallet
-    BottomNavContentTab.GENERATOR -> Icons.Default.AutoAwesome
-    BottomNavContentTab.NOTES -> Icons.Default.Note
-    BottomNavContentTab.PASSKEY -> Icons.Default.Key
-    BottomNavContentTab.SEND -> Icons.AutoMirrored.Default.Send
-    BottomNavContentTab.STEAM -> SteamDockIcon
-}
-
-private fun BottomNavContentTab.toLabelRes(): Int = when (this) {
-    BottomNavContentTab.VAULT_V2 -> R.string.nav_v2_vault
-    BottomNavContentTab.PASSWORDS -> R.string.nav_passwords
-    BottomNavContentTab.AUTHENTICATOR -> R.string.nav_authenticator
-    BottomNavContentTab.CARD_WALLET -> R.string.nav_card_wallet
-    BottomNavContentTab.GENERATOR -> R.string.nav_generator
-    BottomNavContentTab.NOTES -> R.string.nav_notes
-    BottomNavContentTab.PASSKEY -> R.string.nav_passkey
-    BottomNavContentTab.SEND -> R.string.nav_v2_send
-    BottomNavContentTab.STEAM -> R.string.nav_steam
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceSelectionSheet(
     currentTheme: ThemeMode,
