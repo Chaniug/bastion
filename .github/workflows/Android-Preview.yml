@@ -185,6 +185,11 @@ jobs:
           path: Bastion/app/build/outputs/apk/release/*.APK
           if-no-files-found: warn
 
+      - name: Self-test changelog generator
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: python3 "${{ github.workspace }}/scripts/generate_changelog.py" --self-test
+
       - name: Generate preview changelog (since last preview)
         id: preview_changelog
         if: github.event_name != 'pull_request'
@@ -194,14 +199,9 @@ jobs:
         run: |
           set +e
           prev="$(gh api "repos/${{ github.repository }}/releases/tags/preview" --jq '.target_commitish' 2>/dev/null || true)"
-          if [ -n "$prev" ]; then
-            range="${prev}..HEAD"
-            log="$(git log $range --pretty=format:'- %s (%h)')"
-          else
-            log="$(git log --pretty=format:'- %s (%h)')"
-          fi
-          if [ -z "$log" ]; then log="- 无变更记录"; fi
-          { echo "notes<<EOF"; echo "$log"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+          notes="$(python3 "${{ github.workspace }}/scripts/generate_changelog.py" --prev "$prev" --head HEAD --repo "${{ github.workspace }}")"
+          if [ -z "$notes" ]; then notes="- 无变更记录"; fi
+          { echo "notes<<EOF"; echo "$notes"; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - name: Cleanup duplicate preview draft releases
         if: github.event_name != 'pull_request'
