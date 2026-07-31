@@ -125,7 +125,7 @@ data class PageAdjustmentSettingsSnapshot(
     val passwordPageIconEnabled: Boolean = true,
     val authenticatorPageIconEnabled: Boolean = true,
     val passkeyPageIconEnabled: Boolean = true,
-    val unmatchedIconHandlingStrategy: String = com.bastion.app.data.UnmatchedIconHandlingStrategy.DEFAULT_ICON.name,
+    val unmatchedIconHandlingStrategy: String = com.bastion.app.data.UnmatchedIconHandlingStrategy.WEBSITE_OR_TITLE_INITIAL.name,
     val passwordFieldSettingsVersion: Int = 0,
     val separateUsernameAccountEnabled: Boolean = false,
     val presetCustomFieldsJson: String = "[]",

@@ -19,16 +19,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bastion.app.R
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.primaryLinkedAppPackageName
 import com.bastion.app.ui.icons.PASSWORD_ICON_TYPE_NONE
 import com.bastion.app.ui.icons.PASSWORD_ICON_TYPE_SIMPLE
 import com.bastion.app.ui.icons.PASSWORD_ICON_TYPE_UPLOADED
+import com.bastion.app.ui.icons.monogramColorFor
 import com.bastion.app.ui.icons.rememberAutoMatchedSimpleIcon
 import com.bastion.app.ui.icons.rememberSimpleIconBitmap
 import com.bastion.app.ui.icons.rememberUploadedPasswordIcon
@@ -289,7 +292,7 @@ private fun AppIconOrFallback(
         contentAlignment = Alignment.Center
     ) {
         if (!iconCardsEnabled) {
-            DefaultKeyIcon()
+            DefaultKeyIcon(label = password.title.ifBlank { password.website })
         } else {
             val simpleIcon = if (password.customIconType == PASSWORD_ICON_TYPE_SIMPLE) {
                 rememberSimpleIconBitmap(
@@ -378,7 +381,7 @@ private fun AppIconOrFallback(
                     )
                 }
                 else -> {
-                    DefaultKeyIcon()
+                    DefaultKeyIcon(label = password.title.ifBlank { password.website })
                 }
             }
         }
@@ -387,20 +390,23 @@ private fun AppIconOrFallback(
 
 @Composable
 private fun DefaultKeyIcon(
+    label: String,
     modifier: Modifier = Modifier
 ) {
+    val backgroundColor = remember(label) { monogramColorFor(label) }
+    val initial = label.trim().firstOrNull { !it.isWhitespace() }?.uppercaseChar()?.toString() ?: "#"
     Box(
         modifier = modifier
             .fillMaxSize()
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer),
+            .background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Key,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(24.dp)
+        Text(
+            text = initial,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

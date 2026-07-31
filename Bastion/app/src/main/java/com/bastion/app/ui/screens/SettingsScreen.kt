@@ -937,40 +937,23 @@ fun SettingsScreen(
                     context.getString(R.string.advanced_settings_title),
                     context.getString(R.string.advanced_settings_subtitle)
                 )
-                // 折叠态：只显示一行可点击标题
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { advancedSectionExpanded = !advancedSectionExpanded }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = headerIcon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = headerTitle,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = headerSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                // 折叠态：复用统一 SettingsItem 组件，与上方功能项保持一致的卡片风格、对齐与字号
+                SettingsItem(
+                    icon = headerIcon,
+                    title = headerTitle,
+                    subtitle = headerSubtitle,
+                    onClick = { advancedSectionExpanded = !advancedSectionExpanded },
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    trailingContent = {
+                        Icon(
+                            imageVector = if (advancedShouldExpand) {
+                                Icons.Default.ExpandLess
+                            } else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Icon(
-                        imageVector = if (advancedShouldExpand) {
-                            Icons.Default.ExpandLess
-                        } else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                )
 
                 if (advancedShouldExpand) {
                     if (showPreviewFeaturesItem) {

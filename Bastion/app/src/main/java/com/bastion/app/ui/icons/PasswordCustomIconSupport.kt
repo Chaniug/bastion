@@ -86,8 +86,11 @@ object SimpleIconCatalog {
     private fun collectSlugs(context: Context, assetDir: String, output: MutableSet<String>) {
         val files = runCatchingObserved { context.assets.list(assetDir).orEmpty() }.getOrDefault(emptyArray())
         files.forEach { name ->
-            if (!name.endsWith(".png", ignoreCase = true)) return@forEach
-            val raw = name.removeSuffix(".png")
+            val raw = when {
+                name.endsWith(".webp", ignoreCase = true) -> name.removeSuffix(".webp")
+                name.endsWith(".png", ignoreCase = true) -> name.removeSuffix(".png")
+                else -> return@forEach
+            }
             val normalized = if (raw.endsWith("_dark")) raw.removeSuffix("_dark") else raw
             if (normalized.isNotBlank()) {
                 output.add(normalized.lowercase(Locale.ROOT))
@@ -116,7 +119,172 @@ private val DOMAIN_ALIAS_TO_ICON_SLUG = mapOf(
     "steamcommunity" to "steam",
     "office365" to "office",
     "live" to "microsoft",
-    "x" to "twitter"
+    "x" to "twitter",
+    // 全球服务常用域名变体（指向已打包的 slug）
+    "gmail" to "google",
+    "googlemail" to "google",
+    "outlook" to "microsoft",
+    "hotmail" to "microsoft",
+    "yahoo" to "yahoo",
+    "youtu" to "youtube",
+    "fb" to "facebook",
+    "fbcdn" to "facebook",
+    "whatsapp" to "whatsapp",
+    "telegram" to "telegram",
+    "t" to "telegram",
+    "linkedin" to "linkedin",
+    "discord" to "discord",
+    "reddit" to "reddit",
+    "twitch" to "twitch",
+    "spotify" to "spotify",
+    "netflix" to "netflix",
+    "paypal" to "paypal",
+    "amazonaws" to "amazon",
+    "aws" to "amazon",
+    "dropbox" to "dropbox",
+    "slack" to "slack",
+    "zoom" to "zoom",
+    "uber" to "uber",
+    "github" to "github",
+    "gitlab" to "gitlab",
+    "bitbucket" to "bitbucket",
+    "stackoverflow" to "stackoverflow",
+    "medium" to "medium",
+    "wordpress" to "wordpress",
+    "shopify" to "shopify",
+    "stripe" to "stripe",
+    "ebay" to "ebay",
+    "booking" to "booking",
+    "airbnb" to "airbnb",
+    // 中国服务域名变体（slug 待补充品牌资产后自动生效，见 BastionDocs/icon-coverage-chinese-services.md）
+    "qq" to "tencent",
+    "qzone" to "tencent",
+    "weibo" to "weibo",
+    "weixin" to "wechat",
+    "alipay" to "alipay",
+    "taobao" to "taobao",
+    "tmall" to "tmall",
+    "jd" to "jd",
+    "jingdong" to "jd",
+    "baidu" to "baidu",
+    "163" to "netease",
+    "126" to "netease",
+    "bilibili" to "bilibili",
+    "meituan" to "meituan",
+    "dianping" to "meituan",
+    "waimai" to "meituan",
+    "didi" to "didi",
+    "12306" to "12306",
+    "icbc" to "icbc",
+    "cmb" to "cmbchina",
+    "ccb" to "ccb",
+    "abchina" to "abc",
+    "bankcomm" to "bankcomm",
+    "zhihu" to "zhihu",
+    "douyin" to "douyin",
+    "tiktok" to "tiktok",
+    "xiaohongshu" to "xiaohongshu",
+    "kuaishou" to "kuaishou",
+    "dingtalk" to "dingtalk",
+    "feishu" to "feishu",
+    "larksuite" to "feishu"
+)
+
+/**
+ * 应用包名 -> 图标 slug 映射（Android 自动填充场景）。
+ * 指向已打包 slug 的条目可立即生效；指向中国服务 slug 的条目待补充品牌资产后自动生效。
+ */
+private val PACKAGE_TO_ICON_SLUG = mapOf(
+    // 全球应用
+    "com.spotify.music" to "spotify",
+    "com.facebook.katana" to "facebook",
+    "com.facebook.orca" to "facebook",
+    "com.instagram.android" to "instagram",
+    "com.linkedin.android" to "linkedin",
+    "com.twitch.android.app" to "twitch",
+    "com.reddit.frontpage" to "reddit",
+    "com.dropbox.android" to "dropbox",
+    "com.Slack" to "slack",
+    "com.discord" to "discord",
+    "com.zoom.us" to "zoom",
+    "com.sony.playstation.mobile" to "playstation",
+    "com.epicgames.portal" to "epicgames",
+    "com.ubisoft.mobile.legends" to "ubisoft",
+    "com.valvesoftware.android.steam" to "steam",
+    "com.amazon.mShop.android.shopping" to "amazon",
+    "com.google.android.gm" to "google",
+    "com.google.android.youtube" to "youtube",
+    "com.microsoft.office.outlook" to "microsoft",
+    "com.microsoft.todos" to "microsoft",
+    "org.telegram.messenger" to "telegram",
+    "com.whatsapp" to "whatsapp",
+    "com.netflix.mediaclient" to "netflix",
+    "com.ubercab" to "uber",
+    "com.github.android" to "github",
+    "com.paypal.android.p2pmobile" to "paypal",
+    "com.braintreepayments.api.dropin" to "paypal",
+    "com.apple.mobilemail" to "apple",
+    // 中国应用
+    "com.tencent.mm" to "wechat",
+    "com.tencent.mobileqq" to "tencent",
+    "com.eg.android.AlipayGphone" to "alipay",
+    "com.taobao.taobao" to "taobao",
+    "com.tmall.wireless" to "tmall",
+    "com.jingdong.app.mall" to "jd",
+    "com.baidu.searchbox" to "baidu",
+    "com.netease.cloudmusic" to "netease",
+    "tv.danmaku.bili" to "bilibili",
+    "com.sankuai.meituan" to "meituan",
+    "com.sankuai.meituan.takeoutnew" to "meituan",
+    "com.sdu.didi.psnger" to "didi",
+    "com.icbc" to "icbc",
+    "com.chinamworld.bank" to "icbc",
+    "com.cmbchina.ccd.pluto" to "cmbchina",
+    "com.xingin.xhs" to "xiaohongshu",
+    "com.ss.android.ugc.aweme" to "douyin",
+    "com.smile.gifmaker" to "kuaishou",
+    "com.alibaba.android.rimet" to "dingtalk",
+    "com.lark.app" to "feishu",
+    "com.bytedance.lark" to "feishu"
+)
+
+/**
+ * 中文应用名 -> 图标 slug 映射（标题自动匹配场景）。
+ * 中文标题不会被英文切词命中，故需显式映射。slug 待补充品牌资产后自动生效。
+ */
+private val CJK_TITLE_TO_SLUG = mapOf(
+    "微信" to "wechat",
+    "支付宝" to "alipay",
+    "淘宝" to "taobao",
+    "天猫" to "tmall",
+    "京东" to "jd",
+    "拼多多" to "pinduoduo",
+    "微博" to "weibo",
+    "百度" to "baidu",
+    "网易" to "netease",
+    "网易云音乐" to "netease",
+    "QQ" to "tencent",
+    "腾讯" to "tencent",
+    "腾讯视频" to "tencent",
+    "哔哩哔哩" to "bilibili",
+    "B站" to "bilibili",
+    "美团" to "meituan",
+    "大众点评" to "meituan",
+    "滴滴" to "didi",
+    "滴滴出行" to "didi",
+    "12306" to "12306",
+    "中国工商银行" to "icbc",
+    "工商银行" to "icbc",
+    "招商银行" to "cmbchina",
+    "中国建设银行" to "ccb",
+    "中国农业银行" to "abc",
+    "交通银行" to "bankcomm",
+    "知乎" to "zhihu",
+    "抖音" to "douyin",
+    "快手" to "kuaishou",
+    "小红书" to "xiaohongshu",
+    "钉钉" to "dingtalk",
+    "飞书" to "feishu"
 )
 
 private val WEB_SCHEMES = setOf("http", "https")
@@ -218,6 +386,8 @@ private fun buildAutoMatchCandidates(
     }
 
     title?.takeIf { it.isNotBlank() }?.let { rawTitle ->
+        // 中文标题无法被英文切词命中，需显式映射
+        CJK_TITLE_TO_SLUG[rawTitle.trim()]?.let { candidates.add(it) }
         val compactTitle = rawTitle.lowercase(Locale.ROOT).replace(NON_ALNUM_OR_SPACE_REGEX, " ")
         compactTitle.split(' ')
             .asSequence()
@@ -227,6 +397,8 @@ private fun buildAutoMatchCandidates(
     }
 
     appPackageName?.takeIf { it.isNotBlank() }?.let { pkg ->
+        // 整包名直接映射（覆盖非常规命名，如 com.spotify.music -> spotify）
+        PACKAGE_TO_ICON_SLUG[pkg.lowercase(Locale.ROOT)]?.let { candidates.add(it) }
         val parts = pkg.lowercase(Locale.ROOT).split('.')
         parts.asReversed()
             .asSequence()
@@ -398,30 +570,29 @@ private object SimpleIconCache {
     }
 
     private fun fetchSimpleIconBitmap(context: Context, normalizedSlug: String, darkTheme: Boolean): Bitmap? {
-        val candidates = if (darkTheme) {
-            listOf(
-                "$STRATUM_ICON_ASSET_MAIN_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_MAIN_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/$normalizedSlug.png"
-            )
+        // Icons are stored as lossless WebP (see scripts/convert_stratum_icons_to_webp.sh).
+        // A .png fallback is kept so any stray/contributed PNG still resolves.
+        val dirs = listOf(STRATUM_ICON_ASSET_MAIN_DIR, STRATUM_ICON_ASSET_EXTRA_DIR)
+        val exts = listOf("webp", "png")
+        val slugVariants = if (darkTheme) {
+            listOf("${normalizedSlug}_dark", normalizedSlug)
         } else {
-            listOf(
-                "$STRATUM_ICON_ASSET_MAIN_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/$normalizedSlug.png",
-                "$STRATUM_ICON_ASSET_MAIN_DIR/${normalizedSlug}_dark.png",
-                "$STRATUM_ICON_ASSET_EXTRA_DIR/${normalizedSlug}_dark.png"
-            )
+            listOf(normalizedSlug, "${normalizedSlug}_dark")
         }
 
-        for (assetPath in candidates) {
-            val bitmap = runCatchingObserved {
-                context.assets.open(assetPath).use { stream ->
-                    BitmapFactory.decodeStream(stream)
+        for (slugVariant in slugVariants) {
+            for (dir in dirs) {
+                for (ext in exts) {
+                    val assetPath = "$dir/$slugVariant.$ext"
+                    val bitmap = runCatchingObserved {
+                        context.assets.open(assetPath).use { stream ->
+                            BitmapFactory.decodeStream(stream)
+                        }
+                    }.getOrNull()
+                    if (bitmap != null) {
+                        return bitmap
+                    }
                 }
-            }.getOrNull()
-            if (bitmap != null) {
-                return bitmap
             }
         }
         return null

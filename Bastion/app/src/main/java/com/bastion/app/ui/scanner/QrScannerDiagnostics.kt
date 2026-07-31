@@ -24,16 +24,16 @@ internal class QrScannerDiagnostics(
     private val firstEmptyLogged = AtomicBoolean(false)
     private val firstInvalidLogged = AtomicBoolean(false)
 
-    fun logScannerStarted(requestedFormats: Int, mlKitFormats: Int) {
-        log("scanner_started", "requested_formats=$requestedFormats mlkit_formats=$mlKitFormats")
+    fun logScannerStarted(requestedFormats: Int, formatCount: Int) {
+        log("scanner_started", "requested_formats=$requestedFormats format_count=$formatCount")
     }
 
     fun logSessionStarted(generation: Int) {
         log("session_started", "generation=$generation")
     }
 
-    fun logCameraProviderRequested(mlKitFormatCount: Int) {
-        log("camera_controller_requested", "mlkit_formats=$mlKitFormatCount")
+    fun logCameraProviderRequested(formatCount: Int) {
+        log("camera_controller_requested", "format_count=$formatCount")
     }
 
     fun logCameraProviderFailed(error: Throwable) {

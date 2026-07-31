@@ -16,12 +16,21 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.Matrix
+import android.graphics.Rect
+import android.graphics.YuvImage
+import android.media.Image
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.Result
+import com.google.zxing.common.HybridBinarizer
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -32,7 +41,7 @@ internal class QrCameraScanSession(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
     private val previewView: PreviewView,
-    mlKitFormats: List<Int>,
+    zxingFormats: Collection<BarcodeFormat>,
     private val generation: Int,
     private val diagnostics: QrScannerDiagnostics?,
     private val onCandidates: (List<String>, barcodeCount: Int, durationMs: Long) -> Boolean,
@@ -40,7 +49,7 @@ internal class QrCameraScanSession(
 ) : AutoCloseable {
     private val appContext = context.applicationContext
     private val controller = LifecycleCameraController(appContext)
-    private val scanner: BarcodeScanner = createMlKitBarcodeScanner(mlKitFormats)
+    private val zxingFormats: Collection<BarcodeFormat> = zxingFormats
     private val analysisExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainExecutor = ContextCompat.getMainExecutor(appContext)
     private val healthPolicy = QrScanHealthPolicy()
@@ -153,36 +162,18 @@ internal class QrCameraScanSession(
             runCatchingObserved { imageProxy.close() }
         }
 
-        val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        val task = runCatchingObserved { scanner.process(inputImage) }
-            .onFailure { error ->
-                diagnostics?.logFrameFailure(error)
-                finishFrame(succeeded = false)
-            }
-            .getOrNull()
-            ?: return
-
-        val succeeded = AtomicBoolean(false)
-        task.addOnSuccessListener { barcodes ->
-            succeeded.set(true)
-            val candidates = barcodes
-                .flatMap { it.candidateValues() }
-                .distinct()
-            val durationMs = SystemClock.elapsedRealtime() - frameStartedAt
-            val matched = runCatchingObserved {
-                onCandidates(candidates, barcodes.size, durationMs)
-            }.getOrDefault(false)
-            diagnostics?.logFrameSuccess(
-                durationMs = durationMs,
-                barcodeCount = barcodes.size,
-                candidateCount = candidates.size,
-                matched = matched
-            )
-        }.addOnFailureListener { error ->
-            diagnostics?.logFrameFailure(error)
-        }.addOnCompleteListener {
-            finishFrame(succeeded.get())
-        }
+        val candidates = decodeFrameZxing(imageProxy, zxingFormats)
+        val durationMs = SystemClock.elapsedRealtime() - frameStartedAt
+        val matched = runCatchingObserved {
+            onCandidates(candidates, if (candidates.isNotEmpty()) 1 else 0, durationMs)
+        }.getOrDefault(false)
+        diagnostics?.logFrameSuccess(
+            durationMs = durationMs,
+            barcodeCount = if (candidates.isNotEmpty()) 1 else 0,
+            candidateCount = candidates.size,
+            matched = matched
+        )
+        finishFrame(succeeded = candidates.isNotEmpty())
     }
 
     private fun requestCenterFocus(reason: String): Boolean {
@@ -232,7 +223,6 @@ internal class QrCameraScanSession(
         runCatchingObserved { controller.clearImageAnalysisAnalyzer() }
         runCatchingObserved { previewView.controller = null }
         runCatchingObserved { controller.unbind() }
-        runCatchingObserved { scanner.close() }
         analysisExecutor.shutdown()
     }
 
@@ -244,44 +234,110 @@ internal class QrCameraScanSession(
     }
 }
 
-internal fun Collection<BarcodeFormat>.toMlKitFormatList(): List<Int> {
-    val mapped = mapNotNull { format ->
-        when (format) {
-            BarcodeFormat.QR_CODE -> Barcode.FORMAT_QR_CODE
-            BarcodeFormat.CODE_128 -> Barcode.FORMAT_CODE_128
-            BarcodeFormat.CODE_39 -> Barcode.FORMAT_CODE_39
-            BarcodeFormat.CODE_93 -> Barcode.FORMAT_CODE_93
-            BarcodeFormat.EAN_13 -> Barcode.FORMAT_EAN_13
-            BarcodeFormat.EAN_8 -> Barcode.FORMAT_EAN_8
-            BarcodeFormat.UPC_A -> Barcode.FORMAT_UPC_A
-            BarcodeFormat.UPC_E -> Barcode.FORMAT_UPC_E
-            BarcodeFormat.ITF -> Barcode.FORMAT_ITF
-            BarcodeFormat.CODABAR -> Barcode.FORMAT_CODABAR
-            BarcodeFormat.DATA_MATRIX -> Barcode.FORMAT_DATA_MATRIX
-            BarcodeFormat.AZTEC -> Barcode.FORMAT_AZTEC
-            BarcodeFormat.PDF_417 -> Barcode.FORMAT_PDF417
-            else -> null
+private fun decodeFrameZxing(imageProxy: ImageProxy, formats: Collection<BarcodeFormat>): List<String> {
+    val bitmap = runCatchingObserved { imageProxyToBitmap(imageProxy) }.getOrNull() ?: return emptyList()
+    return try {
+        decodeBitmapZxing(bitmap, formats)
+    } finally {
+        bitmap.recycle()
+    }
+}
+
+/**
+ * 将 ImageAnalysis 产出的 YUV_420_888 [ImageProxy] 转为可解码的 [Bitmap]。
+ * camera-core 1.5.x 未提供 ImageProxy.toBitmap() 扩展，这里手动完成
+ * YUV -> NV21 -> JPEG -> Bitmap 的转换，并按传感器旋转角校正方向。
+ */
+private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
+    val mediaImage = imageProxy.image ?: return null
+    val width = mediaImage.width
+    val height = mediaImage.height
+    val nv21 = yuv420ToNv21(mediaImage)
+    val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+    val out = ByteArrayOutputStream()
+    yuvImage.compressToJpeg(Rect(0, 0, width, height), 90, out)
+    val jpeg = out.toByteArray()
+    val raw = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size) ?: return null
+    val rotation = imageProxy.imageInfo.rotationDegrees.toFloat()
+    if (rotation == 0f) return raw
+    val matrix = Matrix().apply { postRotate(rotation) }
+    val rotated = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, matrix, true)
+    raw.recycle()
+    return rotated
+}
+
+/**
+ * 把 YUV_420_888 的三平面数据紧凑为 NV21（Y 平面 + 交错 VU），
+ * 兼容不同设备的 rowStride / pixelStride 布局。
+ */
+private fun yuv420ToNv21(image: Image): ByteArray {
+    val width = image.width
+    val height = image.height
+    val planes = image.planes
+    val yPlane = planes[0]
+    val uPlane = planes[1]
+    val vPlane = planes[2]
+    val yBuffer = yPlane.buffer
+    val uBuffer = uPlane.buffer
+    val vBuffer = vPlane.buffer
+    val yRowStride = yPlane.rowStride
+    val yPixelStride = yPlane.pixelStride
+    val uRowStride = uPlane.rowStride
+    val uPixelStride = uPlane.pixelStride
+    val vRowStride = vPlane.rowStride
+    val vPixelStride = vPlane.pixelStride
+
+    val nv21 = ByteArray(width * height + (width * height) / 2)
+    var pos = 0
+    val yRow = ByteArray(yRowStride)
+    for (row in 0 until height) {
+        yBuffer.position(row * yRowStride)
+        yBuffer.get(yRow, 0, yRowStride)
+        for (col in 0 until width) {
+            nv21[pos++] = yRow[col * yPixelStride]
         }
-    }.distinct()
-    return mapped.ifEmpty { listOf(Barcode.FORMAT_ALL_FORMATS) }
+    }
+    val uvHeight = height / 2
+    val uvWidth = width / 2
+    val uRowArr = ByteArray(uRowStride)
+    val vRowArr = ByteArray(vRowStride)
+    for (row in 0 until uvHeight) {
+        uBuffer.position(row * uRowStride)
+        uBuffer.get(uRowArr, 0, uRowStride)
+        vBuffer.position(row * vRowStride)
+        vBuffer.get(vRowArr, 0, vRowStride)
+        for (col in 0 until uvWidth) {
+            nv21[pos++] = vRowArr[col * vPixelStride]
+            nv21[pos++] = uRowArr[col * uPixelStride]
+        }
+    }
+    return nv21
 }
 
-internal fun createMlKitBarcodeScanner(formats: List<Int>): BarcodeScanner {
-    val builder = BarcodeScannerOptions.Builder()
-    if (formats.size == 1) {
-        builder.setBarcodeFormats(formats.first())
-    } else {
-        builder.setBarcodeFormats(formats.first(), *formats.drop(1).toIntArray())
-    }
-    return BarcodeScanning.getClient(builder.build())
+internal fun buildZxingHints(formats: Collection<BarcodeFormat>): Map<DecodeHintType, Any> {
+    val hints = HashMap<DecodeHintType, Any>()
+    hints[DecodeHintType.TRY_HARDER] = true
+    hints[DecodeHintType.POSSIBLE_FORMATS] = formats.toList()
+    return hints
 }
 
-internal fun Barcode.candidateValues(): List<String> {
-    return listOfNotNull(
-        rawValue,
-        displayValue,
-        url?.url
-    ).mapNotNull { value ->
-        value.trim().takeIf(String::isNotBlank)
-    }
+internal fun buildCandidates(result: Result): List<String> {
+    // zxing Result.getText() 是 Java 平台类型（String!），需先 trim 再判空，
+    // 不能用 takeIf { it.isNotBlank() }（it 会被推断为可空 String? 而报错）。
+    val text = result.text?.trim()
+    if (text.isNullOrBlank()) return emptyList()
+    return listOf(text)
+}
+
+internal fun decodeBitmapZxing(bitmap: android.graphics.Bitmap, formats: Collection<BarcodeFormat>): List<String> {
+    val w = bitmap.width
+    val h = bitmap.height
+    val pixels = IntArray(w * h)
+    bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+    val source = RGBLuminanceSource(w, h, pixels)
+    val binary = BinaryBitmap(HybridBinarizer(source))
+    val result = runCatchingObserved {
+        MultiFormatReader().decode(binary, buildZxingHints(formats))
+    }.getOrNull() ?: return emptyList()
+    return buildCandidates(result)
 }

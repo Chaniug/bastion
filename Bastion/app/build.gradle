@@ -298,7 +298,8 @@ dependencies {
     // TOTP and QR Code
     implementation libs.zxing.core
     implementation libs.zxing.android.embedded
-    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+    // 扫码统一走 zxing（zxing.android.embedded + zxing.core），不再依赖 mlkit
+    // 的 Vision 原生库，以缩减原生库体积。
     
     // Camera
     implementation libs.androidx.camera.core
