@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import com.bastion.app.ui.components.UnifiedMoveAction
+import java.util.concurrent.atomic.AtomicLong
 
 internal enum class PasswordBatchTransferPhase {
     RUNNING,
@@ -40,12 +41,12 @@ internal object PasswordBatchTransferProgressTracker {
     private val _progress = MutableStateFlow<PasswordBatchTransferGlobalProgressState?>(null)
     val progress: StateFlow<PasswordBatchTransferGlobalProgressState?> = _progress.asStateFlow()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    @Volatile
     private var clearJob: Job? = null
-    private var nextOperationId = 0L
+    private val nextOperationId = AtomicLong(0L)
 
     private fun allocateOperationId(): Long {
-        nextOperationId += 1
-        return nextOperationId
+        return nextOperationId.incrementAndGet()
     }
 
     fun update(

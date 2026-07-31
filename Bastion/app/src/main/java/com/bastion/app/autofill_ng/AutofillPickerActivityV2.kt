@@ -83,6 +83,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
@@ -400,7 +401,9 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
 
         runCatchingObserved {
             val autoLockMinutes = runBlocking {
-                localSettingsManager.settingsFlow.first().autoLockMinutes
+                withTimeout(200) {
+                    localSettingsManager.settingsFlow.first().autoLockMinutes
+                }
             }
             SessionManager.updateAutoLockTimeout(autoLockMinutes)
         }.onFailure { error ->

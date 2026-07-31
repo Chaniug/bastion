@@ -3684,9 +3684,9 @@ class WebDavHelper(
                                                             createdAt = System.currentTimeMillis(),
                                                             lastAccessedAt = System.currentTimeMillis()
                                                         )
-                                                        kotlinx.coroutines.runBlocking {
-                                                            keepassDao.insertDatabase(newKeePassDb)
-                                                        }
+                                                        // 外层 restoreFromBackupFile 已是 suspend，直接调用 suspend 的 insertDatabase，
+                                                        // 无需 runBlocking 桥接（避免阻塞 IO 协程线程、破坏结构化并发）。
+                                                        keepassDao.insertDatabase(newKeePassDb)
                                                         
                                                         android.util.Log.d("WebDavHelper", "Restored KeePass database: ${metaBackup.name}")
                                                         warnings.add("✓ KeePass数据库已恢复: ${metaBackup.name}")

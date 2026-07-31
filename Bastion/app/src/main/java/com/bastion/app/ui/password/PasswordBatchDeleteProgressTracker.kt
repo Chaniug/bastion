@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicLong
 
 internal enum class PasswordBatchDeletePhase {
     RUNNING,
@@ -37,12 +38,12 @@ internal object PasswordBatchDeleteProgressTracker {
     private val _progress = MutableStateFlow<PasswordBatchDeleteGlobalProgressState?>(null)
     val progress: StateFlow<PasswordBatchDeleteGlobalProgressState?> = _progress.asStateFlow()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    @Volatile
     private var clearJob: Job? = null
-    private var nextOperationId = 0L
+    private val nextOperationId = AtomicLong(0L)
 
     private fun allocateOperationId(): Long {
-        nextOperationId += 1
-        return nextOperationId
+        return nextOperationId.incrementAndGet()
     }
 
     fun update(processed: Int, total: Int) {

@@ -4,6 +4,7 @@ import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.utils.SettingsManager
@@ -35,7 +36,9 @@ object AccountFillPolicy {
     fun shouldFillEmailWithAccount(context: Context): Boolean {
         return runCatchingObserved {
             runBlocking {
-                SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled
+                withTimeout(200) {
+                    SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled
+                }
             }
         }.getOrDefault(false)
     }
