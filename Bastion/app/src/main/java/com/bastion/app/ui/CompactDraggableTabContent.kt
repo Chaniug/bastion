@@ -109,8 +109,6 @@ internal fun CompactDraggableTabContent(
     onNavigateToSyncBackup: () -> Unit,
     onNavigateToAutofill: () -> Unit,
     onNavigateToPasskeySettings: () -> Unit,
-    onNavigateToBottomNavSettings: () -> Unit,
-    onNavigateToColorScheme: () -> Unit,
     onSecurityAnalysis: () -> Unit,
     onNavigateToDeveloperSettings: () -> Unit,
     onNavigateToPermissionManagement: () -> Unit,
@@ -118,6 +116,7 @@ internal fun CompactDraggableTabContent(
     onNavigateToExtensions: () -> Unit,
     onNavigateToCommonAccountTemplates: () -> Unit,
     onNavigateToPageCustomization: () -> Unit,
+    onNavigateToThemeAndColorScheme: () -> Unit = {},
     onOpenVaultV2HistoryPage: () -> Unit,
     onOpenVaultV2TrashPage: () -> Unit,
     onOpenVaultV2ArchivePage: () -> Unit,
@@ -365,14 +364,13 @@ internal fun CompactDraggableTabContent(
                     onNavigateToSyncBackup = onNavigateToSyncBackup,
                     onNavigateToAutofill = onNavigateToAutofill,
                     onNavigateToPasskeySettings = onNavigateToPasskeySettings,
-                    onNavigateToBottomNavSettings = onNavigateToBottomNavSettings,
-                    onNavigateToColorScheme = onNavigateToColorScheme,
                     onSecurityAnalysis = onSecurityAnalysis,
                     onNavigateToDeveloperSettings = onNavigateToDeveloperSettings,
                     onNavigateToPermissionManagement = onNavigateToPermissionManagement,
                     onNavigateToBastionPlus = onNavigateToBastionPlus,
                     onNavigateToExtensions = onNavigateToExtensions,
                     onNavigateToPageCustomization = onNavigateToPageCustomization,
+                    onNavigateToThemeAndColorScheme = onNavigateToThemeAndColorScheme,
                     onClearAllData = onClearAllData
                 )
             }

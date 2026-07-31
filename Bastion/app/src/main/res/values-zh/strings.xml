@@ -1180,6 +1180,8 @@
     
     <!-- Color Scheme -->
     <string name="color_scheme">配色方案</string>
+    <string name="theme_and_color_scheme">外观与配色</string>
+    <string name="interface_layout">界面与布局</string>
     <string name="color_scheme_description">为应用选择一个配色方案</string>
     <string name="more_color_schemes">更多配色</string>
     <string name="default_color_scheme">默认</string>

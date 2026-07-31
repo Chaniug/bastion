@@ -183,7 +183,7 @@ sealed class Screen(val route: String) {
     object MasterPasswordLockingSettings : Screen("master_password_locking_settings")
     object DedupEngine : Screen("dedup_engine")
     object BottomNavSettings : Screen("bottom_nav_settings")
-    object ColorSchemeSelection : Screen("color_scheme_selection")
+    object ThemeAndColorScheme : Screen("theme_and_color_scheme")
     object CustomColorSettings : Screen("custom_color_settings")
     object Generator : Screen("generator")  // 添加生成器页面路由
     object DeveloperSettings : Screen("developer_settings")  // 添加开发者设置页面路由

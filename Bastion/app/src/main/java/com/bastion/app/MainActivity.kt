@@ -1222,12 +1222,6 @@ fun BastionContent(
                 onNavigateToPasskeySettings = {
                     navController.navigate(Screen.PasskeySettings.route)
                 },
-                onNavigateToBottomNavSettings = {
-                    navController.navigate(Screen.BottomNavSettings.route)
-                },
-                onNavigateToColorScheme = {
-                    navController.navigate(Screen.ColorSchemeSelection.route)
-                },
                 onSecurityAnalysis = {
                     navController.navigate(Screen.SecurityAnalysis.route)
                 },
@@ -1248,6 +1242,9 @@ fun BastionContent(
                 },
                 onNavigateToPageCustomization = {
                     navController.navigate(Screen.PageAdjustmentCustomization.route)
+                },
+                onNavigateToThemeAndColorScheme = {
+                    navController.navigate(Screen.ThemeAndColorScheme.route)
                 },
                 onNavigateToAddSend = {
                     navController.navigate(Screen.AddEditSend.createRoute()) {
@@ -2697,12 +2694,6 @@ fun BastionContent(
                 onNavigateToPasskeySettings = {
                     navController.navigate(Screen.PasskeySettings.route)
                 },
-                onNavigateToBottomNavSettings = {
-                    navController.navigate(Screen.BottomNavSettings.route)
-                },
-                onNavigateToColorScheme = {
-                    navController.navigate(Screen.ColorSchemeSelection.route)
-                },
                 onSecurityAnalysis = {
                     navController.navigate(Screen.SecurityAnalysis.route)
                 },
@@ -2720,6 +2711,9 @@ fun BastionContent(
                 },
                 onNavigateToPageCustomization = {
                     navController.navigate(Screen.PageAdjustmentCustomization.route)
+                },
+                onNavigateToThemeAndColorScheme = {
+                    navController.navigate(Screen.ThemeAndColorScheme.route)
                 },
                 onNavigateToMdbx = {
                     navController.navigate(Screen.MdbxManager.route) {
@@ -3364,10 +3358,6 @@ fun BastionContent(
                 onPasswordSwipeSelectionModeChange = { mode ->
                     settingsViewModel.updatePasswordSwipeSelectionMode(mode)
                 },
-                passwordCardDisplayMode = settings.passwordCardDisplayMode,
-                onPasswordCardDisplayModeChange = { mode ->
-                    settingsViewModel.updatePasswordCardDisplayMode(mode)
-                },
                 validatorUnifiedProgressBar = settings.validatorUnifiedProgressBar,
                 onValidatorUnifiedProgressBarChange = { mode ->
                     settingsViewModel.updateValidatorUnifiedProgressBar(mode)
@@ -3433,6 +3423,9 @@ fun BastionContent(
                 },
                 onNavigateToIconSettings = {
                     navController.navigate(Screen.IconSettings.route)
+                },
+                onNavigateToBottomNavSettings = {
+                    navController.navigate(Screen.BottomNavSettings.route)
                 }
             )
         }
@@ -3666,7 +3659,7 @@ fun BastionContent(
         }
         
         composable(
-            route = Screen.ColorSchemeSelection.route,
+            route = Screen.ThemeAndColorScheme.route,
             enterTransition = { easyNotesScreenEnter() },
             exitTransition = { easyNotesScreenExit() },
             popEnterTransition = { easyNotesScreenEnter() },
@@ -3675,7 +3668,7 @@ fun BastionContent(
             androidx.compose.runtime.CompositionLocalProvider(
                 com.bastion.app.ui.LocalAnimatedVisibilityScope provides this
             ) {
-            com.bastion.app.ui.screens.ColorSchemeSelectionScreen(
+            com.bastion.app.ui.screens.ThemeAndColorSchemeScreen(
                 settingsViewModel = settingsViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
