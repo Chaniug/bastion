@@ -1,6 +1,7 @@
 package com.bastion.app.security.lock
 
 import android.content.Context
+import com.bastion.app.BuildConfig
 import com.bastion.app.security.SecurityManager
 
 /**
@@ -31,7 +32,7 @@ object MainAppLockPolicy {
             )
         }
 
-        if (disablePasswordVerification) {
+        if (disablePasswordVerification && BuildConfig.DEBUG) {
             return MainAppAccessState(
                 isFirstTime = false,
                 bypassEnabled = true,
