@@ -53,9 +53,10 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
+      # 浅克隆：CI debug 不依赖 git 历史，避免拉取大体积历史（.git 历史含旧构建产物），显著缩短 checkout
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
