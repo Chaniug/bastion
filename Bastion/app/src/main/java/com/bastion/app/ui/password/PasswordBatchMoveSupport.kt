@@ -30,7 +30,6 @@ import com.bastion.app.R
 import com.bastion.app.bitwarden.repository.BitwardenRepository
 import com.bastion.app.data.Category
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.OperationLogItemType
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.model.TIMELINE_FIELD_BATCH_COPY_PAYLOAD
@@ -121,9 +120,7 @@ private fun isKeePassMoveCopyOnlyTarget(target: UnifiedMoveCategoryTarget): Bool
         is UnifiedMoveCategoryTarget.BastionCategory ->
             target.categoryId == UNIFIED_MOVE_ARCHIVE_SENTINEL_CATEGORY_ID
         is UnifiedMoveCategoryTarget.KeePassDatabaseTarget,
-        is UnifiedMoveCategoryTarget.KeePassGroupTarget,
-        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget,
-        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> false
+        is UnifiedMoveCategoryTarget.KeePassGroupTarget -> false
         else -> true
     }
 }
@@ -280,38 +277,6 @@ internal fun toMovedLocationState(
             isArchived = false,
             archivedAtMillis = null
         )
-
-        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> TimelinePasswordLocationState(
-            id = entry.id,
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            mdbxDatabaseId = target.databaseId,
-            mdbxFolderId = null,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            isArchived = false,
-            archivedAtMillis = null
-        )
-
-        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> TimelinePasswordLocationState(
-            id = entry.id,
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            mdbxDatabaseId = target.databaseId,
-            mdbxFolderId = target.folderId,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            isArchived = false,
-            archivedAtMillis = null
-        )
     }
 }
 
@@ -330,8 +295,6 @@ internal fun buildCopiedEntryForTarget(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -355,8 +318,6 @@ internal fun buildCopiedEntryForTarget(
                     keepassGroupPath = null,
                     keepassEntryUuid = null,
                     keepassGroupUuid = null,
-                    mdbxDatabaseId = null,
-                    mdbxFolderId = null,
                     bitwardenVaultId = null,
                     bitwardenCipherId = null,
                     bitwardenFolderId = null,
@@ -378,8 +339,6 @@ internal fun buildCopiedEntryForTarget(
                     keepassGroupPath = null,
                     keepassEntryUuid = null,
                     keepassGroupUuid = null,
-                    mdbxDatabaseId = null,
-                    mdbxFolderId = null,
                     bitwardenVaultId = null,
                     bitwardenCipherId = null,
                     bitwardenFolderId = null,
@@ -403,8 +362,6 @@ internal fun buildCopiedEntryForTarget(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = target.vaultId,
             bitwardenCipherId = null,
             bitwardenFolderId = "",
@@ -426,8 +383,6 @@ internal fun buildCopiedEntryForTarget(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = target.vaultId,
             bitwardenCipherId = null,
             bitwardenFolderId = target.folderId,
@@ -449,8 +404,6 @@ internal fun buildCopiedEntryForTarget(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -472,54 +425,6 @@ internal fun buildCopiedEntryForTarget(
             keepassGroupPath = target.groupPath,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            replicaGroupId = null,
-            isArchived = false,
-            archivedAt = null,
-            isDeleted = false,
-            deletedAt = null
-        )
-
-        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> entry.copy(
-            id = 0,
-            createdAt = now,
-            updatedAt = now,
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            mdbxDatabaseId = target.databaseId,
-            mdbxFolderId = null,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            replicaGroupId = null,
-            isArchived = false,
-            archivedAt = null,
-            isDeleted = false,
-            deletedAt = null
-        )
-
-        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> entry.copy(
-            id = 0,
-            createdAt = now,
-            updatedAt = now,
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            mdbxDatabaseId = target.databaseId,
-            mdbxFolderId = target.folderId,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -538,8 +443,7 @@ internal fun buildMoveTargetLabel(
     context: Context,
     target: UnifiedMoveCategoryTarget,
     categories: List<Category>,
-    keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList()
+    keepassDatabases: List<LocalKeePassDatabase>
 ): String {
     return when (target) {
         UnifiedMoveCategoryTarget.Uncategorized -> context.getString(R.string.category_none)
@@ -560,14 +464,6 @@ internal fun buildMoveTargetLabel(
         }
 
         is UnifiedMoveCategoryTarget.KeePassGroupTarget -> decodeKeePassPathForDisplay(target.groupPath)
-
-        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> {
-            mdbxDatabases.find { it.id == target.databaseId }?.name ?: "MDBX"
-        }
-
-        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> {
-            mdbxDatabases.find { it.id == target.databaseId }?.name ?: "MDBX"
-        }
     }
 }
 
@@ -586,7 +482,6 @@ internal suspend fun executePasswordBatchCopy(
     targetRouting: PasswordBatchMoveTargetRouting,
     copyPasswordToBastionLocal: suspend (PasswordEntry, Long?) -> Long?,
     addCopiedEntry: suspend (PasswordEntry) -> Long?,
-    addMdbxCopiedEntriesBatch: suspend (List<PasswordEntry>) -> List<Long>,
     buildCopiedEntryForTarget: (PasswordEntry, UnifiedMoveCategoryTarget) -> PasswordEntry,
     onProgress: ((Int, Int) -> Unit)? = null
 ): PasswordBatchCopyResult {
@@ -611,18 +506,6 @@ internal suspend fun executePasswordBatchCopy(
             processed += 1
             onProgress?.invoke(processed, total)
         }
-    } else if (target is UnifiedMoveCategoryTarget.MdbxDatabaseTarget || target is UnifiedMoveCategoryTarget.MdbxFolderTarget) {
-        val copiedEntries = selectedEntries.map { entry -> buildCopiedEntryForTarget(entry, target) }
-        val createdIds = addMdbxCopiedEntriesBatch(copiedEntries)
-        createdIds.forEachIndexed { index, createdId ->
-            if (createdId > 0) {
-                copiedIds += createdId
-                selectedEntries.getOrNull(index)?.let { source -> idPairs += source.id to createdId }
-            }
-        }
-        failedCount += (selectedEntries.size - copiedIds.size).coerceAtLeast(0)
-        processed = total
-        onProgress?.invoke(processed, total)
     } else {
         selectedEntries.forEach { entry ->
             val copiedEntry = buildCopiedEntryForTarget(entry, target)
@@ -824,7 +707,6 @@ internal fun PasswordBatchMoveSheet(
     visible: Boolean,
     categories: List<Category>,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     database: com.bastion.app.data.PasswordDatabase,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
@@ -874,12 +756,9 @@ internal fun PasswordBatchMoveSheet(
         onDismiss = onDismiss,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
         getKeePassGroups = localKeePassViewModel::getGroups,
-        getMdbxFolders = viewModel::getMdbxFolders,
-        refreshMdbxFolders = viewModel::refreshMdbxFolders,
         showBitwardenFolderTargets = false,
         allowCopy = true,
         allowMove = true,
@@ -1158,21 +1037,11 @@ internal fun PasswordBatchMoveSheet(
                                         addCopiedEntry = { entry ->
                                             viewModel.addPasswordEntryWithResultAwait(entry)
                                         },
-                                        addMdbxCopiedEntriesBatch = { entries ->
-                                            viewModel.createMdbxPasswordEntriesBatchAlreadyEncrypted(entries)
-                                        },
                                         buildCopiedEntryForTarget = ::buildCopiedEntryForTarget,
                                         onProgress = onProgressUpdate
                                     )
                                     successCount = copyResult.successCount
                                     failedCount = copyResult.failedCount
-                                    if (
-                                        copyResult.idPairs.isNotEmpty() &&
-                                        (target is UnifiedMoveCategoryTarget.MdbxDatabaseTarget ||
-                                            target is UnifiedMoveCategoryTarget.MdbxFolderTarget)
-                                    ) {
-                                        viewModel.copyBoundTotpsForPasswordCopies(copyResult.idPairs)
-                                    }
                                 }
                             }
                         } else {
@@ -1333,22 +1202,6 @@ internal fun PasswordBatchMoveSheet(
                                         target.databaseId,
                                         target.groupPath
                                     )
-                                }
-
-                                target is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> {
-                                    viewModel.unarchivePasswordsAwait(selectedIds)
-                                    viewModel.movePasswordsToMdbxDatabaseAwait(selectedIds, target.databaseId)
-                                    onProgressUpdate(selectedEntries.size, selectedEntries.size)
-                                }
-
-                                target is UnifiedMoveCategoryTarget.MdbxFolderTarget -> {
-                                    viewModel.unarchivePasswordsAwait(selectedIds)
-                                    viewModel.movePasswordsToMdbxDatabaseAwait(
-                                        selectedIds,
-                                        target.databaseId,
-                                        target.folderId
-                                    )
-                                    onProgressUpdate(selectedEntries.size, selectedEntries.size)
                                 }
                             }
 

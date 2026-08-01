@@ -29,7 +29,6 @@ import com.bastion.app.R
 import com.bastion.app.data.AppSettings
 import com.bastion.app.data.Category
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.PasswordPageContentType
@@ -41,7 +40,6 @@ import com.bastion.app.data.model.PasskeyBindingCodec
 import com.bastion.app.data.model.isSshKeyEntry
 import com.bastion.app.data.model.isBarcodeEntry
 import com.bastion.app.notes.domain.NoteContentCodec
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.ui.password.PasswordAggregateCardStyle
 import com.bastion.app.ui.password.PasswordAggregateListItemUi
 import com.bastion.app.ui.password.PasswordAggregateRetainedState
@@ -174,8 +172,6 @@ internal fun rememberPasswordListQuickFolderUiState(
     keepassGroupsForSelectedDb: List<KeePassGroupInfo>,
     bitwardenVaults: List<BitwardenVault>,
     selectedBitwardenFolders: List<BitwardenFolder>,
-    mdbxDatabases: List<LocalMdbxDatabase>,
-    selectedMdbxFolders: List<MdbxStoredFolderEntry>,
     quickFolderRootKey: String,
     quickFoldersEnabledForCurrentFilter: Boolean,
     quickFolderPathBannerEnabledForCurrentFilter: Boolean
@@ -295,7 +291,6 @@ internal fun rememberPasswordListQuickFolderUiState(
         keepassGroupsForSelectedDb,
         bitwardenVaults,
         selectedBitwardenFolders,
-        selectedMdbxFolders,
         categories,
         initialValue = emptyList()
     ) {
@@ -317,7 +312,6 @@ internal fun rememberPasswordListQuickFolderUiState(
             keepassGroupsForSelectedDb = keepassGroupsForSelectedDb,
             bitwardenVaults = bitwardenVaults,
             selectedBitwardenFolders = selectedBitwardenFolders,
-            selectedMdbxFolders = selectedMdbxFolders,
             categories = categories
         )
     }
@@ -334,7 +328,6 @@ internal fun rememberPasswordListQuickFolderUiState(
         keepassGroupsForSelectedDb,
         bitwardenVaults,
         selectedBitwardenFolders,
-        selectedMdbxFolders,
         categories,
         initialValue = emptyList()
     ) {
@@ -352,7 +345,6 @@ internal fun rememberPasswordListQuickFolderUiState(
             keepassGroupsForSelectedDb = keepassGroupsForSelectedDb,
             bitwardenVaults = bitwardenVaults,
             selectedBitwardenFolders = selectedBitwardenFolders,
-            selectedMdbxFolders = selectedMdbxFolders,
             categories = categories
         )
     }
@@ -363,10 +355,8 @@ internal fun rememberPasswordListQuickFolderUiState(
         quickFolderNodeByPath,
         quickFolderRootFilter,
         keepassDatabases,
-        mdbxDatabases,
         bitwardenVaults,
         selectedBitwardenFolders,
-        selectedMdbxFolders,
         categories,
         initialValue = emptyList()
     ) {
@@ -378,8 +368,6 @@ internal fun rememberPasswordListQuickFolderUiState(
             quickFolderNodeByPath = quickFolderNodeByPath,
             quickFolderRootFilter = quickFolderRootFilter,
             keepassDatabases = keepassDatabases,
-            mdbxDatabases = mdbxDatabases,
-            selectedMdbxFolders = selectedMdbxFolders,
             bitwardenVaults = bitwardenVaults,
             selectedBitwardenFolders = selectedBitwardenFolders,
             categories = categories

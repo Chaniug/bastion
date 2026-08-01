@@ -10,7 +10,6 @@ import com.bastion.app.attachments.AttachmentContainer
 import com.bastion.app.data.AppLauncherIcon
 import com.bastion.app.data.AppLauncherLabel
 import com.bastion.app.data.PasswordDatabase
-import com.bastion.app.mdbx.MdbxDiagLogger
 import com.bastion.app.perf.MainThreadStallMonitor
 import com.bastion.app.security.AppUpdateSecurityGuard
 import com.bastion.app.sync.AndroidSyncNetworkGate
@@ -70,7 +69,6 @@ class BastionApplication : Application() {
 
         SyncTaskRunner.installNetworkGate(AndroidSyncNetworkGate(this))
         MainThreadStallMonitor.start()
-        MdbxDiagLogger.initialize(this)
         syncLauncherEntryPointsWithSettings()
         WebDavBackoffState.attachPersistence(this)
         scheduleKeePassRemoteUploadRecovery()

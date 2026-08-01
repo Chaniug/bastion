@@ -150,7 +150,6 @@ private fun resolvePasswordDetailGroupPasswords(
             when {
                 it.isLocalOnlyEntry() -> 0
                 it.isKeePassEntry() -> 1
-                it.isMdbxEntry() -> 2
                 else -> 3
             }
         }.thenBy { it.keepassDatabaseId ?: Long.MAX_VALUE }
@@ -204,7 +203,6 @@ fun PasswordDetailScreen(
     val database = remember { PasswordDatabase.getDatabase(context.applicationContext) }
     val categories by viewModel.categories.collectAsState(initial = emptyList())
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     var isLeavingDetail by remember { mutableStateOf(false) }
     fun requestNavigateBack() {
@@ -655,7 +653,6 @@ fun PasswordDetailScreen(
                 entry,
                 categories,
                 keepassDatabases,
-                mdbxDatabases,
                 bitwardenVaults,
                 bitwardenFoldersByVault,
                 settings,
@@ -667,12 +664,10 @@ fun PasswordDetailScreen(
                         entry = candidate,
                         categories = categories,
                         keepassDatabases = keepassDatabases,
-                        mdbxDatabases = mdbxDatabases,
                         bitwardenVaults = bitwardenVaults,
                         bitwardenFoldersByVault = bitwardenFoldersByVault,
                         localSourceLabel = context.getString(R.string.database_source_local),
                         keepassSourceLabel = context.getString(R.string.database_source_keepass),
-                        mdbxSourceLabel = "MDBX",
                         bitwardenSourceLabel = context.getString(R.string.filter_bitwarden),
                         passwordOwnerConflictShortLabel = context.getString(R.string.password_owner_conflict_short),
                         passwordOwnerConflictDatabaseLabel = context.getString(R.string.password_owner_conflict_database),
@@ -685,12 +680,10 @@ fun PasswordDetailScreen(
                         entry = entry,
                         categories = categories,
                         keepassDatabases = keepassDatabases,
-                        mdbxDatabases = mdbxDatabases,
                         bitwardenVaults = bitwardenVaults,
                         bitwardenFoldersByVault = bitwardenFoldersByVault,
                         localSourceLabel = context.getString(R.string.database_source_local),
                         keepassSourceLabel = context.getString(R.string.database_source_keepass),
-                        mdbxSourceLabel = "MDBX",
                         bitwardenSourceLabel = context.getString(R.string.filter_bitwarden),
                         passwordOwnerConflictShortLabel = context.getString(R.string.password_owner_conflict_short),
                         passwordOwnerConflictDatabaseLabel = context.getString(R.string.password_owner_conflict_database),
@@ -3063,12 +3056,10 @@ private fun buildPasswordStorageInfo(
     entry: PasswordEntry,
     categories: List<com.bastion.app.data.Category>,
     keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase>,
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     bitwardenFoldersByVault: Map<Long, List<BitwardenFolder>>,
     localSourceLabel: String,
     keepassSourceLabel: String,
-    mdbxSourceLabel: String,
     bitwardenSourceLabel: String,
     passwordOwnerConflictShortLabel: String,
     passwordOwnerConflictDatabaseLabel: String,
@@ -3079,12 +3070,10 @@ private fun buildPasswordStorageInfo(
         entry.hasOwnershipConflict() -> "conflict:${entry.id}"
         entry.bitwardenVaultId != null -> "bw:${entry.bitwardenVaultId}"
         entry.keepassDatabaseId != null -> "kp:${entry.keepassDatabaseId}"
-        entry.mdbxDatabaseId != null -> "mdbx:${entry.mdbxDatabaseId}"
         else -> "local"
     }
     val categoryPath = categories.firstOrNull { it.id == entry.categoryId }?.name
     val keepassDatabaseName = keepassDatabases.firstOrNull { it.id == entry.keepassDatabaseId }?.name
-    val mdbxDatabaseName = mdbxDatabases.firstOrNull { it.id == entry.mdbxDatabaseId }?.name
     val bitwardenVaultName = bitwardenVaults
         .firstOrNull { it.id == entry.bitwardenVaultId }
         ?.let { vault -> vault.displayName?.takeIf { it.isNotBlank() } ?: vault.email }
@@ -3099,14 +3088,12 @@ private fun buildPasswordStorageInfo(
         entry.hasOwnershipConflict() -> passwordOwnerConflictShortLabel
         entry.isBitwardenEntry() -> bitwardenSourceLabel
         entry.isKeePassEntry() -> keepassSourceLabel
-        entry.isMdbxEntry() -> mdbxSourceLabel
         else -> localSourceLabel
     }
     val databaseName = when {
         entry.hasOwnershipConflict() -> passwordOwnerConflictDatabaseLabel
         entry.isBitwardenEntry() -> bitwardenVaultName ?: bitwardenSourceLabel
         entry.isKeePassEntry() -> keepassDatabaseName ?: keepassSourceLabel
-        entry.isMdbxEntry() -> mdbxDatabaseName ?: mdbxSourceLabel
         else -> localSourceLabel
     }
     val folderPath = when {
@@ -3117,9 +3104,6 @@ private fun buildPasswordStorageInfo(
         entry.isKeePassEntry() -> entry.keepassGroupPath
             ?.takeIf { it.isNotBlank() }
             ?.let(::decodeKeePassPathForDisplay)
-            ?: rootLabel
-        entry.isMdbxEntry() -> categoryPath
-            ?.takeIf { it.isNotBlank() }
             ?: rootLabel
         else -> categoryPath
             ?.takeIf { it.isNotBlank() }

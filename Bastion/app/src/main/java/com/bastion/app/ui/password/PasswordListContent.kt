@@ -111,9 +111,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.FragmentActivity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -312,10 +309,8 @@ fun PasswordListContent(
     settingsViewModel: SettingsViewModel,
     securityManager: SecurityManager,
     keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase>,
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
-    mdbxViewModel: com.bastion.app.viewmodel.MdbxViewModel? = null,
     groupMode: String = "none",
     stackCardMode: StackCardMode,
     onRenameCategory: (Category) -> Unit,
@@ -359,9 +354,6 @@ fun PasswordListContent(
     }
     // settings
     val appSettings by settingsViewModel.settings.collectAsState()
-    val mdbxDatabasesLoaded by remember(mdbxViewModel) {
-        mdbxViewModel?.allDatabasesLoaded ?: kotlinx.coroutines.flow.flowOf(true)
-    }.collectAsState(initial = mdbxViewModel == null)
     val aggregateUiState = rememberPasswordAggregateUiState(
         aggregateConfig = aggregateConfig,
         searchQuery = searchQuery,
@@ -405,68 +397,6 @@ fun PasswordListContent(
         is CategoryFilter.KeePassDatabaseStarred -> filter.databaseId
         is CategoryFilter.KeePassDatabaseUncategorized -> filter.databaseId
         else -> null
-    }
-    val selectedMdbxDatabaseId = when (val filter = currentFilter) {
-        is CategoryFilter.MdbxDatabase -> filter.databaseId
-        is CategoryFilter.MdbxFolderFilter -> filter.databaseId
-        else -> null
-    }
-    val selectedMdbxDatabase = remember(selectedMdbxDatabaseId, mdbxDatabases) {
-        selectedMdbxDatabaseId?.let { databaseId ->
-            mdbxDatabases.find { it.id == databaseId }
-        }
-    }
-    val mdbxOperationState by (
-        mdbxViewModel?.operationState
-            ?: kotlinx.coroutines.flow.flowOf(com.bastion.app.viewmodel.MdbxViewModel.OperationState.Idle)
-        ).collectAsState(initial = com.bastion.app.viewmodel.MdbxViewModel.OperationState.Idle)
-    val mdbxPendingSyncCounts by remember(mdbxViewModel) {
-        mdbxViewModel?.pendingSyncCounts ?: kotlinx.coroutines.flow.flowOf(emptyMap<Long, Int>())
-    }.collectAsState(initial = emptyMap())
-    val mdbxPathSyncState = remember(
-        selectedMdbxDatabase,
-        mdbxOperationState,
-        mdbxPendingSyncCounts,
-        mdbxViewModel
-    ) {
-        val database = selectedMdbxDatabase
-        val viewModel = mdbxViewModel
-        if (database != null && viewModel != null) {
-            MdbxPathSyncState(
-                pendingCount = mdbxPendingSyncCounts[database.id]
-                    ?: database.mdbxPathPendingSyncCount(),
-                isSyncing = mdbxOperationState is com.bastion.app.viewmodel.MdbxViewModel.OperationState.Loading,
-                onSync = {
-                    if (database.mdbxPathShouldFlushPendingUpload()) {
-                        viewModel.flushPendingVaultUpload(database.id)
-                    } else {
-                        viewModel.syncVault(database.id)
-                    }
-                }
-            )
-        } else {
-            null
-        }
-    }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, mdbxViewModel) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                mdbxViewModel?.pruneMissingLocalVaults()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    LaunchedEffect(selectedMdbxDatabaseId, mdbxDatabasesLoaded, mdbxDatabases.map { it.id }) {
-        val selectedId = selectedMdbxDatabaseId ?: return@LaunchedEffect
-        if (!mdbxDatabasesLoaded) return@LaunchedEffect
-        if (mdbxDatabases.none { it.id == selectedId }) {
-            viewModel.setCategoryFilter(CategoryFilter.All)
-        } else {
-            viewModel.refreshMdbxFolders(selectedId)
-            mdbxViewModel?.autoSyncVisibleVault(selectedId)
-        }
     }
     val keepassGroupsForSelectedDbFlow = remember(selectedKeePassDatabaseId, localKeePassViewModel) {
         selectedKeePassDatabaseId?.let { databaseId ->
@@ -519,11 +449,6 @@ fun PasswordListContent(
             ?: kotlinx.coroutines.flow.flowOf(emptyList())
     }
     val selectedBitwardenFolders by selectedBitwardenFoldersFlow.collectAsState(initial = emptyList())
-    val selectedMdbxFoldersFlow = remember(selectedMdbxDatabaseId, viewModel) {
-        selectedMdbxDatabaseId?.let(viewModel::getMdbxFolders)
-            ?: kotlinx.coroutines.flow.flowOf(emptyList())
-    }
-    val selectedMdbxFolders by selectedMdbxFoldersFlow.collectAsState(initial = emptyList())
     val isTopBarSyncing = selectedBitwardenVaultId?.let { vaultId ->
         bitwardenSyncStatusByVault[vaultId].isUserVisibleSyncInProgress()
     } == true
@@ -873,8 +798,6 @@ fun PasswordListContent(
         keepassGroupsForSelectedDb = keepassGroupsForSelectedDb,
         bitwardenVaults = bitwardenVaults,
         selectedBitwardenFolders = selectedBitwardenFolders,
-        mdbxDatabases = mdbxDatabases,
-        selectedMdbxFolders = selectedMdbxFolders,
         quickFolderRootKey = quickFolderRootKey,
         quickFoldersEnabledForCurrentFilter = quickFoldersEnabledForCurrentFilter,
         quickFolderPathBannerEnabledForCurrentFilter = quickFolderPathBannerEnabledForCurrentFilter
@@ -1515,7 +1438,6 @@ fun PasswordListContent(
         visible = showMoveToCategoryDialog,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         database = database,
         localKeePassViewModel = localKeePassViewModel,
@@ -1545,15 +1467,11 @@ fun PasswordListContent(
             categories = categories,
             keepassDatabases = keepassDatabases,
             bitwardenVaults = bitwardenVaults,
-            mdbxDatabases = mdbxDatabases,
             viewModel = viewModel,
             localKeePassViewModel = localKeePassViewModel,
             bitwardenViewModel = bitwardenViewModel,
-            mdbxViewModel = mdbxViewModel,
             selectedBitwardenVaultId = selectedBitwardenVaultId,
             selectedKeePassDatabaseId = selectedKeePassDatabaseId,
-            selectedMdbxDatabaseId = selectedMdbxDatabaseId,
-            selectedMdbxFolders = selectedMdbxFolders,
             isTopBarSyncing = isTopBarSyncing,
             isArchiveView = isArchiveView,
             isKeePassDatabaseView = isKeePassDatabaseView,
@@ -1638,7 +1556,6 @@ fun PasswordListContent(
             density = density,
             showPinnedQuickFolderPathBanner = showPinnedQuickFolderPathBanner,
             quickFolderBreadcrumbs = effectiveQuickFolderBreadcrumbs,
-            mdbxPathSyncState = mdbxPathSyncState,
             quickStatusTransferState = quickStatusTransferState,
             onShowQuickStatusTransferDialog = {
                 backgroundedTransferOperationId = null
@@ -1891,7 +1808,6 @@ private fun PasswordListMainPaneHost(
     density: androidx.compose.ui.unit.Density,
     showPinnedQuickFolderPathBanner: Boolean,
     quickFolderBreadcrumbs: List<PasswordQuickFolderBreadcrumb>,
-    mdbxPathSyncState: MdbxPathSyncState?,
     quickStatusTransferState: com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState?,
     onShowQuickStatusTransferDialog: () -> Unit,
     quickStatusDeleteState: com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState?,
@@ -1983,7 +1899,6 @@ private fun PasswordListMainPaneHost(
         density = density,
         showPinnedQuickFolderPathBanner = showPinnedQuickFolderPathBanner,
         quickFolderBreadcrumbs = quickFolderBreadcrumbs,
-        mdbxPathSyncState = mdbxPathSyncState,
         quickStatusTransferState = quickStatusTransferState,
         onQuickStatusTransferClick = {
             if (quickStatusTransferState != null) {

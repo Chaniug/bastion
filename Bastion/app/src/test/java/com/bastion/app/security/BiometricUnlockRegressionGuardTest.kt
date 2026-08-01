@@ -248,9 +248,6 @@ class BiometricUnlockRegressionGuardTest {
 
     @Test
     fun sharedDatabaseAndSyncBoundariesDoNotExportLocalOnlyTotpCiphertext() {
-        val mdbxStoreSource = projectFile(
-            "app/src/main/java/com/bastion/app/repository/MdbxVaultStore.kt"
-        ).readText()
         val bitwardenSyncSource = projectFile(
             "app/src/main/java/com/bastion/app/bitwarden/service/BitwardenSyncService.kt"
         ).readText()
@@ -261,16 +258,6 @@ class BiometricUnlockRegressionGuardTest {
             "app/src/main/java/com/bastion/app/utils/KeePassKdbxService.kt"
         ).readText()
 
-        assertTrue(
-            "MDBX write boundary must preserve current plaintext data, but decrypt explicitly-prefixed Bastion ciphertext before writing shared payloads.",
-            mdbxStoreSource.contains("\"authenticator_key\",") &&
-                mdbxStoreSource.contains("fieldName = \"authenticator_key\"") &&
-                mdbxStoreSource.contains("\"item_data\",") &&
-                mdbxStoreSource.contains("fieldName = \"item_data\"") &&
-                mdbxStoreSource.contains("!securityManager.looksLikeBastionCiphertext(value)") &&
-                mdbxStoreSource.contains("securityManager.decryptData(value)") &&
-                mdbxStoreSource.contains("Cannot write encrypted")
-        )
         assertTrue(
             "Bitwarden upload and pending reconciliation must compare/upload the real TOTP payload, not a local Room ciphertext wrapper.",
             bitwardenSyncSource.contains("private fun resolvePlainStoredSensitiveValueForBitwardenUpload(") &&
@@ -363,9 +350,6 @@ class BiometricUnlockRegressionGuardTest {
         val autofillStructuredSource = projectFile(
             "app/src/main/java/com/bastion/app/autofill_ng/AutofillStructuredDataSupport.kt"
         ).readText()
-        val mdbxViewModelSource = projectFile(
-            "app/src/main/java/com/bastion/app/viewmodel/MdbxViewModel.kt"
-        ).readText()
 
         assertTrue(
             "Card wallet codec must support conditional field decrypt before parsing old plaintext or new ciphertext.",
@@ -397,14 +381,6 @@ class BiometricUnlockRegressionGuardTest {
                 autofillStructuredSource.contains("decryptIfNeeded: ((String) -> String)? = null") &&
                 autofillStructuredSource.contains("CardWalletDataCodec.parseBankCardData(") &&
                 autofillStructuredSource.contains("CardWalletDataCodec.parseDocumentData(")
-        )
-        assertTrue(
-            "MDBX import must wrap portable TOTP/card/document payloads in local ciphertext when caching them in Room.",
-            mdbxViewModelSource.contains("private fun encodeMdbxSensitiveValueForLocalStorage(") &&
-                mdbxViewModelSource.contains("itemType != ItemType.BANK_CARD") &&
-                mdbxViewModelSource.contains("itemType != ItemType.DOCUMENT") &&
-                mdbxViewModelSource.contains("authenticatorKey = encodeMdbxSensitiveValueForLocalStorage(") &&
-                mdbxViewModelSource.contains("itemData = storedItemData")
         )
     }
 
@@ -533,7 +509,6 @@ class BiometricUnlockRegressionGuardTest {
             "The migration manager must not depend on sync repositories or shared database writers.",
             migrationSource.contains("PasswordRepository") ||
                 migrationSource.contains("SecureItemRepository") ||
-                migrationSource.contains("MdbxVaultStore") ||
                 migrationSource.contains("BitwardenSyncService") ||
                 migrationSource.contains("KeePassKdbxService") ||
                 migrationSource.contains("WebDavHelper")

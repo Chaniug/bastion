@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,12 +36,10 @@ import com.bastion.app.R
 import com.bastion.app.data.Category
 import com.bastion.app.data.KeePassOperationBlockReason
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.bitwarden.BitwardenFolderDao
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.data.writeOperationAvailability
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.utils.decodeKeePassPathForDisplay
 
 @Composable
@@ -51,28 +48,19 @@ fun MultiStorageTargetSelectorCard(
     existingTargetKeys: Set<String>,
     categories: List<Category>,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<BitwardenVault>,
     bitwardenFolderDao: BitwardenFolderDao,
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { flowOf(emptyList()) },
     isEditing: Boolean,
     onAddTargetClick: () -> Unit,
     onRemoveTarget: (StorageTarget) -> Unit
 ) {
     val primaryTarget = selectedTargets.firstOrNull() ?: StorageTarget.BastionLocal(null)
-    val folderNameFlow = remember(primaryTarget, bitwardenFolderDao, getMdbxFolders) {
+    val folderNameFlow = remember(primaryTarget, bitwardenFolderDao) {
         when (primaryTarget) {
             is StorageTarget.Bitwarden -> {
                 bitwardenFolderDao.getFoldersByVaultFlow(primaryTarget.vaultId).map { folders ->
                     primaryTarget.folderId?.let { folderId ->
                         folders.firstOrNull { it.bitwardenFolderId == folderId }?.name
-                    }
-                }
-            }
-            is StorageTarget.Mdbx -> {
-                getMdbxFolders(primaryTarget.databaseId).map { folders ->
-                    primaryTarget.folderId?.let { folderId ->
-                        folders.firstOrNull { it.folderId == folderId }?.name
                     }
                 }
             }
@@ -84,12 +72,10 @@ fun MultiStorageTargetSelectorCard(
 
     val bastionLabel = stringResource(R.string.app_name)
     val keepassLabel = stringResource(R.string.create_target_keepass)
-    val mdbxLabel = "MDBX"
     val bitwardenLabel = stringResource(R.string.create_target_bitwarden)
     val uncategorizedLabel = stringResource(R.string.multi_storage_uncategorized)
     val keepassRootLabel = stringResource(R.string.multi_storage_keepass_root)
     val noFolderLabel = stringResource(R.string.multi_storage_bitwarden_no_folder)
-    val mdbxVaultLabel = stringResource(R.string.category_selection_menu_databases)
     val emptyHint = stringResource(R.string.multi_storage_empty_hint)
     val selectedSummaryFormat = stringResource(R.string.multi_storage_selected_summary)
     val keepOriginalSuffix = stringResource(R.string.multi_storage_preserved_existing_suffix)
@@ -103,8 +89,6 @@ fun MultiStorageTargetSelectorCard(
                 is StorageTarget.BastionLocal -> bastionLabel
                 is StorageTarget.KeePass -> keepassDatabases.firstOrNull { it.id == target.databaseId }?.name
                     ?: keepassLabel
-                is StorageTarget.Mdbx -> mdbxDatabases.firstOrNull { it.id == target.databaseId }?.name
-                    ?: mdbxLabel
                 is StorageTarget.Bitwarden -> bitwardenVaults.firstOrNull { it.id == target.vaultId }?.displayName
                     ?: bitwardenVaults.firstOrNull { it.id == target.vaultId }?.email
                     ?: bitwardenLabel
@@ -116,8 +100,6 @@ fun MultiStorageTargetSelectorCard(
         is StorageTarget.BastionLocal -> bastionLabel
         is StorageTarget.KeePass -> keepassDatabases.firstOrNull { it.id == primaryTarget.databaseId }?.name
             ?: keepassLabel
-        is StorageTarget.Mdbx -> mdbxDatabases.firstOrNull { it.id == primaryTarget.databaseId }?.name
-            ?: mdbxLabel
         is StorageTarget.Bitwarden -> bitwardenVaults.firstOrNull { it.id == primaryTarget.vaultId }?.displayName
             ?: bitwardenVaults.firstOrNull { it.id == primaryTarget.vaultId }?.email
             ?: bitwardenLabel
@@ -129,7 +111,6 @@ fun MultiStorageTargetSelectorCard(
             ?.takeIf { it.isNotBlank() }
             ?.let(::decodeKeePassPathForDisplay)
             ?: keepassRootLabel
-        is StorageTarget.Mdbx -> externalFolderName ?: mdbxVaultLabel
         is StorageTarget.Bitwarden -> externalFolderName ?: noFolderLabel
     }
     val keepassConnectionHint = (primaryTarget as? StorageTarget.KeePass)
@@ -264,13 +245,6 @@ private fun storageCardVisuals(
             iconContainerColor = MaterialTheme.colorScheme.primary,
             iconTint = MaterialTheme.colorScheme.onPrimary
         )
-        is StorageTarget.Mdbx -> StorageCardVisuals(
-            icon = Icons.Default.Storage,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            iconContainerColor = MaterialTheme.colorScheme.inverseSurface,
-            iconTint = MaterialTheme.colorScheme.inverseOnSurface
-        )
         is StorageTarget.Bitwarden -> StorageCardVisuals(
             icon = Icons.Default.Cloud,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -303,7 +277,6 @@ fun buildMultiStorageTarget(
     return when {
         bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)
         keepassDatabaseId != null -> StorageTarget.KeePass(keepassDatabaseId, keepassGroupPath)
-        mdbxDatabaseId != null -> StorageTarget.Mdbx(mdbxDatabaseId, mdbxFolderId)
         else -> StorageTarget.BastionLocal(categoryId)
     }
 }
@@ -314,8 +287,6 @@ fun UnifiedMoveCategoryTarget.toMultiStorageTargetOrNull(): StorageTarget? {
         is UnifiedMoveCategoryTarget.BastionCategory -> StorageTarget.BastionLocal(categoryId)
         is UnifiedMoveCategoryTarget.KeePassDatabaseTarget -> StorageTarget.KeePass(databaseId, null)
         is UnifiedMoveCategoryTarget.KeePassGroupTarget -> StorageTarget.KeePass(databaseId, groupPath)
-        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> StorageTarget.Mdbx(databaseId)
-        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> StorageTarget.Mdbx(databaseId, folderId)
         is UnifiedMoveCategoryTarget.BitwardenVaultTarget -> StorageTarget.Bitwarden(vaultId, null)
         is UnifiedMoveCategoryTarget.BitwardenFolderTarget -> StorageTarget.Bitwarden(vaultId, folderId)
     }

@@ -6,7 +6,6 @@ import com.bastion.app.data.SecureItem
 
 enum class DedupMergeSourceKind {
     MONICA_LOCAL,
-    MDBX,
     KEEPASS,
     BITWARDEN
 }
@@ -22,10 +21,6 @@ data class DedupMergeSourceOption(
 
 sealed class DedupMergeTarget {
     data object BastionLocal : DedupMergeTarget()
-    data class MdbxDatabase(
-        val databaseId: Long,
-        val label: String
-    ) : DedupMergeTarget()
 }
 
 data class DedupMergeTargetOption(

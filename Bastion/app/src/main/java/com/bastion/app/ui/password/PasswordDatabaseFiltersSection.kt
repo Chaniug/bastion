@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.ui.components.BastionExpressiveFilterChip
@@ -51,7 +49,6 @@ import com.bastion.app.viewmodel.CategoryFilter
 internal data class PasswordDatabaseFiltersSectionParams(
     val currentFilter: CategoryFilter,
     val keepassDatabases: List<LocalKeePassDatabase>,
-    val mdbxDatabases: List<LocalMdbxDatabase>,
     val bitwardenVaults: List<BitwardenVault>,
     val onSelectFilter: (CategoryFilter) -> Unit
 )
@@ -130,14 +127,6 @@ internal fun PasswordDatabaseFiltersSection(
                         }
                     )
                 }
-                params.mdbxDatabases.forEach { database ->
-                    BastionExpressiveFilterChip(
-                        selected = params.currentFilter.isMdbxDatabaseFilter(database.id),
-                        onClick = { params.onSelectFilter(CategoryFilter.MdbxDatabase(database.id)) },
-                        label = database.name,
-                        leadingIcon = Icons.Default.Storage
-                    )
-                }
                 params.bitwardenVaults.forEach { vault ->
                     BastionExpressiveFilterChip(
                         selected = params.currentFilter.isBitwardenVaultFilter(vault.id),
@@ -183,14 +172,6 @@ internal fun PasswordDatabaseFiltersSection(
                         } else {
                             null
                         }
-                    )
-                }
-                params.mdbxDatabases.forEach { database ->
-                    BastionExpressiveFilterChip(
-                        selected = params.currentFilter.isMdbxDatabaseFilter(database.id),
-                        onClick = { params.onSelectFilter(CategoryFilter.MdbxDatabase(database.id)) },
-                        label = database.name,
-                        leadingIcon = Icons.Default.Storage
                     )
                 }
                 params.bitwardenVaults.forEach { vault ->

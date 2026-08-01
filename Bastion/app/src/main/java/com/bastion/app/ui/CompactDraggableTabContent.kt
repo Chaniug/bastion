@@ -31,7 +31,6 @@ import com.bastion.app.viewmodel.PasskeyViewModel
 import com.bastion.app.viewmodel.PasswordViewModel
 import com.bastion.app.viewmodel.SettingsViewModel
 import com.bastion.app.viewmodel.TimelineViewModel
-import com.bastion.app.viewmodel.MdbxViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -44,10 +43,8 @@ internal fun CompactDraggableTabContent(
     settingsViewModel: SettingsViewModel,
     securityManager: SecurityManager,
     keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
-    mdbxViewModel: MdbxViewModel? = null,
     passwordGroupMode: String,
     stackCardMode: com.bastion.app.ui.password.StackCardMode,
     onPasswordOpen: (Long) -> Unit,
@@ -196,10 +193,8 @@ internal fun CompactDraggableTabContent(
                     noteViewModel = noteViewModel,
                     passkeyViewModel = passkeyViewModel,
                     keepassDatabases = keepassDatabases,
-                    mdbxDatabases = mdbxDatabases,
                     bitwardenVaults = bitwardenVaults,
                     localKeePassViewModel = localKeePassViewModel,
-                    mdbxViewModel = mdbxViewModel,
                     settingsViewModel = settingsViewModel,
                     state = vaultV2PaneState,
                     onOpenPassword = onPasswordOpen,
@@ -227,10 +222,8 @@ internal fun CompactDraggableTabContent(
                     settingsViewModel = settingsViewModel,
                     securityManager = securityManager,
                     keepassDatabases = keepassDatabases,
-                    mdbxDatabases = mdbxDatabases,
                     bitwardenVaults = bitwardenVaults,
                     localKeePassViewModel = localKeePassViewModel,
-                    mdbxViewModel = mdbxViewModel,
                     timelineViewModel = timelineViewModel,
                     groupMode = passwordGroupMode,
                     stackCardMode = stackCardMode,

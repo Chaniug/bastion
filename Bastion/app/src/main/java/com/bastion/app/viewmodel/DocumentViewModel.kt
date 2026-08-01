@@ -519,7 +519,6 @@ class DocumentViewModel(
         val target = when {
             bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)
             keepassDatabaseId != null -> StorageTarget.KeePass(keepassDatabaseId, keepassGroupPath)
-            mdbxDatabaseId != null -> StorageTarget.Mdbx(mdbxDatabaseId, targetMdbxFolderId)
             else -> StorageTarget.BastionLocal(categoryId)
         }
         if (hasReplicaTargetConflict(
@@ -674,32 +673,6 @@ class DocumentViewModel(
                         )
                     }
                 }
-                is StorageTarget.Mdbx -> {
-                    if (existingItem == null) {
-                        addDocument(
-                            title = title,
-                            documentData = documentData,
-                            notes = notes,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = currentTarget.databaseId,
-                            mdbxFolderId = currentTarget.folderId,
-                            replicaGroupId = replicaGroupId
-                        )
-                    } else {
-                        updateDocument(
-                            id = existingItem.id,
-                            title = title,
-                            documentData = documentData,
-                            notes = notes,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = currentTarget.databaseId,
-                            mdbxFolderId = currentTarget.folderId,
-                            replicaGroupId = replicaGroupId
-                        )
-                    }
-                }
                 is StorageTarget.Bitwarden -> {
                     if (existingItem == null) {
                         addDocument(
@@ -769,26 +742,6 @@ class DocumentViewModel(
                             imagePaths = imagePaths,
                             keepassDatabaseId = target.databaseId,
                             keepassGroupPath = target.groupPath,
-                            replicaGroupId = replicaGroupId
-                        )
-                        is StorageTarget.Mdbx -> if (existingReplica == null) addDocument(
-                            title = title,
-                            documentData = documentData,
-                            notes = notes,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = target.databaseId,
-                            mdbxFolderId = target.folderId,
-                            replicaGroupId = replicaGroupId
-                        ) else updateDocument(
-                            id = existingReplica.id,
-                            title = title,
-                            documentData = documentData,
-                            notes = notes,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = target.databaseId,
-                            mdbxFolderId = target.folderId,
                             replicaGroupId = replicaGroupId
                         )
                         is StorageTarget.Bitwarden -> if (existingReplica == null) addDocument(
@@ -875,7 +828,6 @@ class DocumentViewModel(
                 }
             }
             is SecureItemOwnership.BastionLocal -> Result.success(Unit)
-            is SecureItemOwnership.Mdbx -> Result.success(Unit)
             is SecureItemOwnership.Conflict -> Result.failure(IllegalStateException("证件来源冲突，无法移动到 Bastion 本地"))
         }
 

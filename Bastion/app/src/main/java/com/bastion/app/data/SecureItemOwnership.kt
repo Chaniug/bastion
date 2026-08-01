@@ -13,21 +13,15 @@ sealed class SecureItemOwnership {
         val cipherId: String?
     ) : SecureItemOwnership()
 
-    data class Mdbx(
-        val databaseId: Long
-    ) : SecureItemOwnership()
-
     data class Conflict(
         val hasKeePassBinding: Boolean,
-        val hasBitwardenBinding: Boolean,
-        val hasMdbxBinding: Boolean = false
+        val hasBitwardenBinding: Boolean
     ) : SecureItemOwnership()
 }
 
 fun SecureItem.resolveOwnership(): SecureItemOwnership {
     val hasKeePassBinding = keepassDatabaseId != null
     val hasBitwardenBinding = bitwardenVaultId != null || !bitwardenCipherId.isNullOrBlank()
-    val hasMdbxBinding = mdbxDatabaseId != null
     val hasConcreteKeePassBinding =
         !keepassEntryUuid.isNullOrBlank() ||
             !keepassGroupUuid.isNullOrBlank() ||
@@ -38,13 +32,6 @@ fun SecureItem.resolveOwnership(): SecureItemOwnership {
             !bitwardenFolderId.isNullOrBlank() ||
             bitwardenLocalModified ||
             !syncStatus.equals("NONE", ignoreCase = true)
-    if (hasMdbxBinding && (hasKeePassBinding || hasBitwardenBinding)) {
-        return SecureItemOwnership.Conflict(
-            hasKeePassBinding = hasKeePassBinding,
-            hasBitwardenBinding = hasBitwardenBinding,
-            hasMdbxBinding = hasMdbxBinding
-        )
-    }
 
     return when {
         hasKeePassBinding && hasBitwardenBinding -> when {
@@ -70,7 +57,6 @@ fun SecureItem.resolveOwnership(): SecureItemOwnership {
             databaseId = keepassDatabaseId!!,
             entryUuid = keepassEntryUuid
         )
-        hasMdbxBinding -> SecureItemOwnership.Mdbx(mdbxDatabaseId!!)
         hasBitwardenBinding -> if (hasConcreteBitwardenBinding) {
             SecureItemOwnership.Bitwarden(
                 vaultId = bitwardenVaultId,
@@ -102,7 +88,6 @@ fun SecureItem.asBastionLocalCopy(categoryId: Long?): SecureItem {
         bitwardenFolderId = null,
         bitwardenRevisionDate = null,
         bitwardenLocalModified = false,
-        mdbxDatabaseId = null,
         syncStatus = "NONE"
     )
 }
@@ -110,8 +95,6 @@ fun SecureItem.asBastionLocalCopy(categoryId: Long?): SecureItem {
 fun SecureItem.isBitwardenOwned(): Boolean = resolveOwnership() is SecureItemOwnership.Bitwarden
 
 fun SecureItem.isKeePassOwned(): Boolean = resolveOwnership() is SecureItemOwnership.KeePass
-
-fun SecureItem.isMdbxOwned(): Boolean = resolveOwnership() is SecureItemOwnership.Mdbx
 
 fun SecureItem.hasOwnershipConflict(): Boolean = resolveOwnership() is SecureItemOwnership.Conflict
 

@@ -12,34 +12,20 @@ sealed class PasskeyOwnership {
         val cipherId: String?
     ) : PasskeyOwnership()
 
-    data class Mdbx(
-        val databaseId: Long
-    ) : PasskeyOwnership()
-
     data class Conflict(
         val hasKeePassBinding: Boolean,
-        val hasBitwardenBinding: Boolean,
-        val hasMdbxBinding: Boolean = false
+        val hasBitwardenBinding: Boolean
     ) : PasskeyOwnership()
 }
 
 fun PasskeyEntry.resolveOwnership(): PasskeyOwnership {
     val hasKeePassBinding = keepassDatabaseId != null
     val hasBitwardenBinding = bitwardenVaultId != null || !bitwardenCipherId.isNullOrBlank()
-    val hasMdbxBinding = mdbxDatabaseId != null
     val hasConcreteKeePassBinding = !keepassGroupPath.isNullOrBlank()
     val hasConcreteBitwardenBinding =
         !bitwardenCipherId.isNullOrBlank() ||
             !bitwardenFolderId.isNullOrBlank() ||
             !syncStatus.equals("NONE", ignoreCase = true)
-
-    if (hasMdbxBinding && (hasKeePassBinding || hasBitwardenBinding)) {
-        return PasskeyOwnership.Conflict(
-            hasKeePassBinding = hasKeePassBinding,
-            hasBitwardenBinding = hasBitwardenBinding,
-            hasMdbxBinding = true
-        )
-    }
 
     return when {
         hasKeePassBinding && hasBitwardenBinding -> when {
@@ -73,15 +59,11 @@ fun PasskeyEntry.resolveOwnership(): PasskeyOwnership {
             PasskeyOwnership.BastionLocal
         }
 
-        hasMdbxBinding -> PasskeyOwnership.Mdbx(mdbxDatabaseId!!)
-
         else -> PasskeyOwnership.BastionLocal
     }
 }
 
 fun PasskeyEntry.isKeePassOwned(): Boolean = resolveOwnership() is PasskeyOwnership.KeePass
-
-fun PasskeyEntry.isMdbxOwned(): Boolean = resolveOwnership() is PasskeyOwnership.Mdbx
 
 fun PasskeyEntry.isLocalOnlyPasskey(): Boolean = resolveOwnership() is PasskeyOwnership.BastionLocal
 

@@ -86,7 +86,6 @@ import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.bitwarden.service.BitwardenDiagLogger
 import com.bastion.app.bitwarden.service.BitwardenSyncForensicsLogger
 import com.bastion.app.data.AppLauncherLabel
-import com.bastion.app.mdbx.MdbxDiagLogger
 import com.bastion.app.passkey.PasskeyValidationDiagnostics
 import com.bastion.app.security.SecurityDiagLogger
 import com.bastion.app.security.SessionManager
@@ -753,7 +752,6 @@ private object DeveloperLogDebugHelper {
         runCatchingObserved { AutofillLogger.initialize(context.applicationContext) }
         runCatchingObserved { BitwardenDiagLogger.initialize(context.applicationContext) }
         runCatchingObserved { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
-        runCatchingObserved { MdbxDiagLogger.initialize(context.applicationContext) }
         runCatchingObserved { SecurityDiagLogger.initialize(context.applicationContext) }
         val autofillTagLogs = readAutofillTagLogs()
         val appProcessLogs = readLogcat(
@@ -820,11 +818,6 @@ private object DeveloperLogDebugHelper {
         }.getOrElse {
             "Bitwarden sync forensics logs unavailable: ${it.message}"
         }
-        val persistedMdbxLogs = runCatchingObserved {
-            MdbxDiagLogger.exportPersistedLogs(2000)
-        }.getOrElse {
-            "MDBX persisted logs unavailable: ${it.message}"
-        }
         val persistedSecurityLogs = runCatchingObserved {
             SecurityDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
@@ -875,13 +868,6 @@ private object DeveloperLogDebugHelper {
                 appendLine(persistedForensicsLogs.trim())
             }
             appendLine()
-            appendLine("=== MDBX Persisted Logs ===")
-            if (persistedMdbxLogs.isBlank()) {
-                appendLine(context.getString(R.string.developer_no_logs))
-            } else {
-                appendLine(persistedMdbxLogs.trim())
-            }
-            appendLine()
             appendLine("=== Security Persisted Logs ===")
             if (persistedSecurityLogs.isBlank()) {
                 appendLine(context.getString(R.string.developer_no_logs))
@@ -901,11 +887,9 @@ private object DeveloperLogDebugHelper {
         val parsedPersisted = parseLines(persistedAutofillLogs)
         val parsedBitwarden = parseLines(persistedBitwardenLogs)
         val parsedForensics = parseLines(persistedForensicsLogs)
-        val parsedMdbx = parseLines(persistedMdbxLogs)
         val parsedSecurity = parseLines(persistedSecurityLogs)
         val parsed = when {
             parsedSystem.isNotEmpty() -> parsedSystem
-            parsedMdbx.isNotEmpty() -> parsedMdbx
             parsedSecurity.isNotEmpty() -> parsedSecurity
             parsedForensics.isNotEmpty() -> parsedForensics
             parsedBitwarden.isNotEmpty() -> parsedBitwarden
@@ -924,9 +908,6 @@ private object DeveloperLogDebugHelper {
         }
         runCatchingObserved {
             BitwardenSyncForensicsLogger.clear(context.applicationContext)
-        }
-        runCatchingObserved {
-            MdbxDiagLogger.clear()
         }
         runCatchingObserved {
             SecurityDiagLogger.clear()

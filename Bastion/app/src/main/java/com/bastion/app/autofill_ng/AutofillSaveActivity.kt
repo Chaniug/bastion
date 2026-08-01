@@ -32,9 +32,6 @@ import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.addOrReplaceLinkedAppBinding
 import com.bastion.app.data.isLinkedToApp
-import com.bastion.app.mdbx.MdbxDiagLogger
-import com.bastion.app.repository.MdbxRepository
-import com.bastion.app.repository.MdbxVaultStore
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.theme.BastionTheme
@@ -67,15 +64,6 @@ class AutofillSaveActivity : ComponentActivity() {
         database = PasswordDatabase.getDatabase(applicationContext)
         securityManager = SecurityManager(applicationContext)
         settingsManager = SettingsManager(applicationContext)
-        val mdbxRepository: MdbxRepository = MdbxVaultStore(
-            context = applicationContext,
-            databaseDao = database.localMdbxDatabaseDao(),
-            securityManager = securityManager,
-            remoteSourceDao = database.mdbxRemoteSourceDao(),
-            passwordEntryDao = database.passwordEntryDao(),
-            secureItemDao = database.secureItemDao(),
-            customFieldDao = database.customFieldDao(),
-        )
         passwordRepository = PasswordRepository(
             passwordEntryDao = database.passwordEntryDao(),
             categoryDao = database.categoryDao(),
@@ -84,7 +72,6 @@ class AutofillSaveActivity : ComponentActivity() {
             passkeyDao = database.passkeyDao(),
             passwordArchiveSyncMetaDao = database.passwordArchiveSyncMetaDao(),
             passwordHistoryDao = database.passwordHistoryDao(),
-            mdbxRepository = mdbxRepository,
         )
         
         // 获取传递的数据
@@ -127,7 +114,6 @@ class AutofillSaveActivity : ComponentActivity() {
     ) {
         lifecycleScope.launch {
             try {
-                val initialTarget = resolveInitialTarget()
                 // 获取包名
                 val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME) ?: ""
                 
@@ -207,17 +193,9 @@ class AutofillSaveActivity : ComponentActivity() {
                         appName = appName,
                         createdAt = Date(),
                         updatedAt = Date()
-                    ).withAutofillSaveInitialTarget(initialTarget)
-                    val newId = if (initialTarget.isMdbx) {
-                        passwordRepository.insertPasswordEntries(listOf(newEntry)).singleOrNull()
-                            ?: throw IllegalStateException("MDBX autofill save did not create exactly one password row")
-                    } else {
-                        passwordRepository.insertPasswordEntry(newEntry)
-                    }
-                    MdbxDiagLogger.append(
-                        "[MDBX][autofill-save-complete] source=legacy target=${initialTarget.diagnosticLabel()} roomId=$newId"
                     )
-                    
+                    val newId = passwordRepository.insertPasswordEntry(newEntry)
+
                     // 记录创建操作
                     com.bastion.app.utils.OperationLogger.logCreate(
                         itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
@@ -233,16 +211,6 @@ class AutofillSaveActivity : ComponentActivity() {
                 setResult(RESULT_CANCELED)
                 finish()
             }
-        }
-    }
-
-    private suspend fun resolveInitialTarget(): AutofillSaveInitialTarget {
-        val settingsSnapshot = settingsManager.settingsFlow.first()
-        val mdbxDatabases = database.localMdbxDatabaseDao().getAllDatabasesSnapshot()
-        return resolveAutofillSaveInitialTarget(settingsSnapshot, mdbxDatabases).also { target ->
-            MdbxDiagLogger.append(
-                "[MDBX][autofill-save-open] source=legacy target=${target.diagnosticLabel()} mdbxDatabases=${target.mdbxDatabasesFallback.size}"
-            )
         }
     }
 

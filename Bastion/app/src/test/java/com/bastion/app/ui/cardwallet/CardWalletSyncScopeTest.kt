@@ -23,9 +23,7 @@ class CardWalletSyncScopeTest {
             UnifiedCategoryFilterSelection.KeePassDatabaseFilter(20L),
             UnifiedCategoryFilterSelection.KeePassGroupFilter(20L, "cards"),
             UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter(20L),
-            UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter(20L),
-            UnifiedCategoryFilterSelection.MdbxDatabaseFilter(30L),
-            UnifiedCategoryFilterSelection.MdbxFolderFilter(30L, "folder")
+            UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter(20L)
         )
 
         filters.forEach { filter ->

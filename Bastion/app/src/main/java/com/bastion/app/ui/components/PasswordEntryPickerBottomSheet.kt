@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storage
@@ -68,7 +67,6 @@ private enum class PasswordPickerSourceFilter {
     ALL,
     LOCAL,
     KEEPASS,
-    MDBX,
     BITWARDEN
 }
 
@@ -87,7 +85,6 @@ fun PasswordEntryPickerBottomSheet(
     val context = LocalContext.current
     val database = remember(context) { PasswordDatabase.getDatabase(context) }
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     var foldersByVault by remember { mutableStateOf<Map<Long, List<BitwardenFolder>>>(emptyMap()) }
     val scope = rememberCoroutineScope()
@@ -103,20 +100,15 @@ fun PasswordEntryPickerBottomSheet(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var sourceFilter by rememberSaveable { mutableStateOf(PasswordPickerSourceFilter.ALL) }
     var selectedKeePassDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var selectedMdbxDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedVaultId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedFolderId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var keepassMenuExpanded by remember { mutableStateOf(false) }
-    var mdbxMenuExpanded by remember { mutableStateOf(false) }
     var vaultMenuExpanded by remember { mutableStateOf(false) }
     var folderMenuExpanded by remember { mutableStateOf(false) }
 
     val keepassNameById = remember(keepassDatabases) {
         keepassDatabases.associate { it.id to it.name }
-    }
-    val mdbxNameById = remember(mdbxDatabases) {
-        mdbxDatabases.associate { it.id to it.name }
     }
     val vaultLabelById = remember(bitwardenVaults) {
         bitwardenVaults.associate { vault ->
@@ -136,7 +128,6 @@ fun PasswordEntryPickerBottomSheet(
         searchQuery,
         sourceFilter,
         selectedKeePassDatabaseId,
-        selectedMdbxDatabaseId,
         selectedVaultId,
         selectedFolderId
     ) {
@@ -155,10 +146,6 @@ fun PasswordEntryPickerBottomSheet(
                 PasswordPickerSourceFilter.KEEPASS -> {
                     val keepassId = entry.keepassDatabaseId
                     keepassId != null && (selectedKeePassDatabaseId == null || keepassId == selectedKeePassDatabaseId)
-                }
-                PasswordPickerSourceFilter.MDBX -> {
-                    val mdbxId = entry.mdbxDatabaseId
-                    mdbxId != null && (selectedMdbxDatabaseId == null || mdbxId == selectedMdbxDatabaseId)
                 }
                 PasswordPickerSourceFilter.BITWARDEN -> {
                     val vaultId = entry.bitwardenVaultId
@@ -224,7 +211,6 @@ fun PasswordEntryPickerBottomSheet(
                     onClick = {
                         sourceFilter = PasswordPickerSourceFilter.ALL
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
@@ -235,7 +221,6 @@ fun PasswordEntryPickerBottomSheet(
                     onClick = {
                         sourceFilter = PasswordPickerSourceFilter.LOCAL
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
@@ -245,28 +230,16 @@ fun PasswordEntryPickerBottomSheet(
                     selected = sourceFilter == PasswordPickerSourceFilter.KEEPASS,
                     onClick = {
                         sourceFilter = PasswordPickerSourceFilter.KEEPASS
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
                     label = { Text(stringResource(R.string.filter_keepass)) }
                 )
                 FilterChip(
-                    selected = sourceFilter == PasswordPickerSourceFilter.MDBX,
-                    onClick = {
-                        sourceFilter = PasswordPickerSourceFilter.MDBX
-                        selectedKeePassDatabaseId = null
-                        selectedVaultId = null
-                        selectedFolderId = null
-                    },
-                    label = { Text("MDBX") }
-                )
-                FilterChip(
                     selected = sourceFilter == PasswordPickerSourceFilter.BITWARDEN,
                     onClick = {
                         sourceFilter = PasswordPickerSourceFilter.BITWARDEN
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                     },
                     label = { Text(stringResource(R.string.filter_bitwarden)) }
                 )
@@ -306,47 +279,6 @@ fun PasswordEntryPickerBottomSheet(
                                 onClick = {
                                     selectedKeePassDatabaseId = databaseItem.id
                                     keepassMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (sourceFilter == PasswordPickerSourceFilter.MDBX) {
-                ExposedDropdownMenuBox(
-                    expanded = mdbxMenuExpanded,
-                    onExpandedChange = { mdbxMenuExpanded = !mdbxMenuExpanded }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = selectedMdbxDatabaseId?.let { mdbxNameById[it] }
-                            ?: stringResource(R.string.password_picker_all_databases),
-                        onValueChange = {},
-                        label = { Text(stringResource(R.string.password_picker_filter_database)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = mdbxMenuExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        singleLine = true
-                    )
-                    ExposedDropdownMenu(
-                        expanded = mdbxMenuExpanded,
-                        onDismissRequest = { mdbxMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.password_picker_all_databases)) },
-                            onClick = {
-                                selectedMdbxDatabaseId = null
-                                mdbxMenuExpanded = false
-                            }
-                        )
-                        mdbxDatabases.forEach { databaseItem ->
-                            DropdownMenuItem(
-                                text = { Text(databaseItem.name) },
-                                onClick = {
-                                    selectedMdbxDatabaseId = databaseItem.id
-                                    mdbxMenuExpanded = false
                                 }
                             )
                         }
@@ -473,11 +405,6 @@ fun PasswordEntryPickerBottomSheet(
                                     ?: entry.keepassDatabaseId.toString()
                                 "${stringResource(R.string.filter_keepass)} · $dbName"
                             }
-                            entry.mdbxDatabaseId != null -> {
-                                val dbName = mdbxNameById[entry.mdbxDatabaseId]
-                                    ?: entry.mdbxDatabaseId.toString()
-                                "MDBX · $dbName"
-                            }
                             else -> stringResource(R.string.filter_local_only)
                         }
 
@@ -511,7 +438,6 @@ fun PasswordEntryPickerBottomSheet(
                                     imageVector = when {
                                         entry.bitwardenVaultId != null -> Icons.Default.Cloud
                                         entry.keepassDatabaseId != null -> Icons.Default.Storage
-                                        entry.mdbxDatabaseId != null -> Icons.Default.Folder
                                         else -> Icons.Default.PhoneAndroid
                                     },
                                     contentDescription = null,

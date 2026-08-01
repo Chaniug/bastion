@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import com.bastion.app.data.CustomField
 import com.bastion.app.data.ItemType
 import com.bastion.app.data.LocalKeePassDatabaseDao
-import com.bastion.app.data.LocalMdbxDatabaseDao
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
@@ -38,7 +37,6 @@ class DedupMergeService(
     private val passkeyRepository: PasskeyRepository,
     private val customFieldRepository: CustomFieldRepository,
     private val localKeePassDatabaseDao: LocalKeePassDatabaseDao,
-    private val localMdbxDatabaseDao: LocalMdbxDatabaseDao,
     private val bitwardenVaultDao: BitwardenVaultDao,
     private val securityManager: SecurityManager
 ) {
@@ -56,7 +54,6 @@ class DedupMergeService(
         val secureItems = secureItemRepository.getAllItems().first()
         val passkeys = passkeyRepository.getAllPasskeysSync()
         val keepassDatabases = localKeePassDatabaseDao.getAllDatabasesSync()
-        val mdbxDatabases = localMdbxDatabaseDao.getAllDatabasesSnapshot()
         val bitwardenVaults = bitwardenVaultDao.getAllVaults()
         val passwordCounts = entries.groupingBy(::sourceKeyOf).eachCount()
         val secureItemCounts = secureItems.groupingBy(::sourceKeyOf).eachCount()
@@ -73,19 +70,6 @@ class DedupMergeService(
                     passkeyCount = passkeyCounts[SOURCE_MONICA] ?: 0
                 )
             )
-            mdbxDatabases.forEach { database ->
-                val key = mdbxSourceKey(database.id)
-                add(
-                    DedupMergeSourceOption(
-                        key = key,
-                        kind = DedupMergeSourceKind.MDBX,
-                        label = database.name.ifBlank { "MDBX ${database.id}" },
-                        passwordCount = passwordCounts[key] ?: 0,
-                        secureItemCount = secureItemCounts[key] ?: 0,
-                        passkeyCount = passkeyCounts[key] ?: 0
-                    )
-                )
-            }
             keepassDatabases.forEach { database ->
                 val key = keepassSourceKey(database.id)
                 add(
@@ -119,7 +103,6 @@ class DedupMergeService(
         val entries = passwordRepository.getAllPasswordEntries().first()
         val secureItems = secureItemRepository.getAllItems().first()
         val passkeys = passkeyRepository.getAllPasskeysSync()
-        val mdbxDatabases = localMdbxDatabaseDao.getAllDatabasesSnapshot()
         return buildList {
             add(
                 DedupMergeTargetOption(
@@ -131,21 +114,6 @@ class DedupMergeService(
                     passkeyCount = passkeys.count { it.isLocalOnlyPasskey() }
                 )
             )
-            mdbxDatabases.forEach { database ->
-                add(
-                    DedupMergeTargetOption(
-                        target = DedupMergeTarget.MdbxDatabase(
-                            databaseId = database.id,
-                            label = database.name.ifBlank { "MDBX ${database.id}" }
-                        ),
-                        sourceKey = mdbxSourceKey(database.id),
-                        label = database.name.ifBlank { "MDBX ${database.id}" },
-                        passwordCount = entries.count { it.mdbxDatabaseId == database.id },
-                        secureItemCount = secureItems.count { it.mdbxDatabaseId == database.id },
-                        passkeyCount = passkeys.count { it.mdbxDatabaseId == database.id }
-                    )
-                )
-            }
         }
     }
 
@@ -527,32 +495,6 @@ class DedupMergeService(
                 keepassGroupPath = null,
                 keepassEntryUuid = null,
                 keepassGroupUuid = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
-                bitwardenVaultId = null,
-                bitwardenCipherId = null,
-                bitwardenFolderId = null,
-                bitwardenRevisionDate = null,
-                bitwardenLocalModified = false,
-                ssoRefEntryId = null,
-                replicaGroupId = null,
-                isDeleted = false,
-                deletedAt = null,
-                isArchived = false,
-                archivedAt = null
-            )
-            is DedupMergeTarget.MdbxDatabase -> entry.copy(
-                id = 0,
-                createdAt = now,
-                updatedAt = now,
-                categoryId = null,
-                boundNoteId = null,
-                keepassDatabaseId = null,
-                keepassGroupPath = null,
-                keepassEntryUuid = null,
-                keepassGroupUuid = null,
-                mdbxDatabaseId = target.databaseId,
-                mdbxFolderId = null,
                 bitwardenVaultId = null,
                 bitwardenCipherId = null,
                 bitwardenFolderId = null,
@@ -754,29 +696,6 @@ class DedupMergeService(
                 keepassGroupPath = null,
                 keepassEntryUuid = null,
                 keepassGroupUuid = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
-                isDeleted = false,
-                deletedAt = null,
-                replicaGroupId = null,
-                bitwardenVaultId = null,
-                bitwardenCipherId = null,
-                bitwardenFolderId = null,
-                bitwardenRevisionDate = null,
-                bitwardenLocalModified = false,
-                syncStatus = "NONE"
-            )
-            is DedupMergeTarget.MdbxDatabase -> item.copy(
-                id = 0,
-                createdAt = now,
-                updatedAt = now,
-                categoryId = null,
-                keepassDatabaseId = null,
-                keepassGroupPath = null,
-                keepassEntryUuid = null,
-                keepassGroupUuid = null,
-                mdbxDatabaseId = target.databaseId,
-                mdbxFolderId = null,
                 isDeleted = false,
                 deletedAt = null,
                 replicaGroupId = null,
@@ -793,14 +712,12 @@ class DedupMergeService(
     private fun PasswordEntry.belongsToTarget(target: DedupMergeTarget): Boolean {
         return when (target) {
             DedupMergeTarget.BastionLocal -> isLocalOnlyEntry()
-            is DedupMergeTarget.MdbxDatabase -> mdbxDatabaseId == target.databaseId
         }
     }
 
     private fun SecureItem.belongsToTarget(target: DedupMergeTarget): Boolean {
         return when (target) {
             DedupMergeTarget.BastionLocal -> isLocalOnlyItem()
-            is DedupMergeTarget.MdbxDatabase -> mdbxDatabaseId == target.databaseId
         }
     }
 
@@ -896,7 +813,6 @@ class DedupMergeService(
 
     private fun sourceKeyOf(entry: PasswordEntry): String {
         return when {
-            entry.mdbxDatabaseId != null -> mdbxSourceKey(entry.mdbxDatabaseId)
             entry.keepassDatabaseId != null -> keepassSourceKey(entry.keepassDatabaseId)
             entry.bitwardenVaultId != null -> bitwardenSourceKey(entry.bitwardenVaultId)
             else -> SOURCE_MONICA
@@ -905,7 +821,6 @@ class DedupMergeService(
 
     private fun sourceKeyOf(item: SecureItem): String {
         return when {
-            item.mdbxDatabaseId != null -> mdbxSourceKey(item.mdbxDatabaseId)
             item.keepassDatabaseId != null -> keepassSourceKey(item.keepassDatabaseId)
             item.bitwardenVaultId != null -> bitwardenSourceKey(item.bitwardenVaultId)
             else -> SOURCE_MONICA
@@ -914,7 +829,6 @@ class DedupMergeService(
 
     private fun sourceKeyOf(entry: PasskeyEntry): String {
         return when {
-            entry.mdbxDatabaseId != null -> mdbxSourceKey(entry.mdbxDatabaseId)
             entry.keepassDatabaseId != null -> keepassSourceKey(entry.keepassDatabaseId)
             entry.bitwardenVaultId != null -> bitwardenSourceKey(entry.bitwardenVaultId)
             else -> SOURCE_MONICA
@@ -926,7 +840,6 @@ class DedupMergeService(
         sourceOptions: List<DedupMergeSourceOption>
     ): String {
         return sourceOptions.firstOrNull { it.key == sourceKey }?.label ?: when {
-            sourceKey.startsWith("mdbx:") -> "MDBX"
             sourceKey.startsWith("keepass:") -> "KeePass"
             sourceKey.startsWith("bitwarden:") -> "Bitwarden"
             else -> "Bastion 本地"
@@ -952,14 +865,12 @@ class DedupMergeService(
     private fun DedupMergeTarget.label(): String {
         return when (this) {
             DedupMergeTarget.BastionLocal -> "Bastion 本地"
-            is DedupMergeTarget.MdbxDatabase -> label
         }
     }
 
     private fun DedupMergeTarget.sourceKey(): String {
         return when (this) {
             DedupMergeTarget.BastionLocal -> SOURCE_MONICA
-            is DedupMergeTarget.MdbxDatabase -> mdbxSourceKey(databaseId)
         }
     }
 
@@ -1038,7 +949,6 @@ class DedupMergeService(
     private companion object {
         const val SOURCE_MONICA = "bastion"
 
-        fun mdbxSourceKey(databaseId: Long): String = "mdbx:$databaseId"
         fun keepassSourceKey(databaseId: Long): String = "keepass:$databaseId"
         fun bitwardenSourceKey(vaultId: Long): String = "bitwarden:$vaultId"
     }

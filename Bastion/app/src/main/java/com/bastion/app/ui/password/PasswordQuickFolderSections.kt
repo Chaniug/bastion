@@ -1,8 +1,6 @@
 package com.bastion.app.ui
 
-import com.bastion.app.logging.runCatchingObserved
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
@@ -11,10 +9,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,8 +53,6 @@ import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.KeePassSyncPhase
 import com.bastion.app.data.KeePassSyncStatus
-import com.bastion.app.data.LocalMdbxDatabase
-import com.bastion.app.data.MdbxSyncStatus
 import com.bastion.app.sync.SyncErrorKind
 import com.bastion.app.sync.SyncPhase
 import com.bastion.app.ui.components.QuickStatusTransferBar
@@ -72,15 +66,6 @@ import com.bastion.app.ui.password.PasswordBatchDeletePhase
 import com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState
 import com.bastion.app.ui.password.PasswordBatchTransferPhase
 import com.bastion.app.viewmodel.CategoryFilter
-
-internal fun LocalMdbxDatabase.mdbxPathShouldFlushPendingUpload(): Boolean =
-    lastSyncStatus == MdbxSyncStatus.PENDING_UPLOAD.name
-
-internal data class MdbxPathSyncState(
-    val pendingCount: Int,
-    val isSyncing: Boolean,
-    val onSync: () -> Unit
-)
 
 internal data class QuickStatusBitwardenSyncState(
     val vaultName: String,
@@ -109,23 +94,11 @@ internal data class QuickStatusKeePassSyncState(
             coordinatorPhase == SyncPhase.CONFLICT
 }
 
-internal fun LocalMdbxDatabase.mdbxPathPendingSyncCount(): Int {
-    val pending = when (runCatchingObserved { MdbxSyncStatus.valueOf(lastSyncStatus) }.getOrNull()) {
-        MdbxSyncStatus.PENDING_UPLOAD,
-        MdbxSyncStatus.REMOTE_CHANGED,
-        MdbxSyncStatus.CONFLICT,
-        MdbxSyncStatus.FAILED -> true
-        else -> false
-    }
-    return if (pending) 1 else 0
-}
-
 @Composable
 internal fun PasswordQuickFolderBreadcrumbBanner(
     breadcrumbs: List<PasswordQuickFolderBreadcrumb>,
     currentFilter: CategoryFilter,
     onNavigate: (CategoryFilter) -> Unit,
-    mdbxSyncState: MdbxPathSyncState? = null,
     transferState: PasswordBatchTransferGlobalProgressState? = null,
     onTransferStatusClick: (() -> Unit)? = null,
     deleteState: PasswordBatchDeleteGlobalProgressState? = null,
@@ -198,10 +171,6 @@ internal fun PasswordQuickFolderBreadcrumbBanner(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (mdbxSyncState != null) {
-                    MdbxPathSyncActions(state = mdbxSyncState)
-                }
-
                 PasswordQuickFolderBreadcrumbPath(
                     breadcrumbs = breadcrumbs,
                     currentFilter = currentFilter,
@@ -507,81 +476,6 @@ private fun PasswordQuickFolderBreadcrumbPath(
                         modifier = Modifier.padding(horizontal = 6.dp)
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun MdbxPathSyncActions(state: MdbxPathSyncState) {
-    Row(
-        modifier = Modifier
-            .height(36.dp)
-            .animateContentSize(animationSpec = tween(durationMillis = 220)),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AnimatedVisibility(
-            visible = state.pendingCount > 0,
-            enter = expandHorizontally(
-                expandFrom = Alignment.End,
-                animationSpec = tween(durationMillis = 220)
-            ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-            exit = shrinkHorizontally(
-                shrinkTowards = Alignment.End,
-                animationSpec = tween(durationMillis = 180)
-            ) + fadeOut(animationSpec = tween(durationMillis = 140))
-        ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                tonalElevation = 1.dp,
-                modifier = Modifier
-                    .width(104.dp)
-                    .height(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "未同步${state.pendingCount}条",
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-
-        val spin by rememberInfiniteTransition(label = "mdbx-path-sync-spin")
-            .animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 900, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "mdbx-path-sync-rotation"
-            )
-        val rotation = if (state.isSyncing) spin else 0f
-
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            tonalElevation = 2.dp,
-            modifier = Modifier.size(36.dp)
-        ) {
-            IconButton(
-                onClick = state.onSync,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = "同步 MDBX 数据库",
-                    modifier = Modifier
-                        .size(19.dp)
-                        .graphicsLayer { rotationZ = rotation }
-                )
             }
         }
     }

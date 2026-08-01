@@ -26,7 +26,6 @@ import java.util.Locale
  */
 class SecureItemRepository(
     private val secureItemDao: SecureItemDao,
-    private val mdbxRepository: MdbxRepository? = null,
     private val decryptSensitiveValue: ((String) -> String)? = null
 ) {
     companion object {
@@ -41,24 +40,6 @@ class SecureItemRepository(
         val secret: String
     )
 
-    private fun SecureItem.mdbxReplicaPrefix(): String = when (itemType) {
-        ItemType.NOTE -> "note"
-        ItemType.TOTP -> "totp"
-        ItemType.BANK_CARD -> "card"
-        ItemType.DOCUMENT -> "document-ref"
-        ItemType.BILLING_ADDRESS -> "billing-address"
-        ItemType.PAYMENT_ACCOUNT -> "payment-account"
-        ItemType.PASSWORD -> "password"
-    }
-
-    private fun SecureItem.mdbxObjectId(id: Long = this.id): String? {
-        val stableId = id.takeIf { it > 0 } ?: this.id.takeIf { it > 0 } ?: return replicaGroupId
-        return replicaGroupId
-            ?.takeIf { it.startsWith("${mdbxReplicaPrefix()}:") }
-            ?: "${mdbxReplicaPrefix()}:$stableId"
-    }
-
-    
     fun getAllItems(): Flow<List<SecureItem>> {
         return secureItemDao.getAllItems()
     }
@@ -93,80 +74,6 @@ class SecureItemRepository(
         return secureItemDao.getItemById(id)
     }
 
-    suspend fun ensureMdbxCopyForBinding(
-        source: SecureItem,
-        databaseId: Long,
-        title: String = source.title,
-        notes: String = source.notes,
-        itemData: String = source.itemData,
-        imagePaths: String = source.imagePaths,
-        isFavorite: Boolean = source.isFavorite,
-        categoryId: Long? = source.categoryId,
-        mdbxFolderId: String? = source.mdbxFolderId
-    ): SecureItem {
-        if (source.mdbxDatabaseId == databaseId) {
-            val updated = source.copy(
-                title = title,
-                notes = notes,
-                itemData = itemData,
-                imagePaths = imagePaths,
-                isFavorite = isFavorite,
-                categoryId = categoryId,
-                mdbxFolderId = mdbxFolderId,
-                updatedAt = Date()
-            )
-            updateItem(updated)
-            return secureItemDao.getItemById(source.id) ?: updated
-        }
-
-        val prefix = source.mdbxReplicaPrefix()
-        val replicaId = source.replicaGroupId
-            ?.takeIf { it.startsWith("$prefix:") }
-            ?: "$prefix:local:${source.id}"
-        val existingCopy = secureItemDao.getActiveItemsByTypeSync(source.itemType)
-            .firstOrNull { item ->
-                item.mdbxDatabaseId == databaseId &&
-                    item.replicaGroupId == replicaId &&
-                    !item.isDeleted
-            }
-
-        val now = Date()
-        val copy = (existingCopy ?: source).copy(
-            id = existingCopy?.id ?: 0L,
-            title = title,
-            notes = notes,
-            itemData = itemData,
-            imagePaths = imagePaths,
-            isFavorite = isFavorite,
-            categoryId = categoryId,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            mdbxDatabaseId = databaseId,
-            mdbxFolderId = mdbxFolderId,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            syncStatus = "NONE",
-            replicaGroupId = replicaId,
-            isDeleted = false,
-            deletedAt = null,
-            createdAt = existingCopy?.createdAt ?: now,
-            updatedAt = now
-        )
-
-        val copyId = if (existingCopy != null) {
-            updateItem(copy)
-            existingCopy.id
-        } else {
-            insertItem(copy)
-        }
-        return secureItemDao.getItemById(copyId) ?: copy.copy(id = copyId)
-    }
-
     suspend fun normalizeLegacyDetachedKeePassItem(
         item: SecureItem,
         databaseExists: suspend (Long) -> Boolean = { false }
@@ -190,47 +97,20 @@ class SecureItemRepository(
     }
     
     suspend fun insertItem(item: SecureItem): Long {
-        val id = secureItemDao.insertItem(item)
-        try {
-            val persistedItem = item.copy(
-                id = id,
-                replicaGroupId = if (item.mdbxDatabaseId != null) item.mdbxObjectId(id) else item.replicaGroupId
-            )
-            if (persistedItem.replicaGroupId != item.replicaGroupId) {
-                secureItemDao.updateItem(persistedItem)
-            }
-            mdbxRepository?.upsertSecureItem(persistedItem)
-        } catch (e: Exception) {
-            secureItemDao.deleteItemById(id)
-            throw e
-        }
-        return id
+        return secureItemDao.insertItem(item)
     }
-    
+
     suspend fun updateItem(item: SecureItem) {
         val existingItem = if (item.id != 0L) secureItemDao.getItemById(item.id) else null
         val normalizedItem = BitwardenMutationStateHelper.normalizeSecureItemUpdate(existingItem, item)
-        if (
-            normalizedItem.mdbxDatabaseId != null
-        ) {
-            mdbxRepository?.upsertSecureItem(normalizedItem)
-        }
-        if (
-            existingItem?.mdbxDatabaseId != null &&
-            existingItem.mdbxDatabaseId != normalizedItem.mdbxDatabaseId
-        ) {
-            mdbxRepository?.deleteSecureItem(existingItem)
-        }
         secureItemDao.updateItem(normalizedItem)
     }
-    
+
     suspend fun deleteItem(item: SecureItem) {
-        mdbxRepository?.deleteSecureItem(item)
         secureItemDao.deleteItem(item)
     }
-    
+
     suspend fun deleteItemById(id: Long) {
-        secureItemDao.getItemById(id)?.let { mdbxRepository?.deleteSecureItem(it) }
         secureItemDao.deleteItemById(id)
     }
     
@@ -386,7 +266,6 @@ class SecureItemRepository(
             updatedAt = java.util.Date()
         )
         secureItemDao.updateItem(deletedItem)
-        mdbxRepository?.upsertSecureItem(deletedItem)
         return deletedItem
     }
     
@@ -400,7 +279,6 @@ class SecureItemRepository(
             updatedAt = java.util.Date()
         )
         secureItemDao.updateItem(restoredItem)
-        mdbxRepository?.upsertSecureItem(restoredItem)
         return restoredItem
     }
     

@@ -122,13 +122,10 @@ import com.bastion.app.R
 import com.bastion.app.data.Category
 import com.bastion.app.data.KeePassStorageLocation
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.isBastionLocalCategory
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.data.writeOperationAvailability
-import com.bastion.app.repository.MdbxStoredFolderEntry
-import com.bastion.app.ui.isDirectMdbxChildOf
 import com.bastion.app.utils.KEEPASS_DISPLAY_PATH_SEPARATOR
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.utils.buildLocalCategoryPath
@@ -156,8 +153,6 @@ sealed interface UnifiedCategoryFilterSelection {
     data class KeePassGroupFilter(val databaseId: Long, val groupPath: String) : UnifiedCategoryFilterSelection
     data class KeePassDatabaseStarredFilter(val databaseId: Long) : UnifiedCategoryFilterSelection
     data class KeePassDatabaseUncategorizedFilter(val databaseId: Long) : UnifiedCategoryFilterSelection
-    data class MdbxDatabaseFilter(val databaseId: Long) : UnifiedCategoryFilterSelection
-    data class MdbxFolderFilter(val databaseId: Long, val folderId: String) : UnifiedCategoryFilterSelection
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -175,7 +170,6 @@ fun UnifiedCategoryFilterBottomSheet(
     keepassDatabases: List<LocalKeePassDatabase>,
     bitwardenVaults: List<BitwardenVault>,
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>>,
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { kotlinx.coroutines.flow.flowOf(emptyList()) },
     getKeePassGroups: ((Long) -> Flow<List<KeePassGroupInfo>>)? = null,
     onCreateCategory: (() -> Unit)? = null,
     onCreateCategoryWithName: ((String) -> Unit)? = null,
@@ -187,9 +181,7 @@ fun UnifiedCategoryFilterBottomSheet(
     onDeleteCategory: ((Category) -> Unit)? = null,
     onRequestBiometricVerify: BiometricVerifyRequester? = null,
     onCreateKeePassGroup: ((databaseId: Long, parentPath: String?, name: String) -> Unit)? = null,
-    onCreateMdbxProject: ((databaseId: Long, parentFolderId: String?, name: String) -> Unit)? = null,
     onRenameKeePassGroup: ((databaseId: Long, groupPath: String, newName: String) -> Unit)? = null,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     onDeleteKeePassGroup: ((databaseId: Long, groupPath: String) -> Unit)? = null,
     onMoveCategory: ((category: Category, targetParentCategoryId: Long?) -> Unit)? = null,
     onMoveKeePassGroup: ((sourceDatabaseId: Long, groupPath: String, targetDatabaseId: Long, targetParentPath: String?) -> Unit)? = null,
@@ -202,11 +194,8 @@ fun UnifiedCategoryFilterBottomSheet(
     var bastionExpanded by remember { mutableStateOf(false) }
     val bitwardenExpanded = remember { mutableStateMapOf<Long, Boolean>() }
     val keepassExpanded = remember { mutableStateMapOf<Long, Boolean>() }
-    val mdbxExpanded = remember { mutableStateMapOf<Long, Boolean>() }
     var showCreateDialog by remember { mutableStateOf(false) }
     var createDialogLocalParentPath by remember { mutableStateOf<String?>(null) }
-    var createDialogInitialMdbxDbId by remember { mutableStateOf<Long?>(null) }
-    var createDialogInitialMdbxParentFolderId by remember { mutableStateOf<String?>(null) }
     var renameAction by remember { mutableStateOf<RenameAction?>(null) }
     var renameInput by remember { mutableStateOf("") }
     var localCategoryRenameMode by remember { mutableStateOf(LocalCategoryRenameMode.LeafOnly) }
@@ -246,12 +235,6 @@ fun UnifiedCategoryFilterBottomSheet(
             is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> {
                 keepassExpanded[selected.databaseId] = true
             }
-            is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> {
-                mdbxExpanded[selected.databaseId] = true
-            }
-            is UnifiedCategoryFilterSelection.MdbxFolderFilter -> {
-                mdbxExpanded[selected.databaseId] = true
-            }
             else -> Unit
         }
     }
@@ -259,7 +242,6 @@ fun UnifiedCategoryFilterBottomSheet(
     val canCreateLocal = onCreateCategoryWithName != null || onCreateCategory != null
     val canCreateBitwarden = onCreateBitwardenFolder != null && bitwardenVaults.isNotEmpty()
     val canCreateKeePass = onCreateKeePassGroup != null && keepassDatabases.isNotEmpty()
-    val canCreateMdbx = onCreateMdbxProject != null && mdbxDatabases.isNotEmpty()
     val localKeePassDatabases = keepassDatabases
     val localCategoryNodes = remember(categories) { buildLocalCategoryNodes(categories) }
 
@@ -847,118 +829,11 @@ fun UnifiedCategoryFilterBottomSheet(
                     }
                 }
 
-                if (mdbxDatabases.isNotEmpty()) {
-                    item {
-                        StorageSectionCard(title = "MDBX") {
-                            mdbxDatabases.forEach { database ->
-                                val expanded = mdbxExpanded[database.id] ?: false
-                                val folders by getMdbxFolders(database.id).collectAsState(initial = emptyList())
-                                val currentMdbxFolderId = (selected as? UnifiedCategoryFilterSelection.MdbxFolderFilter)
-                                    ?.takeIf { it.databaseId == database.id }
-                                    ?.folderId
-                                val visibleFolders = remember(folders, currentMdbxFolderId) {
-                                    folders
-                                        .asSequence()
-                                        .filter { it.folderId.isNotBlank() }
-                                        .filter { it.isDirectMdbxChildOf(currentMdbxFolderId) }
-                                        .sortedWith(compareBy<MdbxStoredFolderEntry>({ it.name }, { it.folderId }))
-                                        .toList()
-                                }
-                                Column {
-                                    UnifiedCategoryListItem(
-                                        title = database.name,
-                                        icon = Icons.Default.Storage,
-                                        selected = (
-                                            selected is UnifiedCategoryFilterSelection.MdbxDatabaseFilter &&
-                                                selected.databaseId == database.id
-                                            ) || (
-                                            selected is UnifiedCategoryFilterSelection.MdbxFolderFilter &&
-                                                selected.databaseId == database.id
-                                            ),
-                                        onClick = {
-                                            onSelect(UnifiedCategoryFilterSelection.MdbxDatabaseFilter(database.id))
-                                        },
-                                        menu = {
-                                            Row {
-                                                if (canCreateMdbx) {
-                                                    IconButton(onClick = {
-                                                        createDialogLocalParentPath = null
-                                                        createDialogInitialMdbxDbId = database.id
-                                                        createDialogInitialMdbxParentFolderId = null
-                                                        showCreateDialog = true
-                                                    }) {
-                                                        Icon(Icons.Default.Add, contentDescription = null)
-                                                    }
-                                                }
-                                                IconButton(onClick = {
-                                                    mdbxExpanded[database.id] = !expanded
-                                                }) {
-                                                    Icon(
-                                                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                                        contentDescription = null
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                    SafeAnimatedVisibility(
-                                        visible = expanded,
-                                        enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = expandCollapseSpec),
-                                        exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = expandCollapseSpec)
-                                    ) {
-                                        Column {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            visibleFolders.forEach { folder ->
-                                                val folderSelected = selected is UnifiedCategoryFilterSelection.MdbxFolderFilter &&
-                                                    selected.databaseId == database.id &&
-                                                    selected.folderId == folder.folderId
-                                                Box(modifier = Modifier.padding(start = 16.dp)) {
-                                                    UnifiedCategoryListItem(
-                                                        title = folder.name.ifBlank { "Folder ${folder.folderId.take(8)}" },
-                                                        icon = Icons.Default.Folder,
-                                                        selected = folderSelected,
-                                                        onClick = {
-                                                            onSelect(
-                                                                UnifiedCategoryFilterSelection.MdbxFolderFilter(
-                                                                    database.id,
-                                                                    folder.folderId
-                                                                )
-                                                            )
-                                                        },
-                                                        menu = if (canCreateMdbx) {
-                                                            {
-                                                                IconButton(onClick = {
-                                                                    createDialogLocalParentPath = null
-                                                                    createDialogInitialMdbxDbId = database.id
-                                                                    createDialogInitialMdbxParentFolderId = folder.folderId
-                                                                    showCreateDialog = true
-                                                                }) {
-                                                                    Icon(Icons.Default.Add, contentDescription = null)
-                                                                }
-                                                            }
-                                                        } else {
-                                                            null
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (canCreateLocal || canCreateBitwarden || canCreateKeePass || canCreateMdbx) {
+                if (canCreateLocal || canCreateBitwarden || canCreateKeePass) {
                     item {
                         FilledTonalButton(
                             onClick = {
                                 createDialogLocalParentPath = null
-                                val currentMdbxSelection = selected as? UnifiedCategoryFilterSelection.MdbxFolderFilter
-                                createDialogInitialMdbxDbId = currentMdbxSelection?.databaseId
-                                    ?: (selected as? UnifiedCategoryFilterSelection.MdbxDatabaseFilter)?.databaseId
-                                createDialogInitialMdbxParentFolderId = currentMdbxSelection?.folderId
                                 showCreateDialog = true
                             },
                             modifier = Modifier
@@ -982,28 +857,16 @@ fun UnifiedCategoryFilterBottomSheet(
             onDismiss = {
                 showCreateDialog = false
                 createDialogLocalParentPath = null
-                createDialogInitialMdbxDbId = null
-                createDialogInitialMdbxParentFolderId = null
             },
             categories = categories,
             keepassDatabases = keepassDatabases,
-            mdbxDatabases = mdbxDatabases,
             bitwardenVaults = bitwardenVaults,
             getKeePassGroups = getKeePassGroups,
-            getMdbxFolders = getMdbxFolders,
             onCreateCategory = onCreateCategory,
             onCreateCategoryWithName = onCreateCategoryWithName,
             onCreateBitwardenFolder = onCreateBitwardenFolder,
             onCreateKeePassGroup = onCreateKeePassGroup,
-            onCreateMdbxProject = onCreateMdbxProject,
-            initialLocalParentPath = createDialogLocalParentPath,
-            initialTarget = if (createDialogInitialMdbxDbId != null || (!canCreateLocal && !canCreateBitwarden && !canCreateKeePass && canCreateMdbx)) {
-                CreateDialogTarget.Mdbx
-            } else {
-                null
-            },
-            initialMdbxDbId = createDialogInitialMdbxDbId,
-            initialMdbxParentFolderId = createDialogInitialMdbxParentFolderId
+            initialLocalParentPath = createDialogLocalParentPath
         )
     }
 
@@ -1441,8 +1304,6 @@ private fun rememberCategoryFilterLabel(
         is UnifiedCategoryFilterSelection.KeePassGroupFilter -> keepass
         is UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter -> "$keepass · $starred"
         is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> "$keepass · $uncategorized"
-        is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> "MDBX"
-        is UnifiedCategoryFilterSelection.MdbxFolderFilter -> "MDBX"
     }
 }
 

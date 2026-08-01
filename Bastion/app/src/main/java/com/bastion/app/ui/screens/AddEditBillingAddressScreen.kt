@@ -82,8 +82,6 @@ fun AddEditBillingAddressScreen(
     addressId: Long? = null,
     onNavigateBack: () -> Unit,
     initialCategoryId: Long? = null,
-    initialMdbxDatabaseId: Long? = null,
-    initialMdbxFolderId: String? = null,
     showTopBar: Boolean = true,
     showFab: Boolean = true,
     onFavoriteStateChanged: ((Boolean) -> Unit)? = null,
@@ -96,7 +94,6 @@ fun AddEditBillingAddressScreen(
     val scope = rememberCoroutineScope()
     val database = remember { PasswordDatabase.getDatabase(context) }
     val categories by database.categoryDao().getAllCategories().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
 
     var title by rememberSaveable { mutableStateOf("") }
     var fullName by rememberSaveable { mutableStateOf("") }
@@ -116,8 +113,6 @@ fun AddEditBillingAddressScreen(
     var hasLoadedExistingFields by rememberSaveable(addressId) { mutableStateOf(false) }
     var currentReplicaGroupId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategoryId by rememberSaveable { mutableStateOf<Long?>(initialCategoryId) }
-    var mdbxDatabaseId by rememberSaveable { mutableStateOf(initialMdbxDatabaseId) }
-    var mdbxFolderId by rememberSaveable { mutableStateOf(initialMdbxFolderId) }
     var showStorageTargetSheet by remember { mutableStateOf(false) }
     var customFields by remember { mutableStateOf<List<CustomFieldDraft>>(emptyList()) }
     val selectedStorageTargets = remember { mutableStateListOf<StorageTarget>() }
@@ -126,38 +121,25 @@ fun AddEditBillingAddressScreen(
         when (val target = targets.firstOrNull()) {
             is StorageTarget.BastionLocal -> {
                 selectedCategoryId = target.categoryId
-                mdbxDatabaseId = null
-                mdbxFolderId = null
-            }
-            is StorageTarget.Mdbx -> {
-                selectedCategoryId = null
-                mdbxDatabaseId = target.databaseId
-                mdbxFolderId = target.folderId
             }
             else -> {
                 selectedCategoryId = null
-                mdbxDatabaseId = null
-                mdbxFolderId = null
             }
         }
     }
 
     fun setSelectedStorageTargets(targets: List<StorageTarget>) {
         val supportedTargets = targets
-            .filter { it is StorageTarget.BastionLocal || it is StorageTarget.Mdbx }
+            .filter { it is StorageTarget.BastionLocal }
             .normalizedStorageTargets()
         selectedStorageTargets.clear()
         selectedStorageTargets.addAll(supportedTargets)
         syncStorageState(supportedTargets)
     }
 
-    LaunchedEffect(addressId, hasAppliedInitialStorage, initialCategoryId, initialMdbxDatabaseId, initialMdbxFolderId) {
+    LaunchedEffect(addressId, hasAppliedInitialStorage, initialCategoryId) {
         if (addressId != null || hasAppliedInitialStorage) return@LaunchedEffect
-        val target = if (initialMdbxDatabaseId != null) {
-            StorageTarget.Mdbx(initialMdbxDatabaseId, initialMdbxFolderId?.takeIf { it.isNotBlank() })
-        } else {
-            StorageTarget.BastionLocal(initialCategoryId)
-        }
+        val target = StorageTarget.BastionLocal(initialCategoryId)
         setSelectedStorageTargets(listOf(target))
         hasAppliedInitialStorage = true
     }
@@ -174,8 +156,6 @@ fun AddEditBillingAddressScreen(
                 isFavorite = item.isFavorite
                 currentReplicaGroupId = item.replicaGroupId
                 selectedCategoryId = item.categoryId
-                mdbxDatabaseId = item.mdbxDatabaseId
-                mdbxFolderId = item.mdbxFolderId
                 fullName = parsedData.fullName
                 company = parsedData.company
                 streetAddress = parsedData.streetAddress
@@ -190,7 +170,7 @@ fun AddEditBillingAddressScreen(
                 val existingTarget = item.toStorageTarget()
                 setSelectedStorageTargets(
                     listOf(
-                        if (existingTarget is StorageTarget.Mdbx || existingTarget is StorageTarget.BastionLocal) {
+                        if (existingTarget is StorageTarget.BastionLocal) {
                             existingTarget
                         } else {
                             StorageTarget.BastionLocal(item.categoryId)
@@ -260,30 +240,6 @@ fun AddEditBillingAddressScreen(
                                 )
                             }
                         }
-                        is StorageTarget.Mdbx -> {
-                            if (addressId == null) {
-                                viewModel.addAddress(
-                                    title = effectiveTitle,
-                                    addressData = addressData,
-                                    notes = notes,
-                                    isFavorite = isFavorite,
-                                    mdbxDatabaseId = target.databaseId,
-                                    mdbxFolderId = target.folderId,
-                                    replicaGroupId = currentReplicaGroupId
-                                )
-                            } else {
-                                viewModel.updateAddress(
-                                    id = addressId,
-                                    title = effectiveTitle,
-                                    addressData = addressData,
-                                    notes = notes,
-                                    isFavorite = isFavorite,
-                                    mdbxDatabaseId = target.databaseId,
-                                    mdbxFolderId = target.folderId,
-                                    replicaGroupId = currentReplicaGroupId
-                                )
-                            }
-                        }
                         else -> Unit
                     }
                 }.onFailure {
@@ -322,7 +278,6 @@ fun AddEditBillingAddressScreen(
                 existingTargetKeys = emptySet(),
                 categories = categories,
                 keepassDatabases = emptyList(),
-                mdbxDatabases = mdbxDatabases,
                 bitwardenVaults = emptyList(),
                 bitwardenFolderDao = database.bitwardenFolderDao(),
                 isEditing = addressId != null,
@@ -540,7 +495,6 @@ fun AddEditBillingAddressScreen(
         lockedTargetKeys = emptySet(),
         categories = categories,
         keepassDatabases = emptyList(),
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = emptyList(),
         getBitwardenFolders = { flowOf(emptyList()) },
         getKeePassGroups = { flowOf(emptyList()) },

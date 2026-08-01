@@ -105,7 +105,6 @@ fun AddEditTotpScreen(
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
-    initialMdbxDatabaseId: Long? = null,
     initialBitwardenVaultId: Long? = null,
     initialBitwardenFolderId: String? = null,
     initialReplicaGroupId: String? = null,
@@ -178,7 +177,6 @@ fun AddEditTotpScreen(
         .collectAsState(initial = null as RememberedStorageTarget?)
     var bitwardenVaultId by rememberSaveable { mutableStateOf(initialBitwardenVaultId) }
     var bitwardenFolderId by rememberSaveable { mutableStateOf(initialBitwardenFolderId) }
-    var mdbxDatabaseId by rememberSaveable { mutableStateOf(initialMdbxDatabaseId) }
     var hasAppliedInitialStorage by rememberSaveable { mutableStateOf(false) }
     val selectedStorageTargets = remember { mutableStateListOf<StorageTarget>() }
     var existingReplicaTargetKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -188,7 +186,6 @@ fun AddEditTotpScreen(
     val bitwardenRepository = remember { BitwardenRepository.getInstance(context) }
     val bitwardenVaults by bitwardenRepository.getAllVaultsFlow().collectAsState(initial = emptyList())
     val database = remember { PasswordDatabase.getDatabase(context) }
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val allTotpItems by (totpViewModel?.totpItems ?: kotlinx.coroutines.flow.flowOf(emptyList())).collectAsState(initial = emptyList())
 
     fun syncLegacyStorageState(targets: List<StorageTarget>) {
@@ -197,7 +194,6 @@ fun AddEditTotpScreen(
                 selectedCategoryId = primaryTarget.categoryId
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -205,15 +201,6 @@ fun AddEditTotpScreen(
                 selectedCategoryId = null
                 keepassDatabaseId = primaryTarget.databaseId
                 keepassGroupPath = primaryTarget.groupPath
-                mdbxDatabaseId = null
-                bitwardenVaultId = null
-                bitwardenFolderId = null
-            }
-            is StorageTarget.Mdbx -> {
-                selectedCategoryId = null
-                keepassDatabaseId = null
-                keepassGroupPath = null
-                mdbxDatabaseId = primaryTarget.databaseId
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -221,7 +208,6 @@ fun AddEditTotpScreen(
                 selectedCategoryId = null
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
                 bitwardenVaultId = primaryTarget.vaultId
                 bitwardenFolderId = primaryTarget.folderId
             }
@@ -229,7 +215,6 @@ fun AddEditTotpScreen(
                 selectedCategoryId = null
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -370,7 +355,6 @@ fun AddEditTotpScreen(
         initialCategoryId,
         initialKeePassDatabaseId,
         initialKeePassGroupPath,
-        initialMdbxDatabaseId,
         initialBitwardenVaultId,
         initialBitwardenFolderId,
         rememberedStorageTarget
@@ -382,7 +366,6 @@ fun AddEditTotpScreen(
         val hasExplicitInitialStorage = initialCategoryId != null ||
             initialKeePassDatabaseId != null ||
             explicitGroupPath != null ||
-            initialMdbxDatabaseId != null ||
             initialBitwardenVaultId != null ||
             explicitFolderId != null
         if (!hasExplicitInitialStorage && remembered == null) {
@@ -393,7 +376,6 @@ fun AddEditTotpScreen(
         selectedCategoryId = if (hasExplicitInitialStorage) initialCategoryId else remembered?.categoryId
         keepassDatabaseId = if (hasExplicitInitialStorage) initialKeePassDatabaseId else remembered?.keepassDatabaseId
         keepassGroupPath = if (hasExplicitInitialStorage) explicitGroupPath else remembered?.keepassGroupPath
-        mdbxDatabaseId = if (hasExplicitInitialStorage) initialMdbxDatabaseId else remembered?.mdbxDatabaseId
         bitwardenVaultId = if (hasExplicitInitialStorage) initialBitwardenVaultId else remembered?.bitwardenVaultId
         bitwardenFolderId = if (hasExplicitInitialStorage) explicitFolderId else remembered?.bitwardenFolderId
         setSelectedStorageTargets(
@@ -402,7 +384,6 @@ fun AddEditTotpScreen(
                     categoryId = selectedCategoryId,
                     keepassDatabaseId = keepassDatabaseId,
                     keepassGroupPath = keepassGroupPath,
-                    mdbxDatabaseId = mdbxDatabaseId,
                     bitwardenVaultId = bitwardenVaultId,
                     bitwardenFolderId = bitwardenFolderId
                 )
@@ -420,7 +401,6 @@ fun AddEditTotpScreen(
         selectedCategoryId,
         keepassDatabaseId,
         keepassGroupPath,
-        mdbxDatabaseId,
         bitwardenVaultId,
         bitwardenFolderId
     ) {
@@ -434,7 +414,6 @@ fun AddEditTotpScreen(
             categoryId = selectedCategoryId,
             keepassDatabaseId = keepassDatabaseId,
             keepassGroupPath = keepassGroupPath,
-            mdbxDatabaseId = mdbxDatabaseId,
             bitwardenVaultId = bitwardenVaultId,
             bitwardenFolderId = bitwardenFolderId
         )
@@ -573,7 +552,6 @@ fun AddEditTotpScreen(
                     categoryId = selectedCategoryId,
                     keepassDatabaseId = keepassDatabaseId,
                     keepassGroupPath = keepassGroupPath,
-                    mdbxDatabaseId = mdbxDatabaseId,
                     bitwardenVaultId = bitwardenVaultId,
                     bitwardenFolderId = bitwardenFolderId
                 )
@@ -627,7 +605,6 @@ fun AddEditTotpScreen(
                         categoryId = (primaryTarget as? StorageTarget.BastionLocal)?.categoryId,
                         keepassDatabaseId = (primaryTarget as? StorageTarget.KeePass)?.databaseId,
                         keepassGroupPath = (primaryTarget as? StorageTarget.KeePass)?.groupPath,
-                        mdbxDatabaseId = (primaryTarget as? StorageTarget.Mdbx)?.databaseId,
                         bitwardenVaultId = (primaryTarget as? StorageTarget.Bitwarden)?.vaultId,
                         bitwardenFolderId = (primaryTarget as? StorageTarget.Bitwarden)?.folderId
                     )
@@ -711,7 +688,6 @@ fun AddEditTotpScreen(
                         existingTargetKeys = existingReplicaTargetKeys,
                         categories = categories,
                         keepassDatabases = keepassDatabases,
-                        mdbxDatabases = mdbxDatabases,
                         bitwardenVaults = bitwardenVaults,
                         bitwardenFolderDao = database.bitwardenFolderDao(),
                         isEditing = isEditing,
@@ -1290,7 +1266,6 @@ fun AddEditTotpScreen(
         lockedTargetKeys = existingReplicaTargetKeys,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
         getKeePassGroups = { databaseId ->

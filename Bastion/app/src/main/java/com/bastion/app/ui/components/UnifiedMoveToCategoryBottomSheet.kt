@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
@@ -59,11 +58,8 @@ import com.bastion.app.data.KeePassOperationBlockReason
 import com.bastion.app.data.KeePassStorageLocation
 import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
-import com.bastion.app.data.MdbxSourceType
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.bitwarden.BitwardenVault
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.utils.KEEPASS_DISPLAY_PATH_SEPARATOR
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.utils.decodeKeePassPathSegments
@@ -75,8 +71,6 @@ sealed interface UnifiedMoveCategoryTarget {
     data class BitwardenFolderTarget(val vaultId: Long, val folderId: String) : UnifiedMoveCategoryTarget
     data class KeePassDatabaseTarget(val databaseId: Long) : UnifiedMoveCategoryTarget
     data class KeePassGroupTarget(val databaseId: Long, val groupPath: String) : UnifiedMoveCategoryTarget
-    data class MdbxDatabaseTarget(val databaseId: Long) : UnifiedMoveCategoryTarget
-    data class MdbxFolderTarget(val databaseId: Long, val folderId: String) : UnifiedMoveCategoryTarget
 }
 
 private sealed interface MovePickerSource {
@@ -91,11 +85,6 @@ private sealed interface MovePickerSource {
     data class KeePassDatabase(val database: LocalKeePassDatabase) : MovePickerSource {
         override val key: String = "keepass:${database.id}"
         override val icon: ImageVector = Icons.Default.Key
-    }
-
-    data class MdbxDatabase(val database: LocalMdbxDatabase) : MovePickerSource {
-        override val key: String = "mdbx:${database.id}"
-        override val icon: ImageVector = Icons.Default.Storage
     }
 
     data class BitwardenVaultSource(val vault: BitwardenVault) : MovePickerSource {
@@ -127,12 +116,9 @@ fun UnifiedMoveToCategoryBottomSheet(
     onDismiss: () -> Unit,
     categories: List<Category>,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<BitwardenVault>,
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>>,
     getKeePassGroups: (Long) -> Flow<List<KeePassGroupInfo>>,
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { flowOf(emptyList()) },
-    refreshMdbxFolders: (Long) -> Unit = {},
     showBitwardenFolderTargets: Boolean = true,
     allowCopy: Boolean = false,
     allowMove: Boolean = true,
@@ -151,11 +137,10 @@ fun UnifiedMoveToCategoryBottomSheet(
         }
     }
 
-    val sources = remember(keepassDatabases, mdbxDatabases, bitwardenVaults) {
+    val sources = remember(keepassDatabases, bitwardenVaults) {
         buildList {
             add(MovePickerSource.BastionLocal)
             keepassDatabases.forEach { add(MovePickerSource.KeePassDatabase(it)) }
-            mdbxDatabases.forEach { add(MovePickerSource.MdbxDatabase(it)) }
             bitwardenVaults.forEach { add(MovePickerSource.BitwardenVaultSource(it)) }
         }
     }
@@ -196,7 +181,6 @@ fun UnifiedMoveToCategoryBottomSheet(
         return when (source) {
             MovePickerSource.BastionLocal -> bastionLabel
             is MovePickerSource.KeePassDatabase -> source.database.name
-            is MovePickerSource.MdbxDatabase -> source.database.name
             is MovePickerSource.BitwardenVaultSource -> source.vault.displayName ?: source.vault.email
         }
     }
@@ -226,12 +210,6 @@ fun UnifiedMoveToCategoryBottomSheet(
                 } else {
                     keepassUnavailableFormat.format(keepassReasonLabel(availability.reason))
                 }
-            }
-            is MovePickerSource.MdbxDatabase -> when (source.database.sourceTypeEnum) {
-                MdbxSourceType.LOCAL_INTERNAL -> internalStorageLabel
-                MdbxSourceType.LOCAL_EXTERNAL -> externalStorageLabel
-                MdbxSourceType.REMOTE_WEBDAV -> "WebDAV"
-                MdbxSourceType.REMOTE_ONEDRIVE -> "OneDrive"
             }
             is MovePickerSource.BitwardenVaultSource -> if (source.vault.isDefault) defaultLabel else source.vault.email
         }
@@ -270,10 +248,6 @@ fun UnifiedMoveToCategoryBottomSheet(
                 target = UnifiedMoveCategoryTarget.KeePassDatabaseTarget(source.database.id),
                 label = "${source.database.name} / $keepassRootLabel"
             )
-            is MovePickerSource.MdbxDatabase -> stageTarget(
-                target = UnifiedMoveCategoryTarget.MdbxDatabaseTarget(source.database.id),
-                label = "${source.database.name} / $categoryNoneLabel"
-            )
             is MovePickerSource.BitwardenVaultSource -> stageTarget(
                 target = UnifiedMoveCategoryTarget.BitwardenVaultTarget(source.vault.id),
                 label = "${source.vault.email} / $bitwardenRootLabel"
@@ -303,10 +277,6 @@ fun UnifiedMoveToCategoryBottomSheet(
 
     val activeSource = sources.firstOrNull { it.key == activeSourceKey.value }
         ?: MovePickerSource.BastionLocal
-    val activeMdbxDatabaseId = (activeSource as? MovePickerSource.MdbxDatabase)?.database?.id
-    LaunchedEffect(activeMdbxDatabaseId) {
-        activeMdbxDatabaseId?.let(refreshMdbxFolders)
-    }
     val bitwardenFolders by (
         if (activeSource is MovePickerSource.BitwardenVaultSource && showBitwardenFolderTargets) {
             getBitwardenFolders(activeSource.vault.id)
@@ -321,15 +291,7 @@ fun UnifiedMoveToCategoryBottomSheet(
             flowOf(emptyList())
         }
     ).collectAsState(initial = emptyList())
-    val mdbxFolders by (
-        if (activeSource is MovePickerSource.MdbxDatabase) {
-            getMdbxFolders(activeSource.database.id)
-        } else {
-            flowOf(emptyList())
-        }
-    ).collectAsState(initial = emptyList())
     val keepassGroupNodes = remember(keepassGroups) { buildKeePassGroupNodes(keepassGroups) }
-    val mdbxFolderNodes = remember(mdbxFolders) { buildMdbxFolderNodes(mdbxFolders) }
 
     fun buildTargetsForSource(source: MovePickerSource): List<MovePickerTarget> {
         return when (source) {
@@ -390,35 +352,6 @@ fun UnifiedMoveToCategoryBottomSheet(
                             title = groupNode.displayName,
                             icon = Icons.Default.Folder,
                             supportingText = groupNode.parentPathLabel
-                        )
-                    )
-                }
-            }
-
-            is MovePickerSource.MdbxDatabase -> buildList {
-                add(
-                    MovePickerTarget(
-                        target = UnifiedMoveCategoryTarget.MdbxDatabaseTarget(source.database.id),
-                        label = "${source.database.name} / $categoryNoneLabel",
-                        title = categoryNoneLabel,
-                        icon = Icons.Default.FolderOff
-                    )
-                )
-                mdbxFolderNodes.forEach { folderNode ->
-                    add(
-                        MovePickerTarget(
-                            target = UnifiedMoveCategoryTarget.MdbxFolderTarget(
-                                databaseId = source.database.id,
-                                folderId = folderNode.folder.folderId
-                            ),
-                            label = listOfNotNull(
-                                source.database.name,
-                                folderNode.parentPathLabel,
-                                folderNode.displayName
-                            ).joinToString(" / "),
-                            title = folderNode.displayName,
-                            icon = Icons.Default.Folder,
-                            supportingText = folderNode.parentPathLabel
                         )
                     )
                 }
@@ -709,13 +642,6 @@ private data class KeePassGroupNode(
     val parentPathLabel: String?
 )
 
-private data class MdbxFolderNode(
-    val folder: MdbxStoredFolderEntry,
-    val displayName: String,
-    val depth: Int,
-    val parentPathLabel: String?
-)
-
 private fun buildBastionCategoryNodes(categories: List<Category>): List<BastionCategoryNode> {
     return categories
         .sortedBy { it.name.lowercase() }
@@ -760,65 +686,6 @@ private fun buildKeePassGroupNodes(groups: List<KeePassGroupInfo>): List<KeePass
                 parentPathLabel = parentPath
             )
         }
-}
-
-private fun buildMdbxFolderNodes(folders: List<MdbxStoredFolderEntry>): List<MdbxFolderNode> {
-    val validFolders = folders
-        .filter { it.folderId.isNotBlank() }
-        .distinctBy { it.folderId }
-    if (validFolders.isEmpty()) return emptyList()
-
-    val folderById = validFolders.associateBy { it.folderId }
-    val childrenByParent = validFolders.groupBy { it.parentFolderId.normalizedMdbxParentIdForMoveSheet() }
-    val result = mutableListOf<MdbxFolderNode>()
-
-    fun appendChildren(parentId: String?, parentNames: List<String>, depth: Int, seen: Set<String>) {
-        childrenByParent[parentId]
-            .orEmpty()
-            .sortedWith(compareBy<MdbxStoredFolderEntry>({ it.name.lowercase() }, { it.folderId }))
-            .forEach { folder ->
-                if (folder.folderId in seen) return@forEach
-                val name = folder.name.ifBlank { "Folder ${folder.folderId.take(8)}" }
-                result += MdbxFolderNode(
-                    folder = folder,
-                    displayName = name,
-                    depth = depth,
-                    parentPathLabel = parentNames.takeIf { it.isNotEmpty() }?.joinToString(" / ")
-                )
-                appendChildren(
-                    parentId = folder.folderId,
-                    parentNames = parentNames + name,
-                    depth = depth + 1,
-                    seen = seen + folder.folderId
-                )
-            }
-    }
-
-    appendChildren(parentId = null, parentNames = emptyList(), depth = 0, seen = emptySet())
-    validFolders
-        .filterNot { folder -> result.any { it.folder.folderId == folder.folderId } }
-        .sortedWith(compareBy<MdbxStoredFolderEntry>({ it.name.lowercase() }, { it.folderId }))
-        .forEach { folder ->
-            val parentNames = generateSequence(folder.parentFolderId.normalizedMdbxParentIdForMoveSheet()) { parentId ->
-                folderById[parentId]?.parentFolderId.normalizedMdbxParentIdForMoveSheet()
-            }
-                .take(16)
-                .toList()
-                .asReversed()
-                .mapNotNull { parentId -> folderById[parentId]?.name?.takeIf { it.isNotBlank() } }
-            result += MdbxFolderNode(
-                folder = folder,
-                displayName = folder.name.ifBlank { "Folder ${folder.folderId.take(8)}" },
-                depth = parentNames.size,
-                parentPathLabel = parentNames.takeIf { it.isNotEmpty() }?.joinToString(" / ")
-            )
-        }
-    return result
-}
-
-private fun String?.normalizedMdbxParentIdForMoveSheet(): String? {
-    val value = this?.trim()?.takeIf { it.isNotBlank() } ?: return null
-    return if (value.equals("root", ignoreCase = true)) null else value
 }
 
 private fun splitPathSegments(path: String): List<String> {

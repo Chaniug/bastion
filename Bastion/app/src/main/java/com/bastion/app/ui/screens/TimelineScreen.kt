@@ -88,7 +88,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import com.bastion.app.R
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
@@ -535,7 +534,6 @@ private fun TimelineContent(
     val database = remember(context) { PasswordDatabase.getDatabase(context.applicationContext) }
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val activePasswordEntries by database.passwordEntryDao().getAllPasswordEntries().collectAsState(initial = emptyList())
     val deletedPasswordEntries by database.passwordEntryDao().getDeletedEntries().collectAsState(initial = emptyList())
     val activeSecureItems by database.secureItemDao().getAllItems().collectAsState(initial = emptyList())
@@ -553,8 +551,7 @@ private fun TimelineContent(
         bitwardenLabel,
         keepassLabel,
         bitwardenVaults,
-        keepassDatabases,
-        mdbxDatabases
+        keepassDatabases
     ) {
         buildList {
             add(
@@ -590,15 +587,6 @@ private fun TimelineContent(
                     )
                 )
             }
-            mdbxDatabases.forEach { mdbx ->
-                add(
-                    TrashScopeFilterOption(
-                        key = TrashScopeFilter.MdbxDatabaseScope(mdbx.id).key,
-                        label = "MDBX · ${mdbx.name}",
-                        scope = TrashScopeFilter.MdbxDatabaseScope(mdbx.id)
-                    )
-                )
-            }
         }
     }
 
@@ -622,8 +610,7 @@ private fun TimelineContent(
                     entry.id,
                     resolveScopeFilter(
                         bitwardenVaultId = entry.bitwardenVaultId,
-                        keepassDatabaseId = entry.keepassDatabaseId,
-                        mdbxDatabaseId = entry.mdbxDatabaseId
+                        keepassDatabaseId = entry.keepassDatabaseId
                     )
                 )
             }
@@ -636,8 +623,7 @@ private fun TimelineContent(
                     item.id,
                     resolveScopeFilter(
                         bitwardenVaultId = item.bitwardenVaultId,
-                        keepassDatabaseId = item.keepassDatabaseId,
-                        mdbxDatabaseId = item.mdbxDatabaseId
+                        keepassDatabaseId = item.keepassDatabaseId
                     )
                 )
             }
@@ -647,8 +633,7 @@ private fun TimelineContent(
         passkeys.associate { passkey ->
             passkey.id to resolveScopeFilter(
                 bitwardenVaultId = passkey.bitwardenVaultId,
-                keepassDatabaseId = passkey.keepassDatabaseId,
-                mdbxDatabaseId = passkey.mdbxDatabaseId
+                keepassDatabaseId = passkey.keepassDatabaseId
             )
         }
     }
@@ -808,7 +793,6 @@ private fun TimelineContent(
                         selectedScope = selectedScope,
                         fallbackScope = TrashScopeFilter.All,
                         keepassDatabases = keepassDatabases,
-                        mdbxDatabases = mdbxDatabases,
                         bitwardenVaults = bitwardenVaults,
                         database = database,
                         onSelectedScopeKeyChange = { selectedScopeKey = it }
@@ -2105,7 +2089,6 @@ private sealed interface TrashScopeFilter {
     object Local : TrashScopeFilter
     data class BitwardenVaultScope(val vaultId: Long) : TrashScopeFilter
     data class KeePassDatabaseScope(val databaseId: Long) : TrashScopeFilter
-    data class MdbxDatabaseScope(val databaseId: Long) : TrashScopeFilter
 }
 
 private data class TrashScopeFilterOption(
@@ -2120,7 +2103,6 @@ private val TrashScopeFilter.key: String
         TrashScopeFilter.Local -> "local"
         is TrashScopeFilter.BitwardenVaultScope -> "bitwarden_${this.vaultId}"
         is TrashScopeFilter.KeePassDatabaseScope -> "keepass_${this.databaseId}"
-        is TrashScopeFilter.MdbxDatabaseScope -> "mdbx_${this.databaseId}"
     }
 
 private fun TrashScopeFilter.toUnifiedCategoryFilterSelection(): UnifiedCategoryFilterSelection {
@@ -2131,8 +2113,6 @@ private fun TrashScopeFilter.toUnifiedCategoryFilterSelection(): UnifiedCategory
             UnifiedCategoryFilterSelection.BitwardenVaultFilter(vaultId)
         is TrashScopeFilter.KeePassDatabaseScope ->
             UnifiedCategoryFilterSelection.KeePassDatabaseFilter(databaseId)
-        is TrashScopeFilter.MdbxDatabaseScope ->
-            UnifiedCategoryFilterSelection.MdbxDatabaseFilter(databaseId)
     }
 }
 
@@ -2160,10 +2140,6 @@ private fun UnifiedCategoryFilterSelection.toTrashScopeFilter(
             TrashScopeFilter.KeePassDatabaseScope(databaseId)
         is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter ->
             TrashScopeFilter.KeePassDatabaseScope(databaseId)
-        is UnifiedCategoryFilterSelection.MdbxDatabaseFilter ->
-            TrashScopeFilter.MdbxDatabaseScope(databaseId)
-        is UnifiedCategoryFilterSelection.MdbxFolderFilter ->
-            TrashScopeFilter.MdbxDatabaseScope(databaseId)
         else -> fallbackScope
     }
 }
@@ -2175,7 +2151,6 @@ private fun TrashScopeFilterChipMenu(
     selectedScope: TrashScopeFilter,
     fallbackScope: TrashScopeFilter,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase>,
     bitwardenVaults: List<BitwardenVault>,
     database: PasswordDatabase,
     onSelectedScopeKeyChange: (String) -> Unit
@@ -2198,7 +2173,6 @@ private fun TrashScopeFilterChipMenu(
             },
             categories = emptyList(),
             keepassDatabases = keepassDatabases,
-            mdbxDatabases = mdbxDatabases,
             bitwardenVaults = bitwardenVaults,
             getBitwardenFolders = { vaultId ->
                 database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId)
@@ -2210,13 +2184,11 @@ private fun TrashScopeFilterChipMenu(
 
 private fun resolveScopeFilter(
     bitwardenVaultId: Long?,
-    keepassDatabaseId: Long?,
-    mdbxDatabaseId: Long? = null
+    keepassDatabaseId: Long?
 ): TrashScopeFilter {
     return when {
         bitwardenVaultId != null -> TrashScopeFilter.BitwardenVaultScope(bitwardenVaultId)
         keepassDatabaseId != null -> TrashScopeFilter.KeePassDatabaseScope(keepassDatabaseId)
-        mdbxDatabaseId != null -> TrashScopeFilter.MdbxDatabaseScope(mdbxDatabaseId)
         else -> TrashScopeFilter.Local
     }
 }
@@ -2232,16 +2204,10 @@ private fun resolveTrashScope(item: com.bastion.app.viewmodel.TrashItem): TrashS
         is SecureItem -> data.keepassDatabaseId
         else -> null
     }
-    val mdbxDatabaseId = when (val data = item.originalData) {
-        is PasswordEntry -> data.mdbxDatabaseId
-        is SecureItem -> data.mdbxDatabaseId
-        else -> null
-    }
 
     return resolveScopeFilter(
         bitwardenVaultId = bitwardenVaultId,
-        keepassDatabaseId = keepassDatabaseId,
-        mdbxDatabaseId = mdbxDatabaseId
+        keepassDatabaseId = keepassDatabaseId
     )
 }
 
@@ -2330,7 +2296,6 @@ private fun TrashContent(
     val database = remember(context) { PasswordDatabase.getDatabase(context.applicationContext) }
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
 
     val trashCategories by viewModel.trashCategories.collectAsState()
     val trashSettings by viewModel.trashSettings.collectAsState()
@@ -2345,8 +2310,7 @@ private fun TrashContent(
         bitwardenLabel,
         keepassLabel,
         bitwardenVaults,
-        keepassDatabases,
-        mdbxDatabases
+        keepassDatabases
     ) {
         buildList {
             add(
@@ -2379,15 +2343,6 @@ private fun TrashContent(
                         key = TrashScopeFilter.KeePassDatabaseScope(keepass.id).key,
                         label = "$keepassLabel · ${keepass.name}",
                         scope = TrashScopeFilter.KeePassDatabaseScope(keepass.id)
-                    )
-                )
-            }
-            mdbxDatabases.forEach { mdbx ->
-                add(
-                    TrashScopeFilterOption(
-                        key = TrashScopeFilter.MdbxDatabaseScope(mdbx.id).key,
-                        label = "MDBX · ${mdbx.name}",
-                        scope = TrashScopeFilter.MdbxDatabaseScope(mdbx.id)
                     )
                 )
             }
@@ -2543,7 +2498,6 @@ private fun TrashContent(
                             selectedScope = selectedScope,
                             fallbackScope = TrashScopeFilter.All,
                             keepassDatabases = keepassDatabases,
-                            mdbxDatabases = mdbxDatabases,
                             bitwardenVaults = bitwardenVaults,
                             database = database,
                             onSelectedScopeKeyChange = { selectedScopeKey = it }

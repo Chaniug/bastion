@@ -47,7 +47,6 @@ import com.bastion.app.data.PasswordCardDisplayMode
 import com.bastion.app.data.PasswordPageContentType
 import com.bastion.app.data.PasswordListQuickFilterItem
 import com.bastion.app.data.model.StorageTarget
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.CreateCategoryDialog
 import com.bastion.app.ui.components.CreateDialogTarget
@@ -70,25 +69,19 @@ import com.bastion.app.ui.password.BitwardenReunlockTopActionsMenuItem
 import com.bastion.app.ui.password.BitwardenSyncTopActionsMenuItem
 import com.bastion.app.ui.password.CommonPasswordTopActionsMenuItems
 import com.bastion.app.ui.password.KeepassRefreshTopActionsMenuItem
-import com.bastion.app.ui.password.MdbxSyncTopActionsMenuItem
 import com.bastion.app.ui.password.PasswordTopActionsDropdownMenu
-import com.bastion.app.viewmodel.MdbxViewModel
 
 @Composable
 internal fun PasswordListTopSection(
     currentFilter: CategoryFilter,
     categories: List<Category>,
     keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase>,
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     viewModel: PasswordViewModel,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
     bitwardenViewModel: BitwardenViewModel,
-    mdbxViewModel: MdbxViewModel? = null,
     selectedBitwardenVaultId: Long?,
     selectedKeePassDatabaseId: Long?,
-    selectedMdbxDatabaseId: Long?,
-    selectedMdbxFolders: List<MdbxStoredFolderEntry>,
     isTopBarSyncing: Boolean,
     isArchiveView: Boolean,
     isKeePassDatabaseView: Boolean,
@@ -183,8 +176,6 @@ internal fun PasswordListTopSection(
             is CategoryFilter.BitwardenFolderFilter -> "Bitwarden"
             is CategoryFilter.BitwardenVaultStarred -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_starred)}"
             is CategoryFilter.BitwardenVaultUncategorized -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_uncategorized)}"
-            is CategoryFilter.MdbxDatabase -> mdbxDatabases.find { it.id == filter.databaseId }?.name ?: "MDBX"
-            is CategoryFilter.MdbxFolderFilter -> buildMdbxFolderPathLabel(filter.folderId, selectedMdbxFolders)
         }
 
         ExpressiveTopBar(
@@ -244,7 +235,6 @@ internal fun PasswordListTopSection(
                             PasswordListCategoryChipMenu(
                                 currentFilter = currentFilter,
                                 keepassDatabases = keepassDatabases,
-                                mdbxDatabases = mdbxDatabases,
                                 bitwardenVaults = bitwardenVaults,
                                 configuredQuickFilterItems = configuredQuickFilterItems,
                                 quickFilterFavorite = quickFilterFavorite,
@@ -340,21 +330,9 @@ internal fun PasswordListTopSection(
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
-
-                                        is StorageTarget.Mdbx -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(
-                                                    R.string.save_failed_with_error,
-                                                    "当前暂不支持将分类移动到 MDBX 数据库"
-                                                ),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
                                     }
                                 },
                                 getBitwardenFolders = viewModel::getBitwardenFolders,
-                                getMdbxFolders = viewModel::getMdbxFolders,
                                 getKeePassGroups = localKeePassViewModel::getGroups,
                                 onRenameCategory = onRenameCategory,
                                 onDeleteCategory = onDeleteCategory
@@ -370,20 +348,6 @@ internal fun PasswordListTopSection(
                                     onClick = {
                                         onTopActionsMenuExpandedChange(false)
                                         viewModel.refreshKeePassFromSourceForCurrentContext()
-                                    }
-                                )
-                            }
-                            if (selectedMdbxDatabaseId != null && mdbxViewModel != null) {
-                                val selectedMdbxDatabase = mdbxDatabases
-                                    .firstOrNull { it.id == selectedMdbxDatabaseId }
-                                MdbxSyncTopActionsMenuItem(
-                                    onClick = {
-                                        onTopActionsMenuExpandedChange(false)
-                                        if (selectedMdbxDatabase?.mdbxPathShouldFlushPendingUpload() == true) {
-                                            mdbxViewModel.flushPendingVaultUpload(selectedMdbxDatabaseId)
-                                        } else {
-                                            mdbxViewModel.syncVault(selectedMdbxDatabaseId)
-                                        }
                                     }
                                 )
                             }
@@ -740,8 +704,6 @@ internal fun PasswordListTopSection(
             is CategoryFilter.KeePassGroupFilter -> UnifiedCategoryFilterSelection.KeePassGroupFilter(filter.databaseId, filter.groupPath)
             is CategoryFilter.KeePassDatabaseStarred -> UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter(filter.databaseId)
             is CategoryFilter.KeePassDatabaseUncategorized -> UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter(filter.databaseId)
-            is CategoryFilter.MdbxDatabase -> UnifiedCategoryFilterSelection.MdbxDatabaseFilter(filter.databaseId)
-            is CategoryFilter.MdbxFolderFilter -> UnifiedCategoryFilterSelection.MdbxFolderFilter(filter.databaseId, filter.folderId)
         }
         if (showDisplayOptionsSheet) {
             PasswordDisplayOptionsSheet(
@@ -764,11 +726,6 @@ internal fun PasswordListTopSection(
         if (showCreateCategoryDialog) {
             val initialLocalParentPath = (currentFilter as? CategoryFilter.Custom)?.let { filter ->
                 categories.firstOrNull { it.id == filter.categoryId }?.name
-            }
-            val initialDialogMdbxDbId = when (currentFilter) {
-                is CategoryFilter.MdbxDatabase -> currentFilter.databaseId
-                is CategoryFilter.MdbxFolderFilter -> currentFilter.databaseId
-                else -> null
             }
             val (initialDialogTarget, initialDialogKeePassDbId, initialDialogBitwardenVaultId) = remember(currentFilter) {
                 when (currentFilter) {
@@ -798,10 +755,6 @@ internal fun PasswordListTopSection(
                         }
                         Triple(CreateDialogTarget.Bitwarden, null, vaultId)
                     }
-                    is CategoryFilter.MdbxDatabase,
-                    is CategoryFilter.MdbxFolderFilter -> {
-                        Triple(CreateDialogTarget.Mdbx, null, null)
-                    }
                     else -> Triple(null, null, null)
                 }
             }
@@ -810,15 +763,12 @@ internal fun PasswordListTopSection(
                 onDismiss = { showCreateCategoryDialog = false },
                 categories = categories,
                 keepassDatabases = keepassDatabases,
-                mdbxDatabases = mdbxDatabases,
                 bitwardenVaults = bitwardenVaults,
                 getKeePassGroups = localKeePassViewModel::getGroups,
-                getMdbxFolders = viewModel::getMdbxFolders,
                 onCreateCategoryWithName = { name -> viewModel.addCategory(name) },
                 initialLocalParentPath = initialLocalParentPath,
                 initialTarget = initialDialogTarget,
                 initialKeePassDbId = initialDialogKeePassDbId,
-                initialMdbxDbId = initialDialogMdbxDbId,
                 initialBitwardenVaultId = initialDialogBitwardenVaultId,
                 onCreateBitwardenFolder = { vaultId, name ->
                     coroutineScope.launch {
@@ -844,20 +794,6 @@ internal fun PasswordListTopSection(
                                 context.getString(R.string.webdav_operation_failed, error.message ?: ""),
                                 Toast.LENGTH_SHORT
                             ).show()
-                        }
-                    }
-                },
-                initialMdbxParentFolderId = (currentFilter as? CategoryFilter.MdbxFolderFilter)?.folderId,
-                onCreateMdbxProject = { databaseId, parentFolderId, name ->
-                    coroutineScope.launch {
-                        viewModel.createMdbxFolder(databaseId, name, parentFolderId ?: "root") { result ->
-                            result.exceptionOrNull()?.let { error ->
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.save_failed_with_error, error.message ?: ""),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
                         }
                     }
                 }

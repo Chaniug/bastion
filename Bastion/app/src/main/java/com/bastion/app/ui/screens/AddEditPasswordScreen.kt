@@ -143,7 +143,6 @@ import com.bastion.app.viewmodel.PasswordViewModel
 import com.bastion.app.viewmodel.TotpViewModel
 
 import com.bastion.app.viewmodel.LocalKeePassViewModel
-import com.bastion.app.viewmodel.MdbxViewModel
 import com.bastion.app.data.LocalKeePassDatabase
 import com.bastion.app.data.KeePassOperationBlockReason
 import com.bastion.app.data.bitwarden.BitwardenVault
@@ -177,7 +176,6 @@ private enum class PasswordTotpPickerSourceFilter {
     ALL,
     LOCAL,
     KEEPASS,
-    MDBX,
     BITWARDEN
 }
 
@@ -208,16 +206,12 @@ fun AddEditPasswordScreen(
     bankCardViewModel: BankCardViewModel? = null,
     noteViewModel: NoteViewModel? = null,
     localKeePassViewModel: LocalKeePassViewModel? = null,
-    localMdbxViewModel: MdbxViewModel? = null,
-    mdbxDatabasesFallback: List<com.bastion.app.data.LocalMdbxDatabase> = emptyList(),
     passwordId: Long?,
     initialDraft: AddEditPasswordInitialDraft? = null,
     forceShowAppBinding: Boolean = false,
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
-    initialMdbxDatabaseId: Long? = null,
-    initialMdbxFolderId: String? = null,
     initialBitwardenVaultId: Long? = null,
     initialBitwardenFolderId: String? = null,
     pendingQrResult: String? = null,
@@ -350,12 +344,9 @@ fun AddEditPasswordScreen(
     var editingKeePassEntryUuid by rememberSaveable { mutableStateOf<String?>(null) }
     val keepassDatabases by (localKeePassViewModel?.allDatabases ?: kotlinx.coroutines.flow.flowOf(emptyList())).collectAsState(initial = emptyList())
 
-    // MDBX 数据库选择
+    // 实体字段保留值（编辑时回环，字段仍在实体上）
     var mdbxDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
     var mdbxFolderId by rememberSaveable { mutableStateOf<String?>(null) }
-    val mdbxDatabases by (localMdbxViewModel?.allDatabases
-        ?: database.localMdbxDatabaseDao().getAllDatabases()
-    ).collectAsState(initial = mdbxDatabasesFallback)
 
     // Bitwarden Vault 选择
     var bitwardenVaultId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -365,8 +356,6 @@ fun AddEditPasswordScreen(
     val hasExplicitInitialStorage = initialCategoryId != null ||
         initialKeePassDatabaseId != null ||
         initialKeePassGroupPath != null ||
-        initialMdbxDatabaseId != null ||
-        initialMdbxFolderId != null ||
         initialBitwardenVaultId != null ||
         initialBitwardenFolderId != null
     val selectedStorageTargets = remember { mutableStateListOf<StorageTarget>() }
@@ -668,8 +657,6 @@ fun AddEditPasswordScreen(
                 categoryId = primaryTarget.categoryId
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
-                mdbxFolderId = null
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -677,8 +664,6 @@ fun AddEditPasswordScreen(
                 categoryId = null
                 keepassDatabaseId = primaryTarget.databaseId
                 keepassGroupPath = primaryTarget.groupPath
-                mdbxDatabaseId = null
-                mdbxFolderId = null
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -686,26 +671,13 @@ fun AddEditPasswordScreen(
                 categoryId = null
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
-                mdbxFolderId = null
                 bitwardenVaultId = primaryTarget.vaultId
                 bitwardenFolderId = primaryTarget.folderId
-            }
-            is StorageTarget.Mdbx -> {
-                categoryId = null
-                keepassDatabaseId = null
-                keepassGroupPath = null
-                mdbxDatabaseId = primaryTarget.databaseId
-                mdbxFolderId = primaryTarget.folderId
-                bitwardenVaultId = null
-                bitwardenFolderId = null
             }
             null -> {
                 categoryId = null
                 keepassDatabaseId = null
                 keepassGroupPath = null
-                mdbxDatabaseId = null
-                mdbxFolderId = null
                 bitwardenVaultId = null
                 bitwardenFolderId = null
             }
@@ -1705,8 +1677,6 @@ fun AddEditPasswordScreen(
         initialCategoryId,
         initialKeePassDatabaseId,
         initialKeePassGroupPath,
-        initialMdbxDatabaseId,
-        initialMdbxFolderId,
         initialBitwardenVaultId,
         initialBitwardenFolderId
     ) {
@@ -1720,8 +1690,6 @@ fun AddEditPasswordScreen(
                         categoryId = initialCategoryId,
                         keepassDatabaseId = initialKeePassDatabaseId,
                         keepassGroupPath = initialKeePassGroupPath,
-                        mdbxDatabaseId = initialMdbxDatabaseId,
-                        mdbxFolderId = initialMdbxFolderId,
                         bitwardenVaultId = initialBitwardenVaultId,
                         bitwardenFolderId = initialBitwardenFolderId
                     )
@@ -1735,8 +1703,6 @@ fun AddEditPasswordScreen(
             is CategoryFilter.KeePassGroupFilter -> StorageTarget.KeePass(filter.databaseId, filter.groupPath)
             is CategoryFilter.KeePassDatabaseStarred -> StorageTarget.KeePass(filter.databaseId, null)
             is CategoryFilter.KeePassDatabaseUncategorized -> StorageTarget.KeePass(filter.databaseId, null)
-            is CategoryFilter.MdbxDatabase -> StorageTarget.Mdbx(filter.databaseId)
-            is CategoryFilter.MdbxFolderFilter -> StorageTarget.Mdbx(filter.databaseId, filter.folderId)
             is CategoryFilter.BitwardenVault -> StorageTarget.Bitwarden(filter.vaultId, null)
             is CategoryFilter.BitwardenFolderFilter -> StorageTarget.Bitwarden(filter.vaultId, filter.folderId)
             is CategoryFilter.BitwardenVaultStarred -> StorageTarget.Bitwarden(filter.vaultId, null)
@@ -1860,10 +1826,8 @@ fun AddEditPasswordScreen(
                     existingTargetKeys = existingReplicaTargetKeys,
                     categories = categories,
                     keepassDatabases = keepassDatabases,
-                    mdbxDatabases = mdbxDatabases,
                     bitwardenVaults = bitwardenVaults,
                     bitwardenFolderDao = database.bitwardenFolderDao(),
-                    getMdbxFolders = viewModel::getMdbxFolders,
                     isEditing = isEditing,
                     onAddTargetClick = { showStorageTargetSheet = true },
                     onRemoveTarget = ::removeSelectedStorageTarget
@@ -3282,12 +3246,10 @@ fun AddEditPasswordScreen(
         lockedTargetKeys = existingReplicaTargetKeys,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
         getKeePassGroups = localKeePassViewModel?.let { keepassVm -> keepassVm::getGroups }
             ?: { flowOf(emptyList<com.bastion.app.utils.KeePassGroupInfo>()) },
-        getMdbxFolders = viewModel::getMdbxFolders,
         onDismiss = { showStorageTargetSheet = false },
         onSelectedTargetsChange = ::setSelectedStorageTargets
     )
@@ -3322,7 +3284,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
     val context = LocalContext.current
     val passwordDatabase = remember(context) { PasswordDatabase.getDatabase(context) }
     val keepassDatabases by passwordDatabase.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by passwordDatabase.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val bitwardenVaults by passwordDatabase.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     var foldersByVault by remember { mutableStateOf<Map<Long, List<BitwardenFolder>>>(emptyMap()) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -3337,19 +3298,14 @@ private fun PasswordTotpBindingPickerBottomSheet(
 
     var sourceFilter by rememberSaveable { mutableStateOf(PasswordTotpPickerSourceFilter.ALL) }
     var selectedKeePassDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var selectedMdbxDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedVaultId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedFolderId by rememberSaveable { mutableStateOf<String?>(null) }
     var keepassMenuExpanded by remember { mutableStateOf(false) }
-    var mdbxMenuExpanded by remember { mutableStateOf(false) }
     var vaultMenuExpanded by remember { mutableStateOf(false) }
     var folderMenuExpanded by remember { mutableStateOf(false) }
 
     val keepassNameById = remember(keepassDatabases) {
         keepassDatabases.associate { it.id to it.name }
-    }
-    val mdbxNameById = remember(mdbxDatabases) {
-        mdbxDatabases.associate { it.id to it.name }
     }
     val vaultLabelById = remember(bitwardenVaults) {
         bitwardenVaults.associate { vault ->
@@ -3369,7 +3325,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
         searchQuery,
         sourceFilter,
         selectedKeePassDatabaseId,
-        selectedMdbxDatabaseId,
         selectedVaultId,
         selectedFolderId
     ) {
@@ -3384,14 +3339,10 @@ private fun PasswordTotpBindingPickerBottomSheet(
             val matchesSource = when (sourceFilter) {
                 PasswordTotpPickerSourceFilter.ALL -> true
                 PasswordTotpPickerSourceFilter.LOCAL ->
-                    item.bitwardenVaultId == null && item.keepassDatabaseId == null && item.mdbxDatabaseId == null
+                    item.bitwardenVaultId == null && item.keepassDatabaseId == null
                 PasswordTotpPickerSourceFilter.KEEPASS -> {
                     val keepassId = item.keepassDatabaseId
                     keepassId != null && (selectedKeePassDatabaseId == null || keepassId == selectedKeePassDatabaseId)
-                }
-                PasswordTotpPickerSourceFilter.MDBX -> {
-                    val mdbxId = item.mdbxDatabaseId
-                    mdbxId != null && (selectedMdbxDatabaseId == null || mdbxId == selectedMdbxDatabaseId)
                 }
                 PasswordTotpPickerSourceFilter.BITWARDEN -> {
                     val vaultId = item.bitwardenVaultId
@@ -3455,7 +3406,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
                     onClick = {
                         sourceFilter = PasswordTotpPickerSourceFilter.ALL
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
@@ -3466,7 +3416,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
                     onClick = {
                         sourceFilter = PasswordTotpPickerSourceFilter.LOCAL
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
@@ -3476,28 +3425,16 @@ private fun PasswordTotpBindingPickerBottomSheet(
                     selected = sourceFilter == PasswordTotpPickerSourceFilter.KEEPASS,
                     onClick = {
                         sourceFilter = PasswordTotpPickerSourceFilter.KEEPASS
-                        selectedMdbxDatabaseId = null
                         selectedVaultId = null
                         selectedFolderId = null
                     },
                     label = { Text(stringResource(R.string.filter_keepass)) }
                 )
                 FilterChip(
-                    selected = sourceFilter == PasswordTotpPickerSourceFilter.MDBX,
-                    onClick = {
-                        sourceFilter = PasswordTotpPickerSourceFilter.MDBX
-                        selectedKeePassDatabaseId = null
-                        selectedVaultId = null
-                        selectedFolderId = null
-                    },
-                    label = { Text("MDBX") }
-                )
-                FilterChip(
                     selected = sourceFilter == PasswordTotpPickerSourceFilter.BITWARDEN,
                     onClick = {
                         sourceFilter = PasswordTotpPickerSourceFilter.BITWARDEN
                         selectedKeePassDatabaseId = null
-                        selectedMdbxDatabaseId = null
                     },
                     label = { Text(stringResource(R.string.filter_bitwarden)) }
                 )
@@ -3537,47 +3474,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
                                 onClick = {
                                     selectedKeePassDatabaseId = databaseItem.id
                                     keepassMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (sourceFilter == PasswordTotpPickerSourceFilter.MDBX) {
-                ExposedDropdownMenuBox(
-                    expanded = mdbxMenuExpanded,
-                    onExpandedChange = { mdbxMenuExpanded = !mdbxMenuExpanded }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = selectedMdbxDatabaseId?.let { mdbxNameById[it] }
-                            ?: stringResource(R.string.password_picker_all_databases),
-                        onValueChange = {},
-                        label = { Text(stringResource(R.string.password_picker_filter_database)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = mdbxMenuExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        singleLine = true
-                    )
-                    ExposedDropdownMenu(
-                        expanded = mdbxMenuExpanded,
-                        onDismissRequest = { mdbxMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.password_picker_all_databases)) },
-                            onClick = {
-                                selectedMdbxDatabaseId = null
-                                mdbxMenuExpanded = false
-                            }
-                        )
-                        mdbxDatabases.forEach { databaseItem ->
-                            DropdownMenuItem(
-                                text = { Text(databaseItem.name) },
-                                onClick = {
-                                    selectedMdbxDatabaseId = databaseItem.id
-                                    mdbxMenuExpanded = false
                                 }
                             )
                         }
@@ -3707,11 +3603,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
                                     ?: item.keepassDatabaseId.toString()
                                 "${stringResource(R.string.filter_keepass)} · $dbName"
                             }
-                            item.mdbxDatabaseId != null -> {
-                                val dbName = mdbxNameById[item.mdbxDatabaseId]
-                                    ?: item.mdbxDatabaseId.toString()
-                                "MDBX · $dbName"
-                            }
                             else -> stringResource(R.string.filter_local_only)
                         }
                         val supporting = listOf(data.issuer, data.accountName)
@@ -3748,7 +3639,6 @@ private fun PasswordTotpBindingPickerBottomSheet(
                                     imageVector = when {
                                         item.bitwardenVaultId != null -> Icons.Default.Cloud
                                         item.keepassDatabaseId != null -> Icons.Default.Storage
-                                        item.mdbxDatabaseId != null -> Icons.Default.Folder
                                         else -> Icons.Default.PhoneAndroid
                                     },
                                     contentDescription = null,

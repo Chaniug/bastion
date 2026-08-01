@@ -122,7 +122,6 @@ fun AddEditNoteScreen(
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
-    initialMdbxDatabaseId: Long? = null,
     initialBitwardenVaultId: Long? = null,
     initialBitwardenFolderId: String? = null,
     viewModel: NoteViewModel = viewModel(),
@@ -451,7 +450,6 @@ fun AddEditNoteScreen(
         initialCategoryId,
         initialKeePassDatabaseId,
         initialKeePassGroupPath,
-        initialMdbxDatabaseId,
         initialBitwardenVaultId,
         initialBitwardenFolderId,
         draftStorageTarget,
@@ -463,7 +461,6 @@ fun AddEditNoteScreen(
             initialCategoryId = initialCategoryId,
             initialKeePassDatabaseId = initialKeePassDatabaseId,
             initialKeePassGroupPath = initialKeePassGroupPath,
-            initialMdbxDatabaseId = initialMdbxDatabaseId,
             initialBitwardenVaultId = initialBitwardenVaultId,
             initialBitwardenFolderId = initialBitwardenFolderId,
             draftStorageTarget = draftStorageTarget,
@@ -522,7 +519,6 @@ fun AddEditNoteScreen(
                     categoryId = currentState.selectedCategoryId,
                     keepassDatabaseId = currentState.keepassDatabaseId,
                     keepassGroupPath = currentState.keepassGroupPath,
-                    mdbxDatabaseId = currentState.mdbxDatabaseId,
                     bitwardenVaultId = currentState.bitwardenVaultId,
                     bitwardenFolderId = currentState.bitwardenFolderId
                 )
@@ -563,7 +559,6 @@ fun AddEditNoteScreen(
                     categoryId = (primaryTarget as? StorageTarget.BastionLocal)?.categoryId,
                     keepassDatabaseId = (primaryTarget as? StorageTarget.KeePass)?.databaseId,
                     keepassGroupPath = (primaryTarget as? StorageTarget.KeePass)?.groupPath,
-                    mdbxDatabaseId = (primaryTarget as? StorageTarget.Mdbx)?.databaseId,
                     bitwardenVaultId = (primaryTarget as? StorageTarget.Bitwarden)?.vaultId,
                     bitwardenFolderId = (primaryTarget as? StorageTarget.Bitwarden)?.folderId
                 )

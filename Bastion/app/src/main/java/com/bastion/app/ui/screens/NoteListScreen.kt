@@ -185,7 +185,6 @@ fun NoteListScreen(
     val scope = rememberCoroutineScope()
     val categories by database.categoryDao().getAllCategories().collectAsState(initial = emptyList())
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val bitwardenRepository = remember { BitwardenRepository.getInstance(context) }
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     val keepassBridge = remember {
@@ -257,7 +256,6 @@ fun NoteListScreen(
         is NoteCategoryFilter.KeePassGroupFilter -> UnifiedCategoryFilterSelection.KeePassGroupFilter(filter.databaseId, filter.groupPath)
         is NoteCategoryFilter.KeePassDatabaseStarred -> UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter(filter.databaseId)
         is NoteCategoryFilter.KeePassDatabaseUncategorized -> UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter(filter.databaseId)
-        is NoteCategoryFilter.MdbxDatabase -> UnifiedCategoryFilterSelection.MdbxDatabaseFilter(filter.databaseId)
     }
     val handleCategorySelection: (UnifiedCategoryFilterSelection) -> Unit = { selection ->
         selectedCategoryFilter = when (selection) {
@@ -276,8 +274,6 @@ fun NoteListScreen(
             is UnifiedCategoryFilterSelection.KeePassGroupFilter -> NoteCategoryFilter.KeePassGroupFilter(selection.databaseId, selection.groupPath)
         is UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter -> NoteCategoryFilter.KeePassDatabaseStarred(selection.databaseId)
         is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> NoteCategoryFilter.KeePassDatabaseUncategorized(selection.databaseId)
-        is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> NoteCategoryFilter.MdbxDatabase(selection.databaseId)
-        is UnifiedCategoryFilterSelection.MdbxFolderFilter -> NoteCategoryFilter.MdbxDatabase(selection.databaseId)
     }
         when (selection) {
             is UnifiedCategoryFilterSelection.KeePassDatabaseFilter -> viewModel.syncKeePassNotes(selection.databaseId)
@@ -303,7 +299,6 @@ fun NoteListScreen(
         is NoteCategoryFilter.KeePassGroupFilter -> decodeKeePassPathForDisplay(filter.groupPath)
         is NoteCategoryFilter.KeePassDatabaseStarred -> "${keepassDatabases.find { it.id == filter.databaseId }?.name ?: "KeePass"} · ${stringResource(R.string.filter_starred)}"
         is NoteCategoryFilter.KeePassDatabaseUncategorized -> "${keepassDatabases.find { it.id == filter.databaseId }?.name ?: "KeePass"} · ${stringResource(R.string.filter_uncategorized)}"
-        is NoteCategoryFilter.MdbxDatabase -> mdbxDatabases.find { it.id == filter.databaseId }?.name ?: "MDBX"
     }
     // Notes keep pull-to-search; disable pull-to-sync on Bitwarden filters.
     val isBitwardenDatabaseView = false && when (selectedCategoryFilter) {
@@ -404,8 +399,6 @@ fun NoteListScreen(
                     is UnifiedMoveCategoryTarget.BitwardenFolderTarget -> null
                     is UnifiedMoveCategoryTarget.KeePassDatabaseTarget -> target.databaseId
                     is UnifiedMoveCategoryTarget.KeePassGroupTarget -> target.databaseId
-                    is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> null
-                    is UnifiedMoveCategoryTarget.MdbxFolderTarget -> null
                 }
                 val targetKeepassGroupPath = when (target) {
                     is UnifiedMoveCategoryTarget.KeePassGroupTarget -> target.groupPath
@@ -419,15 +412,6 @@ fun NoteListScreen(
                 }
                 val targetBitwardenFolderId = when (target) {
                     is UnifiedMoveCategoryTarget.BitwardenFolderTarget -> target.folderId
-                    else -> null
-                }
-                val targetMdbxDatabaseId = when (target) {
-                    is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> target.databaseId
-                    is UnifiedMoveCategoryTarget.MdbxFolderTarget -> target.databaseId
-                    else -> null
-                }
-                val targetMdbxFolderId = when (target) {
-                    is UnifiedMoveCategoryTarget.MdbxFolderTarget -> target.folderId
                     else -> null
                 }
 
@@ -451,9 +435,7 @@ fun NoteListScreen(
                             keepassDatabaseId = targetKeepassDatabaseId,
                             keepassGroupPath = targetKeepassGroupPath,
                             bitwardenVaultId = targetBitwardenVaultId,
-                            bitwardenFolderId = targetBitwardenFolderId,
-                            mdbxDatabaseId = targetMdbxDatabaseId,
-                            mdbxFolderId = targetMdbxFolderId
+                            bitwardenFolderId = targetBitwardenFolderId
                         )
                         movedCount++
                     }
@@ -466,9 +448,7 @@ fun NoteListScreen(
                                 keepassDatabaseId = null,
                                 keepassGroupPath = null,
                                 bitwardenVaultId = null,
-                                bitwardenFolderId = null,
-                                mdbxDatabaseId = null,
-                                mdbxFolderId = null
+                                bitwardenFolderId = null
                             )
                         } else {
                             viewModel.moveNoteToBastionLocal(item, targetCategoryId).isSuccess
@@ -480,9 +460,7 @@ fun NoteListScreen(
                             keepassDatabaseId = targetKeepassDatabaseId,
                             keepassGroupPath = targetKeepassGroupPath,
                             bitwardenVaultId = targetBitwardenVaultId,
-                            bitwardenFolderId = targetBitwardenFolderId,
-                            mdbxDatabaseId = targetMdbxDatabaseId,
-                            mdbxFolderId = targetMdbxFolderId
+                            bitwardenFolderId = targetBitwardenFolderId
                         )
                     }
                     if (moved) movedCount++ else failedCount++
@@ -834,11 +812,9 @@ fun NoteListScreen(
             onDismiss = { showBatchMoveCategoryDialog = false },
             categories = categories,
             keepassDatabases = keepassDatabases,
-            mdbxDatabases = mdbxDatabases,
             bitwardenVaults = bitwardenVaults,
             getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
             getKeePassGroups = getKeePassGroups,
-            getMdbxFolders = resolvedPasswordViewModel::getMdbxFolders,
             allowCopy = true,
             allowMove = notes.filter { selectedNoteIds.contains(it.id) }.none { it.isKeePassOwned() },
             onTargetSelected = { target, action ->
@@ -964,7 +940,6 @@ fun NoteListScreen(
         currentFilter = selectedUnifiedFilter,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getKeePassGroups = getKeePassGroups,
         passwordViewModel = resolvedPasswordViewModel,
@@ -1014,9 +989,6 @@ private fun filterNotesByCategory(
         is NoteCategoryFilter.KeePassDatabaseUncategorized -> notes.filter {
             (it.resolveOwnership() as? SecureItemOwnership.KeePass)?.databaseId == filter.databaseId &&
                 it.keepassGroupPath.isNullOrBlank()
-        }
-        is NoteCategoryFilter.MdbxDatabase -> notes.filter {
-            (it.resolveOwnership() as? SecureItemOwnership.Mdbx)?.databaseId == filter.databaseId
         }
     }
 }

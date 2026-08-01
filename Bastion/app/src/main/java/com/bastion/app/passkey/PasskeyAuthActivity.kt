@@ -46,7 +46,6 @@ import com.bastion.app.data.AppSettings
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.ThemeMode
-import com.bastion.app.repository.MdbxVaultStore
 import com.bastion.app.repository.PasskeyRepository
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.MasterPasswordDialog
@@ -82,14 +81,6 @@ class PasskeyAuthActivity : FragmentActivity() {
     private val repository: PasskeyRepository by lazy {
         PasskeyRepository(
             database.passkeyDao(),
-            MdbxVaultStore(
-                applicationContext,
-                database.localMdbxDatabaseDao(),
-                securityManager,
-                database.mdbxRemoteSourceDao(),
-                database.passwordEntryDao(),
-                database.secureItemDao()
-            ),
             applicationContext
         )
     }

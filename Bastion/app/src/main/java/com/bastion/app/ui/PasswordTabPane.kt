@@ -11,7 +11,6 @@ import com.bastion.app.data.PasswordPageContentType
 import com.bastion.app.data.UnmatchedIconHandlingStrategy
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.model.TimelineEvent
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.common.layout.DetailPane
@@ -30,7 +29,6 @@ import com.bastion.app.viewmodel.PasskeyViewModel
 import com.bastion.app.viewmodel.PasswordViewModel
 import com.bastion.app.viewmodel.SettingsViewModel
 import com.bastion.app.viewmodel.TimelineViewModel
-import com.bastion.app.viewmodel.MdbxViewModel
 
 @OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
@@ -41,10 +39,8 @@ internal fun PasswordTabPane(
     settingsViewModel: SettingsViewModel,
     securityManager: SecurityManager,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<BitwardenVault>,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
-    mdbxViewModel: MdbxViewModel? = null,
     timelineViewModel: TimelineViewModel,
     groupMode: String,
     stackCardMode: StackCardMode,
@@ -111,10 +107,8 @@ internal fun PasswordTabPane(
             settingsViewModel = settingsViewModel,
             securityManager = securityManager,
             keepassDatabases = keepassDatabases,
-            mdbxDatabases = mdbxDatabases,
             bitwardenVaults = bitwardenVaults,
             localKeePassViewModel = localKeePassViewModel,
-            mdbxViewModel = mdbxViewModel,
             groupMode = groupMode,
             stackCardMode = stackCardMode,
             onRenameCategory = { category ->
@@ -227,9 +221,6 @@ internal fun PasswordTabPane(
                             initialKeePassGroupPath = passwordNewItemDefaults.keepassGroupPath,
                             initialBitwardenVaultId = passwordNewItemDefaults.bitwardenVaultId,
                             initialBitwardenFolderId = passwordNewItemDefaults.bitwardenFolderId,
-                            initialMdbxDatabaseId = passwordNewItemDefaults.mdbxDatabaseId,
-                            initialMdbxFolderId = passwordNewItemDefaults.mdbxFolderId,
-                            mdbxDatabasesFallback = mdbxDatabases,
                             pendingQrResult = pendingPasswordAuthenticatorQrResult,
                             onConsumePendingQrResult = onConsumePendingPasswordAuthenticatorQrResult,
                             onScanAuthenticatorQrCode = onScanPasswordAuthenticatorQrCode,

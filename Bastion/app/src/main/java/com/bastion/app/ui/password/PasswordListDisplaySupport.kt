@@ -43,12 +43,6 @@ internal fun CategoryFilter.isBitwardenVaultFilter(vaultId: Long): Boolean = whe
     else -> false
 }
 
-internal fun CategoryFilter.isMdbxDatabaseFilter(databaseId: Long): Boolean = when (this) {
-    is CategoryFilter.MdbxDatabase -> this.databaseId == databaseId
-    is CategoryFilter.MdbxFolderFilter -> this.databaseId == databaseId
-    else -> false
-}
-
 internal const val QUICK_FOLDER_ROOT_ALL = "all"
 internal const val QUICK_FOLDER_ROOT_LOCAL = "local"
 internal const val QUICK_FOLDER_ROOT_STARRED = "starred"
@@ -97,9 +91,7 @@ internal fun resolvePasswordListEmptyStateMessage(
     val isQuickFolderRootDatabaseView = quickFoldersEnabledForCurrentFilter && when (currentFilter) {
         is CategoryFilter.Local,
         is CategoryFilter.KeePassDatabase,
-        is CategoryFilter.BitwardenVault,
-        is CategoryFilter.MdbxDatabase,
-        is CategoryFilter.MdbxFolderFilter -> true
+        is CategoryFilter.BitwardenVault -> true
         else -> false
     }
 
@@ -141,18 +133,6 @@ internal fun applyQuickFolderRootVisibility(
         entries.filter { entry ->
             entry.bitwardenVaultId == currentFilter.vaultId &&
                 entry.bitwardenFolderId?.trim().isNullOrBlank()
-        }
-    }
-
-    is CategoryFilter.MdbxDatabase -> {
-        entries.filter { entry ->
-            entry.mdbxDatabaseId == currentFilter.databaseId
-        }
-    }
-
-    is CategoryFilter.MdbxFolderFilter -> {
-        entries.filter { entry ->
-            entry.matchesMdbxFolder(currentFilter.databaseId, currentFilter.folderId)
         }
     }
 
@@ -201,10 +181,6 @@ internal fun PasswordEntry.matchesPasswordCategoryFilter(filter: CategoryFilter)
             bitwardenVaultId == filter.vaultId &&
             bitwardenFolderId == null
     }
-    is CategoryFilter.MdbxDatabase -> !isDeleted && !isArchived && mdbxDatabaseId == filter.databaseId
-    is CategoryFilter.MdbxFolderFilter -> {
-        !isDeleted && !isArchived && matchesMdbxFolder(filter.databaseId, filter.folderId)
-    }
 }
 
 internal fun PasswordEntry.matchesCurrentPasswordListView(
@@ -228,9 +204,7 @@ internal fun CategoryFilter.toQuickFolderRootKeyOrNull(): String? = when (this) 
     is CategoryFilter.KeePassDatabase,
     is CategoryFilter.KeePassGroupFilter,
     is CategoryFilter.BitwardenVault,
-    is CategoryFilter.BitwardenFolderFilter,
-    is CategoryFilter.MdbxDatabase,
-    is CategoryFilter.MdbxFolderFilter -> QUICK_FOLDER_ROOT_ALL
+    is CategoryFilter.BitwardenFolderFilter -> QUICK_FOLDER_ROOT_ALL
     else -> null
 }
 
@@ -241,21 +215,4 @@ internal fun String.toQuickFolderRootFilter(): CategoryFilter = when (this) {
     QUICK_FOLDER_ROOT_LOCAL_STARRED -> CategoryFilter.LocalStarred
     QUICK_FOLDER_ROOT_LOCAL_UNCATEGORIZED -> CategoryFilter.LocalUncategorized
     else -> CategoryFilter.All
-}
-
-private fun PasswordEntry.matchesMdbxFolder(databaseId: Long, folderId: String): Boolean {
-    if (mdbxDatabaseId != databaseId) return false
-    val normalizedFolderId = folderId.trim()
-    val explicitFolderId = mdbxFolderId?.trim().orEmpty()
-    if (normalizedFolderId.equals("root", ignoreCase = true)) {
-        return explicitFolderId.isBlank() && categoryId == null
-    }
-    if (explicitFolderId.isNotBlank()) {
-        return explicitFolderId == normalizedFolderId
-    }
-    val categoryIdFromFolder = normalizedFolderId
-        .removePrefix("category:")
-        .takeIf { it != normalizedFolderId }
-        ?.toLongOrNull()
-    return categoryIdFromFolder != null && categoryId == categoryIdFromFolder
 }

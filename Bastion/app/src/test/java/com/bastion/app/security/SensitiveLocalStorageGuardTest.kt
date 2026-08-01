@@ -155,16 +155,6 @@ class SensitiveLocalStorageGuardTest {
         assertTrue(database.contains("changesJson = ''"))
     }
 
-    @Test
-    fun persistentMdbxDiagnostics_redactSensitiveMetadata() {
-        val logger = projectFile("app/src/main/java/com/bastion/app/mdbx/MdbxDiagLogger.kt")
-
-        assertTrue(logger.contains("name|filePath|workingCopy|cacheCopy|treeUri|uri|externalUri|localCopy"))
-        assertTrue(logger.contains("rows=<redacted>"))
-        assertTrue(logger.contains("(content|file)://"))
-        assertTrue(logger.contains("<path>"))
-    }
-
     private fun projectFile(relativePath: String): String {
         val start = Paths.get("").toAbsolutePath()
         var cursor = start

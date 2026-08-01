@@ -1048,14 +1048,12 @@ private fun PreviewRow(
 @Composable
 private fun sourceColor(kind: DedupMergeSourceKind): Color = when (kind) {
     DedupMergeSourceKind.MONICA_LOCAL -> MaterialTheme.colorScheme.primary
-    DedupMergeSourceKind.MDBX -> MaterialTheme.colorScheme.tertiary
     DedupMergeSourceKind.KEEPASS -> MaterialTheme.colorScheme.secondary
     DedupMergeSourceKind.BITWARDEN -> MaterialTheme.colorScheme.error
 }
 
 private fun DedupMergeSourceKind.label(): String = when (this) {
     DedupMergeSourceKind.MONICA_LOCAL -> "Bastion"
-    DedupMergeSourceKind.MDBX -> "MDBX"
     DedupMergeSourceKind.KEEPASS -> "KeePass"
     DedupMergeSourceKind.BITWARDEN -> "Bitwarden"
 }

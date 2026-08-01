@@ -10,8 +10,7 @@ class PasswordProviderRegistry(
     private fun conflictSourceOf(entry: PasswordEntry): PasswordSource.Conflict {
         return PasswordSource.Conflict(
             hasKeePassBinding = entry.keepassDatabaseId != null,
-            hasBitwardenBinding = entry.bitwardenVaultId != null,
-            hasMdbxBinding = entry.mdbxDatabaseId != null
+            hasBitwardenBinding = entry.bitwardenVaultId != null
         )
     }
 

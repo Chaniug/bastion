@@ -162,8 +162,6 @@ class WalletListItemTest {
             .toBankCardWalletListItem(sampleCardData())
         val keepass = secureItem(id = 3L, itemType = ItemType.DOCUMENT, keepassDatabaseId = 8L, keepassGroupPath = "Wallet")
             .toDocumentWalletListItem(sampleDocumentData())
-        val mdbx = secureItem(id = 4L, itemType = ItemType.DOCUMENT, mdbxDatabaseId = 9L, mdbxFolderId = "folder")
-            .toDocumentWalletListItem(sampleDocumentData())
         val address = secureItem(id = 5L, itemType = ItemType.BILLING_ADDRESS)
             .toBillingAddressWalletListItem(sampleBillingAddressData())
 
@@ -173,7 +171,6 @@ class WalletListItemTest {
         assertFalse(bitwarden.matchesCategoryFilter(UnifiedCategoryFilterSelection.BitwardenFolderFilter(7L, "other")))
         assertTrue(keepass.matchesCategoryFilter(UnifiedCategoryFilterSelection.KeePassGroupFilter(8L, "Wallet")))
         assertFalse(keepass.matchesCategoryFilter(UnifiedCategoryFilterSelection.KeePassDatabaseFilter(9L)))
-        assertTrue(mdbx.matchesCategoryFilter(UnifiedCategoryFilterSelection.MdbxDatabaseFilter(9L)))
         assertTrue(address.matchesCategoryFilter(UnifiedCategoryFilterSelection.Local))
     }
 

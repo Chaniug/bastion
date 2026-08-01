@@ -87,9 +87,7 @@ import com.bastion.app.navigation.Screen
 import com.bastion.app.data.dedup.DedupMergeService
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.PasskeyRepository
-import com.bastion.app.repository.MdbxRepository
 import com.bastion.app.repository.SecureItemRepository
-import com.bastion.app.repository.MdbxVaultStore
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.security.SensitiveFieldMigrationManager
 import com.bastion.app.security.lock.MainAppAccessState
@@ -156,8 +154,6 @@ private data class PendingAddStorageDefaults(
     val categoryId: Long? = null,
     val keepassDatabaseId: Long? = null,
     val keepassGroupPath: String? = null,
-    val mdbxDatabaseId: Long? = null,
-    val mdbxFolderId: String? = null,
     val bitwardenVaultId: Long? = null,
     val bitwardenFolderId: String? = null
 )
@@ -171,8 +167,6 @@ private data class PendingSendDraft(
 private const val KEY_PENDING_ADD_CATEGORY_ID = "pending_add_category_id"
 private const val KEY_PENDING_ADD_KEEPASS_DATABASE_ID = "pending_add_keepass_database_id"
 private const val KEY_PENDING_ADD_KEEPASS_GROUP_PATH = "pending_add_keepass_group_path"
-private const val KEY_PENDING_ADD_MDBX_DATABASE_ID = "pending_add_mdbx_database_id"
-private const val KEY_PENDING_ADD_MDBX_FOLDER_ID = "pending_add_mdbx_folder_id"
 private const val KEY_PENDING_ADD_BITWARDEN_VAULT_ID = "pending_add_bitwarden_vault_id"
 private const val KEY_PENDING_ADD_BITWARDEN_FOLDER_ID = "pending_add_bitwarden_folder_id"
 private const val KEY_PENDING_SEND_TITLE = "pending_send_title"
@@ -183,8 +177,6 @@ private fun PendingAddStorageDefaults.hasAnyValue(): Boolean {
     return categoryId != null ||
         keepassDatabaseId != null ||
         !keepassGroupPath.isNullOrBlank() ||
-        mdbxDatabaseId != null ||
-        !mdbxFolderId.isNullOrBlank() ||
         bitwardenVaultId != null ||
         !bitwardenFolderId.isNullOrBlank()
 }
@@ -233,17 +225,6 @@ private fun SavedStateHandle.setPendingAddStorageDefaults(defaults: PendingAddSt
     } else {
         remove<String>(KEY_PENDING_ADD_KEEPASS_GROUP_PATH)
     }
-    if (defaults.mdbxDatabaseId != null) {
-        set(KEY_PENDING_ADD_MDBX_DATABASE_ID, defaults.mdbxDatabaseId)
-    } else {
-        remove<Long>(KEY_PENDING_ADD_MDBX_DATABASE_ID)
-    }
-    val mdbxFolderId = defaults.mdbxFolderId?.takeIf { it.isNotBlank() }
-    if (mdbxFolderId != null) {
-        set(KEY_PENDING_ADD_MDBX_FOLDER_ID, mdbxFolderId)
-    } else {
-        remove<String>(KEY_PENDING_ADD_MDBX_FOLDER_ID)
-    }
     if (defaults.bitwardenVaultId != null) {
         set(KEY_PENDING_ADD_BITWARDEN_VAULT_ID, defaults.bitwardenVaultId)
     } else {
@@ -288,8 +269,6 @@ private fun SavedStateHandle.consumePendingAddStorageDefaults(): PendingAddStora
         categoryId = get<Long>(KEY_PENDING_ADD_CATEGORY_ID),
         keepassDatabaseId = get<Long>(KEY_PENDING_ADD_KEEPASS_DATABASE_ID),
         keepassGroupPath = get<String>(KEY_PENDING_ADD_KEEPASS_GROUP_PATH)?.takeIf { it.isNotBlank() },
-        mdbxDatabaseId = get<Long>(KEY_PENDING_ADD_MDBX_DATABASE_ID),
-        mdbxFolderId = get<String>(KEY_PENDING_ADD_MDBX_FOLDER_ID)?.takeIf { it.isNotBlank() },
         bitwardenVaultId = get<Long>(KEY_PENDING_ADD_BITWARDEN_VAULT_ID),
         bitwardenFolderId = get<String>(KEY_PENDING_ADD_BITWARDEN_FOLDER_ID)?.takeIf { it.isNotBlank() }
     )
@@ -354,15 +333,6 @@ class MainActivity : BaseBastionActivity() {
         // Initialize dependencies
         val database = PasswordDatabase.getDatabase(this)
         val securityManager = SecurityManager.instance(this)
-        val mdbxRepository: MdbxRepository = MdbxVaultStore(
-            this.applicationContext,
-            database.localMdbxDatabaseDao(),
-            securityManager,
-            database.mdbxRemoteSourceDao(),
-            database.passwordEntryDao(),
-            database.secureItemDao(),
-            database.customFieldDao()
-        )
         val repository = PasswordRepository(
             database.passwordEntryDao(), 
             database.categoryDao(),
@@ -370,12 +340,10 @@ class MainActivity : BaseBastionActivity() {
             database.secureItemDao(),
             database.passkeyDao(),
             database.passwordArchiveSyncMetaDao(),
-            database.passwordHistoryDao(),
-            mdbxRepository = mdbxRepository
+            database.passwordHistoryDao()
         )
         val secureItemRepository = com.bastion.app.repository.SecureItemRepository(
             database.secureItemDao(),
-            mdbxRepository,
             securityManager::decryptDataIfBastionCiphertext
         )
         val settingsManager = SettingsManager(this)
@@ -402,7 +370,6 @@ class MainActivity : BaseBastionActivity() {
                 securityManager = securityManager,
                 settingsManager = settingsManager,
                 database = database,
-                mdbxRepository = mdbxRepository,
                 externalTotpImportController = externalTotpImportController
             )
         }
@@ -497,7 +464,6 @@ fun BastionApp(
     securityManager: SecurityManager,
     settingsManager: SettingsManager,
     database: PasswordDatabase,
-    mdbxRepository: MdbxRepository,
     externalTotpImportController: ExternalTotpImportController
 ) {
     val context = LocalContext.current
@@ -581,7 +547,6 @@ fun BastionApp(
     val passkeyRepository = remember {
         com.bastion.app.repository.PasskeyRepository(
             database.passkeyDao(),
-            mdbxRepository,
             context.applicationContext
         )
     }
@@ -602,21 +567,6 @@ fun BastionApp(
         com.bastion.app.viewmodel.LocalKeePassViewModel(
             context.applicationContext as android.app.Application,
             database.localKeePassDatabaseDao(),
-            securityManager
-        )
-    }
-
-    // MDBX 数据库管理
-    val mdbxViewModel: com.bastion.app.viewmodel.MdbxViewModel = viewModel {
-        com.bastion.app.viewmodel.MdbxViewModel(
-            context.applicationContext as android.app.Application,
-            database.localMdbxDatabaseDao(),
-            database.mdbxRemoteSourceDao(),
-            database.passwordEntryDao(),
-            database.secureItemDao(),
-            database.passkeyDao(),
-            database.attachmentDao(),
-            database.customFieldDao(),
             securityManager
         )
     }
@@ -720,8 +670,6 @@ fun BastionApp(
                     passkeyViewModel = passkeyViewModel,
                     keePassViewModel = keePassViewModel,
                     localKeePassViewModel = localKeePassViewModel,
-                    mdbxViewModel = mdbxViewModel,
-                    mdbxRepository = mdbxRepository,
                     securityManager = securityManager,
                     repository = repository,
                     database = database,
@@ -755,8 +703,6 @@ fun BastionContent(
     passkeyViewModel: com.bastion.app.viewmodel.PasskeyViewModel,
     keePassViewModel: KeePassKdbxViewModel,
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
-    mdbxViewModel: com.bastion.app.viewmodel.MdbxViewModel,
-    mdbxRepository: MdbxRepository,
     securityManager: SecurityManager,
     repository: PasswordRepository,
     database: PasswordDatabase,
@@ -1052,7 +998,6 @@ fun BastionContent(
                 bitwardenViewModel = bitwardenViewModel,
                 passkeyViewModel = passkeyViewModel,
                 localKeePassViewModel = localKeePassViewModel,
-                mdbxViewModel = mdbxViewModel,
                 securityManager = securityManager,
                 onNavigateToStandaloneSettings = {
                     navController.navigate(Screen.Settings.route)
@@ -1104,7 +1049,7 @@ fun BastionContent(
                 onNavigateToWalletAdd = { initialType ->
                     navController.navigate(Screen.WalletAdd.createRoute(initialType.name))
                 },
-                onPreparePasswordAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath, mdbxDatabaseId, mdbxFolderId, bitwardenVaultId, bitwardenFolderId ->
+                onPreparePasswordAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath,  bitwardenVaultId, bitwardenFolderId ->
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.setPendingAddStorageDefaults(
@@ -1112,14 +1057,13 @@ fun BastionContent(
                                 categoryId = categoryId,
                                 keepassDatabaseId = keepassDatabaseId,
                                 keepassGroupPath = keepassGroupPath,
-                                mdbxDatabaseId = mdbxDatabaseId,
-                                mdbxFolderId = mdbxFolderId,
+
                                 bitwardenVaultId = bitwardenVaultId,
                                 bitwardenFolderId = bitwardenFolderId
                             )
                         )
                 },
-                onPrepareTotpAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath, mdbxDatabaseId, mdbxFolderId, bitwardenVaultId, bitwardenFolderId ->
+                onPrepareTotpAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath,  bitwardenVaultId, bitwardenFolderId ->
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.setPendingAddStorageDefaults(
@@ -1127,14 +1071,13 @@ fun BastionContent(
                                 categoryId = categoryId,
                                 keepassDatabaseId = keepassDatabaseId,
                                 keepassGroupPath = keepassGroupPath,
-                                mdbxDatabaseId = mdbxDatabaseId,
-                                mdbxFolderId = mdbxFolderId,
+
                                 bitwardenVaultId = bitwardenVaultId,
                                 bitwardenFolderId = bitwardenFolderId
                             )
                         )
                 },
-                onPrepareNoteAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath, mdbxDatabaseId, mdbxFolderId, bitwardenVaultId, bitwardenFolderId ->
+                onPrepareNoteAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath,  bitwardenVaultId, bitwardenFolderId ->
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.setPendingAddStorageDefaults(
@@ -1142,14 +1085,13 @@ fun BastionContent(
                                 categoryId = categoryId,
                                 keepassDatabaseId = keepassDatabaseId,
                                 keepassGroupPath = keepassGroupPath,
-                                mdbxDatabaseId = mdbxDatabaseId,
-                                mdbxFolderId = mdbxFolderId,
+
                                 bitwardenVaultId = bitwardenVaultId,
                                 bitwardenFolderId = bitwardenFolderId
                             )
                         )
                 },
-                onPrepareWalletAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath, mdbxDatabaseId, mdbxFolderId, bitwardenVaultId, bitwardenFolderId ->
+                onPrepareWalletAddStorageDefaults = { categoryId, keepassDatabaseId, keepassGroupPath,  bitwardenVaultId, bitwardenFolderId ->
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.setPendingAddStorageDefaults(
@@ -1157,8 +1099,7 @@ fun BastionContent(
                                 categoryId = categoryId,
                                 keepassDatabaseId = keepassDatabaseId,
                                 keepassGroupPath = keepassGroupPath,
-                                mdbxDatabaseId = mdbxDatabaseId,
-                                mdbxFolderId = mdbxFolderId,
+
                                 bitwardenVaultId = bitwardenVaultId,
                                 bitwardenFolderId = bitwardenFolderId
                             )
@@ -1361,13 +1302,10 @@ fun BastionContent(
                 bankCardViewModel = bankCardViewModel,
                 noteViewModel = noteViewModel,
                 localKeePassViewModel = localKeePassViewModel,
-                localMdbxViewModel = mdbxViewModel,
                 passwordId = if (passwordId == -1L) null else passwordId,
                 initialCategoryId = pendingStorageDefaults?.categoryId,
                 initialKeePassDatabaseId = pendingStorageDefaults?.keepassDatabaseId,
                 initialKeePassGroupPath = pendingStorageDefaults?.keepassGroupPath,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
-                initialMdbxFolderId = pendingStorageDefaults?.mdbxFolderId,
                 initialBitwardenVaultId = pendingStorageDefaults?.bitwardenVaultId,
                 initialBitwardenFolderId = pendingStorageDefaults?.bitwardenFolderId,
                 pendingQrResult = qrResult,
@@ -1662,7 +1600,6 @@ fun BastionContent(
             var initialTitle by remember { mutableStateOf("") }
             var initialNotes by remember { mutableStateOf("") }
             var initialKeePassGroupPath by remember { mutableStateOf<String?>(null) }
-            var initialMdbxDatabaseIdFromItem by remember { mutableStateOf<Long?>(null) }
             var initialBitwardenVaultId by remember { mutableStateOf<Long?>(null) }
             var initialBitwardenFolderId by remember { mutableStateOf<String?>(null) }
             var initialReplicaGroupId by remember { mutableStateOf<String?>(null) }
@@ -1687,7 +1624,6 @@ fun BastionContent(
                     initialTitle = item.title
                     initialNotes = item.notes
                     initialKeePassGroupPath = item.keepassGroupPath
-                    initialMdbxDatabaseIdFromItem = item.mdbxDatabaseId
                     initialBitwardenVaultId = item.bitwardenVaultId
                     initialBitwardenFolderId = item.bitwardenFolderId
                     initialReplicaGroupId = item.replicaGroupId
@@ -1703,7 +1639,6 @@ fun BastionContent(
                     val categoryId: Long? = null,
                     val keepassDatabaseId: Long? = null,
                     val keepassGroupPath: String? = null,
-                    val mdbxDatabaseId: Long? = null,
                     val bitwardenVaultId: Long? = null,
                     val bitwardenFolderId: String? = null
                 )
@@ -1726,9 +1661,6 @@ fun BastionContent(
                                 keepassDatabaseId = filter.databaseId,
                                 keepassGroupPath = filter.groupPath
                             )
-                        }
-                        is com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase -> {
-                            TotpStorageDefaults(mdbxDatabaseId = filter.databaseId)
                         }
                         is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVault -> {
                             TotpStorageDefaults(bitwardenVaultId = filter.vaultId)
@@ -1764,11 +1696,6 @@ fun BastionContent(
                     hasPendingStorageDefaults -> pendingStorageDefaults?.keepassGroupPath
                     else -> filterDefaults.keepassGroupPath
                 }
-                val initialMdbxDatabaseId = when {
-                    initialMdbxDatabaseIdFromItem != null -> initialMdbxDatabaseIdFromItem
-                    hasPendingStorageDefaults -> pendingStorageDefaults?.mdbxDatabaseId
-                    else -> filterDefaults.mdbxDatabaseId
-                }
                 val initialVaultId = when {
                     initialBitwardenVaultId != null -> initialBitwardenVaultId
                     hasPendingStorageDefaults -> pendingStorageDefaults?.bitwardenVaultId
@@ -1787,7 +1714,6 @@ fun BastionContent(
                     initialCategoryId = initialCategoryId,
                     initialKeePassDatabaseId = initialKeePassDatabaseId,
                     initialKeePassGroupPath = resolvedInitialKeePassGroupPath,
-                    initialMdbxDatabaseId = initialMdbxDatabaseId,
                     initialBitwardenVaultId = initialVaultId,
                     initialBitwardenFolderId = initialFolderId,
                     initialReplicaGroupId = initialReplicaGroupId,
@@ -1866,8 +1792,6 @@ fun BastionContent(
                 initialCategoryId = pendingStorageDefaults?.categoryId,
                 initialKeePassDatabaseId = pendingStorageDefaults?.keepassDatabaseId,
                 initialKeePassGroupPath = pendingStorageDefaults?.keepassGroupPath,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
-                initialMdbxFolderId = pendingStorageDefaults?.mdbxFolderId,
                 initialBitwardenVaultId = pendingStorageDefaults?.bitwardenVaultId,
                 initialBitwardenFolderId = pendingStorageDefaults?.bitwardenFolderId
             )
@@ -1898,8 +1822,6 @@ fun BastionContent(
                 initialCategoryId = pendingStorageDefaults?.categoryId,
                 initialKeePassDatabaseId = pendingStorageDefaults?.keepassDatabaseId,
                 initialKeePassGroupPath = pendingStorageDefaults?.keepassGroupPath,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
-                initialMdbxFolderId = pendingStorageDefaults?.mdbxFolderId,
                 initialBitwardenVaultId = pendingStorageDefaults?.bitwardenVaultId,
                 initialBitwardenFolderId = pendingStorageDefaults?.bitwardenFolderId,
                 onNavigateBack = {
@@ -1933,8 +1855,6 @@ fun BastionContent(
                 initialCategoryId = pendingStorageDefaults?.categoryId,
                 initialKeePassDatabaseId = pendingStorageDefaults?.keepassDatabaseId,
                 initialKeePassGroupPath = pendingStorageDefaults?.keepassGroupPath,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
-                initialMdbxFolderId = pendingStorageDefaults?.mdbxFolderId,
                 initialBitwardenVaultId = pendingStorageDefaults?.bitwardenVaultId,
                 initialBitwardenFolderId = pendingStorageDefaults?.bitwardenFolderId,
                 onNavigateBack = {
@@ -1966,8 +1886,6 @@ fun BastionContent(
                 viewModel = billingAddressViewModel,
                 addressId = if (addressId > 0) addressId else null,
                 initialCategoryId = pendingStorageDefaults?.categoryId,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
-                initialMdbxFolderId = pendingStorageDefaults?.mdbxFolderId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -2021,7 +1939,6 @@ fun BastionContent(
                 initialCategoryId = pendingStorageDefaults?.categoryId,
                 initialKeePassDatabaseId = pendingStorageDefaults?.keepassDatabaseId,
                 initialKeePassGroupPath = pendingStorageDefaults?.keepassGroupPath,
-                initialMdbxDatabaseId = pendingStorageDefaults?.mdbxDatabaseId,
                 initialBitwardenVaultId = pendingStorageDefaults?.bitwardenVaultId,
                 initialBitwardenFolderId = pendingStorageDefaults?.bitwardenFolderId,
                 onNavigateBack = {
@@ -2350,7 +2267,6 @@ fun BastionContent(
                             is TotpCategoryFilter.BitwardenFolderFilter -> listOf(StorageTarget.Bitwarden(filter.vaultId, filter.folderId))
                             is TotpCategoryFilter.BitwardenVaultStarred -> listOf(StorageTarget.Bitwarden(filter.vaultId, null))
                             is TotpCategoryFilter.BitwardenVaultUncategorized -> listOf(StorageTarget.Bitwarden(filter.vaultId, null))
-                            is TotpCategoryFilter.MdbxDatabase -> listOf(StorageTarget.Mdbx(filter.databaseId))
                         }
                     }
 
@@ -3438,7 +3354,7 @@ fun BastionContent(
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val dedupPasskeyRepository = remember {
-                PasskeyRepository(database.passkeyDao(), mdbxRepository, context.applicationContext)
+                PasskeyRepository(database.passkeyDao(), context.applicationContext)
             }
             val dedupViewModel: DedupEngineViewModel = viewModel {
                 DedupEngineViewModel(
@@ -3448,7 +3364,6 @@ fun BastionContent(
                         passkeyRepository = dedupPasskeyRepository,
                         customFieldRepository = com.bastion.app.repository.CustomFieldRepository(database.customFieldDao()),
                         localKeePassDatabaseDao = database.localKeePassDatabaseDao(),
-                        localMdbxDatabaseDao = database.localMdbxDatabaseDao(),
                         bitwardenVaultDao = database.bitwardenVaultDao(),
                         securityManager = securityManager
                     )

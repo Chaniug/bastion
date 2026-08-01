@@ -17,7 +17,6 @@ import com.bastion.app.data.PasswordListTopModule
 import com.bastion.app.data.PasswordPageContentType
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.model.StorageTarget
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.ui.components.rememberUnifiedCategoryFilterChipMenuWidth
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.viewmodel.CategoryFilter
@@ -26,7 +25,6 @@ import com.bastion.app.viewmodel.CategoryFilter
 internal fun PasswordListCategoryChipMenu(
     currentFilter: CategoryFilter,
     keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
-    mdbxDatabases: List<com.bastion.app.data.LocalMdbxDatabase>,
     bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
     configuredQuickFilterItems: List<com.bastion.app.data.PasswordListQuickFilterItem>,
     quickFilterFavorite: Boolean,
@@ -66,7 +64,6 @@ internal fun PasswordListCategoryChipMenu(
     onMoveCategory: ((Category, Long?) -> Unit)? = null,
     onMoveCategoryToStorageTarget: ((Category, StorageTarget) -> Unit)? = null,
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>> = { flowOf(emptyList()) },
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { flowOf(emptyList()) },
     getKeePassGroups: (Long) -> Flow<List<KeePassGroupInfo>> = { flowOf(emptyList()) },
     onRenameCategory: ((Category) -> Unit)? = null,
     onDeleteCategory: ((Category) -> Unit)? = null
@@ -108,7 +105,6 @@ internal fun PasswordListCategoryChipMenu(
             params = PasswordDatabaseFiltersSectionParams(
                 currentFilter = currentFilter,
                 keepassDatabases = keepassDatabases,
-                mdbxDatabases = mdbxDatabases,
                 bitwardenVaults = bitwardenVaults,
                 onSelectFilter = onSelectFilter
             )

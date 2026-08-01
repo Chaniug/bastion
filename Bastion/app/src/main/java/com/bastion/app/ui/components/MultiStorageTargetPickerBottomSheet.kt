@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -52,11 +51,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import com.bastion.app.data.Category
 import com.bastion.app.data.KeePassOperationBlockReason
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.isBastionLocalCategory
 import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.bitwarden.BitwardenFolder
@@ -65,7 +62,6 @@ import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.data.model.normalizedStorageTargets
 import com.bastion.app.data.model.withStorageTargetSelected
 import com.bastion.app.data.model.withoutStorageTarget
-import com.bastion.app.repository.MdbxStoredFolderEntry
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.utils.buildLocalCategoryPathOptions
 import com.bastion.app.utils.decodeKeePassPathForDisplay
@@ -89,11 +85,6 @@ private sealed interface StoragePickerSource {
     data class KeePassDatabase(val database: LocalKeePassDatabase) : StoragePickerSource {
         override val key: String = "keepass:${database.id}"
         override val icon: ImageVector = Icons.Default.Key
-    }
-
-    data class MdbxDatabase(val database: LocalMdbxDatabase) : StoragePickerSource {
-        override val key: String = "mdbx:${database.id}"
-        override val icon: ImageVector = Icons.Default.Storage
     }
 
     data class BitwardenVaultSource(val vault: BitwardenVault) : StoragePickerSource {
@@ -121,11 +112,9 @@ fun MultiStorageTargetPickerBottomSheet(
     lockedTargetKeys: Set<String>,
     categories: List<Category>,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<BitwardenVault>,
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>>,
     getKeePassGroups: (Long) -> Flow<List<KeePassGroupInfo>>,
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { flowOf(emptyList()) },
     onDismiss: () -> Unit,
     onSelectedTargetsChange: (List<StorageTarget>) -> Unit,
     onTargetClicked: ((StorageTarget) -> Unit)? = null,
@@ -147,11 +136,10 @@ fun MultiStorageTargetPickerBottomSheet(
         minSheetHeight
     }
 
-    val sources = remember(keepassDatabases, mdbxDatabases, bitwardenVaults) {
+    val sources = remember(keepassDatabases, bitwardenVaults) {
         buildList {
             add(StoragePickerSource.BastionLocal)
             keepassDatabases.forEach { add(StoragePickerSource.KeePassDatabase(it)) }
-            mdbxDatabases.forEach { add(StoragePickerSource.MdbxDatabase(it)) }
             bitwardenVaults.forEach { add(StoragePickerSource.BitwardenVaultSource(it)) }
         }
     }
@@ -178,11 +166,6 @@ fun MultiStorageTargetPickerBottomSheet(
     keepassDatabases.forEach { database ->
         val groups by getKeePassGroups(database.id).collectAsState(initial = emptyList())
         keepassGroupsByDatabase[database.id] = groups
-    }
-    val mdbxFoldersByDatabase = mutableMapOf<Long, List<MdbxStoredFolderEntry>>()
-    mdbxDatabases.forEach { database ->
-        val folders by getMdbxFolders(database.id).collectAsState(initial = emptyList())
-        mdbxFoldersByDatabase[database.id] = folders
     }
     val primaryTarget = selectedTargets.firstOrNull() ?: StorageTarget.BastionLocal(null)
     val primarySourceKey = primaryTarget.toSourceKey()
@@ -211,7 +194,6 @@ fun MultiStorageTargetPickerBottomSheet(
         return when (source) {
             StoragePickerSource.BastionLocal -> StorageTarget.BastionLocal(null)
             is StoragePickerSource.KeePassDatabase -> StorageTarget.KeePass(source.database.id, null)
-            is StoragePickerSource.MdbxDatabase -> StorageTarget.Mdbx(source.database.id)
             is StoragePickerSource.BitwardenVaultSource -> StorageTarget.Bitwarden(source.vault.id, null)
         }
     }
@@ -235,7 +217,6 @@ fun MultiStorageTargetPickerBottomSheet(
                     "${source.database.name} · ${keepassUnavailableFormat.format(reason)}"
                 }
             }
-            is StoragePickerSource.MdbxDatabase -> source.database.name
             is StoragePickerSource.BitwardenVaultSource -> source.vault.displayName ?: source.vault.email
         }
     }
@@ -246,7 +227,6 @@ fun MultiStorageTargetPickerBottomSheet(
             is StoragePickerSource.KeePassDatabase -> {
                 if (source.database.writeOperationAvailability().canOperate) StorageHealthyGreen else null
             }
-            is StoragePickerSource.MdbxDatabase -> StorageHealthyGreen
             is StoragePickerSource.BitwardenVaultSource -> {
                 if (source.vault.hasHealthyConnection()) StorageHealthyGreen else null
             }
@@ -303,32 +283,6 @@ fun MultiStorageTargetPickerBottomSheet(
                         )
                     )
                 }
-            }
-
-            is StoragePickerSource.MdbxDatabase -> buildList {
-                add(
-                    StorageTargetChip(
-                        target = StorageTarget.Mdbx(source.database.id),
-                        label = categoryNoneLabel,
-                        icon = Icons.Default.FolderOff,
-                        sourceKey = source.key
-                    )
-                )
-                val folders = mdbxFoldersByDatabase[source.database.id].orEmpty()
-                folders
-                    .filter { it.folderId.isNotBlank() }
-                    .distinctBy { it.folderId }
-                    .sortedWith(compareBy<MdbxStoredFolderEntry>({ mdbxFolderDisplayLabel(it, folders).lowercase() }, { it.folderId }))
-                    .forEach { folder ->
-                        add(
-                            StorageTargetChip(
-                                target = StorageTarget.Mdbx(source.database.id, folder.folderId),
-                                label = mdbxFolderDisplayLabel(folder, folders),
-                                icon = Icons.Default.Folder,
-                                sourceKey = source.key
-                            )
-                        )
-                    }
             }
 
             is StoragePickerSource.BitwardenVaultSource -> buildList {
@@ -405,11 +359,9 @@ fun MultiStorageTargetPickerBottomSheet(
         activeSourceKeys.toList(),
         categories,
         keepassDatabases,
-        mdbxDatabases,
         bitwardenVaults,
         bitwardenFoldersByVault,
-        keepassGroupsByDatabase,
-        mdbxFoldersByDatabase
+        keepassGroupsByDatabase
     ) {
         if (selectionMode == StoragePickerSelectionMode.SINGLE) {
             buildTargetsForSource(sourceByKey(singleSourceKey))
@@ -425,11 +377,9 @@ fun MultiStorageTargetPickerBottomSheet(
         activeSourceKeys.toList(),
         categories,
         keepassDatabases,
-        mdbxDatabases,
         bitwardenVaults,
         bitwardenFoldersByVault,
-        keepassGroupsByDatabase,
-        mdbxFoldersByDatabase
+        keepassGroupsByDatabase
     ) {
         val activeSourceKeySet = activeSourceKeys.toSet()
         sources
@@ -746,32 +696,8 @@ private fun StorageTarget.toSourceKey(): String {
     return when (this) {
         is StorageTarget.BastionLocal -> "bastion"
         is StorageTarget.KeePass -> "keepass:$databaseId"
-        is StorageTarget.Mdbx -> "mdbx:$databaseId"
         is StorageTarget.Bitwarden -> "bitwarden:$vaultId"
     }
-}
-
-private fun mdbxFolderDisplayLabel(
-    folder: MdbxStoredFolderEntry,
-    folders: List<MdbxStoredFolderEntry>
-): String {
-    val folderById = folders
-        .filter { it.folderId.isNotBlank() }
-        .associateBy { it.folderId }
-    val parentNames = generateSequence(folder.parentFolderId.normalizedMdbxParentIdForStoragePicker()) { parentId ->
-        folderById[parentId]?.parentFolderId.normalizedMdbxParentIdForStoragePicker()
-    }
-        .take(16)
-        .toList()
-        .asReversed()
-        .mapNotNull { parentId -> folderById[parentId]?.name?.takeIf { it.isNotBlank() } }
-    val name = folder.name.ifBlank { "Folder ${folder.folderId.take(8)}" }
-    return (parentNames + name).joinToString("/")
-}
-
-private fun String?.normalizedMdbxParentIdForStoragePicker(): String? {
-    val value = this?.trim()?.takeIf { it.isNotBlank() } ?: return null
-    return if (value.equals("root", ignoreCase = true)) null else value
 }
 
 private val StorageHealthyGreen = Color(0xFF22C55E)

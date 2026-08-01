@@ -39,9 +39,6 @@ import com.bastion.app.keepass.KeePassPendingChangeDao
         BitwardenSyncRawEntryRecord::class,
         // 附件（仅挂在 PasswordEntry 上，跨 Local/Bitwarden/KeePass 三个来源统一元数据）
         Attachment::class,
-        // MDBX 数据库格式
-        LocalMdbxDatabase::class,
-        MdbxRemoteSource::class,
         // KeePass entry-level pending changes
         KeePassPendingChange::class
     ],
@@ -60,8 +57,6 @@ abstract class PasswordDatabase : RoomDatabase() {
     abstract fun keepassRemoteSourceDao(): KeepassRemoteSourceDao
     abstract fun keepassRemoteSyncStateDao(): KeepassRemoteSyncStateDao
     abstract fun keepassGroupSyncConfigDao(): KeepassGroupSyncConfigDao
-    abstract fun localMdbxDatabaseDao(): LocalMdbxDatabaseDao
-    abstract fun mdbxRemoteSourceDao(): MdbxRemoteSourceDao
     abstract fun customFieldDao(): CustomFieldDao  // 自定义字段 DAO
     abstract fun passwordPageAggregateStackDao(): PasswordPageAggregateStackDao
     abstract fun passwordArchiveSyncMetaDao(): PasswordArchiveSyncMetaDao

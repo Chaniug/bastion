@@ -17,7 +17,6 @@ enum class SyncTargetKind {
     BITWARDEN,
     KEEPASS_DATABASE,
     KEEPASS_COMPATIBILITY_INDEX,
-    MDBX_VAULT,
     BACKUP,
     AUTOFILL_SAVE
 }
@@ -40,7 +39,6 @@ enum class SyncBackupProvider {
 
 enum class SyncAutofillDestination {
     MONICA_LOCAL,
-    MDBX,
     KEEPASS,
     BITWARDEN
 }
@@ -73,10 +71,6 @@ sealed class SyncTarget(val kind: SyncTargetKind) {
 
         override val stableKey: SyncKey = SyncKey("keepass_compat:$databasePart:$itemPart")
         override val defaultDedupeKey: SyncKey = SyncKey(KEEPASS_COMPATIBILITY_INDEX_DEDUPE_KEY)
-    }
-
-    data class MdbxVault(val databaseId: Long) : SyncTarget(SyncTargetKind.MDBX_VAULT) {
-        override val stableKey: SyncKey = SyncKey("mdbx:$databaseId")
     }
 
     data class Backup(val provider: SyncBackupProvider) : SyncTarget(SyncTargetKind.BACKUP) {

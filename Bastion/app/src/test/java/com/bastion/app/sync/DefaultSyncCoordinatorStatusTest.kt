@@ -96,8 +96,8 @@ class DefaultSyncCoordinatorStatusTest {
 
     @Test
     fun coordinatorPublishesBlockedWhenExecutorIsMissing() = runBlocking {
-        val target = SyncTarget.MdbxVault(databaseId = 9L)
-        val dedupeKey = SyncKey("mdbx:9:repair")
+        val target = SyncTarget.KeePassDatabase(databaseId = 9L)
+        val dedupeKey = SyncKey("keepass:9:repair")
         val store = DefaultSyncStatusStore()
         val coordinator = DefaultSyncCoordinator(
             scope = CoroutineScope(coroutineContext + Job()),

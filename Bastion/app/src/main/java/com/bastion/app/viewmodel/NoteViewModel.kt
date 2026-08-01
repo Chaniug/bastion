@@ -568,35 +568,6 @@ class NoteViewModel(
                         )
                     }
                 }
-                is StorageTarget.Mdbx -> {
-                    if (existingItem == null) {
-                        addNote(
-                            content = content,
-                            title = title,
-                            tags = tags,
-                            isMarkdown = isMarkdown,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = currentTarget.databaseId,
-                            mdbxFolderId = currentTarget.folderId,
-                            replicaGroupId = replicaGroupId
-                        )
-                    } else {
-                        updateNote(
-                            id = existingItem.id,
-                            content = content,
-                            title = title,
-                            tags = tags,
-                            isMarkdown = isMarkdown,
-                            isFavorite = isFavorite,
-                            createdAt = createdAt,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = currentTarget.databaseId,
-                            mdbxFolderId = currentTarget.folderId,
-                            replicaGroupId = replicaGroupId
-                        )
-                    }
-                }
                 is StorageTarget.Bitwarden -> {
                     if (existingItem == null) {
                         addNote(
@@ -677,29 +648,6 @@ class NoteViewModel(
                             keepassGroupPath = target.groupPath,
                             replicaGroupId = replicaGroupId
                         )
-                        is StorageTarget.Mdbx -> if (existingReplica == null) addNote(
-                            content = content,
-                            title = title,
-                            tags = tags,
-                            isMarkdown = isMarkdown,
-                            isFavorite = isFavorite,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = target.databaseId,
-                            mdbxFolderId = target.folderId,
-                            replicaGroupId = replicaGroupId
-                        ) else updateNote(
-                            id = existingReplica.id,
-                            content = content,
-                            title = title,
-                            tags = tags,
-                            isMarkdown = isMarkdown,
-                            isFavorite = isFavorite,
-                            createdAt = createdAt,
-                            imagePaths = imagePaths,
-                            mdbxDatabaseId = target.databaseId,
-                            mdbxFolderId = target.folderId,
-                            replicaGroupId = replicaGroupId
-                        )
                         is StorageTarget.Bitwarden -> if (existingReplica == null) addNote(
                             content = content,
                             title = title,
@@ -753,7 +701,6 @@ class NoteViewModel(
         val target = when {
             bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)
             keepassDatabaseId != null -> StorageTarget.KeePass(keepassDatabaseId, keepassGroupPath)
-            mdbxDatabaseId != null -> StorageTarget.Mdbx(mdbxDatabaseId, targetMdbxFolderId)
             else -> StorageTarget.BastionLocal(categoryId)
         }
         if (hasReplicaTargetConflict(
@@ -866,7 +813,6 @@ class NoteViewModel(
                 }
             }
             is SecureItemOwnership.BastionLocal -> Result.success(Unit)
-            is SecureItemOwnership.Mdbx -> Result.success(Unit)
             is SecureItemOwnership.Conflict -> Result.failure(IllegalStateException("笔记来源冲突，无法移动到 Bastion 本地"))
         }
 

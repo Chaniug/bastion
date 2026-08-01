@@ -24,33 +24,24 @@ sealed interface StorageTarget {
         override val stableKey: String = "bitwarden:$vaultId:${folderId.orEmpty()}"
     }
 
-    data class Mdbx(
-        val databaseId: Long,
-        val folderId: String? = null
-    ) : StorageTarget {
-        override val stableKey: String = "mdbx:$databaseId:${folderId.orEmpty()}"
-    }
 }
 
 fun StorageTarget.storageScopeKey(): String = when (this) {
     is StorageTarget.BastionLocal -> "local"
     is StorageTarget.KeePass -> "keepass:$databaseId"
     is StorageTarget.Bitwarden -> "bitwarden:$vaultId"
-    is StorageTarget.Mdbx -> "mdbx:$databaseId"
 }
 
 fun StorageTarget.uncategorizedPeer(): StorageTarget = when (this) {
     is StorageTarget.BastionLocal -> StorageTarget.BastionLocal(null)
     is StorageTarget.KeePass -> StorageTarget.KeePass(databaseId, null)
     is StorageTarget.Bitwarden -> StorageTarget.Bitwarden(vaultId, null)
-    is StorageTarget.Mdbx -> StorageTarget.Mdbx(databaseId)
 }
 
 fun StorageTarget.isUncategorizedTarget(): Boolean = when (this) {
     is StorageTarget.BastionLocal -> categoryId == null
     is StorageTarget.KeePass -> groupPath.isNullOrBlank()
     is StorageTarget.Bitwarden -> folderId.isNullOrBlank()
-    is StorageTarget.Mdbx -> folderId.isNullOrBlank()
 }
 
 fun List<StorageTarget>.normalizedStorageTargets(
@@ -99,10 +90,6 @@ fun PasswordEntry.toStorageTarget(): StorageTarget = when {
         databaseId = keepassDatabaseId,
         groupPath = keepassGroupPath
     )
-    mdbxDatabaseId != null -> StorageTarget.Mdbx(
-        databaseId = mdbxDatabaseId,
-        folderId = mdbxFolderId
-    )
     else -> StorageTarget.BastionLocal(categoryId = categoryId)
 }
 
@@ -114,10 +101,6 @@ fun SecureItem.toStorageTarget(): StorageTarget = when {
     keepassDatabaseId != null -> StorageTarget.KeePass(
         databaseId = keepassDatabaseId,
         groupPath = keepassGroupPath
-    )
-    mdbxDatabaseId != null -> StorageTarget.Mdbx(
-        databaseId = mdbxDatabaseId,
-        folderId = mdbxFolderId
     )
     else -> StorageTarget.BastionLocal(categoryId = categoryId)
 }
@@ -133,8 +116,6 @@ fun StorageTarget.applyToPasswordEntry(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -148,43 +129,11 @@ fun StorageTarget.applyToPasswordEntry(
             keepassGroupPath = groupPath,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
             bitwardenRevisionDate = null,
             bitwardenLocalModified = false,
-            replicaGroupId = replicaGroupId
-        )
-        is StorageTarget.Bitwarden -> entry.copy(
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
-            bitwardenVaultId = vaultId,
-            bitwardenCipherId = null,
-            bitwardenFolderId = folderId,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            replicaGroupId = replicaGroupId
-        )
-        is StorageTarget.Mdbx -> entry.copy(
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            mdbxDatabaseId = databaseId,
-            mdbxFolderId = folderId,
             replicaGroupId = replicaGroupId
         )
     }
@@ -201,8 +150,6 @@ fun StorageTarget.applyToSecureItem(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -217,8 +164,6 @@ fun StorageTarget.applyToSecureItem(
             keepassGroupPath = groupPath,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -233,30 +178,12 @@ fun StorageTarget.applyToSecureItem(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = vaultId,
             bitwardenCipherId = null,
             bitwardenFolderId = folderId,
             bitwardenRevisionDate = null,
             bitwardenLocalModified = false,
             syncStatus = "PENDING",
-            replicaGroupId = replicaGroupId
-        )
-        is StorageTarget.Mdbx -> item.copy(
-            categoryId = null,
-            keepassDatabaseId = null,
-            keepassGroupPath = null,
-            keepassEntryUuid = null,
-            keepassGroupUuid = null,
-            bitwardenVaultId = null,
-            bitwardenCipherId = null,
-            bitwardenFolderId = null,
-            bitwardenRevisionDate = null,
-            bitwardenLocalModified = false,
-            mdbxDatabaseId = databaseId,
-            mdbxFolderId = folderId,
-            syncStatus = "NONE",
             replicaGroupId = replicaGroupId
         )
     }

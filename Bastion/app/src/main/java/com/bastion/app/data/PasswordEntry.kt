@@ -194,11 +194,6 @@ data class PasswordEntry(
     fun isKeePassEntry(): Boolean = resolveOwnership() is PasswordOwnership.KeePass
 
     /**
-     * 是否来自 MDBX
-     */
-    fun isMdbxEntry(): Boolean = resolveOwnership() is PasswordOwnership.Mdbx
-
-    /**
      * 是否存在多重 owner 冲突
      */
     fun hasOwnershipConflict(): Boolean = resolveOwnership() is PasswordOwnership.Conflict

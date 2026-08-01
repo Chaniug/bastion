@@ -46,8 +46,6 @@ internal fun CardWalletDetailPaneContent(
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
-    initialMdbxDatabaseId: Long? = null,
-    initialMdbxFolderId: String? = null,
     initialBitwardenVaultId: Long? = null,
     initialBitwardenFolderId: String? = null
 ) {
@@ -91,8 +89,6 @@ internal fun CardWalletDetailPaneContent(
                     initialCategoryId = initialCategoryId,
                     initialKeePassDatabaseId = initialKeePassDatabaseId,
                     initialKeePassGroupPath = initialKeePassGroupPath,
-                    initialMdbxDatabaseId = initialMdbxDatabaseId,
-                    initialMdbxFolderId = initialMdbxFolderId,
                     initialBitwardenVaultId = initialBitwardenVaultId,
                     initialBitwardenFolderId = initialBitwardenFolderId,
                     onNavigateBack = onInlineBankCardEditorBack,
@@ -108,8 +104,6 @@ internal fun CardWalletDetailPaneContent(
                     initialCategoryId = initialCategoryId,
                     initialKeePassDatabaseId = initialKeePassDatabaseId,
                     initialKeePassGroupPath = initialKeePassGroupPath,
-                    initialMdbxDatabaseId = initialMdbxDatabaseId,
-                    initialMdbxFolderId = initialMdbxFolderId,
                     initialBitwardenVaultId = initialBitwardenVaultId,
                     initialBitwardenFolderId = initialBitwardenFolderId,
                     onNavigateBack = onInlineDocumentEditorBack,
@@ -123,8 +117,6 @@ internal fun CardWalletDetailPaneContent(
                     viewModel = billingAddressViewModel,
                     addressId = editorId,
                     initialCategoryId = initialCategoryId,
-                    initialMdbxDatabaseId = initialMdbxDatabaseId,
-                    initialMdbxFolderId = initialMdbxFolderId,
                     onNavigateBack = onInlineBillingAddressEditorBack,
                     modifier = Modifier.fillMaxSize()
                 )

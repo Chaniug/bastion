@@ -48,8 +48,7 @@ data class WalletListItem(
         val folderId = item.bitwardenFolderId
         val keePassId = item.keepassDatabaseId
         val groupPath = item.keepassGroupPath
-        val mdbxId = item.mdbxDatabaseId
-        val isLocal = vaultId == null && keePassId == null && mdbxId == null
+        val isLocal = vaultId == null && keePassId == null && item.mdbxDatabaseId == null
         return when (filter) {
             UnifiedCategoryFilterSelection.All -> true
             UnifiedCategoryFilterSelection.Local -> isLocal
@@ -72,8 +71,6 @@ data class WalletListItem(
                 keePassId == filter.databaseId && item.isFavorite
             is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter ->
                 keePassId == filter.databaseId && item.categoryId == null
-            is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> mdbxId == filter.databaseId
-            is UnifiedCategoryFilterSelection.MdbxFolderFilter -> mdbxId == filter.databaseId
         }
     }
 }

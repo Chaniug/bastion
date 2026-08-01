@@ -9,46 +9,43 @@ import com.bastion.app.data.PasswordEntry
 class StorageTargetOwnershipTest {
 
     @Test
-    fun applyingBastionLocalTargetClearsMdbxOwnership() {
-        val source = mdbxPasswordEntry()
+    fun applyingBastionLocalTargetClearsExternalOwnership() {
+        val source = keepassPasswordEntry()
 
         val local = StorageTarget.BastionLocal(categoryId = 42L)
             .applyToPasswordEntry(source, replicaGroupId = null)
 
         assertEquals(42L, local.categoryId)
-        assertNull(local.mdbxDatabaseId)
-        assertNull(local.mdbxFolderId)
+        assertNull(local.keepassDatabaseId)
+        assertNull(local.keepassGroupPath)
+        assertNull(local.bitwardenVaultId)
         assertNull(local.replicaGroupId)
         assertTrue(local.isLocalOnlyEntry())
     }
 
     @Test
-    fun applyingExternalNonMdbxTargetsClearsMdbxOwnership() {
-        val source = mdbxPasswordEntry()
+    fun applyingExternalTargetsClearOtherExternalOwnership() {
+        val source = keepassPasswordEntry()
 
-        val keepass = StorageTarget.KeePass(databaseId = 9L, groupPath = "Root")
-            .applyToPasswordEntry(source, replicaGroupId = "group")
         val bitwarden = StorageTarget.Bitwarden(vaultId = 8L, folderId = "folder")
             .applyToPasswordEntry(source, replicaGroupId = "group")
 
-        assertNull(keepass.mdbxDatabaseId)
-        assertNull(keepass.mdbxFolderId)
-        assertEquals(9L, keepass.keepassDatabaseId)
-        assertNull(bitwarden.mdbxDatabaseId)
-        assertNull(bitwarden.mdbxFolderId)
+        assertNull(bitwarden.keepassDatabaseId)
+        assertNull(bitwarden.keepassGroupPath)
         assertEquals(8L, bitwarden.bitwardenVaultId)
+        assertEquals("group", bitwarden.replicaGroupId)
     }
 
-    private fun mdbxPasswordEntry(): PasswordEntry {
+    private fun keepassPasswordEntry(): PasswordEntry {
         return PasswordEntry(
             id = 1L,
             title = "Example",
             website = "example.com",
             username = "alice",
             password = "secret",
-            mdbxDatabaseId = 7L,
-            mdbxFolderId = "folder",
-            replicaGroupId = "password:source"
+            keepassDatabaseId = 7L,
+            keepassGroupPath = "Root",
+            replicaGroupId = "keepass:source"
         )
     }
 }

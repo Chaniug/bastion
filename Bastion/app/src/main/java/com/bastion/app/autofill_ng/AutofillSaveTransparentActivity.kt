@@ -37,10 +37,7 @@ import kotlinx.coroutines.launch
 import com.bastion.app.R
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.ThemeMode
-import com.bastion.app.mdbx.MdbxDiagLogger
 import com.bastion.app.repository.CustomFieldRepository
-import com.bastion.app.repository.MdbxRepository
-import com.bastion.app.repository.MdbxVaultStore
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.security.SecurityManager
@@ -80,15 +77,6 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
 
         val securityManager = SecurityManager(applicationContext)
         val database = PasswordDatabase.getDatabase(applicationContext)
-        val mdbxRepository: MdbxRepository = MdbxVaultStore(
-            context = applicationContext,
-            databaseDao = database.localMdbxDatabaseDao(),
-            securityManager = securityManager,
-            remoteSourceDao = database.mdbxRemoteSourceDao(),
-            passwordEntryDao = database.passwordEntryDao(),
-            secureItemDao = database.secureItemDao(),
-            customFieldDao = database.customFieldDao(),
-        )
         val repository = PasswordRepository(
             passwordEntryDao = database.passwordEntryDao(),
             categoryDao = database.categoryDao(),
@@ -97,11 +85,9 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
             passkeyDao = database.passkeyDao(),
             passwordArchiveSyncMetaDao = database.passwordArchiveSyncMetaDao(),
             passwordHistoryDao = database.passwordHistoryDao(),
-            mdbxRepository = mdbxRepository,
         )
         val secureItemRepository = SecureItemRepository(
             database.secureItemDao(),
-            mdbxRepository,
             securityManager::decryptDataIfBastionCiphertext
         )
         val customFieldRepository = CustomFieldRepository(database.customFieldDao())
@@ -120,12 +106,7 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
                 key2 = database
             ) {
                 val settingsSnapshot = settingsManager.settingsFlow.first()
-                val mdbxDatabases = database.localMdbxDatabaseDao().getAllDatabasesSnapshot()
-                value = resolveAutofillSaveInitialTarget(settingsSnapshot, mdbxDatabases).also { target ->
-                    MdbxDiagLogger.append(
-                        "[MDBX][autofill-save-open] source=transparent target=${target.diagnosticLabel()} mdbxDatabases=${target.mdbxDatabasesFallback.size}"
-                    )
-                }
+                value = resolveAutofillSaveInitialTarget(settingsSnapshot)
             }
 
             val isSystemDark = isSystemInDarkTheme()
@@ -214,7 +195,6 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
                         AddEditPasswordScreen(
                             viewModel = passwordViewModel,
                             localKeePassViewModel = localKeePassViewModel,
-                            mdbxDatabasesFallback = resolvedInitialTarget.mdbxDatabasesFallback,
                             passwordId = null,
                             initialDraft = AddEditPasswordInitialDraft(
                                 title = initialTitle,
@@ -225,13 +205,8 @@ class AutofillSaveTransparentActivity : ComponentActivity() {
                                 appName = effectiveAppName,
                             ),
                             forceShowAppBinding = true,
-                            initialMdbxDatabaseId = resolvedInitialTarget.mdbxDatabaseId,
-                            initialMdbxFolderId = resolvedInitialTarget.mdbxFolderId,
                             onSaveCompleted = { savedId ->
                                 didSave = true
-                                MdbxDiagLogger.append(
-                                    "[MDBX][autofill-save-complete] source=transparent target=${resolvedInitialTarget.diagnosticLabel()} roomId=${savedId ?: "-"}"
-                                )
                                 setResult(RESULT_SAVED)
                             },
                             onNavigateBack = {

@@ -235,7 +235,6 @@ fun TotpListContent(
     val database = remember { com.bastion.app.data.PasswordDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
     val keepassDatabases by database.localKeePassDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
-    val mdbxDatabases by database.localMdbxDatabaseDao().getAllDatabases().collectAsState(initial = emptyList())
     val bitwardenVaults by database.bitwardenVaultDao().getAllVaultsFlow().collectAsState(initial = emptyList())
     val keepassBridge = remember {
         KeePassCompatibilityBridge(
@@ -295,7 +294,6 @@ fun TotpListContent(
         is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenFolderFilter -> UnifiedCategoryFilterSelection.BitwardenFolderFilter(filter.vaultId, filter.folderId)
         is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultStarred -> UnifiedCategoryFilterSelection.BitwardenVaultStarredFilter(filter.vaultId)
         is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultUncategorized -> UnifiedCategoryFilterSelection.BitwardenVaultUncategorizedFilter(filter.vaultId)
-        is com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase -> UnifiedCategoryFilterSelection.MdbxDatabaseFilter(filter.databaseId)
     }
     val handleCategorySelection: (UnifiedCategoryFilterSelection) -> Unit = { selection ->
         when (selection) {
@@ -314,8 +312,6 @@ fun TotpListContent(
             is UnifiedCategoryFilterSelection.BitwardenFolderFilter -> viewModel.setCategoryFilter(com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenFolderFilter(selection.folderId, selection.vaultId))
             is UnifiedCategoryFilterSelection.BitwardenVaultStarredFilter -> viewModel.setCategoryFilter(com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultStarred(selection.vaultId))
             is UnifiedCategoryFilterSelection.BitwardenVaultUncategorizedFilter -> viewModel.setCategoryFilter(com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultUncategorized(selection.vaultId))
-            is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> viewModel.setCategoryFilter(com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase(selection.databaseId))
-            is UnifiedCategoryFilterSelection.MdbxFolderFilter -> viewModel.setCategoryFilter(com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase(selection.databaseId))
         }
     }
 
@@ -489,11 +485,9 @@ fun TotpListContent(
         onDismiss = { showMoveToCategoryDialog = false },
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
         getKeePassGroups = getKeePassGroups,
-        getMdbxFolders = passwordViewModel::getMdbxFolders,
         allowCopy = true,
         allowMove = totpItems.filter { it.id in selectedItems.filter { selected -> selected > 0L } }.none { it.isKeePassOwned() },
         onTargetSelected = { target, action ->
@@ -551,15 +545,6 @@ fun TotpListContent(
                             is UnifiedMoveCategoryTarget.BitwardenVaultTarget -> ""
                             else -> null
                         }
-                        val targetMdbxDatabaseId = when (target) {
-                            is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> target.databaseId
-                            is UnifiedMoveCategoryTarget.MdbxFolderTarget -> target.databaseId
-                            else -> null
-                        }
-                        val targetMdbxFolderId = when (target) {
-                            is UnifiedMoveCategoryTarget.MdbxFolderTarget -> target.folderId
-                            else -> null
-                        }
                         viewModel.saveTotpItem(
                             id = null,
                             title = item.title,
@@ -569,9 +554,7 @@ fun TotpListContent(
                             categoryId = targetCategoryId,
                             keepassDatabaseId = targetKeepassDatabaseId,
                             bitwardenVaultId = targetBitwardenVaultId,
-                            bitwardenFolderId = targetBitwardenFolderId,
-                            mdbxDatabaseId = targetMdbxDatabaseId,
-                            mdbxFolderId = targetMdbxFolderId
+                            bitwardenFolderId = targetBitwardenFolderId
                         )
                         copiedCount++
                     }
@@ -628,16 +611,6 @@ fun TotpListContent(
                             val groupName = decodeKeePassPathForDisplay(target.groupPath)
                             Toast.makeText(context, "${context.getString(R.string.move_to_category)} $groupName", Toast.LENGTH_SHORT).show()
                         }
-                        is UnifiedMoveCategoryTarget.MdbxDatabaseTarget -> {
-                            viewModel.moveToMdbxDatabase(movableIds, target.databaseId)
-                            val name = mdbxDatabases.find { it.id == target.databaseId }?.name ?: "MDBX"
-                            Toast.makeText(context, "${context.getString(R.string.move_to_category)} $name", Toast.LENGTH_SHORT).show()
-                        }
-                        is UnifiedMoveCategoryTarget.MdbxFolderTarget -> {
-                            viewModel.moveToMdbxDatabase(movableIds, target.databaseId, target.folderId)
-                            val name = mdbxDatabases.find { it.id == target.databaseId }?.name ?: "MDBX"
-                            Toast.makeText(context, "${context.getString(R.string.move_to_category)} $name", Toast.LENGTH_SHORT).show()
-                        }
                     }
                 }
             }
@@ -668,7 +641,6 @@ fun TotpListContent(
             is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenFolderFilter -> stringResource(R.string.filter_bitwarden)
             is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultStarred -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_starred)}"
             is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultUncategorized -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_uncategorized)}"
-            is com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase -> mdbxDatabases.find { it.id == filter.databaseId }?.name ?: "MDBX"
         }
 
         ExpressiveTopBar(
@@ -727,7 +699,6 @@ fun TotpListContent(
                                 onSelect = handleCategorySelection,
                                 categories = categories,
                                 keepassDatabases = keepassDatabases,
-                                mdbxDatabases = mdbxDatabases,
                                 bitwardenVaults = bitwardenVaults,
                                 getBitwardenFolders = { vaultId -> database.bitwardenFolderDao().getFoldersByVaultFlow(vaultId) },
                                 getKeePassGroups = getKeePassGroups,
@@ -1277,7 +1248,6 @@ fun TotpListContent(
         currentFilter = totpSelectedFilter,
         categories = categories,
         keepassDatabases = keepassDatabases,
-        mdbxDatabases = mdbxDatabases,
         bitwardenVaults = bitwardenVaults,
         getKeePassGroups = getKeePassGroups,
         passwordViewModel = passwordViewModel,

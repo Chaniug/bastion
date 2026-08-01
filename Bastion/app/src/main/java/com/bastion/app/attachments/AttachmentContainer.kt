@@ -13,7 +13,6 @@ import com.bastion.app.attachments.storage.AttachmentKeyVault
 import com.bastion.app.attachments.storage.AttachmentPreviewCache
 import com.bastion.app.attachments.storage.AttachmentStorage
 import com.bastion.app.data.PasswordDatabase
-import com.bastion.app.repository.MdbxVaultStore
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.utils.KeePassKdbxService
 
@@ -48,7 +47,6 @@ object AttachmentContainer {
     @Volatile private var reconcilerCache: BitwardenAttachmentReconciler? = null
     @Volatile private var keepassReconcilerCache: KeePassAttachmentReconciler? = null
     @Volatile private var facadeCache: AttachmentFacade? = null
-    @Volatile private var mdbxVaultStoreCache: MdbxVaultStore? = null
 
     @Volatile private var keepassServiceOverride: KeePassKdbxService? = null
     @Volatile private var defaultKeePassServiceCache: KeePassKdbxService? = null
@@ -70,7 +68,6 @@ object AttachmentContainer {
                 keyVault = keyVault(app),
                 previewCache = previewCache(app),
                 passwordEntryDao = PasswordDatabase.getDatabase(app).passwordEntryDao(),
-                mdbxVaultStore = mdbxVaultStore(app),
                 fileProviderAuthority = "${app.packageName}.fileprovider"
             )
             facadeCache = facade
@@ -195,21 +192,6 @@ object AttachmentContainer {
                     dao = db.localKeePassDatabaseDao(),
                     securityManager = SecurityManager(app)
                 ).also { defaultKeePassServiceCache = it }
-            }
-        }
-
-    private fun mdbxVaultStore(app: Context): MdbxVaultStore =
-        mdbxVaultStoreCache ?: synchronized(this) {
-            mdbxVaultStoreCache ?: run {
-                val db = PasswordDatabase.getDatabase(app)
-                MdbxVaultStore(
-                    context = app,
-                    databaseDao = db.localMdbxDatabaseDao(),
-                    securityManager = SecurityManager(app),
-                    remoteSourceDao = db.mdbxRemoteSourceDao(),
-                    passwordEntryDao = db.passwordEntryDao(),
-                    secureItemDao = db.secureItemDao()
-                ).also { mdbxVaultStoreCache = it }
             }
         }
 

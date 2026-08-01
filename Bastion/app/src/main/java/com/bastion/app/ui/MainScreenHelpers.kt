@@ -85,9 +85,6 @@ internal fun defaultsFromTotpFilter(filter: com.bastion.app.viewmodel.TotpCatego
                 bitwardenFolderId = filter.folderId
             )
         }
-        is com.bastion.app.viewmodel.TotpCategoryFilter.MdbxDatabase -> {
-            NewItemStorageDefaults(mdbxDatabaseId = filter.databaseId)
-        }
         is com.bastion.app.viewmodel.TotpCategoryFilter.KeePassDatabaseStarred -> {
             NewItemStorageDefaults(keepassDatabaseId = filter.databaseId)
         }
@@ -131,15 +128,6 @@ internal fun defaultsFromPasswordFilter(filter: CategoryFilter): NewItemStorageD
             NewItemStorageDefaults(
                 bitwardenVaultId = filter.vaultId,
                 bitwardenFolderId = filter.folderId
-            )
-        }
-        is CategoryFilter.MdbxDatabase -> {
-            NewItemStorageDefaults(mdbxDatabaseId = filter.databaseId)
-        }
-        is CategoryFilter.MdbxFolderFilter -> {
-            NewItemStorageDefaults(
-                mdbxDatabaseId = filter.databaseId,
-                mdbxFolderId = filter.folderId
             )
         }
         is CategoryFilter.BitwardenVaultStarred -> {

@@ -129,7 +129,6 @@ class NoteEditorViewModel(
         initialCategoryId: Long?,
         initialKeePassDatabaseId: Long?,
         initialKeePassGroupPath: String?,
-        initialMdbxDatabaseId: Long?,
         initialBitwardenVaultId: Long?,
         initialBitwardenFolderId: String?,
         draftStorageTarget: NoteDraftStorageTarget,
@@ -151,7 +150,7 @@ class NoteEditorViewModel(
         val resolvedKeepassGroupPath =
             normalizedInitialKeePassGroupPath ?: normalizedDraftKeePassGroupPath ?: normalizedRememberedKeePassGroupPath
         val resolvedMdbxDatabaseId =
-            initialMdbxDatabaseId ?: draftStorageTarget.mdbxDatabaseId ?: rememberedStorageTarget?.mdbxDatabaseId
+            draftStorageTarget.mdbxDatabaseId ?: rememberedStorageTarget?.mdbxDatabaseId
         val resolvedBitwardenVaultId =
             initialBitwardenVaultId ?: draftStorageTarget.bitwardenVaultId ?: rememberedStorageTarget?.bitwardenVaultId
         val resolvedBitwardenFolderId =
@@ -191,7 +190,6 @@ class NoteEditorViewModel(
                 databaseId = resolvedKeepassDatabaseId,
                 groupPath = resolvedKeepassGroupPath
             )
-            resolvedMdbxDatabaseId != null -> StorageTarget.Mdbx(resolvedMdbxDatabaseId)
             else -> StorageTarget.BastionLocal(resolvedCategoryId)
         }
 
@@ -255,19 +253,6 @@ class NoteEditorViewModel(
         }
     }
 
-    fun selectMdbxDatabase(databaseId: Long?) {
-        _uiState.update {
-            it.copy(
-                selectedCategoryId = null,
-                keepassDatabaseId = null,
-                keepassGroupPath = null,
-                mdbxDatabaseId = databaseId,
-                bitwardenVaultId = null,
-                bitwardenFolderId = null
-            )
-        }
-    }
-
     fun selectBitwardenVault(vaultId: Long?) {
         _uiState.update {
             it.copy(
@@ -301,7 +286,7 @@ class NoteEditorViewModel(
                 selectedCategoryId = (primaryTarget as? StorageTarget.BastionLocal)?.categoryId,
                 keepassDatabaseId = (primaryTarget as? StorageTarget.KeePass)?.databaseId,
                 keepassGroupPath = (primaryTarget as? StorageTarget.KeePass)?.groupPath,
-                mdbxDatabaseId = (primaryTarget as? StorageTarget.Mdbx)?.databaseId,
+                mdbxDatabaseId = null,
                 bitwardenVaultId = (primaryTarget as? StorageTarget.Bitwarden)?.vaultId,
                 bitwardenFolderId = (primaryTarget as? StorageTarget.Bitwarden)?.folderId,
                 selectedStorageTargets = normalizedTargets,

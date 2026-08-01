@@ -9,9 +9,9 @@ class PasswordArchiveFilterControllerTest {
     @Test
     fun restoresTheExactDatabaseFolderFilterAfterArchive() {
         val controller = PasswordArchiveFilterController()
-        val databaseFolder = CategoryFilter.MdbxFolderFilter(
+        val databaseFolder = CategoryFilter.KeePassGroupFilter(
             databaseId = 42L,
-            folderId = "accounts/email"
+            groupPath = "accounts/email"
         )
 
         assertSame(CategoryFilter.Archived, controller.open(databaseFolder))

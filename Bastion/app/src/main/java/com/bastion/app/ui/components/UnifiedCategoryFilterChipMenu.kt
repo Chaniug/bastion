@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
@@ -70,13 +69,10 @@ import kotlinx.coroutines.flow.flowOf
 import com.bastion.app.R
 import com.bastion.app.data.Category
 import com.bastion.app.data.LocalKeePassDatabase
-import com.bastion.app.data.LocalMdbxDatabase
 import com.bastion.app.data.isBastionLocalCategory
 import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.bitwarden.BitwardenVault
-import com.bastion.app.repository.MdbxStoredFolderEntry
-import com.bastion.app.ui.isDirectMdbxChildOf
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.utils.decodeKeePassPathForDisplay
 
@@ -238,10 +234,8 @@ fun UnifiedCategoryFilterChipMenu(
     launchAnchorBounds: Rect? = null,
     categories: List<Category>,
     keepassDatabases: List<LocalKeePassDatabase>,
-    mdbxDatabases: List<LocalMdbxDatabase> = emptyList(),
     bitwardenVaults: List<BitwardenVault>,
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>>,
-    getMdbxFolders: (Long) -> Flow<List<MdbxStoredFolderEntry>> = { flowOf(emptyList()) },
     getKeePassGroups: ((Long) -> Flow<List<KeePassGroupInfo>>)? = null,
     categoryEditMode: Boolean = false,
     onRequestCategoryAction: ((Category) -> Unit)? = null,
@@ -286,11 +280,6 @@ fun UnifiedCategoryFilterChipMenu(
         is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> selected.databaseId
         else -> null
     }
-    val selectedMdbxDatabaseId = when (selected) {
-        is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> selected.databaseId
-        is UnifiedCategoryFilterSelection.MdbxFolderFilter -> selected.databaseId
-        else -> null
-    }
     val bitwardenFolders by remember(selectedVaultId) {
         selectedVaultId?.let(getBitwardenFolders) ?: flowOf(emptyList())
     }.collectAsState(initial = emptyList())
@@ -299,16 +288,12 @@ fun UnifiedCategoryFilterChipMenu(
             getKeePassGroups?.invoke(databaseId)
         } ?: flowOf(emptyList())
     }.collectAsState(initial = emptyList())
-    val mdbxFolders by remember(selectedMdbxDatabaseId, getMdbxFolders) {
-        selectedMdbxDatabaseId?.let(getMdbxFolders) ?: flowOf(emptyList())
-    }.collectAsState(initial = emptyList())
     val folderChips = remember(
         selected,
         localNodes,
         localCurrentPath,
         bitwardenFolders,
-        keepassGroups,
-        mdbxFolders
+        keepassGroups
     ) {
         buildFolderChips(
             selected = selected,
@@ -316,8 +301,7 @@ fun UnifiedCategoryFilterChipMenu(
             localNodeByPath = localNodeByPath,
             localCurrentPath = localCurrentPath,
             bitwardenFolders = bitwardenFolders,
-            keepassGroups = keepassGroups,
-            mdbxFolders = mdbxFolders
+            keepassGroups = keepassGroups
         )
     }
     val quickFilterItems = remember(selected, showLocalOnlyQuickFilter, isLocalOnlyQuickFilterSelected, onSelectLocalOnlyQuickFilter) {
@@ -417,15 +401,6 @@ fun UnifiedCategoryFilterChipMenu(
                             }
                         )
                     }
-                    mdbxDatabases.forEach { database ->
-                        BastionExpressiveFilterChip(
-                            selected = selected.isMdbxScope(database.id),
-                            onClick = { onSelect(UnifiedCategoryFilterSelection.MdbxDatabaseFilter(database.id)) },
-                            label = database.name,
-                            leadingIcon = Icons.Default.Storage,
-                            statusDotColor = StorageHealthyGreen
-                        )
-                    }
                     bitwardenVaults.forEach { vault ->
                         BastionExpressiveFilterChip(
                             selected = selected.isBitwardenScope(vault.id),
@@ -471,15 +446,6 @@ fun UnifiedCategoryFilterChipMenu(
                             } else {
                                 null
                             }
-                        )
-                    }
-                    mdbxDatabases.forEach { database ->
-                        BastionExpressiveFilterChip(
-                            selected = selected.isMdbxScope(database.id),
-                            onClick = { onSelect(UnifiedCategoryFilterSelection.MdbxDatabaseFilter(database.id)) },
-                            label = database.name,
-                            leadingIcon = Icons.Default.Storage,
-                            statusDotColor = StorageHealthyGreen
                         )
                     }
                     bitwardenVaults.forEach { vault ->
@@ -609,8 +575,7 @@ private fun buildFolderChips(
     localNodeByPath: Map<String, ChipMenuLocalCategoryNode>,
     localCurrentPath: String?,
     bitwardenFolders: List<BitwardenFolder>,
-    keepassGroups: List<KeePassGroupInfo>,
-    mdbxFolders: List<MdbxStoredFolderEntry>
+    keepassGroups: List<KeePassGroupInfo>
 ): List<FolderChipItem> {
     return when (selected) {
         UnifiedCategoryFilterSelection.All,
@@ -697,28 +662,6 @@ private fun buildFolderChips(
             }
             chips
         }
-
-        is UnifiedCategoryFilterSelection.MdbxDatabaseFilter,
-        is UnifiedCategoryFilterSelection.MdbxFolderFilter -> {
-            val databaseId = when (selected) {
-                is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> selected.databaseId
-                is UnifiedCategoryFilterSelection.MdbxFolderFilter -> selected.databaseId
-                else -> return emptyList()
-            }
-            val currentFolderId = (selected as? UnifiedCategoryFilterSelection.MdbxFolderFilter)?.folderId
-            val chips = mutableListOf<FolderChipItem>()
-            chips += mdbxFolders
-                .filter { it.folderId.isNotBlank() }
-                .filter { it.isDirectMdbxChildOf(currentFolderId) }
-                .sortedWith(compareBy<MdbxStoredFolderEntry>({ it.name }, { it.folderId }))
-                .map {
-                    FolderChipItem(
-                        label = it.name.ifBlank { "Folder ${it.folderId.take(8)}" },
-                        selection = UnifiedCategoryFilterSelection.MdbxFolderFilter(databaseId, it.folderId)
-                    )
-                }
-            chips
-        }
     }
 }
 
@@ -757,12 +700,6 @@ private fun UnifiedCategoryFilterSelection.isKeePassScope(databaseId: Long): Boo
     is UnifiedCategoryFilterSelection.KeePassGroupFilter -> this.databaseId == databaseId
     is UnifiedCategoryFilterSelection.KeePassDatabaseStarredFilter -> this.databaseId == databaseId
     is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> this.databaseId == databaseId
-    else -> false
-}
-
-private fun UnifiedCategoryFilterSelection.isMdbxScope(databaseId: Long): Boolean = when (this) {
-    is UnifiedCategoryFilterSelection.MdbxDatabaseFilter -> this.databaseId == databaseId
-    is UnifiedCategoryFilterSelection.MdbxFolderFilter -> this.databaseId == databaseId
     else -> false
 }
 

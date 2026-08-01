@@ -24,7 +24,6 @@ import com.bastion.app.bitwarden.api.BitwardenVaultApi
 import com.bastion.app.bitwarden.api.CipherAttachmentApiData
 import com.bastion.app.bitwarden.crypto.BitwardenCrypto.SymmetricCryptoKey
 import com.bastion.app.data.PasswordEntryDao
-import com.bastion.app.repository.MdbxVaultStore
 import java.io.File
 import java.io.OutputStream
 
@@ -51,7 +50,6 @@ class AttachmentFacade(
     private val keyVault: AttachmentKeyVault,
     private val previewCache: AttachmentPreviewCache,
     private val passwordEntryDao: PasswordEntryDao? = null,
-    private val mdbxVaultStore: MdbxVaultStore? = null,
     /** 用于 `openForPreview` 发出的 FileProvider authority，需与 manifest 中注册的 authority 一致。 */
     private val fileProviderAuthority: String
 ) {
@@ -189,7 +187,6 @@ class AttachmentFacade(
                         "keepassEntryUuidPresent" to !request.keepassContext?.entryUuid.isNullOrBlank()
                     )
                 )
-                mirrorAttachmentToMdbx(saved)
             }
         } catch (e: Throwable) {
             AttachmentLogger.logFailure(
@@ -331,7 +328,6 @@ class AttachmentFacade(
         keepassContext: KeePassContext? = null
     ) = withContext(Dispatchers.IO) {
         val existing = repository.getById(attachmentId) ?: return@withContext
-        mirrorAttachmentDeleteToMdbx(existing)
         when (existing.sourceEnum) {
             AttachmentSource.LOCAL -> {
                 localExecutor.delete(existing)
@@ -669,45 +665,6 @@ class AttachmentFacade(
         }
 
         throw AttachmentError.IoError
-    }
-
-    private suspend fun mirrorAttachmentToMdbx(attachment: Attachment) {
-        val vaultStore = mdbxVaultStore ?: return
-        val dao = passwordEntryDao ?: return
-        if (attachment.localPath.isNullOrBlank() || attachment.wrappedCek.isNullOrBlank()) return
-        val parent = dao.getPasswordEntryById(attachment.parentPasswordId) ?: return
-        val databaseId = parent.mdbxDatabaseId ?: return
-        val parentEntryId = vaultStore.passwordObjectIdForAttachment(parent)
-        runCatchingObserved {
-            vaultStore.upsertAttachment(databaseId, parentEntryId, attachment)
-        }.onFailure { error ->
-            AttachmentLogger.logFailure(
-                event = AttachmentLogger.Event.UPLOAD,
-                attachmentId = attachment.id,
-                source = attachment.sourceEnum,
-                error = error,
-                extras = mapOf("mdbx_database_id" to databaseId)
-            )
-        }
-    }
-
-    private suspend fun mirrorAttachmentDeleteToMdbx(attachment: Attachment) {
-        val vaultStore = mdbxVaultStore ?: return
-        val dao = passwordEntryDao ?: return
-        val parent = dao.getPasswordEntryById(attachment.parentPasswordId) ?: return
-        val databaseId = parent.mdbxDatabaseId ?: return
-        val parentEntryId = vaultStore.passwordObjectIdForAttachment(parent)
-        runCatchingObserved {
-            vaultStore.deleteAttachment(databaseId, parentEntryId, attachment)
-        }.onFailure { error ->
-            AttachmentLogger.logFailure(
-                event = AttachmentLogger.Event.DELETE,
-                attachmentId = attachment.id,
-                source = attachment.sourceEnum,
-                error = error,
-                extras = mapOf("mdbx_database_id" to databaseId)
-            )
-        }
     }
 
     private suspend fun materializePreview(attachment: Attachment): File {
