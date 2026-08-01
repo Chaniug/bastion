@@ -3,7 +3,7 @@
 > **文档目的**：Phase A（MDBX 移除）完成后的后续优化路线，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：B.2.1（摸清并清零 19 个失败测试）+ B.2.2（处置 disabled 文件）已 ✅ 完成；下一步 B.2.3 守卫测试治理（待维护者确认）
+> **状态**：B.1 / B.2.1 / B.2.2 已 ✅ 完成；B.2.3 守卫测试治理 🟡 进行中（Wave 1a/1b/2起/2批2 已完成，剩 1b续/1c/2余/3/规范，详见治理文档）；B.3–B.6 ⬜ 未开始
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 
@@ -212,6 +212,11 @@ PlusLocalActivationGuardTest > activationCompletesLocallyWithoutBlockingProgress
 
 9 个文件、23 处 `projectFile(...).readText()` 源码文本断言，重命名即破：
 
+> **当前进度（2026-08-02 同步）**：范围与节奏已于 `02ff77b2` 确认，治理已**部分完成**。
+> 已完成 Wave 1a / 1b / 2（起）/ 2（批2）共 4 波，CI 全绿（`failed=0`）；
+> 剩余 1b（续）/ 1c / 2（余）/ Wave 3（Tier A 行为测试）/ Wave e（写法规范）未做。
+> 详细执行记录见 [`docs/architecture-phaseB-b2.3-guard-governance.md`](architecture-phaseB-b2.3-guard-governance.md)。
+
 | 优先级 | 文件 | readText 次数 | 治理方式 |
 | --- | --- | --- | --- |
 | P0 | `CardWalletSyncScopeTest.kt` | 8 | 改为行为测试（验证实际运行时行为而非源码文本） |
@@ -360,7 +365,7 @@ sealed interface ItemOwnership<out K : KeePassBinding, out B : BitwardenBinding>
 | **P0** | B.1 遗留命名收敛 | 1-2 小时 | 低 | 单 agent | ✅ 完成（`54c2111f`，CI #30704111010） |
 | **P0** | B.2.1 摸清并清零 19 个失败测试 | 1 小时 | 无 | 单 agent | ✅ 19/19 已修复（19 → 0，`af6c2c63`） |
 | **P0** | B.2.2 处置 5 个 .disabled 文件 | 2-3 小时 | 低 | 单 agent | ✅ 完成（删 4 复活 1） |
-| **P1** | B.2.3 守卫测试治理 | 4-6 小时 | 中 | 单 agent | ⬜ 未开始 |
+| **P1** | B.2.3 守卫测试治理 | 4-6 小时 | 中 | 单 agent | 🟡 进行中（Wave 1a/1b/2起/2批2 已完成；剩 1b续/1c/2余/3/规范，详见治理文档） |
 | **P1** | B.3 PasswordViewModel 拆分 | 8-16 小时 | 中高 | 多 agent 接力 | ⬜ 未开始 |
 | **P2** | B.4 密封类同形收敛 | 4-8 小时 | 中 | 单 agent（B.3 完成后） | ⬜ 未开始 |
 | **P2** | B.5 Screen 文件拆分 | 8-16 小时 | 低 | 多 agent 接力 | ⬜ 未开始 |
@@ -373,7 +378,7 @@ sealed interface ItemOwnership<out K : KeePassBinding, out B : BitwardenBinding>
 ```
 Agent 1: B.1（命名收敛）+ B.2.1（摸清失败测试）+ B.2.2（处置 disabled）
     ↓
-Agent 2: B.2.3（守卫测试治理）+ B.2.1 续（逐个修复失败测试，下调基线）
+Agent 2: B.2.3（守卫测试治理，进行中：Wave 1a/1b/2起/2批2 已完成，剩 1b续/1c/2余/3/规范）
     ↓
 Agent 3-5: B.3（PasswordViewModel 拆分，每次拆 1-2 个职责簇）
     ↓
