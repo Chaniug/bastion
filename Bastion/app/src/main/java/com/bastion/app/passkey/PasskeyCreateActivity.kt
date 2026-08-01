@@ -1,6 +1,7 @@
 package com.bastion.app.passkey
 
 import com.bastion.app.logging.runCatchingObserved
+import com.bastion.app.logging.logSwallowed
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -38,9 +39,12 @@ import androidx.credentials.exceptions.CreateCredentialUnknownException
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.provider.PendingIntentHandler
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import com.bastion.app.R
@@ -545,12 +549,14 @@ class PasskeyCreateActivity : FragmentActivity() {
                                 showMasterPasswordDialog.value = false
                                 repository.logAudit("PASSKEY_CREATE_MASTER_PASSWORD_SUCCESS", pendingRpId)
                                 recordPasskeyEvent(stage = "master_password_success")
-                                createPasskey(
-                                    pendingRequestJson,
-                                    pendingRpId,
-                                    pendingUserName,
-                                    pendingUserDisplayName,
-                                )
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    createPasskey(
+                                        pendingRequestJson,
+                                        pendingRpId,
+                                        pendingUserName,
+                                        pendingUserDisplayName,
+                                    )
+                                }
                             } else {
                                 masterPasswordError.value = true
                                 repository.logAudit("PASSKEY_CREATE_MASTER_PASSWORD_FAILED", pendingRpId)
@@ -569,34 +575,38 @@ class PasskeyCreateActivity : FragmentActivity() {
     }
 
     private fun requestPasskeyUserVerificationBeforeCreate() {
-        val settings = runBlocking {
-            SettingsManager(applicationContext).settingsFlow.first()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val settings = SettingsManager(applicationContext).settingsFlow.first()
+            val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
+                romType = DeviceUtils.getROMType(),
+                isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
+                hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
+            )
+
+            withContext(Dispatchers.Main) {
+                if (!shouldBypassBiometric) {
+                    requestBiometricAuth()
+                    return@withContext
+                }
+
+                repository.logAudit("PASSKEY_CREATE_BIOMETRIC_BYPASSED_HYPER_OS", pendingRpId)
+                recordPasskeyEvent(stage = "biometric_bypassed_hyperos")
+
+                if (securityManager.isMasterPasswordSet()) {
+                    showMasterPasswordDialog.value = true
+                    return@withContext
+                }
+
+                lifecycleScope.launch(Dispatchers.IO) {
+                    createPasskey(
+                        pendingRequestJson,
+                        pendingRpId,
+                        pendingUserName,
+                        pendingUserDisplayName,
+                    )
+                }
+            }
         }
-        val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
-            romType = DeviceUtils.getROMType(),
-            isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
-            hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
-        )
-
-        if (!shouldBypassBiometric) {
-            requestBiometricAuth()
-            return
-        }
-
-        repository.logAudit("PASSKEY_CREATE_BIOMETRIC_BYPASSED_HYPER_OS", pendingRpId)
-        recordPasskeyEvent(stage = "biometric_bypassed_hyperos")
-
-        if (securityManager.isMasterPasswordSet()) {
-            showMasterPasswordDialog.value = true
-            return
-        }
-
-        createPasskey(
-            pendingRequestJson,
-            pendingRpId,
-            pendingUserName,
-            pendingUserDisplayName,
-        )
     }
     
     /**
@@ -615,7 +625,9 @@ class PasskeyCreateActivity : FragmentActivity() {
             onSuccess = {
                 repository.logAudit("PASSKEY_CREATE_BIOMETRIC_SUCCESS", pendingRpId)
                 recordPasskeyEvent(stage = "biometric_success")
-                createPasskey(pendingRequestJson, pendingRpId, pendingUserName, pendingUserDisplayName)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    createPasskey(pendingRequestJson, pendingRpId, pendingUserName, pendingUserDisplayName)
+                }
             },
             onError = { errorCode, errString ->
                 repository.logAudit("PASSKEY_CREATE_BIOMETRIC_FAILED", 
@@ -703,12 +715,13 @@ class PasskeyCreateActivity : FragmentActivity() {
         }
     }
     
-    private fun createPasskey(
+    private suspend fun createPasskey(
         requestJson: String,
         rpId: String,
         userName: String,
         userDisplayName: String
     ) {
+        withContext(Dispatchers.IO) {
         var createdCredentialIdForRollback: String? = null
         var boundPasswordIdForRollback: Long? = null
         try {
@@ -782,11 +795,9 @@ class PasskeyCreateActivity : FragmentActivity() {
 
             val discoverable = parseDiscoverable(requestJson)
             val normalizedRpId = PasskeyRpIdNormalizer.normalize(rpId) ?: rpId
-            val resolvedBoundTarget = kotlinx.coroutines.runBlocking {
-                pendingBoundPasswordId
-                    ?.let { passwordId -> database.passwordEntryDao().getPasswordEntryById(passwordId) }
-                    ?.let(::resolveStorageFromPassword)
-            }
+            val resolvedBoundTarget = pendingBoundPasswordId
+                ?.let { passwordId -> database.passwordEntryDao().getPasswordEntryById(passwordId) }
+                ?.let(::resolveStorageFromPassword)
             val initialCategoryId = resolvedBoundTarget?.categoryId ?: pendingCategoryId
             val initialKeepassDatabaseId = resolvedBoundTarget?.keepassDatabaseId ?: pendingKeepassDatabaseId
             val initialKeepassGroupPath = resolvedBoundTarget?.keepassGroupPath ?: pendingKeepassGroupPath
@@ -844,35 +855,33 @@ class PasskeyCreateActivity : FragmentActivity() {
                 passkeyMode = passkeyMode
             )
             
-            // 在协程中保存
-            kotlinx.coroutines.runBlocking {
-                val created = keepassPasskeyCreateExecutor.create(
-                    passkey = passkeyEntry,
-                    insertPasskey = repository::savePasskey,
-                    rollbackPasskey = ::rollbackPasskeyByCredentialId
-                )
-                if (!created) {
-                    throw IllegalStateException(getString(R.string.passkey_keepass_create_failed))
-                }
-                createdCredentialIdForRollback = credentialIdB64
-                boundPasswordIdForRollback = pendingBoundPasswordId
+            // 在协程中保存（已在 Dispatchers.IO 内，无需 runBlocking）
+            val created = keepassPasskeyCreateExecutor.create(
+                passkey = passkeyEntry,
+                insertPasskey = repository::savePasskey,
+                rollbackPasskey = ::rollbackPasskeyByCredentialId
+            )
+            if (!created) {
+                throw IllegalStateException(getString(R.string.passkey_keepass_create_failed))
+            }
+            createdCredentialIdForRollback = credentialIdB64
+            boundPasswordIdForRollback = pendingBoundPasswordId
 
-                // 同步写入密码条目的通行密钥绑定（用于备份/恢复）
-                val boundPasswordId = pendingBoundPasswordId
-                if (boundPasswordId != null) {
-                    val passwordDao = database.passwordEntryDao()
-                    val passwordEntry = passwordDao.getPasswordEntryById(boundPasswordId)
-                    if (passwordEntry != null) {
-                        val binding = PasskeyBinding(
-                            credentialId = credentialIdB64,
-                            rpId = normalizedRpId,
-                            rpName = parseRpName(requestJson, normalizedRpId),
-                            userName = userName,
-                            userDisplayName = userDisplayName
-                        )
-                        val updatedBindings = PasskeyBindingCodec.addBinding(passwordEntry.passkeyBindings, binding)
-                        passwordDao.updatePasskeyBindings(boundPasswordId, updatedBindings)
-                    }
+            // 同步写入密码条目的通行密钥绑定（用于备份/恢复）
+            val boundPasswordId = pendingBoundPasswordId
+            if (boundPasswordId != null) {
+                val passwordDao = database.passwordEntryDao()
+                val passwordEntry = passwordDao.getPasswordEntryById(boundPasswordId)
+                if (passwordEntry != null) {
+                    val binding = PasskeyBinding(
+                        credentialId = credentialIdB64,
+                        rpId = normalizedRpId,
+                        rpName = parseRpName(requestJson, normalizedRpId),
+                        userName = userName,
+                        userDisplayName = userDisplayName
+                    )
+                    val updatedBindings = PasskeyBindingCodec.addBinding(passwordEntry.passkeyBindings, binding)
+                    passwordDao.updatePasskeyBindings(boundPasswordId, updatedBindings)
                 }
             }
             
@@ -945,35 +954,34 @@ class PasskeyCreateActivity : FragmentActivity() {
             setResult(Activity.RESULT_OK, resultIntent)
             finish()
         }
+        }
     }
 
-    private fun rollbackCreatedPasskeyIfNeeded(
+    private suspend fun rollbackCreatedPasskeyIfNeeded(
         credentialId: String?,
         boundPasswordId: Long?
     ) {
         if (credentialId.isNullOrBlank()) return
-        runCatchingObserved {
-            kotlinx.coroutines.runBlocking {
-                val createdPasskey = database.passkeyDao().getPasskeyById(credentialId)
-                if (createdPasskey != null) {
-                    val deleteResult = keepassPasskeyDeleteExecutor.delete(
-                        passkey = createdPasskey,
-                        deleteLocal = repository::deletePasskeyLocalOnly
+        try {
+            val createdPasskey = database.passkeyDao().getPasskeyById(credentialId)
+            if (createdPasskey != null) {
+                val deleteResult = keepassPasskeyDeleteExecutor.delete(
+                    passkey = createdPasskey,
+                    deleteLocal = repository::deletePasskeyLocalOnly
+                )
+                deleteResult.getOrThrow()
+            } else {
+                database.passkeyDao().deleteById(credentialId)
+            }
+            if (boundPasswordId != null) {
+                val passwordDao = database.passwordEntryDao()
+                val passwordEntry = passwordDao.getPasswordEntryById(boundPasswordId)
+                if (passwordEntry != null) {
+                    val updatedBindings = PasskeyBindingCodec.removeBinding(
+                        passwordEntry.passkeyBindings,
+                        credentialId
                     )
-                    deleteResult.getOrThrow()
-                } else {
-                    database.passkeyDao().deleteById(credentialId)
-                }
-                if (boundPasswordId != null) {
-                    val passwordDao = database.passwordEntryDao()
-                    val passwordEntry = passwordDao.getPasswordEntryById(boundPasswordId)
-                    if (passwordEntry != null) {
-                        val updatedBindings = PasskeyBindingCodec.removeBinding(
-                            passwordEntry.passkeyBindings,
-                            credentialId
-                        )
-                        passwordDao.updatePasskeyBindings(boundPasswordId, updatedBindings)
-                    }
+                    passwordDao.updatePasskeyBindings(boundPasswordId, updatedBindings)
                 }
             }
             repository.logAudit(
@@ -981,8 +989,9 @@ class PasskeyCreateActivity : FragmentActivity() {
                 "$credentialId|boundPasswordId=${boundPasswordId ?: "null"}"
             )
             Log.w(TAG, "Rolled back passkey creation")
-        }.onFailure { rollbackError ->
+        } catch (rollbackError: Exception) {
             Log.e(TAG, "Failed to rollback created passkey", rollbackError)
+            logSwallowed(TAG, Log.WARN, rollbackError)
         }
     }
 

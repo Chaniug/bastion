@@ -842,8 +842,8 @@ class SecurityManager(private val context: Context) {
             sharedPreferences.edit()
                 .putString(MDK_KEYSTORE_BLOB_KEY, blob)
                 .apply()
-            android.util.Log.w(logTag, "persistCompatKeystoreWrappedMdk: saved compatibility wrapper")
-            SecurityDiagLogger.append("W/$logTag persistCompatKeystoreWrappedMdk: saved compatibility wrapper")
+            android.util.Log.w(logTag, "persistCompatKeystoreWrappedMdk: saved NON-biometric compatibility wrapper (biometric binding NOT enforced)")
+            SecurityDiagLogger.append("W/$logTag persistCompatKeystoreWrappedMdk: saved NON-biometric compatibility wrapper (biometric binding NOT enforced)")
             true
         } catch (e: Exception) {
             android.util.Log.w(logTag, "persistCompatKeystoreWrappedMdk failed: ${e.javaClass.simpleName}, message=${e.message}")
@@ -969,15 +969,14 @@ class SecurityManager(private val context: Context) {
         } else {
             sharedPreferences.edit().putBoolean(MDK_READY_KEY, true).apply()
         }
-        // Password unlock has the real MDK in hand, so refresh the keystore
-        // wrapper even when an old blob exists. Write the compatibility wrapper
-        // directly here: if the user recently passed biometric auth, Android may
-        // otherwise allow writing a fresh AUTH wrapper that still fails on some
-        // devices on the next biometric-only app unlock.
-        val persisted = persistCompatKeystoreWrappedMdk(actualMdk)
+        // 密码解锁后重新包装 MDK 的 Keystore 包装：优先用 AUTH（需生物识别）密钥包装，
+        // 以恢复生物识别绑定（数据静息保护）。persistKeystoreWrappedMdk 仅在 Keystore 拒绝
+        // AUTH 写入（UserNotAuthenticatedException / 密钥失效等已知机型兼容问题）时才回退到
+        // COMPAT 兜底，因此在支持的设备上生物识别绑定得以恢复，同时不破坏已知异常机型的可用性。
+        val persisted = persistKeystoreWrappedMdk(actualMdk)
         android.util.Log.d(
             logTag,
-            "ensureMdkInitializedWithPassword: compatibility wrapper refresh after password unlock success=$persisted"
+            "ensureMdkInitializedWithPassword: keystore wrapper refresh after password unlock success=$persisted"
         )
         mdkAuthUnavailableUntilMillis = 0L
         hasLoggedMdkAuthExpiredWarning = false

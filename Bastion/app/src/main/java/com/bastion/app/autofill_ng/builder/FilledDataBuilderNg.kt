@@ -20,6 +20,7 @@ import com.bastion.app.security.SessionManager
 import com.bastion.app.utils.SettingsManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 // 不在此处截断条目数量，让系统键盘自行控制横向滚动显示所有条目。
 private const val MAX_FILLED_PARTITIONS_COUNT = Int.MAX_VALUE
@@ -34,7 +35,9 @@ class FilledDataBuilderNg(
         return runCatchingObserved {
             val settingsManager = SettingsManager(context.applicationContext)
             val autoLockMinutes = runBlocking {
-                settingsManager.settingsFlow.first().autoLockMinutes
+                withTimeout(200) {
+                    settingsManager.settingsFlow.first().autoLockMinutes
+                }
             }
             SessionManager.updateAutoLockTimeout(autoLockMinutes)
             autoLockMinutes

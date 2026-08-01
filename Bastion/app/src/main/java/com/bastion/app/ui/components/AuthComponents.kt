@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import com.bastion.app.BuildConfig
 import com.bastion.app.R
 import com.bastion.app.security.MasterPasswordPolicy
 import com.bastion.app.security.SecurityManager
@@ -182,7 +183,7 @@ fun PasswordVerificationContent(
             )
         }
         
-        if (!isFirstTime && disablePasswordVerification) {
+        if (!isFirstTime && disablePasswordVerification && BuildConfig.DEBUG) {
             Text(
                 text = stringResource(R.string.developer_mode_password_disabled),
                 color = MaterialTheme.colorScheme.tertiary,
@@ -244,7 +245,7 @@ fun PasswordVerificationContent(
         Button(
             onClick = {
                 // 如果已存在主密码且关闭了密码验证,直接通过
-                if (!isFirstTime && disablePasswordVerification) {
+                if (!isFirstTime && disablePasswordVerification && BuildConfig.DEBUG) {
                     completeAuthentication()
                     return@Button
                 }

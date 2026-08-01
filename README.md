@@ -1,7 +1,7 @@
 # bastion
 
 <p align="center">
-  <img src="image/bastion-hero.svg" alt="bastion 主视觉" width="100%" />
+  <img src="image/bastion-hero.svg" alt="Bastion 主视觉 — 玻璃盾牌与金色锁孔" width="100%" />
 </p>
 
 <p align="center">
@@ -16,6 +16,18 @@
   <img src="https://img.shields.io/badge/platform-Android%208.0%2B-green?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/license-GPLv3-blue?style=flat-square" alt="License" />
 </p>
+
+<p align="center">
+  <a href="https://github.com/Chaniug/bastion/releases"><b>📥 下载 Development Preview APK</b></a>
+</p>
+
+> **bastion 是什么？** 一个把"你的密码只属于你"落到实处的 Android 密码管理器：数据默认完全离线、密钥由硬件 Keystore 守护、源码全程开源可审计。
+
+## 🌟 为什么选择 bastion
+
+| 🔒 本地优先 · 零信任 | 🔄 双生态聚合 | 🛡️ 开源 · 可审计 |
+| :--- | :--- | :--- |
+| 凭据本地加密，无云依赖；服务端零知识，无法找回也无法重置 | 兼容 Bitwarden 同步与 KeePass（`.kdbx`）读写，既有数据一键迁移无压力 | GPLv3 全量开源，CI 构建与发布流程透明，欢迎审阅与共建 |
 
 ---
 

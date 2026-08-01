@@ -37,6 +37,7 @@ class ClipboardUtils(private val context: Context) {
 
     companion object {
         private val clipboardScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        @Volatile
         private var clearClipboardJob: Job? = null
 
         fun copyToClipboard(

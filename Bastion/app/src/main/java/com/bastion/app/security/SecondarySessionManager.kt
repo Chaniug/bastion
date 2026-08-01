@@ -22,8 +22,13 @@ object SecondarySessionManager {
     private val _isUnlocked = MutableStateFlow(false)
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
 
+    @Volatile
     private var unlockTimestamp: Long = 0L
+    @Volatile
     private var autoLockMinutes: Int = 5
+
+    // 保护解锁状态复合读写的锁（跨进程/多线程场景，避免撕裂读与 read-modify-write 竞态）
+    private val sessionStateLock = Any()
 
     fun markUnlocked() {
         _isUnlocked.value = true
@@ -51,7 +56,9 @@ object SecondarySessionManager {
             return false
         }
 
-        val elapsedMillis = SystemClock.elapsedRealtime() - unlockTimestamp
+        val elapsedMillis = synchronized(sessionStateLock) {
+            SystemClock.elapsedRealtime() - unlockTimestamp
+        }
         if (isExpired(elapsedMillis)) {
             android.util.Log.d(
                 TAG,

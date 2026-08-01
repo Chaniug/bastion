@@ -1,111 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bastion — 本地优先 · 零知识 · 开源的 Android 密码管理器">
   <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#06122A"/>
-      <stop offset="0.52" stop-color="#0B2E52"/>
-      <stop offset="1" stop-color="#050E1F"/>
-    </linearGradient>
-    <radialGradient id="glowBlue" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.5"/>
-      <stop offset="60%" stop-color="#1E5FA8" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#1E5FA8" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
-    </radialGradient>
-    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.1" fill="#9FD4FF" fill-opacity="0.10"/>
-    </pattern>
-    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
-
-    <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.5"/>
-      <stop offset="60%" stop-color="#1E5FA8" stop-opacity="0.14"/>
-      <stop offset="100%" stop-color="#1E5FA8" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="ringGrad" x1="120" y1="90" x2="300" y2="330" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#9FD4FF"/>
-      <stop offset="0.5" stop-color="#2E7FC8"/>
-      <stop offset="1" stop-color="#0A2A4D"/>
-    </linearGradient>
-    <radialGradient id="core" cx="50%" cy="38%" r="62%">
-      <stop offset="0" stop-color="#FFF0CC"/>
-      <stop offset="0.5" stop-color="#F5B942"/>
-      <stop offset="1" stop-color="#B9760F"/>
-    </radialGradient>
-    <linearGradient id="ray" x1="0" y1="60" x2="0" y2="5" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
-    </linearGradient>
-
-    <path id="ray" d="M204 60 L210 5 L216 60 Z" fill="url(#ray)"/>
-    <line id="tick" x1="210" y1="46" x2="210" y2="60" stroke="#9FD4FF" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
-    <line id="spoke" x1="210" y1="152" x2="210" y2="104" stroke="#9FD4FF" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
-
-    <!-- 保险库徽标（右侧复用） -->
-    <g id="vault">
-      <circle cx="210" cy="210" r="200" fill="url(#blueGlow)" filter="url(#soft)"/>
-      <g>
-        <use href="#ray"/><use href="#ray" transform="rotate(30 210 210)"/><use href="#ray" transform="rotate(60 210 210)"/>
-        <use href="#ray" transform="rotate(90 210 210)"/><use href="#ray" transform="rotate(120 210 210)"/><use href="#ray" transform="rotate(150 210 210)"/>
-        <use href="#ray" transform="rotate(180 210 210)"/><use href="#ray" transform="rotate(210 210 210)"/><use href="#ray" transform="rotate(240 210 210)"/>
-        <use href="#ray" transform="rotate(270 210 210)"/><use href="#ray" transform="rotate(300 210 210)"/><use href="#ray" transform="rotate(330 210 210)"/>
-      </g>
-      <circle cx="210" cy="210" r="178" fill="none" stroke="#F5B942" stroke-opacity="0.42" stroke-width="2" stroke-dasharray="2 22"/>
-      <circle cx="392" cy="392" r="5" fill="#F5B942"/>
-      <circle cx="392" cy="392" r="10" fill="#F5B942" fill-opacity="0.25"/>
-      <circle cx="210" cy="210" r="150" fill="none" stroke="url(#ringGrad)" stroke-width="20"/>
-      <g>
-        <use href="#tick"/><use href="#tick" transform="rotate(15 210 210)"/><use href="#tick" transform="rotate(30 210 210)"/>
-        <use href="#tick" transform="rotate(45 210 210)"/><use href="#tick" transform="rotate(60 210 210)"/><use href="#tick" transform="rotate(75 210 210)"/>
-        <use href="#tick" transform="rotate(90 210 210)"/><use href="#tick" transform="rotate(105 210 210)"/><use href="#tick" transform="rotate(120 210 210)"/>
-        <use href="#tick" transform="rotate(135 210 210)"/><use href="#tick" transform="rotate(150 210 210)"/><use href="#tick" transform="rotate(165 210 210)"/>
-        <use href="#tick" transform="rotate(180 210 210)"/><use href="#tick" transform="rotate(195 210 210)"/><use href="#tick" transform="rotate(210 210 210)"/>
-        <use href="#tick" transform="rotate(225 210 210)"/><use href="#tick" transform="rotate(240 210 210)"/><use href="#tick" transform="rotate(255 210 210)"/>
-        <use href="#tick" transform="rotate(270 210 210)"/><use href="#tick" transform="rotate(285 210 210)"/><use href="#tick" transform="rotate(300 210 210)"/>
-        <use href="#tick" transform="rotate(315 210 210)"/><use href="#tick" transform="rotate(330 210 210)"/><use href="#tick" transform="rotate(345 210 210)"/>
-      </g>
-      <circle cx="210" cy="210" r="112" fill="none" stroke="#9FD4FF" stroke-opacity="0.30" stroke-width="2"/>
-      <g>
-        <use href="#spoke"/><use href="#spoke" transform="rotate(30 210 210)"/><use href="#spoke" transform="rotate(60 210 210)"/>
-        <use href="#spoke" transform="rotate(90 210 210)"/><use href="#spoke" transform="rotate(120 210 210)"/><use href="#spoke" transform="rotate(150 210 210)"/>
-        <use href="#spoke" transform="rotate(180 210 210)"/><use href="#spoke" transform="rotate(210 210 210)"/><use href="#spoke" transform="rotate(240 210 210)"/>
-        <use href="#spoke" transform="rotate(270 210 210)"/><use href="#spoke" transform="rotate(300 210 210)"/><use href="#spoke" transform="rotate(330 210 210)"/>
-      </g>
-      <circle cx="210" cy="210" r="74" fill="url(#coreGlow)" filter="url(#soft)"/>
-      <circle cx="210" cy="210" r="50" fill="url(#core)" stroke="#C98A1E" stroke-width="1.5"/>
-      <circle cx="210" cy="202" r="12" fill="#0A2A4D"/>
-      <path d="M204 209 L216 209 L219 234 L201 234 Z" fill="#0A2A4D"/>
-      <ellipse cx="200" cy="197" rx="5" ry="3.4" fill="#FFFFFF" fill-opacity="0.7"/>
-    </g>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1336"/><stop offset="0.55" stop-color="#070C22"/><stop offset="1" stop-color="#04060F"/></linearGradient>
+    <radialGradient id="halo" cx="72%" cy="48%" r="58%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.14"/><stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.12"/><stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.5"/><stop offset="100%" stop-color="#F5B942" stop-opacity="0"/></radialGradient>
+    <linearGradient id="magGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5B942" stop-opacity="0.2"/><stop offset="0.5" stop-color="#F5B942"/><stop offset="1" stop-color="#F5B942" stop-opacity="0.2"/></linearGradient>
+    <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#9FD4FF" fill-opacity="0.06"/></pattern>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
   </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#halo)"/>
+  <rect width="1280" height="640" fill="url(#dots)"/>
+  <ellipse cx="930" cy="360" rx="380" ry="360" fill="url(#glowGold)" filter="url(#soft)"/>
 
-  <!-- ===== 背景 ===== -->
-  <rect x="0" y="0" width="1280" height="640" fill="url(#bgGrad)"/>
-  <circle cx="980" cy="300" r="540" fill="url(#glowBlue)"/>
-  <circle cx="180" cy="430" r="420" fill="url(#glowGold)"/>
-  <rect x="0" y="0" width="1280" height="640" fill="url(#dots)"/>
+  <!-- 三个半透明立方体：Local / Keystore / WebDAV，品字形排列（无皇冠） -->
+  <g>
+    <polygon points="1022.0,204.0 930.0,250.0 930.0,342.0 1022.0,342.0" fill="#2E9BC2" fill-opacity="0.82" stroke="#2E9BC2" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="838.0,204.0 930.0,250.0 930.0,342.0 838.0,342.0" fill="#6FD3EC" fill-opacity="0.82" stroke="#2E9BC2" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="930.0,158.0 1022.0,204.0 930.0,250.0 838.0,204.0" fill="#CFF6FF" fill-opacity="0.82" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="1.2"/>
+    <text x="930" y="258" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="18" font-weight="700" fill="#0A1437" letter-spacing="1">Local</text>
+  </g>
+  <g>
+    <polygon points="907.0,402.0 815.0,448.0 815.0,540.0 907.0,540.0" fill="#2E6FC8" fill-opacity="0.82" stroke="#2E6FC8" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="723.0,402.0 815.0,448.0 815.0,540.0 723.0,540.0" fill="#5FA8E8" fill-opacity="0.82" stroke="#2E6FC8" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="815.0,356.0 907.0,402.0 815.0,448.0 723.0,402.0" fill="#CDE6FF" fill-opacity="0.82" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="1.2"/>
+    <text x="815" y="456" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="18" font-weight="700" fill="#0A1437" letter-spacing="1">Keystore</text>
+  </g>
+  <g>
+    <polygon points="1137.0,402.0 1045.0,448.0 1045.0,540.0 1137.0,540.0" fill="#4A57D8" fill-opacity="0.82" stroke="#4A57D8" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="953.0,402.0 1045.0,448.0 1045.0,540.0 953.0,540.0" fill="#7E8BF0" fill-opacity="0.82" stroke="#4A57D8" stroke-opacity="0.5" stroke-width="1.2"/>
+    <polygon points="1045.0,356.0 1137.0,402.0 1045.0,448.0 953.0,402.0" fill="#D6DBFF" fill-opacity="0.82" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="1.2"/>
+    <text x="1045" y="456" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="18" font-weight="700" fill="#0A1437" letter-spacing="1">WebDAV</text>
+  </g>
 
-  <!-- ===== 右侧保险库徽标 ===== -->
-  <use href="#vault" transform="translate(637.5 57.5) scale(1.25)"/>
+  <!-- 磁力吸附特效线条（品字三连） -->
+  <path d="M 862 338 C 851.0 338, 851.0 402, 900 402" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.6" filter="url(#soft2)"/>
+  <circle cx="851.0" cy="370.0" r="4.5" fill="#FFF3D2" filter="url(#soft2)"/>  <path d="M 998 338 C 1009.0 338, 1009.0 402, 960 402" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.6" filter="url(#soft2)"/>
+  <path d="M 903 470 C 918 498, 942 498, 957 470" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.6" filter="url(#soft2)"/>
+  <circle cx="930" cy="492" r="4.5" fill="#FFF3D2" filter="url(#soft2)"/>
 
-  <!-- ===== 左侧文字 ===== -->
-  <text x="92" y="288" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'Helvetica Neue',Arial,sans-serif" font-size="92" font-weight="800" letter-spacing="1">
-    <tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan>
-  </text>
-  <rect x="96" y="312" width="128" height="4" rx="2" fill="#F5B942"/>
-  <text x="94" y="362" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="23" font-weight="500" fill="#A9BBD0" letter-spacing="2">
-    本地优先 · 零知识 · 开源的 Android 密码管理器
-  </text>
-  <text x="94" y="416" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="30" font-weight="700" fill="#EAF2FB">
-    你的密码，只属于你。
-  </text>
-  <text x="94" y="456" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400" fill="#8FA6C0" letter-spacing="1">
-    AES-256 加密 · 硬件 Keystore · 完全离线运行
-  </text>
+  <text x="92" y="300" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'PingFang SC','Microsoft YaHei',sans-serif" font-size="96" font-weight="800" letter-spacing="1"><tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan></text>
+  <rect x="96" y="324" width="132" height="5" rx="2.5" fill="#F5B942"/>
+  <text x="94" y="372" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="23" font-weight="500" fill="#8899B5" letter-spacing="2">本地优先 · 零知识 · 开源的 Android 密码管理器</text>
+  <text x="94" y="430" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="32" font-weight="700" fill="#EAF2FB">你的密码，只属于你。</text>
+  <text x="94" y="470" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="18" font-weight="400" fill="#8FA6C0" letter-spacing="1">AES-256-GCM · 硬件 Keystore · 完全离线运行</text>
 </svg>

@@ -34,8 +34,12 @@ import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.provider.PendingIntentHandler
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
 import org.json.JSONObject
 import com.bastion.app.R
 import com.bastion.app.data.AppSettings
@@ -190,26 +194,36 @@ class PasskeyAuthActivity : FragmentActivity() {
         
         // 加载 Passkey 信息。Credential Provider 的候选项按 recordId 精确传递，
         // 避免同一 RP/用户名相近或同步引用数据存在时误取到另一条 credential。
-        runBlocking {
-            passkey = recordId
+        // 异步加载，防止主线程全表查询导致 ANR。
+        lifecycleScope.launch(Dispatchers.IO) {
+            val loadedPasskey = recordId
                 .takeIf { it > 0L }
                 ?.let { database.passkeyDao().getPasskeyByRecordId(it) }
                 ?.takeIf { it.credentialId == credentialId }
-            if (passkey == null) {
-                passkey = database.passkeyDao().getPasskeyById(credentialId)
-            }
-            if (passkey == null) {
-                val normalizedId = normalizeCredentialId(credentialId)
-                if (normalizedId != null) {
-                    val all = database.passkeyDao().getAllPasskeysSync()
-                    passkey = all.firstOrNull {
-                        (recordId <= 0L || it.id == recordId) &&
-                            normalizeCredentialId(it.credentialId) == normalizedId
-                    } ?: all.firstOrNull { normalizeCredentialId(it.credentialId) == normalizedId }
+                ?: database.passkeyDao().getPasskeyById(credentialId)
+                ?: run {
+                    val normalizedId = normalizeCredentialId(credentialId)
+                    if (normalizedId != null) {
+                        val all = database.passkeyDao().getAllPasskeysSync()
+                        all.firstOrNull {
+                            (recordId <= 0L || it.id == recordId) &&
+                                normalizeCredentialId(it.credentialId) == normalizedId
+                        } ?: all.firstOrNull { normalizeCredentialId(it.credentialId) == normalizedId }
+                    } else null
                 }
+
+            withContext(Dispatchers.Main) {
+                passkey = loadedPasskey
+                onPasskeyLoaded(requestJson, credentialId)
             }
         }
-        
+    }
+
+    /**
+     * Passkey 异步加载完成后的回调，在主线程执行后续逻辑（验证、显示 UI 等）。
+     * 若 passkey 未找到则 finish + 返回异常；否则展示认证界面。
+     */
+    private fun onPasskeyLoaded(requestJson: String, credentialId: String) {
         val currentPasskey = passkey
         if (currentPasskey == null) {
             Log.e(TAG, "Passkey not found")
@@ -361,33 +375,35 @@ class PasskeyAuthActivity : FragmentActivity() {
     }
 
     private fun requestPasskeyUserVerification(passkey: PasskeyEntry) {
-        val settings = runBlocking {
-            SettingsManager(applicationContext).settingsFlow.first()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val settings = SettingsManager(applicationContext).settingsFlow.first()
+            val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
+                romType = DeviceUtils.getROMType(),
+                isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
+                hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
+            )
+
+            withContext(Dispatchers.Main) {
+                if (!shouldBypassBiometric) {
+                    requestBiometricAuth(passkey)
+                    return@withContext
+                }
+
+                repository.logAudit("PASSKEY_AUTH_BIOMETRIC_BYPASSED_HYPER_OS", passkey.credentialId)
+                recordPasskeyEvent(
+                    stage = "biometric_bypassed_hyperos",
+                    rpId = passkey.rpId,
+                    credentialId = passkey.credentialId,
+                )
+
+                if (securityManager.isMasterPasswordSet()) {
+                    showMasterPasswordDialog.value = true
+                    return@withContext
+                }
+
+                authenticateWithPasskey(pendingRequestJson, passkey)
+            }
         }
-        val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
-            romType = DeviceUtils.getROMType(),
-            isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
-            hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
-        )
-
-        if (!shouldBypassBiometric) {
-            requestBiometricAuth(passkey)
-            return
-        }
-
-        repository.logAudit("PASSKEY_AUTH_BIOMETRIC_BYPASSED_HYPER_OS", passkey.credentialId)
-        recordPasskeyEvent(
-            stage = "biometric_bypassed_hyperos",
-            rpId = passkey.rpId,
-            credentialId = passkey.credentialId,
-        )
-
-        if (securityManager.isMasterPasswordSet()) {
-            showMasterPasswordDialog.value = true
-            return
-        }
-
-        authenticateWithPasskey(pendingRequestJson, passkey)
     }
     
     /**
@@ -538,10 +554,12 @@ class PasskeyAuthActivity : FragmentActivity() {
             
             val activePasskey = PasskeyPrivateKeyStore.protectPasskey(applicationContext, passkey)
             if (activePasskey.privateKeyAlias != passkey.privateKeyAlias) {
-                runBlocking {
-                    activePasskey.id.takeIf { it > 0L }?.let {
-                        database.passkeyDao().update(activePasskey)
-                    } ?: database.passkeyDao().update(activePasskey)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    runCatchingObserved {
+                        activePasskey.id.takeIf { it > 0L }?.let {
+                            database.passkeyDao().update(activePasskey)
+                        } ?: database.passkeyDao().update(activePasskey)
+                    }
                 }
                 this.passkey = activePasskey
             }
@@ -553,19 +571,21 @@ class PasskeyAuthActivity : FragmentActivity() {
                 data = signedData
             )
             
-            // 更新数据库
-            runBlocking {
-                activePasskey.id.takeIf { it > 0L }?.let { recordId ->
-                    database.passkeyDao().updateUsageByRecordId(
-                        recordId = recordId,
+            // 异步更新数据库使用统计（不阻塞签名返回）
+            lifecycleScope.launch(Dispatchers.IO) {
+                runCatchingObserved {
+                    activePasskey.id.takeIf { it > 0L }?.let { recordId ->
+                        database.passkeyDao().updateUsageByRecordId(
+                            recordId = recordId,
+                            timestamp = System.currentTimeMillis(),
+                            signCount = newSignCount
+                        )
+                    } ?: database.passkeyDao().updateUsage(
+                        credentialId = activePasskey.credentialId,
                         timestamp = System.currentTimeMillis(),
                         signCount = newSignCount
                     )
-                } ?: database.passkeyDao().updateUsage(
-                    credentialId = activePasskey.credentialId,
-                    timestamp = System.currentTimeMillis(),
-                    signCount = newSignCount
-                )
+                }
             }
             
             val clientDataJsonB64 = Base64.encodeToString(

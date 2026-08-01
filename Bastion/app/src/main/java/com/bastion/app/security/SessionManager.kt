@@ -42,11 +42,16 @@ object SessionManager {
     val isUnlocked: StateFlow<Boolean> = _isUnlocked.asStateFlow()
     
     // 解锁时间戳（基于 SystemClock.elapsedRealtime，不受系统时间修改影响）
+    @Volatile
     private var unlockTimestamp: Long = 0L
-    
+
     // 自动锁定超时（分钟），从 SettingsManager 同步。
     // -1 = 永不过期/不锁定；-2 = 重启后锁定（运行期不空闲超时，但进程冷启动即清锁）；>0 = 对应分钟空闲超时；0 = 立即
+    @Volatile
     private var autoLockMinutes: Int = 5
+
+    // 保护解锁状态复合读写的锁（跨进程/多线程场景，避免撕裂读与 read-modify-write 竞态）
+    private val sessionStateLock = Any()
     
     // 进程标识（用于检测进程重启）
     private val processId: Int = android.os.Process.myPid()
@@ -195,17 +200,20 @@ object SessionManager {
     fun canSkipVerification(context: Context): Boolean {
         appContext = context.applicationContext
         // 跨进程同步：以持久化的解锁状态为准（自动填充服务独立进程）
+        // 用锁保护对 _isUnlocked / unlockTimestamp / autoLockMinutes 的复合读写，避免跨进程/多线程撕裂读
         prefs?.let { p ->
-            val persistedUnlocked = p.getBoolean(KEY_UNLOCKED, false)
-            val persistedTs = p.getLong(KEY_UNLOCK_TS, 0L)
-            val persistedAutoLock = p.getInt(KEY_AUTO_LOCK, autoLockMinutes)
-            _isUnlocked.value = persistedUnlocked
-            if (persistedUnlocked && persistedTs != 0L) {
-                unlockTimestamp = persistedTs
-            } else if (!persistedUnlocked) {
-                unlockTimestamp = 0L
+            synchronized(sessionStateLock) {
+                val persistedUnlocked = p.getBoolean(KEY_UNLOCKED, false)
+                val persistedTs = p.getLong(KEY_UNLOCK_TS, 0L)
+                val persistedAutoLock = p.getInt(KEY_AUTO_LOCK, autoLockMinutes)
+                _isUnlocked.value = persistedUnlocked
+                if (persistedUnlocked && persistedTs != 0L) {
+                    unlockTimestamp = persistedTs
+                } else if (!persistedUnlocked) {
+                    unlockTimestamp = 0L
+                }
+                autoLockMinutes = persistedAutoLock
             }
-            autoLockMinutes = persistedAutoLock
         }
         
         // 检查是否已解锁

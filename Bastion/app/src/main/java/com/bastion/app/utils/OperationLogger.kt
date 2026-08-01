@@ -25,9 +25,13 @@ import com.bastion.app.security.SecurityManager
  */
 object OperationLogger {
     
+    @Volatile
     private var database: PasswordDatabase? = null
+    @Volatile
     private var deviceId: String = ""
+    @Volatile
     private var deviceName: String = ""
+    @Volatile
     private var securityManager: SecurityManager? = null
     @Volatile
     private var lastSnapshotCleanupAt: Long = 0L

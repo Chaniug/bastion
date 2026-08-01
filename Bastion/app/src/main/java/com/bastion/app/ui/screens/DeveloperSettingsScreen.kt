@@ -271,23 +271,25 @@ fun DeveloperSettingsScreen(
             SettingsSection(
                 title = stringResource(R.string.developer_functions)
             ) {
-                SettingsItemWithSwitch(
-                    icon = Icons.Default.Lock,
-                    title = stringResource(R.string.developer_disable_password_verification),
-                    subtitle = stringResource(R.string.developer_disable_password_verification_desc),
-                    checked = disablePasswordVerification,
-                    onCheckedChange = { enabled ->
-                        android.util.Log.d("DeveloperSettings", "Toggling password verification: $enabled")
-                        disablePasswordVerification = enabled
-                        scope.launch {
-                            viewModel.updateDisablePasswordVerification(enabled)
-                            android.util.Log.d(
-                                "DeveloperSettings",
-                                "Password verification setting updated to: $enabled"
-                            )
+                if (BuildConfig.DEBUG) {
+                    SettingsItemWithSwitch(
+                        icon = Icons.Default.Lock,
+                        title = stringResource(R.string.developer_disable_password_verification),
+                        subtitle = stringResource(R.string.developer_disable_password_verification_desc),
+                        checked = disablePasswordVerification,
+                        onCheckedChange = { enabled ->
+                            android.util.Log.d("DeveloperSettings", "Toggling password verification: $enabled")
+                            disablePasswordVerification = enabled
+                            scope.launch {
+                                viewModel.updateDisablePasswordVerification(enabled)
+                                android.util.Log.d(
+                                    "DeveloperSettings",
+                                    "Password verification setting updated to: $enabled"
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 SettingsItemWithSwitch(
                     icon = Icons.Default.WarningAmber,

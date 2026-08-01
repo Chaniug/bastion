@@ -269,6 +269,10 @@ private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
 /**
  * 把 YUV_420_888 的三平面数据紧凑为 NV21（Y 平面 + 交错 VU），
  * 兼容不同设备的 rowStride / pixelStride 布局。
+ *
+ * 注意：当 rowStride > width 或 pixelStride > 1 时，某些设备的平面布局
+ * 可能导致写入位置超出 NV21 缓冲区。这里加了边界保护：一旦 pos 超界则
+ * 截断并返回部分数据（此时 QR 解码会失败，触发 frame 重试，不会崩溃）。
  */
 private fun yuv420ToNv21(image: Image): ByteArray {
     val width = image.width
@@ -289,12 +293,27 @@ private fun yuv420ToNv21(image: Image): ByteArray {
 
     val nv21 = ByteArray(width * height + (width * height) / 2)
     var pos = 0
+    val safePut: (Byte) -> Boolean = { b ->
+        if (pos < nv21.size) {
+            nv21[pos++] = b
+            true
+        } else false
+    }
+
     val yRow = ByteArray(yRowStride)
     for (row in 0 until height) {
         yBuffer.position(row * yRowStride)
-        yBuffer.get(yRow, 0, yRowStride)
+        yBuffer.get(yRow, 0, minOf(yRowStride, yBuffer.remaining()))
         for (col in 0 until width) {
-            nv21[pos++] = yRow[col * yPixelStride]
+            val srcIdx = col * yPixelStride
+            if (srcIdx >= yRowStride) break
+            if (!safePut(yRow[srcIdx])) {
+                android.util.Log.w(
+                    "QrCameraScanSession",
+                    "yuv420ToNv21: NV21 buffer overflow at Y plane row=$row col=$col pos=$pos size=${nv21.size} width=$width height=$height yRowStride=$yRowStride yPixelStride=$yPixelStride"
+                )
+                return nv21
+            }
         }
     }
     val uvHeight = height / 2
@@ -303,12 +322,20 @@ private fun yuv420ToNv21(image: Image): ByteArray {
     val vRowArr = ByteArray(vRowStride)
     for (row in 0 until uvHeight) {
         uBuffer.position(row * uRowStride)
-        uBuffer.get(uRowArr, 0, uRowStride)
+        uBuffer.get(uRowArr, 0, minOf(uRowStride, uBuffer.remaining()))
         vBuffer.position(row * vRowStride)
-        vBuffer.get(vRowArr, 0, vRowStride)
+        vBuffer.get(vRowArr, 0, minOf(vRowStride, vBuffer.remaining()))
         for (col in 0 until uvWidth) {
-            nv21[pos++] = vRowArr[col * vPixelStride]
-            nv21[pos++] = uRowArr[col * uPixelStride]
+            val vIdx = col * vPixelStride
+            val uIdx = col * uPixelStride
+            if (vIdx >= vRowStride || uIdx >= uRowStride) break
+            if (!safePut(vRowArr[vIdx]) || !safePut(uRowArr[uIdx])) {
+                android.util.Log.w(
+                    "QrCameraScanSession",
+                    "yuv420ToNv21: NV21 buffer overflow at UV plane row=$row col=$col pos=$pos size=${nv21.size} width=$width height=$height uvWidth=$uvWidth uvHeight=$uvHeight uRowStride=$uRowStride vRowStride=$vRowStride uPixelStride=$uPixelStride vPixelStride=$vPixelStride"
+                )
+                return nv21
+            }
         }
     }
     return nv21
