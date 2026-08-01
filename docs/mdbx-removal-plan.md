@@ -1,8 +1,9 @@
 # 移除 MDBX · 收敛到 KDBX + Bitwarden 双后端（实施计划）
 
-> 状态：**计划待确认，尚未动工**。
+> 状态：**方向已确认，Phase 0 已完成，Phase 1–3 待执行**。
 > 决策背景：MDBX 为自研格式，仅作者本人测试使用，维护成本高；KDBX（开源标准、生态成熟）与 Bitwarden 保留为正式后端。
-> 前置依赖：**Phase 0 必须先完成**，否则无法验证后续任何阶段的正确性。
+> 产品定位：**本地库 = KDBX，云端账户 = Bitwarden**，不再保留第三种自研格式。
+> 前置依赖：Phase 0（CI 回归基线闸门）已于 `e759d188` 完成，后续阶段方可验证正确性。
 
 ## 一、决策依据（已核实）
 
@@ -78,6 +79,34 @@ MDBX 专有文件 20 个 / 17,666 行：
 
 引用分布（116 文件）：`ui` 58、`data` 18、`viewmodel` 11、`repository` 7、`utils` 5、`autofill_ng` 4、`domain` 3、`passkey` 2、`attachments` 2、`sync` 1、`security` 1、`navigation` 1、`mdbx` 1、`MainActivity.kt`、`BastionApplication.kt`。
 
+### ⚠️ 真实工作量：删文件只是一半
+
+主源码含 `mdbx` 的引用共 **3,893 行**，其中：
+
+| 位置 | 引用行数 | 处理方式 |
+| --- | --- | --- |
+| MDBX 专有文件（20 个） | 1,711 | 整文件删除 |
+| **共享文件（96 个）** | **2,182** | **逐处剔除分支** |
+
+**即：需要在共享文件中做外科手术的量，比直接删文件的量还大。** 这是本次改造的主要成本，也是最容易引入回归的地方。
+
+引用密度最高的共享文件：
+
+| 文件 | mdbx 引用行数 |
+| --- | --- |
+| `ui/vaultv2/VaultV2Pane.kt` | 134 |
+| `ui/screens/AddEditPasswordScreen.kt` | 73 |
+| `ui/password/PasswordQuickFolderSupport.kt` | 73 |
+| `ui/components/CreateCategoryDialog.kt` | 72 |
+| `ui/password/PasswordBatchMoveMixedSupport.kt` | 54 |
+| `ui/screens/PasskeyListScreen.kt` | 53 |
+| `ui/components/UnifiedCategoryFilterBottomSheet.kt` | 53 |
+| `ui/SimpleMainScreen.kt` | 51 |
+| `ui/password/PasswordBatchMoveSupport.kt` | 51 |
+| `ui/password/PasswordListContent.kt` | 50 |
+
+这类文件普遍是「三后端并列分支」结构（KeePass / Bitwarden / MDBX 各一路），剔除 MDBX 分支的同时**必须保证另外两路行为不变** —— 这是 Phase 1 与 Phase 3 的主要风险来源。
+
 ### 数据模型字段
 
 - `data/PasswordEntry.kt:80,82` —— `mdbxDatabaseId` / `mdbxFolderId`
@@ -111,15 +140,33 @@ MDBX 专有测试（可整体删除）：`MdbxAndroidIntegrationGuardTest`、`Md
 
 > 每个阶段独立提交、独立跑 CI、独立核对测试失败**名单**（非仅数字）后再进入下一阶段。
 
-### Phase 0：恢复 CI 信号【前置，必须先做】
+### Phase 0：恢复 CI 信号【前置，必须先做】—— ✅ 已完成（`e759d188`）
 
-**改动范围**：仅 `.github/workflows/main.yml`，不触碰任何业务代码。
+**改动范围**：仅 `.github/workflows/main.yml`，未触碰任何业务代码。
 
-**内容**：保留 `continue-on-error: true`（不阻塞出包），新增阈值校验步骤 —— 解析 `app/build/test-results/testDebugUnitTest/*.xml`，当 `failures + errors` 超过基线时显式 fail。
+**已实现**：新增 `Enforce unit test failure baseline` 步骤
 
-**当前基线**：`593 tests completed, 22 failed`
+- 解析 `app/build/test-results/testDebugUnitTest/*.xml`，逐 `<testcase>` 统计 `failure` / `error`
+- 失败数 **> 基线** → 显式 fail，并报告新增数量
+- 失败数 **< 基线** → 告警提示下调 `BASELINE_FAILURES`（棘轮效应，防止改进被回吐）
+- 失败测试**名单**写入 run summary，不必再手动下载日志 diff
+- XML 缺失 → fail（防止「没跑测试」被静默放行）；单个 XML 损坏 → 告警但不中断
+- 采用 XML 解析而非原 `sed` 正则（后者假设 `tests=` / `failures=` / `errors=` 属性顺序固定，不可靠）
+- `if: always() && steps.unit_tests.outcome != 'skipped'` —— 构建门禁失败时不产生重复噪音
 
-**理由**：现状为 `continue-on-error` 导致 CI 恒绿，22 个守卫已失效且无告警。上一轮 66 行重构引入 2 个新失败，靠人工扒日志才发现。**在无信号状态下执行 116 文件手术，等同于闭眼拆承重墙。**
+**当前基线**：`BASELINE_FAILURES: "22"`（对应 `593 tests completed, 22 failed`）
+
+**上线前本地验证**（用夹具 XML 跑通全部分支）：
+
+| 场景 | 期望 | 实测 |
+| --- | --- | --- |
+| 失败 2 < 基线 3 | 通过 + 提示下调 | ✅ exit 0 + warning |
+| 失败 2 = 基线 2 | 通过 | ✅ exit 0 |
+| 失败 2 > 基线 1 | 失败 + 报新增 1 个 | ✅ exit 1 + error |
+| XML 缺失 | 失败 | ✅ exit 1 |
+| XML 损坏 | 告警但不崩溃 | ✅ warning + exit 0 |
+
+**理由**：改动前 `continue-on-error` 使 CI 恒绿，22 个守卫已失效且无任何告警。上一轮 66 行重构引入 2 个新失败，靠人工扒日志才发现。**在无信号状态下执行 116 文件手术，等同于闭眼拆承重墙。**
 
 **风险**：零（不改业务代码）
 
@@ -178,15 +225,28 @@ MDBX 专有测试（可整体删除）：`MdbxAndroidIntegrationGuardTest`、`Md
 
 同时消除「同一功能实现三遍」的重复成本 —— 这是巨型文件与 UI 分支复杂度的主要成因之一。
 
-## 五、待确认事项
+## 五、待确认事项（已全部确认）
 
-1. **测试库数据**：作者本机是否有需保留的 MDBX 测试库？若有，建议 Phase 3 前手动导出（现有通路：`movePasswordsToKeePassDatabase()` 可将条目搬运至 KDBX 库）。
-2. **是否需要一次性导出器**：若测试数据量大，可在 Phase 1 前先做「MDBX → KDBX 一键导出」（纯新增代码，零破坏）。若数据可弃则跳过。
-3. **多设备增量同步**：确认接受降级为 KDBX 的字段级冲突检测方案（失去提交图历史回溯与附件分块增量传输）。
+作者决策：**「本地不需要 MDBX，本地只需要 KDBX。」**
+
+| 事项 | 结论 |
+| --- | --- |
+| MDBX 测试库数据是否保留 | **不保留**，数据可弃 |
+| 是否先做 MDBX → KDBX 导出器 | **跳过**，不需要 |
+| 是否接受同步能力降级 | **接受**，KDBX 字段级冲突检测已足够 |
+
+因此本次为**直接移除**，无需过渡期、无需导出器、无需只读观察版本。
+定位收敛为：**本地 = KDBX，云端账户 = Bitwarden。**
 
 ## 六、执行纪律
 
 - 每阶段单独提交，提交后必须监控 Actions；
-- **不以 Actions 绿色作为通过依据** —— 必须拉日志核对 `NNN tests completed, MM failed`，并将失败**名单**与上一阶段 diff（仅比数字会漏掉「修好一个、坏一个」的抵消）；
+- Phase 0 上线后，**回归判定以 `Enforce unit test failure baseline` 闸门为准**：失败数超过基线会直接 fail，run summary 内含完整失败名单；
+- 仍需关注失败**名单**而非仅数字 —— 闸门比对的是总数，「修好一个、同时坏一个」的抵消不会触发 fail，需人工核对名单；
+- 每阶段删除测试后，**必须同步下调 `BASELINE_FAILURES`**：
+  - Phase 1 删除 `PasswordListMdbxFilterTest`、`PasswordAggregateMdbxFilterTest` 中的失败项
+  - Phase 2 删除 `MdbxAndroidIntegrationGuardTest`（3 项）、`MdbxPasswordObjectIdRegressionGuardTest`
+  - Phase 3 改写 `BiometricUnlockRegressionGuardTest`（2 项）等
+  - 基线只降不升 —— **上调基线等于接受新回归**，禁止；
 - 任一阶段出现失败名单**新增**项，立即定位；无法快速修复则 revert 该阶段；
 - 相关背景见 `docs/ci-test-signal-and-guard-test-debt.md`。
