@@ -1,8 +1,9 @@
-# Bastion 架构重构：KDBX + Bitwarden 双后端
+# Bastion 架构重构：移除 MDBX，保留 KDBX + Bitwarden + BastionLocal 三后端
 
-> **文档目的**：为「移除 MDBX 与 BastionLocal，收敛为 KDBX + Bitwarden 双后端」提供完整的技术设计与实施路线，供多 agent 接力开发。
+> **文档目的**：为「移除 MDBX 自研引擎，保留 KDBX + Bitwarden + BastionLocal 三后端」提供完整的技术设计与实施路线，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
+> **最后更新**：2026-08-01（保留 BastionLocal，取消 Phase B）
 > **状态**：架构设计已完成，Phase A 执行中
 > **决策人**：项目维护者
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
@@ -24,19 +25,22 @@ Bastion 当前有 **4 种存储后端**：
 
 ### 1.2 目标架构
 
-**只保留 2 种后端**：
+**移除 MDBX，保留 3 种后端**：
 
 | 后端 | 角色 | 同步能力 | 说明 |
 | --- | --- | --- | --- |
-| **KDBX (KeePass)** | 本地库（取代 BastionLocal + MDBX） | 本地 + WebDAV + OneDrive + Google Drive | 唯一本地存储，用户首次启动引导创建/绑定 .kdbx 文件 |
-| **Bitwarden** | 云端密码库 | 云端 | 不改动 |
+| **BastionLocal** | App 内置本地库（默认 fallback） | 无 | 保留不动。开箱即用，不与 KDBX/Bitwarden 冲突 |
+| **KDBX (KeePass)** | 可同步的本地文件库（取代 MDBX） | 本地 + WebDAV + OneDrive + Google Drive | 保留不动。功能已完整 |
+| **Bitwarden** | 云端密码库 | 云端 | 保留不动 |
+
+> **为什么不删 BastionLocal？** BastionLocal 是 App 默认内置库，开箱即用，承载未绑定外部库的纯本地条目。它与 KDBX/Bitwarden 是互斥平行关系（`toStorageTarget()` 的 `when` 优先级保证），不缓存 Bitwarden/KDBX 数据，不产生冲突。删除它需要数据迁移且有丢失风险，收益为零。
 
 ### 1.3 设计原则
 
 - **UI 风格不变**：现有界面布局、交互模式、视觉风格保持不动，仅移除 MDBX 相关的 UI 元素。
 - **KDBX 能力已就绪**：KDBX 已有完整的远程同步管线（`RemoteKeePassSyncService` + `KeePassRemoteUploadWorker` + `KeePassChangeSetApplier` 字段级冲突检测 + `KeePassRemoteRebase` 重放），**无需新建同步能力**，仅删除 MDBX 代码即可。
 - **零数据丢失**：MDBX 条目的加密方式与本地条目完全相同（`MdbxPasswordProvider` 使用相同的 `decodePasswordOrNull` + `securityManager::encryptData`），移除时将 `mdbxDatabaseId` 置空即可降级为本地条目，密码仍可解密。
-- **BastionLocal 数据迁移**：移除 BastionLocal 前，需将 Room 中的本地条目迁移进默认 KDBX 文件。
+- **BastionLocal 保留**：不删 BastionLocal，无需数据迁移，用户开箱即用。
 
 ---
 
@@ -297,91 +301,9 @@ private val MIGRATION_73_74 = object : Migration(73, 74) {
 
 ---
 
-### Phase B：移除 BastionLocal，KDBX 成为默认本地库
+## 五、`StorageTarget` 目标设计（Phase A 完成后）
 
-> **风险**：高。BastionLocal 是 App 默认 fallback，承载用户真实本地数据，移除需数据迁移。
-> **前置条件**：Phase A 完成并验证。
-
-#### B.1 现状分析
-
-`BastionLocal` 是 `StorageTarget` 的默认 fallback：
-- `StorageTarget.kt` 中 `normalizedStorageTargets`、`withStorageTargetSelected`、`withoutStorageTarget` 的 `defaultTarget` 参数默认值为 `StorageTarget.BastionLocal(null)`
-- `PasswordEntry.toStorageTarget()` / `SecureItem.toStorageTarget()` 的 `else` 分支返回 `BastionLocal(categoryId)`
-- `MultiStorageTargetPickerBottomSheet.kt`、`MultiStorageTargetSelectorCard.kt` 等 15+ 处 `?: StorageTarget.BastionLocal(null)` 作为 fallback
-- 所有 AddEdit 页面的默认 `selectedStorageTargets` 初始化为 `listOf(StorageTarget.BastionLocal(null))`
-- Room `password_entries` 表中没有 keepass/bitwarden/mdbx 字段的条目即为 BastionLocal 数据（`categoryId` 关联分类）
-
-#### B.2 移除 `StorageTarget.BastionLocal` 分支
-
-在 13 个密封接口中删除 `BastionLocal` / `Local` / `BastionCategory` 分支（命名不统一，需逐个处理）：
-- `StorageTarget.BastionLocal` → 删（64 处穷尽 `when` 分支，215 处引用）
-- `UnifiedCategoryFilterSelection.Local` → 删
-- `CategoryFilter.Local` / `LocalOnly` / `LocalStarred` / `LocalUncategorized` → 删或合并
-- `TotpCategoryFilter.Local` / `LocalStarred` / `LocalUncategorized` → 删或合并
-- `NoteCategoryFilter.Local` / `LocalStarred` / `LocalUncategorized` → 删或合并
-- `CreateDialogTarget.Local` → 删
-- `UnifiedMoveCategoryTarget.Uncategorized` / `BastionCategory` → 删或改为 KDBX
-- `MovePickerSource.BastionLocal` → 删
-- `StoragePickerSource.BastionLocal` → 删
-- `PasswordOwnership.BastionLocal` → 删
-- `SecureItemOwnership.BastionLocal` → 删
-- `PasskeyOwnership.BastionLocal` → 删
-- `PasswordSource.Local` → 删
-- `DedupMergeTarget.BastionLocal` → 删
-
-#### B.3 首次启动引导创建默认 KDBX 文件
-
-在 App 首次启动（或检测到无已注册 KDBX 数据库时）：
-1. 引导用户创建或导入一个 .kdbx 文件（可默认本地存储，后续可添加 WebDAV/OneDrive 同步）
-2. 将此数据库注册为默认本地库
-3. 后续新建条目默认存入此 KDBX 数据库
-
-**需修改**：
-- `SettingsManager`：添加默认 KDBX 数据库 ID 设置
-- `MainActivity`：首次启动检查 + 引导逻辑
-- 所有 `?: StorageTarget.BastionLocal(null)` fallback：改为 `?: StorageTarget.KeePass(defaultDbId, null)`
-
-#### B.4 存量数据迁移（核心风险）
-
-将 Room 中无 keepass/bitwarden/mdbx 字段的本地条目迁移进默认 KDBX 文件：
-
-1. 读取所有 `keepassDatabaseId IS NULL AND bitwardenVaultId IS NULL AND mdbxDatabaseId IS NULL` 的条目
-2. 解密每条目的密码字段
-3. 通过 `KeePassChangeSetApplier` 写入默认 KDBX 文件
-4. 更新 Room 记录的 `keepassDatabaseId` 为默认 KDBX 数据库 ID
-5. Room 迁移 74 → 75：`categoryId` 字段保留（用于 KDBX groupPath 映射）
-
-**风险点**：
-- 迁移过程中断的数据一致性（需事务保护）
-- KDBX 文件写入失败的处理（需回滚 + 提示）
-- 大量条目迁移的性能（需分批 + 进度提示）
-
-#### B.5 Room 迁移 74 → 75
-
-```kotlin
-private val MIGRATION_74_75 = object : Migration(74, 75) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        // 1. 将所有本地条目的 keepassDatabaseId 设为默认 KDBX 数据库 ID
-        //    （需在运行时确定默认 KDBX 数据库 ID 后执行）
-        // 2. categoryId 字段保留（KDBX groupPath 映射用）
-        // 3. 无需 DROP COLUMN（categoryId 保留）
-    }
-}
-```
-
-> **注**：此迁移可能需要在 App 运行时执行（而非 Room 启动迁移），因为需要确定默认 KDBX 数据库 ID 并写入 KDBX 文件。
-
-#### B.6 验收
-
-- 迁移后本地数据可正常读写
-- CI + 手动验证
-- 保留回滚路径（迁移前备份 Room 数据库）
-
----
-
-## 五、`StorageTarget` 目标设计
-
-### 5.1 Phase A 完成后（移除 MDBX）
+移除 MDBX 后，`StorageTarget` 保留 3 个分支：
 
 ```kotlin
 sealed interface StorageTarget {
@@ -407,27 +329,7 @@ sealed interface StorageTarget {
 }
 ```
 
-### 5.2 Phase B 完成后（最终目标）
-
-```kotlin
-sealed interface StorageTarget {
-    val stableKey: String
-
-    data class KeePass(
-        val databaseId: Long,
-        val groupPath: String?
-    ) : StorageTarget {
-        override val stableKey: String = "keepass:$databaseId:${groupPath.orEmpty()}"
-    }
-
-    data class Bitwarden(
-        val vaultId: Long,
-        val folderId: String?
-    ) : StorageTarget {
-        override val stableKey: String = "bitwarden:$vaultId:${folderId.orEmpty()}"
-    }
-}
-```
+> **BastionLocal 保留**：它是 App 默认内置库，与 KDBX/Bitwarden 互斥平行（`toStorageTarget()` 的 `when` 优先级保证），不缓存其他后端数据，不产生冲突。
 
 ---
 
@@ -476,7 +378,7 @@ GitHub Actions 的 `Build Debug APK (build gate)` 步骤是**硬性编译闸门*
 | A.5 清理 MainActivity MDBX 装配 | ⬜ 待做 | — |
 | A.6 Room 迁移 73 → 74 | ⬜ 待做 | — |
 | A.7 CI 验证 | ⬜ 待做 | — |
-| **Phase B：移除 BastionLocal** | ⬜ 待确认 | — |
+| ~~Phase B：移除 BastionLocal~~ | ❌ 已取消 | 保留 BastionLocal，不删 |
 
 ---
 
