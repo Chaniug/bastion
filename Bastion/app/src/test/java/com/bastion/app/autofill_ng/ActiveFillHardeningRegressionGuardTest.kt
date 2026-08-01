@@ -38,7 +38,9 @@ class ActiveFillHardeningRegressionGuardTest {
 
         assertTrue(serviceSource.contains("activeFillNotificationEnabled"))
         assertTrue(serviceSource.contains("activeFillPromptThrottle.tryAcquire"))
-        assertTrue(serviceSource.contains("entry.isLinkedToApp(packageName)"))
+        // 绑定校验已从内存端 `entry.isLinkedToApp(packageName)` 下沉到 DAO 查询，
+        // `findByPackageName` 的 SQL 做同样的大小写无关多绑定匹配。
+        assertTrue(serviceSource.contains("findByPackageName(packageName)"))
         assertFalse(serviceSource.contains("Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE"))
         assertTrue(helperSource.contains("EXTRA_MANUAL_TARGET_PACKAGE"))
         assertTrue(pickerSource.contains("EXTRA_MANUAL_TARGET_PACKAGE"))

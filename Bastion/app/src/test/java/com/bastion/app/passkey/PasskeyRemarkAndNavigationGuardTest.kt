@@ -83,8 +83,10 @@ class PasskeyRemarkAndNavigationGuardTest {
         val passkeyList = projectFile(
             "app/src/main/java/com/bastion/app/ui/screens/PasskeyListScreen.kt"
         ).readText()
-        val settings = projectFile(
-            "app/src/main/java/com/bastion/app/ui/screens/SettingsScreen.kt"
+        // 底栏排序设置已从 SettingsScreen 拆出到独立的 BottomNavSettingsScreen，
+        // PASSKEY 的过滤逻辑随之迁移，守卫的读取目标同步跟进。
+        val bottomNavSettings = projectFile(
+            "app/src/main/java/com/bastion/app/ui/screens/BottomNavSettingsScreen.kt"
         ).readText()
 
         assertTrue(mainScreen.contains("if (tab == BottomNavContentTab.PASSKEY) BottomNavContentTab.AUTHENTICATOR else tab"))
@@ -95,7 +97,7 @@ class PasskeyRemarkAndNavigationGuardTest {
         assertTrue(fab.contains("onClick = onNavigateToPasskey"))
         assertTrue(passkeyList.contains("onNavigateToAuthenticator: (() -> Unit)? = null"))
         assertTrue(passkeyList.contains("imageVector = Icons.Default.Security"))
-        assertTrue(settings.contains("filterNot { it == BottomNavContentTab.PASSKEY }"))
+        assertTrue(bottomNavSettings.contains("filterNot { it == BottomNavContentTab.PASSKEY }"))
     }
 
     @Test

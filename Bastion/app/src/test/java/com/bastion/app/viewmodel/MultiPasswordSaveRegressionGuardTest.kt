@@ -603,7 +603,8 @@ class MultiPasswordSaveRegressionGuardTest {
             "The transfer tracker must keep a short success phase so the quick status bar can show the completed result before returning to breadcrumbs.",
             trackerSource.contains("enum class PasswordBatchTransferPhase") &&
                 trackerSource.contains("val operationId: Long") &&
-                trackerSource.contains("private var nextOperationId") &&
+                // 计数器已从 `private var Long` 加固为 `private val AtomicLong`（线程安全）。
+                trackerSource.contains("private val nextOperationId = AtomicLong") &&
                 trackerSource.contains("RUNNING") &&
                 trackerSource.contains("SUCCESS") &&
                 trackerSource.contains("fun complete(") &&
@@ -733,7 +734,8 @@ class MultiPasswordSaveRegressionGuardTest {
             "Batch delete progress must keep a short success state so the quick status bar can show the completed result before returning to breadcrumbs.",
             deleteTrackerSource.contains("enum class PasswordBatchDeletePhase") &&
                 deleteTrackerSource.contains("val operationId: Long") &&
-                deleteTrackerSource.contains("private var nextOperationId") &&
+                // 计数器已从 `private var Long` 加固为 `private val AtomicLong`（线程安全）。
+                deleteTrackerSource.contains("private val nextOperationId = AtomicLong") &&
                 deleteTrackerSource.contains("SUCCESS") &&
                 deleteTrackerSource.contains("fun complete(") &&
                 deleteTrackerSource.contains("delay(1300)")
@@ -908,11 +910,15 @@ class MultiPasswordSaveRegressionGuardTest {
             savePasswordsAcrossTargetsBody.contains("requestedTargetKeys") &&
                 savePasswordsAcrossTargetsBody.contains("catch (e: Exception)") &&
                 savePasswordsAcrossTargetsBody.contains("savePasswordsAcrossTargets crashed") &&
-                savePasswordsAcrossTargetsBody.contains("onComplete(firstId)")
+                // 首个 id 已收进 PasswordSaveAcrossTargetsResult，回调参数随之变为
+                // saveResult.firstPasswordId。守卫只关心"回调仍被调用且带首个 id"。
+                savePasswordsAcrossTargetsBody.contains("onComplete(saveResult.firstPasswordId)")
         )
         assertTrue(
             "Grouped password updates must not silently report success when an existing row update is rejected.",
-            saveGroupedBody.contains("val updated = updatePasswordEntryInternal(updatedEntry)") &&
+            // 调用点已展开为多行具名参数，断言拆成"接收返回值"+"传入的是 updatedEntry"两段。
+            saveGroupedBody.contains("val updated = updatePasswordEntryInternal(") &&
+                saveGroupedBody.contains("entry = updatedEntry") &&
                 saveGroupedBody.contains("saveGroupedPasswords aborted due to password update failure") &&
                 saveGroupedBody.contains("return null")
         )

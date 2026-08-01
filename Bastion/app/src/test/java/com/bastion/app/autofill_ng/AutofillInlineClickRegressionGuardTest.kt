@@ -15,14 +15,17 @@ class AutofillInlineClickRegressionGuardTest {
         val cipherDatasetBody = source.substringAfter("private fun buildCipherDataset(")
             .substringBefore("private fun buildStrongPasswordSuggestionDataset(")
 
+        // 原先单个 `authPendingIntent`（条件为 requiresAuthentication || hasInlinePresentation）
+        // 已拆成两个独立变量：`authPendingIntent`（仅认证用，挂 Dataset authentication）与
+        // `inlinePendingIntent`（仅 inline 用，喂给 InlinePresentation）。语义不变，守卫随之拆分。
         assertTrue(
             "Inline suggestions should still create the real callback PendingIntent for keyboards that launch the slice PendingIntent.",
-            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication || hasInlinePresentation)") &&
+            cipherDatasetBody.contains("val inlinePendingIntent = if (hasInlinePresentation)") &&
                 cipherDatasetBody.contains("createCipherAuthPendingIntent(")
         )
         assertTrue(
             "The real callback PendingIntent should be wired to the inline presentation itself.",
-            cipherDatasetBody.contains("pendingIntent = authPendingIntent ?: return@create null")
+            cipherDatasetBody.contains("pendingIntent = inlinePendingIntent ?: return@create null")
         )
         assertFalse(
             "Inline suggestion clicks must not be wired to a no-op PendingIntent, because some keyboards launch it instead of applying dataset values.",
@@ -30,7 +33,8 @@ class AutofillInlineClickRegressionGuardTest {
         )
         assertTrue(
             "Inline alone must not wrap direct-fill suggestions; Dataset authentication is only for locked authenticated suggestions.",
-            cipherDatasetBody.contains("if (partition.requiresAuthentication && authPendingIntent != null)") &&
+            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication)") &&
+                cipherDatasetBody.contains("if (authPendingIntent != null)") &&
                 cipherDatasetBody.contains("datasetBuilder.setAuthentication(authPendingIntent.intentSender)")
         )
     }

@@ -61,7 +61,7 @@ class AutofillDetectionIntegrationGuardTest {
 
         assertTrue(parser.contains("AutofillFieldRolePolicy.selectWithDiagnostics("))
         assertTrue(callback.contains("val parser = EnhancedAutofillStructureParserV2()"))
-        assertTrue(callback.contains("source = \"assist_structure\""))
+        assertTrue(callback.contains("source = \"assist_structure_fresh\""))
     }
 
     @Test

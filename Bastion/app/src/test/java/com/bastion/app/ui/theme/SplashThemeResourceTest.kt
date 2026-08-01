@@ -20,10 +20,12 @@ class SplashThemeResourceTest {
         assertTrue(!darkApi31.contains("system_neutral"))
         assertTrue(lightApi31.contains("android:windowSplashScreenBackground"))
         assertTrue(darkApi31.contains("android:windowSplashScreenBackground"))
-        assertTrue(lightTheme.contains("<item name=\"android:windowLightStatusBar\">true</item>"))
-        assertTrue(lightTheme.contains("<item name=\"android:windowLightNavigationBar\">true</item>"))
-        assertTrue(darkTheme.contains("<item name=\"android:windowLightStatusBar\">false</item>"))
-        assertTrue(darkTheme.contains("<item name=\"android:windowLightNavigationBar\">false</item>"))
+        // 这些 item 可能带 tools:ignore="NewApi" 等附加属性（windowLightNavigationBar
+        // 需 API 27），所以用容忍额外属性的正则，而不是全等文本匹配。
+        assertTrue(hasThemeFlag(lightTheme, "windowLightStatusBar", expected = true))
+        assertTrue(hasThemeFlag(lightTheme, "windowLightNavigationBar", expected = true))
+        assertTrue(hasThemeFlag(darkTheme, "windowLightStatusBar", expected = false))
+        assertTrue(hasThemeFlag(darkTheme, "windowLightNavigationBar", expected = false))
     }
 
     @Test
@@ -41,7 +43,17 @@ class SplashThemeResourceTest {
         assertTrue(!baseActivity.contains("cachedSettings = startupSettings"))
         assertTrue(mainActivity.split("installSplashScreen()").size - 1 == 1)
         assertTrue(mainActivity.contains("setContent {"))
-        assertTrue(mainActivity.contains("BastionApp(repository"))
+        // 调用点已格式化为多行具名参数，用空白不敏感的正则代替原来的紧凑文本断言。
+        assertTrue(Regex("""BastionApp\(\s*repository\s*=""").containsMatchIn(mainActivity))
+    }
+
+    /**
+     * 匹配形如 `<item name="android:windowLightStatusBar">true</item>` 的主题开关，
+     * 允许 item 上带任意附加属性（例如 `tools:ignore="NewApi"`）。
+     */
+    private fun hasThemeFlag(themeXml: String, attribute: String, expected: Boolean): Boolean {
+        val pattern = Regex("""<item\s+name="android:$attribute"[^>]*>\s*$expected\s*</item>""")
+        return pattern.containsMatchIn(themeXml)
     }
 
     private fun projectFile(path: String): File {

@@ -766,7 +766,9 @@ class BiometricUnlockRegressionGuardTest {
             "Wide card-wallet detail pane should animate add/edit/detail changes instead of hard switching after heavy composition work.",
             cardWalletDetailPaneContentSource.contains("AnimatedContent(") &&
                 cardWalletDetailPaneContentSource.contains("targetState = detailContent") &&
-                cardWalletDetailPaneContentSource.contains("scaleIn(initialScale = 0.94f") &&
+                // 内联的 scaleIn/fadeIn 已抽取为共享的 AnimationUtils.pageTransitionSpec()
+                // （fade + 横向 slide）。守卫只需确认过渡规格仍被显式指定，不再绑定具体动画参数。
+                cardWalletDetailPaneContentSource.contains("AnimationUtils.pageTransitionSpec()") &&
                 cardWalletDetailPaneContentSource.contains("CardWalletDetailContent.BankCardAdd") &&
                 cardWalletDetailPaneContentSource.contains("CardWalletDetailContent.DocumentAdd")
         )

@@ -26,7 +26,11 @@ class AutofillDropdownClickRegressionGuardTest {
         )
         assertTrue(
             "Locked concrete suggestions may set Dataset authentication so the list stays visible, but unlocked direct-fill suggestions must not be wrapped.",
-            cipherDatasetBody.contains("if (partition.requiresAuthentication && authPendingIntent != null)") &&
+            // authPendingIntent 只在 requiresAuthentication 时才非空，所以挂载点的
+            // `&& authPendingIntent != null` 合取项是冗余的、已被删除。守卫拆成两段：
+            // ① 变量本身仍受 requiresAuthentication 约束 ② 挂载仍以该变量非空为条件。
+            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication)") &&
+                cipherDatasetBody.contains("if (authPendingIntent != null)") &&
                 cipherDatasetBody.contains("datasetBuilder.setAuthentication(authPendingIntent.intentSender)")
         )
         assertTrue(

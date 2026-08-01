@@ -80,9 +80,12 @@ class CardBrandIconTest {
             "src/main/java/com/bastion/app/ui/cardwallet/CardBrandIcon.kt"
         ).readText()
 
+        // 守卫意图是"亮度判定取自 app 的 Material 主题，而不是系统主题"。
+        // 具体取哪个 color role（surface / background / …）属实现细节，
+        // 不该被守卫钉死——之前钉 surface，实现换成 background 后就误报。
         assertTrue(
             "Card-brand frame should follow Bastion's active Material theme so app light mode keeps a white frame even when the system is dark.",
-            source.contains("MaterialTheme.colorScheme.surface.luminance()")
+            Regex("""MaterialTheme\.colorScheme\.\w+\.luminance\(\)""").containsMatchIn(source)
         )
         assertFalse(source.contains("isSystemInDarkTheme"))
     }
