@@ -530,7 +530,7 @@ private fun SecureItem.matchesAggregateCategory(
         is CategoryFilter.Custom ->
             effectiveCategoryId == filter.categoryId &&
                 keepassDatabaseId == null &&
-                bitwardenVaultId == null &&
+                bitwardenVaultId == null
         is CategoryFilter.KeePassDatabase -> keepassDatabaseId == filter.databaseId
         is CategoryFilter.KeePassGroupFilter ->
             keepassDatabaseId == filter.databaseId && keepassGroupPath == filter.groupPath
@@ -562,7 +562,7 @@ private fun PasskeyEntry.matchesAggregateCategory(filter: CategoryFilter): Boole
         is CategoryFilter.Custom ->
             categoryId == filter.categoryId &&
                 keepassDatabaseId == null &&
-                bitwardenVaultId == null &&
+                bitwardenVaultId == null
         is CategoryFilter.KeePassDatabase -> keepassDatabaseId == filter.databaseId
         is CategoryFilter.KeePassGroupFilter ->
             keepassDatabaseId == filter.databaseId && keepassGroupPath == filter.groupPath
