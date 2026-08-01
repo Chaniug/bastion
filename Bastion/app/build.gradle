@@ -126,6 +126,18 @@ android {
         
     }
 
+    // CI 固定签名：当注入 BASTION_KS_FILE 时，debug 与 release 共用同一 keystore，
+    // 使 preview debug APK 与 stable release APK 签名一致，可互相覆盖安装。
+    // 本地开发不设这些环境变量，仍走 Android 默认 debug keystore，无副作用。
+    signingConfigs {
+        ciFixed {
+            storeFile file(System.env.BASTION_KS_FILE ?: 'nonexistent.jks')
+            storePassword System.env.BASTION_KS_STORE_PASSWORD ?: ''
+            keyAlias System.env.BASTION_KS_ALIAS ?: ''
+            keyPassword System.env.BASTION_KS_KEY_PASSWORD ?: ''
+        }
+    }
+
     splits {
         abi {
             // 仅输出 arm64-v8a（64 位）APK，砍掉 armeabi-v7a（32 位）以缩短构建并精简产物。
@@ -150,6 +162,10 @@ android {
         debug {
             minifyEnabled false
             shrinkResources false
+            // CI 注入固定 keystore 时启用，确保 debug APK 与 stable release APK 签名一致可互相覆盖
+            if (System.env.BASTION_KS_FILE != null) {
+                signingConfig signingConfigs.ciFixed
+            }
         }
     }
     compileOptions {

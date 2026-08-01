@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # 发 debug APK 到 preview Release 需要
 
 # 取消策略：false = 连续推送时新 run 排队而非取消旧 run。
 # 旧 run 跑完会把构建/配置缓存暖热，后续 run 命中缓存更快（公开仓库 CI 分钟无限，无成本顾虑）。
@@ -53,9 +53,10 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
+      # 浅克隆：CI debug 不依赖 git 历史，避免拉取大体积历史（.git 历史含旧构建产物），显著缩短 checkout
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -76,9 +77,28 @@ jobs:
         if: github.event_name != 'push'
         run: ./gradlew :app:lintDebug --stacktrace
 
+      # push 时用仓库固定 keystore 签名 debug APK，确保 preview 与 stable 签名一致、可互相覆盖安装
+      - name: Decode signing keystore
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          printf '%s' "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/release.jks"
+          if [ ! -s "$GITHUB_WORKSPACE/release.jks" ]; then
+            echo "::error title=Keystore decode failed::release.jks was not created or is empty."
+            exit 1
+          fi
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
       # 1) 门禁：仅编译并产出 Debug APK（最快出包路径，不跑测试）
+      # push 时注入固定签名，使 debug APK 与 stable release APK 签名一致，可互相覆盖安装
       - name: Build Debug APK (build gate)
         run: ./gradlew :app:assembleDebug --stacktrace
+        env:
+          BASTION_KS_FILE: ${{ github.event_name == 'push' && format('{0}/release.jks', github.workspace) || '' }}
+          BASTION_KS_STORE_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_STORE_PASSWORD || '' }}
+          BASTION_KS_ALIAS: ${{ github.event_name == 'push' && secrets.DEBUG_KEY_ALIAS || '' }}
+          BASTION_KS_KEY_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_KEY_PASSWORD || '' }}
 
       # 2) 立即上传 APK —— 在跑测试之前，push 场景最快拿到包用于真机验证
       - name: List debug APK outputs
@@ -92,6 +112,82 @@ jobs:
             Bastion/app/build/outputs/apk/debug/*.apk
             Bastion/app/build/outputs/apk/debug/*.APK
           if-no-files-found: error
+
+      # 2.5) push 到 dev/main 时，把 debug APK 发布到 preview Release，方便直接从 Release 页下载真机验证
+      - name: Generate preview version suffix
+        if: github.event_name == 'push'
+        id: preview_meta
+        shell: bash
+        run: |
+          suffix="build.$(date -u +%Y%m%d%H%M)"
+          echo "preview_version_suffix=$suffix" >> "$GITHUB_OUTPUT"
+
+      - name: Cleanup previous preview release (assets + release + tag)
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # 删除已存在的 preview release（含 assets），再删除 tag，确保下次全新创建
+          release_id="$(gh api repos/${{ github.repository }}/releases/tags/preview --jq '.id' 2>/dev/null || true)"
+          if [[ "$release_id" =~ ^[0-9]+$ ]]; then
+            echo "Deleting existing preview release id=${release_id}"
+            gh api -X DELETE repos/${{ github.repository }}/releases/${release_id} 2>/dev/null || true
+          else
+            echo "No existing preview release to delete"
+          fi
+          # 删除 preview tag（不存在则忽略）
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/preview 2>/dev/null || true
+          echo "Cleanup done"
+
+      - name: Collect debug APK metadata
+        if: github.event_name == 'push'
+        id: apk_meta
+        shell: bash
+        run: |
+          cd app/build/outputs/apk/debug
+          apk_list="$(find . -maxdepth 1 -type f \( -iname '*.apk' -o -iname '*.APK' \) -printf '%f\n' | sort)"
+          apk_count="$(printf '%s\n' "$apk_list" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$apk_count" = "0" ]; then
+            echo "No debug APK found"; ls -la; exit 1
+          fi
+          apk_markdown="$(printf '%s\n' "$apk_list" | sed '/^$/d' | sed 's/^/> *   `/; s/$/`/')"
+          echo "apk_count=${apk_count}" >> "$GITHUB_OUTPUT"
+          {
+            echo "apk_list<<EOF"
+            printf '%s\n' "$apk_markdown"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish Debug APK to preview Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: preview
+          target_commitish: ${{ github.sha }}
+          name: "⚠️ Development Preview (${{ steps.preview_meta.outputs.preview_version_suffix }})"
+          body: |
+            > **⚠️ 开发预览版本 (Debug APK)**
+            >
+            > 此版本为 debug 构建产物，用于快速体验最新代码，可能包含未完成功能或 Bug。
+            > 正式使用请下载 Stable 版本。
+            > ---
+            > **构建信息：**
+            > * **Build Suffix**: `${{ steps.preview_meta.outputs.preview_version_suffix }}`
+            > * **Build Type**: `debug`
+            > * **Commit SHA**: `${{ github.sha }}`
+            > * **Ref**: `${{ github.ref }}`
+            > **Generated APKs:**
+            ${{ steps.apk_meta.outputs.apk_list }}
+          files: |
+            Bastion/app/build/outputs/apk/debug/*.apk
+            Bastion/app/build/outputs/apk/debug/*.APK
+          draft: false
+          prerelease: true
+          make_latest: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 3) 单测（非阻塞，门禁已过不拖慢出包；保留排错信号）
       - name: Run unit tests (non-blocking)
@@ -122,9 +218,9 @@ jobs:
             echo "- no results" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      # 5) 排错辅助：打印环境/缓存信息，验证缓存生效与定位慢点
+      # 5) 排错辅助：仅在失败时打印环境/缓存信息（成功时省几秒，出包更快）
       - name: Diagnostics - cache & environment
-        if: always()
+        if: failure()
         run: |
           echo "Gradle wrapper:"; grep distributionUrl gradle/wrapper/gradle-wrapper.properties || true
           echo "Build cache dir size:"; du -sh ~/.gradle/caches/build-cache-1 2>/dev/null || echo "n/a"

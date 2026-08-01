@@ -15,6 +15,12 @@ build/
 coverage/
 docs/.vitepress/dist/
 
+# Rust build artifacts (mdbx native module) - never commit, ~1.6GB in history
+target/
+mdbx/target/
+mdbx/target-cli-sync/
+*.rlib
+
 # Caches
 .cache/
 .vite/
