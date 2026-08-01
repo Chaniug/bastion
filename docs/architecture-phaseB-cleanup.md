@@ -257,6 +257,8 @@ sealed interface ItemOwnership<out K : KeePassBinding, out B : BitwardenBinding>
 | **P2** | B.5 Screen 文件拆分 | 8-16 小时 | 低 | 多 agent 接力 |
 | **P3** | B.6 DedupMergeTarget 扩展 | 4-8 小时 | 中 | 单 agent（B.4 完成后） |
 
+> **性能优化任务**见 Phase C：[`docs/architecture-phaseC-performance.md`](architecture-phaseC-performance.md)
+
 ### 建议接力顺序
 
 ```
@@ -270,6 +272,8 @@ Agent 6: B.4（密封类收敛）
     ↓
 Agent 7+: B.5（Screen 拆分）+ B.6（DedupMergeTarget 扩展）
 ```
+
+> Phase B 和 Phase C 可并行推进，互不依赖。
 
 ---
 

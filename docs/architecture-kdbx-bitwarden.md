@@ -408,6 +408,15 @@ GitHub Actions 的 `Build Debug APK (build gate)` 步骤是**硬性编译闸门*
   - B.4 密封类同形收敛（4 套 Ownership/Source 统一）
   - B.5 大型 Screen 文件拆分
   - B.6 DedupMergeTarget 扩展
+- **Phase C：运行时性能优化** — 详见 [`docs/architecture-phaseC-performance.md`](architecture-phaseC-performance.md)
+  - C.1 主线程 IO 阻塞修复（AttachmentPreviewDialog）
+  - C.2 runBlocking 反模式修复（5 处，1 处无超时 ANR 风险）
+  - C.3 Room SELECT * 投影优化（40+ 处列表查询）
+  - C.4 协程 Scope 生命周期（4 处未取消）
+  - C.5 Compose 列表补 key（8+ 处）
+  - C.6 Compose 编译器优化（@Immutable 标注）
+
+> Phase B 和 Phase C 可并行推进，互不依赖。
 
 ---
 
