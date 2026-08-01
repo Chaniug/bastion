@@ -77,9 +77,28 @@ jobs:
         if: github.event_name != 'push'
         run: ./gradlew :app:lintDebug --stacktrace
 
+      # push 时用仓库固定 keystore 签名 debug APK，确保 preview 与 stable 签名一致、可互相覆盖安装
+      - name: Decode signing keystore
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          printf '%s' "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/release.jks"
+          if [ ! -s "$GITHUB_WORKSPACE/release.jks" ]; then
+            echo "::error title=Keystore decode failed::release.jks was not created or is empty."
+            exit 1
+          fi
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
       # 1) 门禁：仅编译并产出 Debug APK（最快出包路径，不跑测试）
+      # push 时注入固定签名，使 debug APK 与 stable release APK 签名一致，可互相覆盖安装
       - name: Build Debug APK (build gate)
         run: ./gradlew :app:assembleDebug --stacktrace
+        env:
+          BASTION_KS_FILE: ${{ github.event_name == 'push' && format('{0}/release.jks', github.workspace) || '' }}
+          BASTION_KS_STORE_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_STORE_PASSWORD || '' }}
+          BASTION_KS_ALIAS: ${{ github.event_name == 'push' && secrets.DEBUG_KEY_ALIAS || '' }}
+          BASTION_KS_KEY_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_KEY_PASSWORD || '' }}
 
       # 2) 立即上传 APK —— 在跑测试之前，push 场景最快拿到包用于真机验证
       - name: List debug APK outputs
