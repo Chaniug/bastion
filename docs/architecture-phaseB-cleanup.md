@@ -80,31 +80,80 @@ private const val SOURCE_BASTION = "bastion"
 
 当前 `BASELINE_FAILURES=19`，基线是"黑盒"。已从 CI 日志提取完整名单（共 525 测试，19 失败）：
 
-| # | 测试类 | 方法 | 失败原因分类 | 修复状态 |
-| --- | --- | --- | --- | --- |
-| 1 | `ActiveFillHardeningRegressionGuardTest` | notificationFillIsOptInThrottledAndBoundToTheDetectedApp | 待分析 | ⬜ |
-| 2 | `AutofillAuthResultLaunchModeRegressionGuardTest` | authResultActivitiesMustNotReuseExistingInstances | 待分析 | ⬜ |
-| 3 | `AutofillDetectionIntegrationGuardTest` | parserAndAuthenticationCallbackShareTheConflictPolicy | 待分析 | ⬜ |
-| 4 | `AutofillDropdownClickRegressionGuardTest` | dropdownCipherSuggestionsUseDirectValuesAndKeepManualFallback | 待分析 | ⬜ |
-| 5 | `AutofillInlineClickRegressionGuardTest` | directInlineSuggestionsUseRealAuthenticationCallbackInsteadOfNoopIntent | 待分析 | ⬜ |
-| 6 | `BiometricUnlockRegressionGuardTest` | mdkWrapperRebuildHandlesInvalidatedAndUnrecoverableKeystoreKeys | 待分析 | ⬜ |
-| 7 | `BiometricUnlockRegressionGuardTest` | pageSwitchHotPathsDoNotRunAuthOrBitwardenSyncWorkOnMainThread | 待分析 | ⬜ |
-| 8 | `CardBrandIconTest` | cardBrandIconFrameFollowsAppThemeInsteadOfSystemTheme | 待分析 | ⬜ |
-| 9 | `ExpressiveTopBarKeyboardRegressionGuardTest` | searchFieldRestoresKeyboardWhenPressedAfterSystemDismissal | 待分析 | ⬜ |
-| 10 | `KeePassOperationAvailabilityTest` | remoteDatabaseBlocksUnsafeSyncStates | 待分析 | ⬜ |
-| 11 | `MultiPasswordSaveRegressionGuardTest` | normalPasswordPageRunsBatchDeleteThroughQuickStatusBar | 待分析 | ⬜ |
-| 12 | `MultiPasswordSaveRegressionGuardTest` | normalPasswordPageShowsBatchTransferInQuickStatusBar | 待分析 | ⬜ |
-| 13 | `MultiPasswordSaveRegressionGuardTest` | saveFailuresAreReportedWithNonSecretDiagnostics | 待分析 | ⬜ |
-| 14 | `PasswordSuggestionUiRegressionGuardTest` | primaryActionUsesShortLabelInEnglishAndChinese | 待分析 | ⬜ |
-| 15 | `PasskeyRemarkAndNavigationGuardTest` | authenticatorAndPasskeyShareOneDockDestinationWithBidirectionalControls | 待分析 | ⬜ |
-| 16 | `PlusLocalActivationGuardTest` | activationCompletesLocallyWithoutBlockingProgressUi | 待分析 | ⬜ |
-| 17 | `SplashThemeResourceTest` | startupUsesOnlyTheAndroidSystemSplashLayer | 待分析 | ⬜ |
-| 18 | `SplashThemeResourceTest` | systemSplashFallbackUsesBastionM3LightAndDarkColors | 待分析 | ⬜ |
-| 19 | `TimelineSnapshotIntegrationGuardTest` | roomDatabaseRegistersVersion73SnapshotMigration | **守卫断言过时**（Phase A 版本 73→74） | ✅ 已修复 |
+##### 完整根因表（19/19 已定位，无一"未能定位"）
 
-**已修复**：第 19 项（`adc16a70`），将断言从 `version = 73` / `Migration(72, 73)` / `MIGRATION_72_73` 更新为 `version = 74` / `Migration(73, 74)` / `MIGRATION_73_74`。
+失败类型定义：
+- **文本漂移**：实现语义等价，只是格式化 / 命名 / 拆分变了，断言字串失配。改断言即可。
+- **属性插入**：XML 元素被插入额外属性（如 `tools:ignore`），死板的全等文本断言失配。
+- **守卫对象已消失**：被守卫的那个设计已被删除或被更彻底的方案取代，守卫已无意义。
+- **真实行为差异**：实现与测试期望的行为真的不同。需逐个判定是"实现有意演进、测试过时"还是"实现真回归"。
 
-**统计**：525 总测试，19 失败。移除第 19 项后剩余 18 个待分析。
+| # | 测试 | 失败断言 | 主源码实际情况 | 类型 | 处置 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `ActiveFillHardeningRegressionGuardTest`<br>notificationFillIsOptInThrottledAndBoundToTheDetectedApp | `contains("entry.isLinkedToApp(packageName)")` | `BastionAccessibilityService.kt:456` 改用 `passwordRepository.findByPackageName(packageName).firstOrNull()`，DAO SQL 做同样的大小写无关多绑定匹配 | 文本漂移 | 改断言为 `findByPackageName(packageName)` |
+| 2 | `AutofillAuthResultLaunchModeRegressionGuardTest`<br>authResultActivitiesMustNotReuseExistingInstances | `AutofillCipherCallbackActivity` 不得有 `launchMode` | `AndroidManifest.xml:363` 确有 `android:launchMode="singleTop"` | 真实行为差异<br>（**实现有意演进**） | 提交 `2b5d83e4` 为修复 Via WebView 会话被认证 Activity 破坏而刻意引入 singleTop，并在 `AutofillCipherCallbackActivity.kt:116` 同步新增 `onNewIntent` 接管复用实例。改为白名单该 Activity + 断言它必须覆写 `onNewIntent` |
+| 3 | `AutofillDetectionIntegrationGuardTest`<br>parserAndAuthenticationCallbackShareTheConflictPolicy | `contains("source = \"assist_structure\"")` | 实际为 `source = "assist_structure_fresh",` | 文本漂移 | 改断言为 `assist_structure_fresh` |
+| 4 | `AutofillDropdownClickRegressionGuardTest`<br>dropdownCipherSuggestionsUseDirectValuesAndKeepManualFallback | `if (partition.requiresAuthentication && authPendingIntent != null)` | `FillResponseBuilderNg.kt:358` 为 `if (authPendingIntent != null)`；L293 已保证仅 `requiresAuthentication` 时非空，合取项冗余被删 | 文本漂移 | 断言 `if (authPendingIntent != null)` + 补断 L293 前置条件 |
+| 5 | `AutofillInlineClickRegressionGuardTest`<br>directInlineSuggestionsUseRealAuthenticationCallbackInsteadOfNoopIntent | 3 条失配，均围绕 `authPendingIntent` | 变量拆成两个：L293 `authPendingIntent`（认证用）、L316 `inlinePendingIntent`（inline 用）。仍是真回调 intent，`createNoopPendingIntent` 确实不存在 | 文本漂移 | 断言换成 `inlinePendingIntent` |
+| 6 | `BiometricUnlockRegressionGuardTest`<br>mdkWrapperRebuildHandlesInvalidatedAndUnrecoverableKeystoreKeys | `"compatibility wrapper refresh after password unlock"`、`persistCompatKeystoreWrappedMdk(actualMdk)` | `SecurityManager.kt:976` 为 `persistKeystoreWrappedMdk(actualMdk)`，日志文案去掉 "compatibility" | 真实行为差异<br>（**实现有意演进 / 安全增强**） | 提交 `e7dbb8c8`：密码解锁后**优先**用 AUTH（生物识别绑定）密钥包装以恢复静息保护，仅当 Keystore 拒绝 AUTH 写入才回退 COMPAT。测试守卫的"必须写 COMPAT"被刻意反转 → 整体重写断言 |
+| 7 | `BiometricUnlockRegressionGuardTest`<br>pageSwitchHotPathsDoNotRunAuthOrBitwardenSyncWorkOnMainThread | `scaleIn(initialScale = 0.94f`（其余 21 组断言全通过） | `CardWalletDetailPaneContent.kt:79` 改为 `AnimationUtils.pageTransitionSpec()`（fade + 横向 slide，全仓无 `scaleIn`） | 文本漂移 | 断言改 `AnimationUtils.pageTransitionSpec()` |
+| 8 | `CardBrandIconTest`<br>cardBrandIconFrameFollowsAppThemeInsteadOfSystemTheme | `contains("MaterialTheme.colorScheme.surface.luminance()")` | `CardBrandIcon.kt:68` 为 `MaterialTheme.colorScheme.background.luminance() < 0.5f` | 文本漂移 | 守卫意图是"跟随 app 主题而非系统主题"，`surface`/`background` 均满足 → 放宽为正则 `MaterialTheme\.colorScheme\.\w+\.luminance\(\)`，保留 `assertFalse(isSystemInDarkTheme)` |
+| 9 | `ExpressiveTopBarKeyboardRegressionGuardTest`<br>searchFieldRestoresKeyboardWhenPressedAfterSystemDismissal | `keyboardController?.show()` | 全文件无 `keyboardController`。`ExpressiveTopBar.kt:97-103` Press 分支只剩 `focusRequester.requestFocus()`，键盘改依赖 L242 `KeyboardOptions(showKeyboardOnFocus = true)` | 真实行为差异<br>（⚠️ **疑似真回归**） | **不改测试，建议修实现**。详见下方专项说明 |
+| 10 | `KeePassOperationAvailabilityTest`<br>remoteDatabaseBlocksUnsafeSyncStates | 期望 `SYNCING`→阻塞、`FAILED`→阻塞 | `KeePassOperationAvailability.kt`：`SYNCING` 且 `hasLocalCopy && isSyncingStateStale()`（>10min）→**放行**；`FAILED` → **放行** | 真实行为差异<br>（**实现有意演进**） | 两处都是刻意的"防卡死"设计（同步卡住/失败不该锁死本地编辑）。更新测试以反映当前语义，并补注释 |
+| 11 | `MultiPasswordSaveRegressionGuardTest`<br>normalPasswordPageRunsBatchDeleteThroughQuickStatusBar | `private var nextOperationId` | `PasswordBatchDeleteProgressTracker.kt:43` 为 `private val nextOperationId = AtomicLong(0L)`（提交 `da49db73` 线程安全加固）。其余 30+ 字串全命中 | 文本漂移 | 断言 `private val nextOperationId = AtomicLong` |
+| 12 | `MultiPasswordSaveRegressionGuardTest`<br>normalPasswordPageShowsBatchTransferInQuickStatusBar | 同上 | `PasswordBatchTransferProgressTracker.kt:46` 同样 `val` + `AtomicLong` | 文本漂移 | 同上 |
+| 13 | `MultiPasswordSaveRegressionGuardTest`<br>saveFailuresAreReportedWithNonSecretDiagnostics | `onComplete(firstId)`、`val updated = updatePasswordEntryInternal(updatedEntry)` | `PasswordViewModel.kt:3886` 为 `onComplete(saveResult.firstPasswordId)`（结果包进新 `PasswordSaveAcrossTargetsResult`）；L3991 改为多行具名参数 | 文本漂移 | 拆成 `onComplete(` + `firstPasswordId`、`entry = updatedEntry` 两段松断言 |
+| 14 | `PasswordSuggestionUiRegressionGuardTest`<br>primaryActionUsesShortLabelInEnglishAndChinese | `english.contains("…>Use</string>")` | `values/strings.xml:128` 是 `使用`，与 `values-zh` 完全一致 | 真实行为差异<br>（**实现有意演进**） | 提交 `69c59def`「语言统一中文」把默认资源改为中文。仓库无 `values-en`，默认 `values/` 3431 条里 3192 条是中文——"values/ 即英文"的前提从未成立。删掉英文断言，或真正补一份 `values-en` |
+| 15 | `PasskeyRemarkAndNavigationGuardTest`<br>authenticatorAndPasskeyShareOneDockDestinationWithBidirectionalControls | `settings.contains("filterNot { it == BottomNavContentTab.PASSKEY }")` | `SettingsScreen.kt` 已无任何 PASSKEY 引用；逻辑迁至 `BottomNavSettingsScreen.kt:37` 与 `QuickSetupScreen.kt:336,346` | 文本漂移<br>（守卫读错文件） | `projectFile` 指向 `BottomNavSettingsScreen.kt` |
+| 16 | `PlusLocalActivationGuardTest`<br>activationCompletesLocallyWithoutBlockingProgressUi | `paymentSource.contains("onActivatePlus: () -> Unit")`、`mainActivitySource.contains("settingsViewModel.updatePlusActivated(true)")` | `PaymentScreen.kt` 现为纯打赏页（"功能已全部免费"，静态显示已激活），**根本没有激活动作**；全仓无 `updatePlusActivated(true)` 调用 | 守卫对象已消失 | 守卫的设计被更彻底的方案（全部免费、无需激活）取代。删掉正向断言，只保留 `assertFalse(isActivating / CircularProgressIndicator / onActivatePlus)` 的反向守卫 |
+| 17 | `SplashThemeResourceTest`<br>startupUsesOnlyTheAndroidSystemSplashLayer | `mainActivity.contains("BastionApp(repository")` | `MainActivity.kt:365` 格式化为多行 `BastionApp(\n    repository = repository,` | 文本漂移 | 改为空白不敏感的正则 `BastionApp\(\s*repository\s*=` |
+| 18 | `SplashThemeResourceTest`<br>systemSplashFallbackUsesBastionM3LightAndDarkColors | `darkTheme.contains("<item name=\"android:windowLightNavigationBar\">false</item>")` | `values-night/themes.xml:10` 为 `<item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>` | 属性插入 | 改为容忍额外属性的正则 `windowLightNavigationBar"[^>]*>false<`，light 侧同步放宽 |
+| 19 | `TimelineSnapshotIntegrationGuardTest`<br>roomDatabaseRegistersVersion73SnapshotMigration | `version = 73` / `Migration(72, 73)` / `MIGRATION_72_73` | Phase A 已升到 74 | 文本漂移 | ✅ **已修复**（`adc16a70`） |
+
+##### 类型分布
+
+| 类型 | 数量 | 编号 | 修复难度 |
+| --- | --- | --- | --- |
+| 文本漂移 | 12 | 1, 3, 4, 5, 7, 8, 11, 12, 13, 15, 17, 19 | 低——改断言字串即可，零实现风险 |
+| 属性插入 | 1 | 18 | 低——断言改正则 |
+| 守卫对象已消失 | 1 | 16 | 低——删正向断言，保留反向守卫 |
+| 真实行为差异（测试过时） | 4 | 2, 6, 10, 14 | 中——需重写断言语义，要理解设计意图 |
+| 真实行为差异（疑似真回归） | 1 | 9 | ⚠️ 需改主代码，待维护者确认 |
+
+> **关键结论**：19 个失败里 **18 个是测试自身的债务**（守卫断言追不上实现演进），只有 **1 个疑似真实功能回归**。
+> 这印证了 B.2.3「守卫测试脆弱性治理」的必要性——源码文本断言的维护成本已经超过它带来的防回退价值。
+
+##### ⚠️ 专项：#9 疑似真实回归（搜索框键盘无法恢复）
+
+**现象**：搜索框仍持有焦点时，用户用返回键收起键盘，再点一下搜索框，**键盘不会重新弹出**。
+
+**判定依据**：
+1. `focusRequester.requestFocus()` 对**已聚焦**的节点是 no-op，不产生焦点变更事件
+2. 替代方案 `KeyboardOptions(showKeyboardOnFocus = true)` 只在**获得焦点的瞬间**生效，覆盖不到上述路径
+3. 提交 `0cc83e9e`（标题含 "search IME"）很可能是在迁移到声明式 API 时，把命令式的 `keyboardController?.show()` 当成冗余删掉了
+4. 该守卫测试的方法名 `searchFieldRestoresKeyboardWhenPressedAfterSystemDismissal` 精确点名了这个场景——说明它当初就是为修这个 bug 而写的
+
+**建议**：在 `ExpressiveTopBar.kt` 的 Press 分支恢复 `LocalSoftwareKeyboardController.current?.show()`，保留原断言不动。
+
+**限制**：本地无 Android SDK，无法实机验证。此判断基于 Compose 焦点语义推理，**建议维护者在荣耀真机上实测确认后再改**。
+
+##### 分批修复计划
+
+| 批次 | 内容 | 编号 | 基线变化 | 风险 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| 批次 0 | Phase A 遗留（Room 版本断言） | 19 | 19 → **18** | 无 | ✅ 完成（`adc16a70`，CI #30704712456 实测 18 failed） |
+| 批次 1 | 纯文本漂移 + 属性插入 | 1, 3, 4, 5, 7, 8, 11, 12, 13, 15, 17, 18 | 18 → 6 | 低 | ⬜ |
+| 批次 2 | 守卫对象消失 + 测试过时 | 2, 6, 10, 14, 16 | 6 → 1 | 中（需理解设计意图） | ⬜ |
+| 批次 3 | 疑似真回归 | 9 | 1 → 0 | ⚠️ 改主代码，需维护者确认 | ⬜ 待确认 |
+
+**统计演进**：
+
+| 节点 | 总测试 | 失败 | BASELINE_FAILURES |
+| --- | --- | --- | --- |
+| Phase A 完成时 | 525 | 19 | 19 |
+| B.2.1 批次 0 + B.2.2 后（CI #30704712456） | **538**（+13 复活用例全通过） | **18** | **18** |
+
+根因定位率 19/19 = 100%。
 
 #### B.2.2 5 个 `.kt.disabled` 文件处置
 

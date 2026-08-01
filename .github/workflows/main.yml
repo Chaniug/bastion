@@ -219,7 +219,11 @@ jobs:
           # 当前基线。修好测试后必须同步下调，禁止上调（上调 = 接受新回归）。
           # 2026-08-01 Phase 1a：删除读取已删 MdbxManagerScreen.kt 的 3 个守卫函数
           # 及整个 MdbxAndroidIntegrationGuardTest.kt，失败数 22 -> 19。
-          BASELINE_FAILURES: "19"
+          # 2026-08-01 Phase B.2.1：修复 TimelineSnapshotIntegrationGuardTest 过时的
+          # Room 版本断言（73 -> 74），失败数 19 -> 18（总数 525 -> 538，
+          # +13 为 B.2.2 复活的 AutofillLoggerTest，全部通过）。
+          # 剩余 18 个的完整根因见 docs/architecture-phaseB-cleanup.md#b21。
+          BASELINE_FAILURES: "18"
         run: |
           python3 - <<'PY'
           import glob, os, sys
