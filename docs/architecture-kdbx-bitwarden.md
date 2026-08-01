@@ -3,8 +3,8 @@
 > **文档目的**：为「移除 MDBX 自研引擎，保留 KDBX + Bitwarden + BastionLocal 三后端」提供完整的技术设计与实施路线，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **最后更新**：2026-08-01（保留 BastionLocal，取消 Phase B）
-> **状态**：架构设计已完成，Phase A 执行中
+> **最后更新**：2026-08-01（Phase A 全部完成，CI 通过）
+> **状态**：Phase A ✅ 已完成 — MDBX 已完全移除，三后端架构落地
 > **决策人**：项目维护者
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 
@@ -369,16 +369,39 @@ GitHub Actions 的 `Build Debug APK (build gate)` 步骤是**硬性编译闸门*
 | Phase 0：CI 回归基线闸门 | ✅ 完成 | `e759d188` |
 | Phase 1a：删除 MDBX 屏 + 导航入口 | ✅ 完成 | `e475d057` |
 | 基线锁定 22 → 19 | ✅ 完成 | `f9ebf6aa` |
-| 架构决策：KDBX + Bitwarden 双后端 | ✅ 确认 | — |
-| **Phase A：整删 MDBX** | 🔄 执行中 | — |
-| A.1 删除 17 个 MDBX 专有文件 | ✅ 完成 | 待提交 |
-| A.2 移除 @Database MDBX 实体引用 | ⬜ 待做 | — |
-| A.3 移除密封分支 + when 分支 | ⬜ 待做 | — |
-| A.4 清理 96 个共享文件 | ⬜ 待做 | — |
-| A.5 清理 MainActivity MDBX 装配 | ⬜ 待做 | — |
-| A.6 Room 迁移 73 → 74 | ⬜ 待做 | — |
-| A.7 CI 验证 | ⬜ 待做 | — |
+| 架构决策：KDBX + Bitwarden + BastionLocal 三后端 | ✅ 确认 | — |
+| **Phase A：整删 MDBX** | ✅ 完成 | — |
+| A.1 删除 17 个 MDBX 专有文件 | ✅ 完成 | `9005e421` |
+| A.2 移除 @Database MDBX 实体引用 | ✅ 完成 | `302a2f41` |
+| A.3 移除密封分支 + when 分支 | ✅ 完成 | `302a2f41` |
+| A.4 清理共享文件中的 MDBX 引用（42 文件） | ✅ 完成 | `302a2f41` |
+| A.5 清理 MainActivity MDBX 装配 | ✅ 完成 | `302a2f41` |
+| A.6 Room 迁移 73 → 74 | ✅ 完成 | `302a2f41` |
+| A.7 CI 验证（编译 + 测试 + 发布） | ✅ 通过 | `b192f184` |
 | ~~Phase B：移除 BastionLocal~~ | ❌ 已取消 | 保留 BastionLocal，不删 |
+
+### Phase A 变更统计
+
+| 指标 | 数值 |
+| --- | --- |
+| 修改文件数 | 42 |
+| 新增行数 | 158 |
+| 删除行数 | 512 |
+| 删除字符串资源 | 92 个 |
+| CI 状态 | ✅ success（Build + Tests + Preview Release） |
+| 最终提交 | `b192f184` (fix trailing &&) |
+| 主提交 | `302a2f41` (Phase A 完整提交) |
+
+### 保留说明
+
+- **PasswordDatabase.kt**：MIGRATION_62~68 和 MIGRATION_73_74 历史迁移代码必须保留（Room 迁移链不可断开）
+- **BastionLocal**：保留为默认内置库，与 KDBX/Bitwarden 互斥平行
+
+### 下一步
+
+- 用户在荣耀 Android 17 设备上真机测试预览版 APK
+- 确认无回归后，将 dev 合并到 main
+- 后续可考虑的功能增强方向（非紧急）：KDBX 附件同步优化、Bitwarden send 集成等
 
 ---
 
