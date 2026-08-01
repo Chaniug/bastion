@@ -15,13 +15,13 @@ class VaultV2ArchiveTopBarStateTest {
         val topBar = pane.substringAfter("ExpressiveTopBar(")
             .substringBefore("VaultV2QuickStatusBar(")
 
-        assertFalse(topBar.contains("navigationIcon = if (state.isArchiveView)"))
+        assertFalse(topBar.contains(Regex("navigationIcon\\s*=\\s*if\\s*\\(\\s*state\\.isArchiveView\\s*\\)")))
         val archiveActionIndex = topBar.indexOf("if (state.isArchiveView)")
         val searchActionIndex = topBar.indexOf("IconButton(onClick = { isSearchExpanded = true })")
         assertTrue(archiveActionIndex >= 0)
         assertTrue(searchActionIndex > archiveActionIndex)
-        assertTrue(topBar.contains("IconButton(onClick = state::closeArchiveView)"))
-        assertTrue(topBar.contains("imageVector = Icons.Default.Lock"))
+        assertTrue(topBar.contains(Regex("IconButton\\(\\s*onClick\\s*=\\s*state::closeArchiveView\\s*\\)")))
+        assertTrue(topBar.contains(Regex("imageVector\\s*=\\s*Icons\\.Default\\.Lock")))
     }
 
     @Test

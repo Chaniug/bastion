@@ -20,19 +20,19 @@ class KeePassFolderPathRegressionGuardTest {
 
         assertTrue(
             "addOrUpdatePasswordEntries must add new password entries to entry.keepassGroupPath, not root.",
-            addOrUpdateBody.contains("groupPath = entry.keepassGroupPath")
+            addOrUpdateBody.contains(Regex("groupPath\\s*=\\s*entry\\.keepassGroupPath"))
         )
         assertTrue(
             "updatePasswordEntry fallback creation must add new password entries to entry.keepassGroupPath.",
-            updateBody.contains("groupPath = entry.keepassGroupPath")
+            updateBody.contains(Regex("groupPath\\s*=\\s*entry\\.keepassGroupPath"))
         )
         assertFalse(
             "Password creation fallback must not append directly to the root group.",
-            addOrUpdateBody.contains("entries + newEntry")
+            addOrUpdateBody.contains(Regex("entries\\s*\\+\\s*newEntry"))
         )
         assertFalse(
             "Password update fallback must not append directly to the root group.",
-            updateBody.contains("entries + newEntry")
+            updateBody.contains(Regex("entries\\s*\\+\\s*newEntry"))
         )
     }
 
