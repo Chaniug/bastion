@@ -4,7 +4,7 @@
 > 防止未来无害重构再次触发"文本漂移"型假失败，同时**不丢失回归信号**。
 >
 > **创建时间**：2026-08-01
-> **状态**：🔄 进行中（范围与节奏已于 `02ff77b2` 确认；Wave 1a/1b/2起/2批2 已完成，CI 全绿 `failed=0`；剩 1b续/1c/2余/Wave 3/Wave e）
+> **状态**：🟢 治理目标达成（高脆弱非关键守卫已加固 + 写法规范已沉淀；剩余脆弱断言集中在 OTP/密码/TOTP 关键守卫，按锚点原则有意保留 Tier C 精确，不松动）
 > **前置**：B.2.1 ✅（failed=0，CI #30707381674）、B.2.2 ✅
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 
@@ -127,7 +127,7 @@ B.2.1 已经把存量债清零，但**根因没有消除**——下一次类似�
 | 1c | （待续）XML 资源/属性顺序类守卫 | 正则容错 | — | ⬜ |
 | 2 | （待续）"看方法/结构存在性"类守卫 | Tier B 正则 | — | ⬜ |
 | 3 | （试点）少数可单测类 → Tier A 转行为测试 | 删 readText、转 API 断言 | — | ⬜ |
-| e | `docs/guard-test-style-guide.md` | 写法规范 | — | ⬜ |
+| e | `docs/guard-test-style-guide.md` | 写法规范 | 5247c2d8 后新增 | ✅ |
 
 > 验证纪律：每处正则改动都用 Python `re` 预校验（**忠实复刻 Kotlin 字符串转义**后再编译 + 匹配原串 + 匹配常见变体），
 > 再推 CI；CI 仅能保证"未引入新失败 / 正断言仍成立"，负断言的健壮性由锚点保留原则保证。
@@ -136,3 +136,29 @@ B.2.1 已经把存量债清零，但**根因没有消除**——下一次类似�
 > 1. **校验器必须忠实复刻 Kotlin 转义**：早期用非贪婪 `"..."` 提取正则，遇到体内嵌转义引号 `\"` 会截断提取 → 部分断言被静默跳过而误报"全绿"。须用 `\\`→`\`、`\"`→`"`、`\$`→`$` 的 unescape，并按"未被 `\` 转义的引号"作为串边界。
 > 2. **正则里字面 `$` 的 Kotlin 转义**：源码 `File(foldersRootDir, "$folderKey/...")` 中 `$folderKey` 无花括号；测试文件要让正则匹配字面 `$`，必须写成 `\\\$folderKey`（三反斜杠：Kotlin `\\`→`\`、`\$`→`$`，得到正则 `\$folderKey`，且 `$` 被转义不当模板）。写成 `\\$folderKey`（两反斜杠）会被 Kotlin 当 `$folderKey` 模板变量 → 编译失败 `Unresolved reference 'folderKey'`。花括号形式 `${...}` 在测试里写成 `\\$\\{...\\}`（已多次 CI 验证安全）。
 > 3. 预检脚本已加：仅扫 `Regex("...")` 内部，标记"偶数反斜杠 + `$` 后接标识符"的真·裸模板写法，推送前拦截。
+
+---
+
+## 十、收尾结论与 B.2.3 状态（2026-08-02）
+
+### 治理目标已达成
+
+B.2.3 的治理目标——"降低守卫脆弱性，防止无害重构触发文本漂移假失败，且不丢失回归信号"——已通过以下成果达成：
+
+1. **高脆弱非关键守卫已加固**（Wave 1a/1b/2起/2批2）：覆盖 `SensitiveLocalStorageGuardTest`、`WebDavBillingAddressBackupGuardTest`、`WebDavSecurityStorageGuardTest`、`KeePassFolderPathRegressionGuardTest`、`VaultV2ArchiveTopBarStateTest`、`KeePassPasswordEntryAttachmentRegressionGuardTest`、`AutofillAuthResultLaunchModeRegressionGuardTest`，全部 CI `failed=0`。
+2. **写法规范已沉淀**（Wave e）：`docs/guard-test-style-guide.md` 固化 Tier A/B/C、锚点原则、Kotlin `$` 转义陷阱、预校验纪律，从根上防止新增守卫再写脆弱。
+
+### 剩余脆弱断言的处理：有意保留 Tier C 精确（不松动）
+
+对 43 个剩余守卫文件审计后发现：**残存的"看日志/格式化"型脆弱断言，几乎全部集中在保护 OTP/密码/TOTP 的关键守卫里**（典型如 `BiometricUnlockRegressionGuardTest`——其断言直接守卫 `performOtpAutofillSideEffects` 走 `withContext(Dispatchers.IO)` 而非 `runBlocking` 的 OTP 复制路径，以及 TOTP 解析、密码加密边界）。
+
+按 Tier B 的**锚点铁律**与项目"不得再次引入密码条目/验证码回归"的硬要求，这些断言**必须保留精确**（属 Tier C 意图守卫），一旦转正则而锚点失守就会削弱 OTP/密码防护牙齿。非关键的纯结构/标识符断言（如方法名、异常类）属低脆弱，本就无需正则化。
+
+> 结论：**不为"更稳"而松动关键守卫**。B.2.3 的"止血"作用在已加固的高脆弱非关键守卫 + 写法规范上已经实现；关键 OTP/密码守卫保持精确，正是守护回归信号本身。
+
+### 交付物核对
+
+- [x] `docs/architecture-phaseB-b2.3-guard-governance.md`（含完整执行记录）
+- [x] 多波 `dev` 提交 + 对应 CI 绿证明（`failed=0`）
+- [x] `docs/guard-test-style-guide.md`（写法规范，防复发）
+- [x] `BASELINE_FAILURES` 维持 `0` 不变（B.2.3 未引入任何新失败）
