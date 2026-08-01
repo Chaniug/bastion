@@ -120,11 +120,17 @@ B.2.1 已经把存量债清零，但**根因没有消除**——下一次类似�
 | Wave | 文件 | 改动 | CI | 状态 |
 | --- | --- | --- | --- | --- |
 | 1a | `security/SensitiveLocalStorageGuardTest.kt` | 27 处日志断言：精确子串 → 容错正则（容忍全/半角冒号、等号前后空白，敏感变量锚点 `${...}` 保留） | #30708772383 `failed=0` | ✅ |
-| 1b | （待续）WebDav / Totp / Sync / CardBrand 等"看日志/格式化"类守卫 | 同 1a 手法 | — | ⬜ |
+| 1b | `utils/WebDavBillingAddressBackupGuardTest.kt`、`utils/WebDavSecurityStorageGuardTest.kt` | 27 处精确子串 → 超集正则（容忍空白/换行、全/半角冒号、敏感变量锚点 `${...}` 保留）；`assertFalse` 守卫保留"牙齿"（正则仍匹配被禁止写法） | #30710476793 `failed=0` | ✅ |
+| 1b(续) | Totp / Sync / CardBrand 等"看日志/格式化"类守卫 | 同 1b 手法 | — | ⬜ |
 | 1c | （待续）XML 资源/属性顺序类守卫 | 正则容错 | — | ⬜ |
 | 2 | （待续）"看方法/结构存在性"类守卫 | Tier B 正则 | — | ⬜ |
 | 3 | （试点）少数可单测类 → Tier A 转行为测试 | 删 readText、转 API 断言 | — | ⬜ |
 | e | `docs/guard-test-style-guide.md` | 写法规范 | — | ⬜ |
 
-> 验证纪律：每处正则改动都用 Python `re` 预校验（编译通过 + 匹配原串 + 匹配常见变体），
+> 验证纪律：每处正则改动都用 Python `re` 预校验（**忠实复刻 Kotlin 字符串转义**后再编译 + 匹配原串 + 匹配常见变体），
 > 再推 CI；CI 仅能保证"未引入新失败 / 正断言仍成立"，负断言的健壮性由锚点保留原则保证。
+>
+> 踩坑记录（Wave 1b 两次迭代）：
+> 1. **校验器必须忠实复刻 Kotlin 转义**：早期用非贪婪 `"..."` 提取正则，遇到体内嵌转义引号 `\"` 会截断提取 → 部分断言被静默跳过而误报"全绿"。须用 `\\`→`\`、`\"`→`"`、`\$`→`$` 的 unescape，并按"未被 `\` 转义的引号"作为串边界。
+> 2. **正则里字面 `$` 的 Kotlin 转义**：源码 `File(foldersRootDir, "$folderKey/...")` 中 `$folderKey` 无花括号；测试文件要让正则匹配字面 `$`，必须写成 `\\\$folderKey`（三反斜杠：Kotlin `\\`→`\`、`\$`→`$`，得到正则 `\$folderKey`，且 `$` 被转义不当模板）。写成 `\\$folderKey`（两反斜杠）会被 Kotlin 当 `$folderKey` 模板变量 → 编译失败 `Unresolved reference 'folderKey'`。花括号形式 `${...}` 在测试里写成 `\\$\\{...\\}`（已多次 CI 验证安全）。
+> 3. 预检脚本已加：仅扫 `Regex("...")` 内部，标记"偶数反斜杠 + `$` 后接标识符"的真·裸模板写法，推送前拦截。
