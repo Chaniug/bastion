@@ -217,7 +217,9 @@ jobs:
         if: always() && steps.unit_tests.outcome != 'skipped'
         env:
           # 当前基线。修好测试后必须同步下调，禁止上调（上调 = 接受新回归）。
-          BASELINE_FAILURES: "22"
+          # 2026-08-01 Phase 1a：删除读取已删 MdbxManagerScreen.kt 的 3 个守卫函数
+          # 及整个 MdbxAndroidIntegrationGuardTest.kt，失败数 22 -> 19。
+          BASELINE_FAILURES: "19"
         run: |
           python3 - <<'PY'
           import glob, os, sys

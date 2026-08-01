@@ -1,6 +1,7 @@
 # 移除 MDBX · 收敛到 KDBX + Bitwarden 双后端（实施计划）
 
-> 状态：**方向已确认，Phase 0 已完成，Phase 1–3 待执行**。
+> 状态：**方向已确认，Phase 0 已完成，Phase 1a（UI+导航）已完成并验证绿，Phase 1b / 2 / 3 待执行**。
+> 单测失败基线：`22` → `19`（Phase 1a 删除 3 个读取已删 MdbxManagerScreen.kt 的守卫函数 + 整个 `MdbxAndroidIntegrationGuardTest.kt`）。
 > 决策背景：MDBX 为自研格式，仅作者本人测试使用，维护成本高；KDBX（开源标准、生态成熟）与 Bitwarden 保留为正式后端。
 > 产品定位：**本地库 = KDBX，云端账户 = Bitwarden**，不再保留第三种自研格式。
 > 前置依赖：Phase 0（CI 回归基线闸门）已于 `e759d188` 完成，后续阶段方可验证正确性。
