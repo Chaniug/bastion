@@ -99,7 +99,7 @@ class KeePassCompatibilityBridge(
         passkeys: List<PasskeyEntry>
     ) = workspaceRepository.addOrUpdatePasskeys(databaseId, passkeys)
 
-    suspend fun deleteLegacyPasswordEntries(
+    suspend fun deleteKeePassPasswordEntries(
         databaseId: Long,
         entries: List<PasswordEntry>
     ) = workspaceRepository.deletePasswordEntries(databaseId, entries)
@@ -120,7 +120,7 @@ class KeePassCompatibilityBridge(
         forceSyncWrite: Boolean = false
     ) = workspaceRepository.movePasswordEntriesToRecycleBin(databaseId, entries, forceSyncWrite)
 
-    suspend fun restoreLegacyPasswordEntriesFromRecycleBin(
+    suspend fun restoreKeePassPasswordEntriesFromRecycleBin(
         databaseId: Long,
         entries: List<PasswordEntry>,
         forceSyncWrite: Boolean = false
@@ -144,7 +144,7 @@ class KeePassCompatibilityBridge(
         item: SecureItem
     ) = workspaceRepository.updateSecureItem(databaseId, item)
 
-    suspend fun deleteLegacySecureItems(
+    suspend fun deleteKeePassSecureItems(
         databaseId: Long,
         items: List<SecureItem>
     ) = workspaceRepository.deleteSecureItems(databaseId, items)
@@ -155,7 +155,7 @@ class KeePassCompatibilityBridge(
         forceSyncWrite: Boolean = false
     ) = workspaceRepository.moveSecureItemsToRecycleBin(databaseId, items, forceSyncWrite)
 
-    suspend fun restoreLegacySecureItemsFromRecycleBin(
+    suspend fun restoreKeePassSecureItemsFromRecycleBin(
         databaseId: Long,
         items: List<SecureItem>,
         forceSyncWrite: Boolean = false

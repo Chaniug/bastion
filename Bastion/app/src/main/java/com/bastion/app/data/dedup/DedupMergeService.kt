@@ -62,12 +62,12 @@ class DedupMergeService(
         return buildList {
             add(
                 DedupMergeSourceOption(
-                    key = SOURCE_MONICA,
+                    key = SOURCE_BASTION,
                     kind = DedupMergeSourceKind.MONICA_LOCAL,
                     label = "Bastion 本地",
-                    passwordCount = passwordCounts[SOURCE_MONICA] ?: 0,
-                    secureItemCount = secureItemCounts[SOURCE_MONICA] ?: 0,
-                    passkeyCount = passkeyCounts[SOURCE_MONICA] ?: 0
+                    passwordCount = passwordCounts[SOURCE_BASTION] ?: 0,
+                    secureItemCount = secureItemCounts[SOURCE_BASTION] ?: 0,
+                    passkeyCount = passkeyCounts[SOURCE_BASTION] ?: 0
                 )
             )
             keepassDatabases.forEach { database ->
@@ -107,7 +107,7 @@ class DedupMergeService(
             add(
                 DedupMergeTargetOption(
                     target = DedupMergeTarget.BastionLocal,
-                    sourceKey = SOURCE_MONICA,
+                    sourceKey = SOURCE_BASTION,
                     label = "Bastion 本地",
                     passwordCount = entries.count { it.isLocalOnlyEntry() },
                     secureItemCount = secureItems.count { it.isLocalOnlyItem() },
@@ -815,7 +815,7 @@ class DedupMergeService(
         return when {
             entry.keepassDatabaseId != null -> keepassSourceKey(entry.keepassDatabaseId)
             entry.bitwardenVaultId != null -> bitwardenSourceKey(entry.bitwardenVaultId)
-            else -> SOURCE_MONICA
+            else -> SOURCE_BASTION
         }
     }
 
@@ -823,7 +823,7 @@ class DedupMergeService(
         return when {
             item.keepassDatabaseId != null -> keepassSourceKey(item.keepassDatabaseId)
             item.bitwardenVaultId != null -> bitwardenSourceKey(item.bitwardenVaultId)
-            else -> SOURCE_MONICA
+            else -> SOURCE_BASTION
         }
     }
 
@@ -831,7 +831,7 @@ class DedupMergeService(
         return when {
             entry.keepassDatabaseId != null -> keepassSourceKey(entry.keepassDatabaseId)
             entry.bitwardenVaultId != null -> bitwardenSourceKey(entry.bitwardenVaultId)
-            else -> SOURCE_MONICA
+            else -> SOURCE_BASTION
         }
     }
 
@@ -870,7 +870,7 @@ class DedupMergeService(
 
     private fun DedupMergeTarget.sourceKey(): String {
         return when (this) {
-            DedupMergeTarget.BastionLocal -> SOURCE_MONICA
+            DedupMergeTarget.BastionLocal -> SOURCE_BASTION
         }
     }
 
@@ -947,7 +947,7 @@ class DedupMergeService(
     }
 
     private companion object {
-        const val SOURCE_MONICA = "bastion"
+        const val SOURCE_BASTION = "bastion"
 
         fun keepassSourceKey(databaseId: Long): String = "keepass:$databaseId"
         fun bitwardenSourceKey(vaultId: Long): String = "bitwarden:$vaultId"

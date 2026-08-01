@@ -57,7 +57,7 @@ class KeePassSecureItemDeleteExecutor(
         databaseId: Long,
         item: SecureItem
     ): Boolean {
-        val directDelete = bridge.deleteLegacySecureItems(
+        val directDelete = bridge.deleteKeePassSecureItems(
             databaseId = databaseId,
             items = listOf(item)
         )

@@ -57,7 +57,7 @@ class KeePassPasswordUpdateExecutor(
         persistUpdate?.invoke(updatedEntry)
 
         if (oldKeepassId != null && oldKeepassId != newKeepassId) {
-            val deleteResult = keepassBridge.deleteLegacyPasswordEntries(
+            val deleteResult = keepassBridge.deleteKeePassPasswordEntries(
                 databaseId = oldKeepassId,
                 entries = listOf(existingEntry)
             )

@@ -561,7 +561,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                     val localTarget = KeePassRestoreTarget(data.keepassGroupPath, data.keepassGroupUuid)
                     return Result.success(localTarget)
                 }
-                val restoredTargets = keepassBridge.restoreLegacyPasswordEntriesFromRecycleBin(
+                val restoredTargets = keepassBridge.restoreKeePassPasswordEntriesFromRecycleBin(
                     databaseId = keepassId,
                     entries = listOf(data.copy(keepassDatabaseId = keepassId))
                 ).getOrElse { return Result.failure(it) }
@@ -575,7 +575,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                     val localTarget = KeePassRestoreTarget(data.keepassGroupPath, data.keepassGroupUuid)
                     return Result.success(localTarget)
                 }
-                val restoredTargets = keepassBridge.restoreLegacySecureItemsFromRecycleBin(
+                val restoredTargets = keepassBridge.restoreKeePassSecureItemsFromRecycleBin(
                     databaseId = keepassId,
                     items = listOf(data.copy(keepassDatabaseId = keepassId))
                 ).getOrElse { return Result.failure(it) }
@@ -613,7 +613,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             .filter { it.keepassDatabaseId != null }
             .groupBy { it.keepassDatabaseId!! }
         groupedPasswords.forEach { (databaseId, entries) ->
-            val restoreResult = keepassBridge.restoreLegacyPasswordEntriesFromRecycleBin(
+            val restoreResult = keepassBridge.restoreKeePassPasswordEntriesFromRecycleBin(
                 databaseId = databaseId,
                 entries = entries.map { it.copy(keepassDatabaseId = databaseId) }
             )
@@ -642,7 +642,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             .filter { it.keepassDatabaseId != null }
             .groupBy { it.keepassDatabaseId!! }
         groupedSecureItems.forEach { (databaseId, items) ->
-            val restoreResult = keepassBridge.restoreLegacySecureItemsFromRecycleBin(
+            val restoreResult = keepassBridge.restoreKeePassSecureItemsFromRecycleBin(
                 databaseId = databaseId,
                 items = items.map { it.copy(keepassDatabaseId = databaseId) }
             )
@@ -678,7 +678,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         return when (data) {
             is PasswordEntry -> {
                 val keepassId = data.keepassDatabaseId ?: return true
-                val result = keepassBridge.deleteLegacyPasswordEntries(
+                val result = keepassBridge.deleteKeePassPasswordEntries(
                     databaseId = keepassId,
                     entries = listOf(data.copy(keepassDatabaseId = keepassId))
                 )
@@ -698,7 +698,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             }
             is SecureItem -> {
                 val keepassId = data.keepassDatabaseId ?: return true
-                val result = keepassBridge.deleteLegacySecureItems(
+                val result = keepassBridge.deleteKeePassSecureItems(
                     databaseId = keepassId,
                     items = listOf(data.copy(keepassDatabaseId = keepassId))
                 )

@@ -131,7 +131,7 @@ class KeePassPasswordDeleteExecutor(
         databaseId: Long,
         entry: PasswordEntry
     ): Boolean {
-        val directDelete = bridge.deleteLegacyPasswordEntries(
+        val directDelete = bridge.deleteKeePassPasswordEntries(
             databaseId = databaseId,
             entries = listOf(entry)
         )
@@ -152,7 +152,7 @@ class KeePassPasswordDeleteExecutor(
         databaseId: Long,
         entries: List<PasswordEntry>
     ): Boolean {
-        val directDelete = bridge.deleteLegacyPasswordEntries(
+        val directDelete = bridge.deleteKeePassPasswordEntries(
             databaseId = databaseId,
             entries = entries
         )

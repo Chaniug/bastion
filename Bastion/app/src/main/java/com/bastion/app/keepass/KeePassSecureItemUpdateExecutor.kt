@@ -45,7 +45,7 @@ class KeePassSecureItemUpdateExecutor(
         persistUpdate?.invoke(updatedItem)
 
         if (oldKeepassId != null && oldKeepassId != newKeepassId) {
-            val deleteResult = keepassBridge.deleteLegacySecureItems(oldKeepassId, listOf(existingItem))
+            val deleteResult = keepassBridge.deleteKeePassSecureItems(oldKeepassId, listOf(existingItem))
             if (deleteResult.isFailure) {
                 Log.e(TAG, "KeePass delete failed: ${deleteResult.exceptionOrNull()?.message}")
                 return Result.failure(

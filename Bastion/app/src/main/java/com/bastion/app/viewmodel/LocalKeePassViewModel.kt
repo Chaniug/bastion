@@ -2119,7 +2119,7 @@ class LocalKeePassViewModel(
                 }
 
                 crossDatabaseEntriesBySource.forEach { (sourceDatabaseId, sourceEntries) ->
-                    compatibilityBridge.deleteLegacyPasswordEntries(
+                    compatibilityBridge.deleteKeePassPasswordEntries(
                         databaseId = sourceDatabaseId,
                         entries = sourceEntries
                     ).getOrThrow()
@@ -2147,7 +2147,7 @@ class LocalKeePassViewModel(
                 .forEach { (databaseId, databaseEntries) ->
                     val resolvedDatabaseId = databaseId ?: return@forEach
                     materializeKeePassAttachmentsForLocal(databaseEntries)
-                    compatibilityBridge.deleteLegacyPasswordEntries(
+                    compatibilityBridge.deleteKeePassPasswordEntries(
                         databaseId = resolvedDatabaseId,
                         entries = databaseEntries
                     ).getOrThrow()
@@ -2229,7 +2229,7 @@ class LocalKeePassViewModel(
     ) {
         if (targets.isEmpty()) return
         runCatchingObserved {
-            compatibilityBridge.deleteLegacyPasswordEntries(
+            compatibilityBridge.deleteKeePassPasswordEntries(
                 databaseId = databaseId,
                 entries = targets
             )

@@ -1129,8 +1129,14 @@ class SecurityManager(private val context: Context) {
     }
 
     /**
-     * Compatibility helper: force compat payload for scenarios where
+     * Compatibility helper (Phase B.1.3): force compat payload for scenarios where
      * immediate readability is required under unstable MDK auth state.
+     *
+     * 历史背景：本方法命名中的 "Legacy" 指品牌重塑前 (Monica Pass) 的加密兼容层，
+     * 与已移除的 MDBX 存储引擎无关。存量用户数据可能使用旧 Keystore 别名
+     * (monica_data_key_v2 / monica_data_key_v2_compat) 加密，解密时通过
+     * [tryGetLegacyKey] 回退读取，加密时一律使用新别名 (bastion_data_key_v2)。
+     * 未来可通过渐进式迁移将旧别名数据重新加密为新区名后淘汰本兼容路径。
      */
     fun encryptDataLegacyCompat(data: String): String {
         return encryptDataCompat(data)
