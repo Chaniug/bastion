@@ -63,3 +63,16 @@ if (!showNotification && !autoCopy) { return }   // 两个都关 → 直接返�
 - 是否接受"自动填充后默认把 OTP 放进剪贴板"（方向 A，对齐 Bitwarden）？
 - 还是保持可选、只修竞态（方向 B）？
 - OTP 复制后的"自动清除"时长沿用现有敏感默认值即可？
+
+## 五、修复记录（已实施，方向 A）
+- 用户确认采用"默认即复制 + 修竞态"。
+- 改动（commit `6b6998cd`，分支 `dev`）：
+  1. `AutofillPreferences.kt`：`isAutoCopyOtpEnabled` 默认 `false` → `true`（对齐 Bitwarden）。
+  2. `BastionAccessibilityService.kt`：新增 `leaveOtpInClipboard(otp)`，在
+     `fillCredentialsInActiveWindow` 填充收尾、OTP 存在时调用；取消挂起的临时剪贴板还原
+     （`clipboardHandler::removeCallbacks` + `resetTemporaryClipboardSessionLocked()`）并把
+     OTP 显式写入系统剪贴板（label `"OTP Code"`，**不设 `IS_SENSITIVE`** 以保输入法剪贴板收录）。
+  3. 新增 `OtpAutofillClipboardRegressionGuardTest.kt` 固化上述行为。
+- CI：`30712842822` **success**（dev 分支）。
+- 后续：用户下载预览版 APK 在荣耀 / Android 17 真机验证 Edge 上 OTP 复制；确认无误后
+  再将 `dev` 合并到 `main`（约定 #2）。
