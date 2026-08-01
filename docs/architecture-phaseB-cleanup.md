@@ -142,18 +142,41 @@ private const val SOURCE_BASTION = "bastion"
 | 批次 | 内容 | 编号 | 基线变化 | 风险 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | 批次 0 | Phase A 遗留（Room 版本断言） | 19 | 19 → **18** | 无 | ✅ 完成（`adc16a70`，CI #30704712456 实测 18 failed） |
-| 批次 1 | 纯文本漂移 + 属性插入 | 1, 3, 4, 5, 7, 8, 11, 12, 13, 15, 17, 18 | 18 → 6 | 低 | ⬜ |
-| 批次 2 | 守卫对象消失 + 测试过时 | 2, 6, 10, 14, 16 | 6 → 1 | 中（需理解设计意图） | ⬜ |
-| 批次 3 | 疑似真回归 | 9 | 1 → 0 | ⚠️ 改主代码，需维护者确认 | ⬜ 待确认 |
+| 批次 1 | 纯文本漂移 + 属性插入 | 1, 3, 4, 5, 7, 8, 11, 12, 13, 15, 17, 18 | 18 → **6** | 低（零主代码改动） | ✅ 完成（`5548607f`，CI #30705545204 实测 6 failed） |
+| 批次 2 | 守卫对象消失 + 测试过时 | 2, 6, 10, 14, 16 | 6 → 1 | 中（改的是安全/策略护栏的语义，需理解设计意图） | ⏸ **待维护者确认** |
+| 批次 3 | 疑似真回归 | 9 | 1 → 0 | ⚠️ 需改主代码 + 真机验证 | ⏸ **待维护者确认** |
 
 **统计演进**：
 
-| 节点 | 总测试 | 失败 | BASELINE_FAILURES |
-| --- | --- | --- | --- |
-| Phase A 完成时 | 525 | 19 | 19 |
-| B.2.1 批次 0 + B.2.2 后（CI #30704712456） | **538**（+13 复活用例全通过） | **18** | **18** |
+| 节点 | 总测试 | 失败 | BASELINE_FAILURES | CI |
+| --- | --- | --- | --- | --- |
+| Phase A 完成时 | 525 | 19 | 19 | — |
+| B.2.1 批次 0 + B.2.2 后 | **538**（+13 复活用例全通过） | **18** | 18 | #30704712456 / #30705361280 |
+| B.2.1 批次 1 后 | 538 | **6** | **6** | #30705545204 |
 
-根因定位率 19/19 = 100%。
+根因定位率 19/19 = 100%。**失败数已从 19 降至 6，降幅 68%，且全程零主代码改动。**
+
+##### 剩余 6 个失败（批次 2 + 批次 3）
+
+```
+AutofillAuthResultLaunchModeRegressionGuardTest > authResultActivitiesMustNotReuseExistingInstances   (#2)
+BiometricUnlockRegressionGuardTest > mdkWrapperRebuildHandlesInvalidatedAndUnrecoverableKeystoreKeys  (#6)
+ExpressiveTopBarKeyboardRegressionGuardTest > searchFieldRestoresKeyboardWhenPressedAfterSystemDismissal (#9 ⚠️)
+KeePassOperationAvailabilityTest > remoteDatabaseBlocksUnsafeSyncStates                               (#10)
+PasswordSuggestionUiRegressionGuardTest > primaryActionUsesShortLabelInEnglishAndChinese              (#14)
+PlusLocalActivationGuardTest > activationCompletesLocallyWithoutBlockingProgressUi                    (#16)
+```
+
+**为什么这 6 个要停下来等确认**：它们不像批次 1 那样是"实现等价、只是文本变了"。改它们等于**改写守卫的语义**——即承认某条安全/策略红线已经移动。这类判断应该由维护者拍板，而不是 agent 自行认定：
+
+- **#6** 涉及 Keystore 密钥包装策略（AUTH vs COMPAT）——改错了会影响静息数据保护强度
+- **#10** 涉及 KeePass 远程库在异常同步态下是否放行写入——改错了可能导致数据覆盖
+- **#2** 涉及 autofill 认证 Activity 的实例复用——改错了可能引入会话串号
+- **#14** 涉及要不要真正补一份 `values-en`（产品决策，不是技术决策）
+- **#16** 涉及 Plus 功能是否永久免费（产品决策）
+- **#9** 需要改主代码修复疑似回归，且必须真机验证
+
+批次 2/3 的具体改法已在上方根因表的「处置」列写明，维护者确认后可由接力 agent 直接执行。
 
 #### B.2.2 5 个 `.kt.disabled` 文件处置
 
