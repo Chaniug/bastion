@@ -127,13 +127,6 @@ import com.bastion.app.ui.screens.PaymentScreen
 import com.bastion.app.ui.screens.SupportAuthorScreen
 import com.bastion.app.ui.screens.OneDriveBackupScreen
 import com.bastion.app.ui.screens.WebDavBackupScreen
-import com.bastion.app.ui.screens.MdbxManagerScreen
-import com.bastion.app.ui.screens.MdbxLocalCreateScreen
-import com.bastion.app.ui.screens.MdbxLocalOpenScreen
-import com.bastion.app.ui.screens.MdbxOneDriveCreateScreen
-import com.bastion.app.ui.screens.MdbxOneDriveOpenScreen
-import com.bastion.app.ui.screens.MdbxWebDavCreateScreen
-import com.bastion.app.ui.screens.MdbxWebDavOpenScreen
 import com.bastion.app.ui.screens.KeePassKdbxViewModel
 import com.bastion.app.ui.theme.BastionTheme
 import com.bastion.app.utils.LocaleHelper
@@ -2715,12 +2708,6 @@ fun BastionContent(
                 onNavigateToThemeAndColorScheme = {
                     navController.navigate(Screen.ThemeAndColorScheme.route)
                 },
-                onNavigateToMdbx = {
-                    navController.navigate(Screen.MdbxManager.route) {
-                        popUpTo(Screen.MdbxManager.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(
@@ -2973,117 +2960,6 @@ fun BastionContent(
         }
 
         composable(
-            route = Screen.MdbxManager.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxManagerScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToLocalCreate = {
-                    navController.navigate(Screen.MdbxLocalCreate.route)
-                },
-                onNavigateToLocalOpen = {
-                    navController.navigate(Screen.MdbxLocalOpen.route)
-                },
-                onNavigateToWebDavCreate = {
-                    navController.navigate(Screen.MdbxWebDavCreate.route)
-                },
-                onNavigateToWebDavOpen = {
-                    navController.navigate(Screen.MdbxWebDavOpen.route)
-                },
-                onNavigateToOneDriveCreate = {
-                    navController.navigate(Screen.MdbxOneDriveCreate.route)
-                },
-                onNavigateToOneDriveOpen = {
-                    navController.navigate(Screen.MdbxOneDriveOpen.route)
-                }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxLocalCreate.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxLocalCreateScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxLocalOpen.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxLocalOpenScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxWebDavCreate.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxWebDavCreateScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxWebDavOpen.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxWebDavOpenScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxOneDriveCreate.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxOneDriveCreateScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.MdbxOneDriveOpen.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            MdbxOneDriveOpenScreen(
-                viewModel = mdbxViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
             route = Screen.AutofillSettings.route,
             enterTransition = { easyNotesScreenEnter() },
             exitTransition = { easyNotesScreenExit() },
@@ -3301,12 +3177,6 @@ fun BastionContent(
                 viewModel = settingsViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onNavigateToMdbx = {
-                    navController.navigate(Screen.MdbxManager.route) {
-                        popUpTo(Screen.MdbxManager.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
                 }
             )
             }
@@ -3553,12 +3423,6 @@ fun BastionContent(
                 onNavigateToLocalKeePass = {
                     navController.navigate(Screen.LocalKeePass.route)
                 },
-                onNavigateToMdbx = {
-                    navController.navigate(Screen.MdbxManager.route) {
-                        popUpTo(Screen.MdbxManager.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
                 onNavigateToBitwarden = {
                     navController.navigate(Screen.BitwardenSettings.route)
                 }
@@ -3624,9 +3488,6 @@ fun BastionContent(
                 },
                 onSelectTarget = { target ->
                     dedupViewModel.selectMergeTarget(target)
-                },
-                onCreateMdbxTarget = {
-                    navController.navigate(Screen.MdbxLocalCreate.route)
                 },
                 onConflictPolicyChange = { policy ->
                     dedupViewModel.updateConflictPolicy(policy)

@@ -102,7 +102,6 @@ fun SettingsScreen(
     onNavigateToBastionPlus: () -> Unit = {},
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToPageCustomization: () -> Unit = {},
-    onNavigateToMdbx: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { _, _, _, _, _, _ -> },
     showTopBar: Boolean = true,  // 添加参数控制是否显示顶栏
     onSectionSelected: ((String) -> Unit)? = null  // 宽屏模式下 section 被选中时回调

@@ -32,7 +32,6 @@ fun SyncBackupScreen(
     onNavigateToOneDrive: () -> Unit = {},
     onNavigateToDedupEngine: () -> Unit = {},
     onNavigateToLocalKeePass: () -> Unit = {},  // 本地 KeePass 数据库管理
-    onNavigateToMdbx: () -> Unit = {},
     onNavigateToBitwarden: () -> Unit = {}  // Bitwarden 集成入口
 ) {
     val scrollState = rememberScrollState()
@@ -170,17 +169,6 @@ fun SyncBackupScreen(
                     title = stringResource(R.string.local_keepass_database),
                     description = stringResource(R.string.local_keepass_database_description),
                     onClick = onNavigateToLocalKeePass
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SyncBackupSection(title = "MDBX 1.0") {
-                SyncBackupItem(
-                    icon = Icons.Default.Storage,
-                    title = "MDBX 1.0 数据库管理",
-                    description = "管理本地、WebDAV 和 OneDrive MDBX 数据库，兼容旧测试版库",
-                    onClick = onNavigateToMdbx
                 )
             }
 

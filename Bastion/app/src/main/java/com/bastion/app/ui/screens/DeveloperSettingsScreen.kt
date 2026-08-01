@@ -100,8 +100,7 @@ import com.bastion.app.viewmodel.SettingsViewModel
 @Composable
 fun DeveloperSettingsScreen(
     viewModel: SettingsViewModel,
-    onNavigateBack: () -> Unit,
-    onNavigateToMdbx: () -> Unit = {}
+    onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     val settings by viewModel.settings.collectAsState()
@@ -385,13 +384,6 @@ fun DeveloperSettingsScreen(
                             Toast.LENGTH_SHORT
                         ).show()
                     }
-                )
-
-                SettingsItem(
-                    icon = Icons.Default.Science,
-                    title = stringResource(R.string.mdbx_format_title),
-                    subtitle = stringResource(R.string.mdbx_format_description),
-                    onClick = onNavigateToMdbx
                 )
             }
             SettingsSection(

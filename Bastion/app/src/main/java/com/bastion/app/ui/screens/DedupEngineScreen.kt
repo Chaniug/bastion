@@ -111,7 +111,6 @@ fun DedupEngineScreen(
     onSelectAllSources: () -> Unit,
     onClearSources: () -> Unit,
     onSelectTarget: (DedupMergeTarget) -> Unit,
-    onCreateMdbxTarget: () -> Unit,
     onConflictPolicyChange: (DedupConflictPolicy) -> Unit,
     onExecuteMerge: () -> Unit,
     onCancelMerge: () -> Unit,
@@ -159,10 +158,6 @@ fun DedupEngineScreen(
             onSelectTarget = {
                 onSelectTarget(it)
                 activeSheet = null
-            },
-            onCreateMdbxTarget = {
-                activeSheet = null
-                onCreateMdbxTarget()
             },
             onDismiss = { activeSheet = null }
         )
@@ -507,7 +502,6 @@ private fun TargetSelectionSheet(
     selectedTarget: DedupMergeTarget?,
     selectedSourceKeys: Set<String>,
     onSelectTarget: (DedupMergeTarget) -> Unit,
-    onCreateMdbxTarget: () -> Unit,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -550,16 +544,6 @@ private fun TargetSelectionSheet(
                         }
                     )
                 }
-            }
-            OutlinedButton(
-                onClick = onCreateMdbxTarget,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.Storage, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("新建 MDBX 目标数据库")
             }
         }
     }
