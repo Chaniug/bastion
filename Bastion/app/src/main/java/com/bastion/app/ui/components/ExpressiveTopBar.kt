@@ -31,6 +31,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -81,6 +82,7 @@ fun ExpressiveTopBar(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val searchInteractionSource = remember { MutableInteractionSource() }
     var searchFieldValueState by remember {
         mutableStateOf(initialSearchTextFieldValue(searchQuery))
@@ -98,6 +100,7 @@ fun ExpressiveTopBar(
         searchInteractionSource.interactions.collect { interaction ->
             if (interaction is PressInteraction.Press) {
                 focusRequester.requestFocus()
+                keyboardController?.show()
             }
         }
     }

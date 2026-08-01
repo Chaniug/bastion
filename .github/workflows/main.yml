@@ -230,7 +230,10 @@ jobs:
           # 2026-08-01 Phase B.2.1 批次 2：重写 5 个"实现有意演进、测试过时"的守卫断言
           # （#2 实例复用白名单+onNewIntent / #6 AUTH 优先包装 / #10 KeePass 反死锁 /
           # #14 中英文案 / #16 Plus 免费化），失败数 6 -> 1（仅剩 #9 疑似真实回归）。
-          BASELINE_FAILURES: "1"
+          # 2026-08-01 Phase B.2.1 批次 3：修复 #9 ExpressiveTopBar 搜索框真实回归
+          # （已聚焦的搜索框被系统收起键盘后，再次点按重新唤出软键盘 keyboardController?.show()），
+          # 失败数 1 -> 0。Phase B.2.1 守卫测试债务清零（19 -> 0）。
+          BASELINE_FAILURES: "0"
         run: |
           python3 - <<'PY'
           import glob, os, sys
