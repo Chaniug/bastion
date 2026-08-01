@@ -707,24 +707,6 @@ private fun SavedCategoryFilterState.toVaultV2SavedStorageFilter(): VaultV2Saved
 				VaultV2SavedStorageFilter(VAULT_V2_STORAGE_FILTER_ALL)
 			}
 		}
-		VAULT_V2_STORAGE_FILTER_MDBX_DATABASE -> {
-			primaryId?.let {
-				VaultV2SavedStorageFilter(type = VAULT_V2_STORAGE_FILTER_MDBX_DATABASE, primaryId = it)
-			} ?: VaultV2SavedStorageFilter(VAULT_V2_STORAGE_FILTER_ALL)
-		}
-		VAULT_V2_STORAGE_FILTER_MDBX_FOLDER -> {
-			val databaseId = primaryId
-			val folderId = text
-			if (databaseId != null && !folderId.isNullOrBlank()) {
-				VaultV2SavedStorageFilter(
-					type = VAULT_V2_STORAGE_FILTER_MDBX_FOLDER,
-					primaryId = databaseId,
-					secondaryKey = folderId,
-				)
-			} else {
-				VaultV2SavedStorageFilter(VAULT_V2_STORAGE_FILTER_ALL)
-			}
-		}
 		else -> VaultV2SavedStorageFilter(VAULT_V2_STORAGE_FILTER_ALL)
 	}
 }
@@ -745,27 +727,10 @@ private fun VaultV2PaneState.toSavedCategoryFilterState(): SavedCategoryFilterSt
 		VAULT_V2_STORAGE_FILTER_KEEPASS_DATABASE_UNCATEGORIZED,
 		VAULT_V2_STORAGE_FILTER_BITWARDEN_VAULT,
 		VAULT_V2_STORAGE_FILTER_BITWARDEN_VAULT_STARRED,
-		VAULT_V2_STORAGE_FILTER_BITWARDEN_VAULT_UNCATEGORIZED,
-		VAULT_V2_STORAGE_FILTER_MDBX_DATABASE -> {
+		VAULT_V2_STORAGE_FILTER_BITWARDEN_VAULT_UNCATEGORIZED -> {
 			if (storageFilterPrimaryId != null) {
 				SavedCategoryFilterState(
 					type = storageFilterType,
-					primaryId = storageFilterPrimaryId,
-				)
-			} else {
-				SavedCategoryFilterState(type = VAULT_V2_STORAGE_FILTER_ALL)
-			}
-		}
-		VAULT_V2_STORAGE_FILTER_MDBX_FOLDER -> {
-			if (storageFilterPrimaryId != null && !storageFilterSecondaryKey.isNullOrBlank()) {
-				SavedCategoryFilterState(
-					type = VAULT_V2_STORAGE_FILTER_MDBX_FOLDER,
-					primaryId = storageFilterPrimaryId,
-					text = storageFilterSecondaryKey,
-				)
-			} else if (storageFilterPrimaryId != null) {
-				SavedCategoryFilterState(
-					type = VAULT_V2_STORAGE_FILTER_MDBX_DATABASE,
 					primaryId = storageFilterPrimaryId,
 				)
 			} else {

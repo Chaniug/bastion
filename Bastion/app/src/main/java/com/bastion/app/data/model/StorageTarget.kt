@@ -136,6 +136,19 @@ fun StorageTarget.applyToPasswordEntry(
             bitwardenLocalModified = false,
             replicaGroupId = replicaGroupId
         )
+        is StorageTarget.Bitwarden -> entry.copy(
+            categoryId = null,
+            keepassDatabaseId = null,
+            keepassGroupPath = null,
+            keepassEntryUuid = null,
+            keepassGroupUuid = null,
+            bitwardenVaultId = vaultId,
+            bitwardenCipherId = null,
+            bitwardenFolderId = folderId,
+            bitwardenRevisionDate = null,
+            bitwardenLocalModified = false,
+            replicaGroupId = replicaGroupId
+        )
     }
 }
 

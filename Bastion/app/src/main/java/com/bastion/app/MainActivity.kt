@@ -191,8 +191,6 @@ private fun SavedStateHandle.clearPendingAddStorageDefaults() {
     remove<Long>(KEY_PENDING_ADD_CATEGORY_ID)
     remove<Long>(KEY_PENDING_ADD_KEEPASS_DATABASE_ID)
     remove<String>(KEY_PENDING_ADD_KEEPASS_GROUP_PATH)
-    remove<Long>(KEY_PENDING_ADD_MDBX_DATABASE_ID)
-    remove<String>(KEY_PENDING_ADD_MDBX_FOLDER_ID)
     remove<Long>(KEY_PENDING_ADD_BITWARDEN_VAULT_ID)
     remove<String>(KEY_PENDING_ADD_BITWARDEN_FOLDER_ID)
 }
