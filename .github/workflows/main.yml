@@ -122,28 +122,24 @@ jobs:
           suffix="build.$(date -u +%Y%m%d%H%M)"
           echo "preview_version_suffix=$suffix" >> "$GITHUB_OUTPUT"
 
-      - name: Cleanup previous preview release assets
+      - name: Cleanup previous preview release (assets + release + tag)
         if: github.event_name == 'push'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          # 删除已存在的 preview release（含 assets），再删除 tag，确保下次全新创建
           release_id="$(gh api repos/${{ github.repository }}/releases/tags/preview --jq '.id' 2>/dev/null || true)"
-          if [ -z "$release_id" ]; then
-            echo "No existing preview release assets to clean"
-            exit 0
+          if [[ "$release_id" =~ ^[0-9]+$ ]]; then
+            echo "Deleting existing preview release id=${release_id}"
+            gh api -X DELETE repos/${{ github.repository }}/releases/${release_id} 2>/dev/null || true
+          else
+            echo "No existing preview release to delete"
           fi
-          asset_ids="$(gh api repos/${{ github.repository }}/releases/${release_id}/assets --paginate --jq '.[].id')"
-          if [ -z "$asset_ids" ]; then
-            echo "Preview release has no existing assets"
-            exit 0
-          fi
-          while IFS= read -r asset_id; do
-            [ -z "$asset_id" ] && continue
-            echo "Deleting previous preview asset id=${asset_id}"
-            gh api -X DELETE repos/${{ github.repository }}/releases/assets/${asset_id}
-          done <<< "$asset_ids"
+          # 删除 preview tag（不存在则忽略）
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/preview 2>/dev/null || true
+          echo "Cleanup done"
 
       - name: Collect debug APK metadata
         if: github.event_name == 'push'
