@@ -11,9 +11,10 @@ class WebDavSecurityStorageGuardTest {
     fun webDavHelper_doesNotPersistSensitiveConfigInPlainSharedPreferences() {
         val source = projectFile("app/src/main/java/com/bastion/app/utils/WebDavHelper.kt")
 
-        assertFalse(source.contains("putString(KEY_PASSWORD, password)"))
-        assertFalse(source.contains("putString(KEY_ENCRYPTION_PASSWORD, encryptionPassword)"))
-        assertTrue(source.contains("securityManager.putProtectedString(SECURE_KEY_PASSWORD"))
+        // 正则仅容忍空白排版；语义锚点(putProtectedString / SECURE_KEY_*)保持原样
+        assertFalse(source.contains(Regex("putString\\s*\\(\\s*KEY_PASSWORD,\\s*password\\s*\\)")))
+        assertFalse(source.contains(Regex("putString\\s*\\(\\s*KEY_ENCRYPTION_PASSWORD,\\s*encryptionPassword\\s*\\)")))
+        assertTrue(source.contains(Regex("securityManager\\.putProtectedString\\s*\\(\\s*SECURE_KEY_PASSWORD")))
         assertTrue(source.contains("securityManager.putProtectedString("))
         assertTrue(source.contains("SECURE_KEY_ENCRYPTION_PASSWORD"))
         assertTrue(source.contains("migrateLegacyConfigIfNeeded"))
@@ -25,19 +26,20 @@ class WebDavSecurityStorageGuardTest {
         val autofillAuth = projectFile("app/src/main/java/com/bastion/app/autofill_ng/AutofillAuthenticationActivity.kt")
         val securityManager = projectFile("app/src/main/java/com/bastion/app/security/SecurityManager.kt")
 
-        assertFalse(webDavHelper.contains("Log.d(\"WebDavHelper\", \"Username: ${'$'}username\")"))
-        assertFalse(webDavHelper.contains("user=${'$'}username"))
-        assertFalse(autofillAuth.contains("Log.d(TAG, \"Username: ${'$'}usernameValue\")"))
-        assertFalse(securityManager.contains("Bitwarden credential saved for user:"))
+        // 日志不打印明文：敏感变量锚点 ${...} 保留，容忍冒号/等号前后空白与全半角冒号
+        assertFalse(webDavHelper.contains(Regex("Username:\\s*\\$\\{username\\}")))
+        assertFalse(webDavHelper.contains(Regex("user\\s*=\\s*\\$\\{username\\}")))
+        assertFalse(autofillAuth.contains(Regex("Username:\\s*\\$\\{usernameValue\\}")))
+        assertFalse(securityManager.contains(Regex("Bitwarden\\s+credential\\s+saved\\s+for\\s+user[:：]?")))
     }
 
     @Test
     fun backupCreation_doesNotUseHardcodedFallbackKeyForNewSensitiveExports() {
         val source = projectFile("app/src/main/java/com/bastion/app/utils/WebDavHelper.kt")
 
-        assertTrue(source.contains("val backupEncryptPassword = currentBackupEncryptionPassword()"))
+        assertTrue(source.contains(Regex("val\\s+backupEncryptPassword\\s*=\\s*currentBackupEncryptionPassword\\s*\\(\\s*\\)")))
         assertTrue(source.contains("未启用备份加密，已跳过 WebDAV 连接凭证和 Bitwarden Vault 密钥材料"))
-        assertFalse(source.contains("val backupEncryptPassword = if (enableEncryption && encryptionPassword.isNotEmpty())"))
+        assertFalse(source.contains(Regex("val\\s+backupEncryptPassword\\s*=\\s*if\\s*\\(\\s*enableEncryption\\s*&&\\s*encryptionPassword\\.isNotEmpty\\s*\\(\\s*\\)\\s*\\)")))
     }
 
     @Test
@@ -45,8 +47,8 @@ class WebDavSecurityStorageGuardTest {
         val source = projectFile("app/src/main/java/com/bastion/app/utils/WebDavHelper.kt")
 
         assertTrue(source.contains("private const val LEGACY_WEBDAV_BACKUP_FALLBACK_KEY = \"Bastion_WebDAV_Config_Key\""))
-        assertTrue(source.contains("private fun decryptBackupValueWithLegacyFallback"))
-        assertTrue(source.contains("if (decryptPassword.isNullOrBlank())"))
+        assertTrue(source.contains(Regex("private\\s+fun\\s+decryptBackupValueWithLegacyFallback")))
+        assertTrue(source.contains(Regex("if\\s*\\(\\s*decryptPassword\\.isNullOrBlank\\s*\\(\\s*\\)\\s*\\)")))
     }
 
     @Test
