@@ -399,9 +399,15 @@ GitHub Actions 的 `Build Debug APK (build gate)` 步骤是**硬性编译闸门*
 
 ### 下一步
 
-- 用户在荣耀 Android 17 设备上真机测试预览版 APK
-- 确认无回归后，将 dev 合并到 main
-- 后续可考虑的功能增强方向（非紧急）：KDBX 附件同步优化、Bitwarden send 集成等
+- ✅ 用户在荣耀 Android 17 设备上真机测试预览版 APK
+- ✅ 确认无回归后，将 dev 合并到 main（`69c9f8b5`，已合并）
+- **Phase B：代码治理与模块化** — 详见 [`docs/architecture-phaseB-cleanup.md`](architecture-phaseB-cleanup.md)
+  - B.1 遗留命名收敛（Legacy → KeePass）
+  - B.2 测试债务治理（19 个失败测试 + 5 个 disabled + 23 处守卫测试）
+  - B.3 PasswordViewModel 拆分（4162 行 → 6-7 个职责类）
+  - B.4 密封类同形收敛（4 套 Ownership/Source 统一）
+  - B.5 大型 Screen 文件拆分
+  - B.6 DedupMergeTarget 扩展
 
 ---
 
