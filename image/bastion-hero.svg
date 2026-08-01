@@ -1,70 +1,79 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bastion — 本地优先 · 零知识 · 开源的 Android 密码管理器">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1336"/><stop offset="0.55" stop-color="#070C22"/><stop offset="1" stop-color="#04060F"/></linearGradient>
-    <radialGradient id="halo" cx="72%" cy="46%" r="60%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.16"/><stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.13"/><stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/></radialGradient>
-    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.5"/><stop offset="100%" stop-color="#F5B942" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo" cx="72%" cy="46%" r="60%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.18"/><stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.16"/><stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/><stop offset="100%" stop-color="#F5B942" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#57C7E8" stop-opacity="0.45"/><stop offset="100%" stop-color="#57C7E8" stop-opacity="0"/></radialGradient>
     <linearGradient id="magGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5B942" stop-opacity="0.15"/><stop offset="0.5" stop-color="#FFD874"/><stop offset="1" stop-color="#F5B942" stop-opacity="0.15"/></linearGradient>
     <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#9FD4FF" fill-opacity="0.06"/></pattern>
-    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
-    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
-        <linearGradient id="gt_loc" gradientUnits="userSpaceOnUse" x1="946.0" y1="150.0" x2="946.0" y2="224.0"><stop offset="0" stop-color="#ECFCFF"/><stop offset="1" stop-color="#83E1F2"/></linearGradient>
-    <linearGradient id="gl_loc" gradientUnits="userSpaceOnUse" x1="881.9" y1="187.0" x2="946.0" y2="298.0"><stop offset="0" stop-color="#59C7E6"/><stop offset="1" stop-color="#2E9BC2"/></linearGradient>
-    <linearGradient id="gr_loc" gradientUnits="userSpaceOnUse" x1="1010.1" y1="187.0" x2="946.0" y2="298.0"><stop offset="0" stop-color="#2E9BC2"/><stop offset="1" stop-color="#16708F"/></linearGradient>
-    <linearGradient id="gt_key" gradientUnits="userSpaceOnUse" x1="850.0" y1="306.0" x2="850.0" y2="380.0"><stop offset="0" stop-color="#ECF4FF"/><stop offset="1" stop-color="#93C2F5"/></linearGradient>
-    <linearGradient id="gl_key" gradientUnits="userSpaceOnUse" x1="785.9" y1="343.0" x2="850.0" y2="454.0"><stop offset="0" stop-color="#4F97E0"/><stop offset="1" stop-color="#2E6FC8"/></linearGradient>
-    <linearGradient id="gr_key" gradientUnits="userSpaceOnUse" x1="914.1" y1="343.0" x2="850.0" y2="454.0"><stop offset="0" stop-color="#2E6FC8"/><stop offset="1" stop-color="#1A4E97"/></linearGradient>
-    <linearGradient id="gt_web" gradientUnits="userSpaceOnUse" x1="1042.0" y1="306.0" x2="1042.0" y2="380.0"><stop offset="0" stop-color="#F0F0FF"/><stop offset="1" stop-color="#9EA9F6"/></linearGradient>
-    <linearGradient id="gl_web" gradientUnits="userSpaceOnUse" x1="977.9" y1="343.0" x2="1042.0" y2="454.0"><stop offset="0" stop-color="#6E7CEC"/><stop offset="1" stop-color="#4A57D8"/></linearGradient>
-    <linearGradient id="gr_web" gradientUnits="userSpaceOnUse" x1="1106.1" y1="343.0" x2="1042.0" y2="454.0"><stop offset="0" stop-color="#4A57D8"/><stop offset="1" stop-color="#2F39AE"/></linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="15"/></filter>
+    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+        <linearGradient id="gt_loc" gradientUnits="userSpaceOnUse" x1="946.0" y1="150.0" x2="946.0" y2="226.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#CFF6FF" stop-opacity="0.35"/><stop offset="1" stop-color="#7FE7FF" stop-opacity="0.20"/></linearGradient>
+    <linearGradient id="gl_loc" gradientUnits="userSpaceOnUse" x1="880.2" y1="188.0" x2="946.0" y2="302.0"><stop offset="0" stop-color="#7FE7FF" stop-opacity="0.30"/><stop offset="1" stop-color="#2E9BC2" stop-opacity="0.16"/></linearGradient>
+    <linearGradient id="gr_loc" gradientUnits="userSpaceOnUse" x1="1011.8" y1="188.0" x2="946.0" y2="302.0"><stop offset="0" stop-color="#7FE7FF" stop-opacity="0.22"/><stop offset="1" stop-color="#2E9BC2" stop-opacity="0.28"/></linearGradient>
+    <linearGradient id="gt_key" gradientUnits="userSpaceOnUse" x1="848.0" y1="308.0" x2="848.0" y2="384.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#D6E9FF" stop-opacity="0.35"/><stop offset="1" stop-color="#8FC4FF" stop-opacity="0.20"/></linearGradient>
+    <linearGradient id="gl_key" gradientUnits="userSpaceOnUse" x1="782.2" y1="346.0" x2="848.0" y2="460.0"><stop offset="0" stop-color="#8FC4FF" stop-opacity="0.30"/><stop offset="1" stop-color="#2E6FC8" stop-opacity="0.16"/></linearGradient>
+    <linearGradient id="gr_key" gradientUnits="userSpaceOnUse" x1="913.8" y1="346.0" x2="848.0" y2="460.0"><stop offset="0" stop-color="#8FC4FF" stop-opacity="0.22"/><stop offset="1" stop-color="#2E6FC8" stop-opacity="0.28"/></linearGradient>
+    <linearGradient id="gt_web" gradientUnits="userSpaceOnUse" x1="1044.0" y1="308.0" x2="1044.0" y2="384.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#E0E3FF" stop-opacity="0.35"/><stop offset="1" stop-color="#A6AEFF" stop-opacity="0.20"/></linearGradient>
+    <linearGradient id="gl_web" gradientUnits="userSpaceOnUse" x1="978.2" y1="346.0" x2="1044.0" y2="460.0"><stop offset="0" stop-color="#A6AEFF" stop-opacity="0.30"/><stop offset="1" stop-color="#4A57D8" stop-opacity="0.16"/></linearGradient>
+    <linearGradient id="gr_web" gradientUnits="userSpaceOnUse" x1="1109.8" y1="346.0" x2="1044.0" y2="460.0"><stop offset="0" stop-color="#A6AEFF" stop-opacity="0.22"/><stop offset="1" stop-color="#4A57D8" stop-opacity="0.28"/></linearGradient>
   </defs>
   <rect width="1280" height="640" fill="url(#bg)"/>
   <rect width="1280" height="640" fill="url(#halo)"/>
   <rect width="1280" height="640" fill="url(#dots)"/>
-  <ellipse cx="946" cy="360" rx="360" ry="330" fill="url(#glowGold)" filter="url(#soft)"/>
+  <!-- 立方体背后的彩色光晕，透过玻璃可见，增强通透感 -->
+  <ellipse cx="946" cy="250" rx="220" ry="200" fill="url(#glowCyan)" filter="url(#soft)"/>
+  <ellipse cx="960" cy="430" rx="320" ry="280" fill="url(#glowGold)" filter="url(#soft)"/>
 
   <!-- 悬浮阴影 -->
-  <ellipse cx="946.0" cy="314.0" rx="60.9" ry="13" fill="#03050C" fill-opacity="0.42" filter="url(#soft)"/>
-  <ellipse cx="850.0" cy="470.0" rx="60.9" ry="13" fill="#03050C" fill-opacity="0.42" filter="url(#soft)"/>
-  <ellipse cx="1042.0" cy="470.0" rx="60.9" ry="13" fill="#03050C" fill-opacity="0.42" filter="url(#soft)"/>
+  <ellipse cx="946.0" cy="320.0" rx="59.2" ry="12" fill="#2E9BC2" fill-opacity="0.28" filter="url(#soft)"/>
+  <ellipse cx="848.0" cy="478.0" rx="59.2" ry="12" fill="#2E6FC8" fill-opacity="0.28" filter="url(#soft)"/>
+  <ellipse cx="1044.0" cy="478.0" rx="59.2" ry="12" fill="#4A57D8" fill-opacity="0.28" filter="url(#soft)"/>
 
-  <!-- 磁力吸附特效线条（品字三连，绘制于立方体之下作为连接感）-->
-  <path d="M 881.9 261.0 Q 884.0 302.0 914.1 343.0" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="884.0" cy="302.0" r="4.2" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="884.0" cy="302.0" r="2" fill="#FFFDF6"/>
-  <path d="M 1010.1 261.0 Q 1008.0 302.0 977.9 343.0" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="1008.0" cy="302.0" r="4.2" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="1008.0" cy="302.0" r="2" fill="#FFFDF6"/>
-  <path d="M 914.1 343.0 Q 946.0 343.0 977.9 343.0" fill="none" stroke="url(#magGrad)" stroke-width="2.4" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="946.0" cy="343.0" r="4.2" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="946.0" cy="343.0" r="2" fill="#FFFDF6"/>
+  <!-- 磁力吸附特效线条（品字三连）-->
+  <path d="M 880.2 264.0 Q 883.0 305.0 913.8 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
+  <circle cx="883.0" cy="305.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
+  <circle cx="883.0" cy="305.0" r="1.8" fill="#FFFDF6"/>
+  <path d="M 1011.8 264.0 Q 1009.0 305.0 978.2 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
+  <circle cx="1009.0" cy="305.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
+  <circle cx="1009.0" cy="305.0" r="1.8" fill="#FFFDF6"/>
+  <path d="M 913.8 346.0 Q 946.0 346.0 978.2 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
+  <circle cx="946.0" cy="346.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
+  <circle cx="946.0" cy="346.0" r="1.8" fill="#FFFDF6"/>
 
-  <!-- 三个半透明立方体：Keystore / WebDAV 在底，Local 在顶（品字形） -->
+  <!-- 三个透明玻璃立方体（品字形：Keystore 左下 / WebDAV 右下 / Local 顶）-->
   <g>
-    <polygon points="785.9,343.0 850.0,380.0 850.0,454.0 785.9,417.0" fill="url(#gl_key)" fill-opacity="0.78" stroke="#2E6FC8" stroke-opacity="0.35" stroke-width="1"/>
-    <polygon points="914.1,343.0 850.0,380.0 850.0,454.0 914.1,417.0" fill="url(#gr_key)" fill-opacity="0.80" stroke="#1A4E97" stroke-opacity="0.4" stroke-width="1"/>
-    <polygon points="850.0,306.0 914.1,343.0 850.0,380.0 785.9,343.0" fill="url(#gt_key)" fill-opacity="0.9" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1"/>
-    <polygon points="842.3,310.4 814.8,326.4 814.8,359.6 842.3,375.6" fill="#FFFFFF" fill-opacity="0.18"/>
-    <polyline points="785.9,343.0 850.0,306.0 914.1,343.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="850.0" y1="380.0" x2="850.0" y2="454.0" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1"/>
-    <text x="850.0" y="422.9" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#0A1B3A" stroke-width="2.4" stroke-opacity="0.35">Keystore</text>
+    <polygon points="782.2,346.0 848.0,384.0 848.0,460.0 782.2,422.0" fill="url(#gl_key)" stroke="#D6E9FF" stroke-opacity="0.5" stroke-width="1.1"/>
+    <polygon points="913.8,346.0 848.0,384.0 848.0,460.0 913.8,422.0" fill="url(#gr_key)" stroke="#D6E9FF" stroke-opacity="0.45" stroke-width="1.1"/>
+    <polygon points="848.0,308.0 913.8,346.0 848.0,384.0 782.2,346.0" fill="url(#gt_key)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
+    <polygon points="854.6,311.8 879.6,326.2 879.6,365.8 854.6,380.2" fill="#FFFFFF" fill-opacity="0.28"/>
+    <polygon points="844.1,310.3 828.3,319.4 828.3,372.6 844.1,381.7" fill="#FFFFFF" fill-opacity="0.14"/>
+    <polyline points="782.2,346.0 848.0,308.0 913.8,346.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
+    <line x1="848.0" y1="384.0" x2="848.0" y2="460.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
+    <polyline points="782.2,422.0 848.0,460.0 913.8,422.0" fill="none" stroke="#D6E9FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
+    <text x="848.0" y="429.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#2E6FC8" stroke-width="2.6" stroke-opacity="0.55">Keystore</text>
   </g>
   <g>
-    <polygon points="977.9,343.0 1042.0,380.0 1042.0,454.0 977.9,417.0" fill="url(#gl_web)" fill-opacity="0.78" stroke="#4A57D8" stroke-opacity="0.35" stroke-width="1"/>
-    <polygon points="1106.1,343.0 1042.0,380.0 1042.0,454.0 1106.1,417.0" fill="url(#gr_web)" fill-opacity="0.80" stroke="#2F39AE" stroke-opacity="0.4" stroke-width="1"/>
-    <polygon points="1042.0,306.0 1106.1,343.0 1042.0,380.0 977.9,343.0" fill="url(#gt_web)" fill-opacity="0.9" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1"/>
-    <polygon points="1034.3,310.4 1006.8,326.4 1006.8,359.6 1034.3,375.6" fill="#FFFFFF" fill-opacity="0.18"/>
-    <polyline points="977.9,343.0 1042.0,306.0 1106.1,343.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="1042.0" y1="380.0" x2="1042.0" y2="454.0" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1"/>
-    <text x="1042.0" y="422.9" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#0A1B3A" stroke-width="2.4" stroke-opacity="0.35">WebDAV</text>
+    <polygon points="978.2,346.0 1044.0,384.0 1044.0,460.0 978.2,422.0" fill="url(#gl_web)" stroke="#E0E3FF" stroke-opacity="0.5" stroke-width="1.1"/>
+    <polygon points="1109.8,346.0 1044.0,384.0 1044.0,460.0 1109.8,422.0" fill="url(#gr_web)" stroke="#E0E3FF" stroke-opacity="0.45" stroke-width="1.1"/>
+    <polygon points="1044.0,308.0 1109.8,346.0 1044.0,384.0 978.2,346.0" fill="url(#gt_web)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
+    <polygon points="1050.6,311.8 1075.6,326.2 1075.6,365.8 1050.6,380.2" fill="#FFFFFF" fill-opacity="0.28"/>
+    <polygon points="1040.1,310.3 1024.3,319.4 1024.3,372.6 1040.1,381.7" fill="#FFFFFF" fill-opacity="0.14"/>
+    <polyline points="978.2,346.0 1044.0,308.0 1109.8,346.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
+    <line x1="1044.0" y1="384.0" x2="1044.0" y2="460.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
+    <polyline points="978.2,422.0 1044.0,460.0 1109.8,422.0" fill="none" stroke="#E0E3FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
+    <text x="1044.0" y="429.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#4A57D8" stroke-width="2.6" stroke-opacity="0.55">WebDAV</text>
   </g>
   <g>
-    <polygon points="881.9,187.0 946.0,224.0 946.0,298.0 881.9,261.0" fill="url(#gl_loc)" fill-opacity="0.78" stroke="#2E9BC2" stroke-opacity="0.35" stroke-width="1"/>
-    <polygon points="1010.1,187.0 946.0,224.0 946.0,298.0 1010.1,261.0" fill="url(#gr_loc)" fill-opacity="0.80" stroke="#16708F" stroke-opacity="0.4" stroke-width="1"/>
-    <polygon points="946.0,150.0 1010.1,187.0 946.0,224.0 881.9,187.0" fill="url(#gt_loc)" fill-opacity="0.9" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1"/>
-    <polygon points="938.3,154.4 910.8,170.3 910.8,203.7 938.3,219.6" fill="#FFFFFF" fill-opacity="0.18"/>
-    <polyline points="881.9,187.0 946.0,150.0 1010.1,187.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="946.0" y1="224.0" x2="946.0" y2="298.0" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1"/>
-    <text x="946.0" y="266.9" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#0A1B3A" stroke-width="2.4" stroke-opacity="0.35">Local</text>
+    <polygon points="880.2,188.0 946.0,226.0 946.0,302.0 880.2,264.0" fill="url(#gl_loc)" stroke="#CFF6FF" stroke-opacity="0.5" stroke-width="1.1"/>
+    <polygon points="1011.8,188.0 946.0,226.0 946.0,302.0 1011.8,264.0" fill="url(#gr_loc)" stroke="#CFF6FF" stroke-opacity="0.45" stroke-width="1.1"/>
+    <polygon points="946.0,150.0 1011.8,188.0 946.0,226.0 880.2,188.0" fill="url(#gt_loc)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
+    <polygon points="952.6,153.8 977.6,168.2 977.6,207.8 952.6,222.2" fill="#FFFFFF" fill-opacity="0.28"/>
+    <polygon points="942.1,152.3 926.3,161.4 926.3,214.6 942.1,223.7" fill="#FFFFFF" fill-opacity="0.14"/>
+    <polyline points="880.2,188.0 946.0,150.0 1011.8,188.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
+    <line x1="946.0" y1="226.0" x2="946.0" y2="302.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
+    <polyline points="880.2,264.0 946.0,302.0 1011.8,264.0" fill="none" stroke="#CFF6FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
+    <text x="946.0" y="271.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#2E9BC2" stroke-width="2.6" stroke-opacity="0.55">Local</text>
   </g>
 
   <text x="92" y="300" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'PingFang SC','Microsoft YaHei',sans-serif" font-size="96" font-weight="800" letter-spacing="1"><tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan></text>
