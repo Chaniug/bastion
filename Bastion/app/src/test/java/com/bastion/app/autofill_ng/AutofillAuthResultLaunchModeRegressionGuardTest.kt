@@ -2,18 +2,43 @@ package com.bastion.app.autofill_ng
 
 import java.io.File
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AutofillAuthResultLaunchModeRegressionGuardTest {
 
+    /**
+     * AutofillCipherCallbackActivity 通过 onNewIntent 回传解锁结果，因此 singleTop 是刻意的实例复用。
+     * 守卫只确认：它确实声明了 singleTop 且确实覆写了 onNewIntent（否则复用会导致结果丢失）。
+     */
     @Test
-    fun authResultActivitiesMustNotReuseExistingInstances() {
+    fun callbackActivityMayReuseInstanceViaSingleTopWithOnNewIntent() {
+        val manifest = projectFile("app/src/main/AndroidManifest.xml").readText()
+        val block = activityBlock(manifest, ".autofill_ng.AutofillCipherCallbackActivity")
+
+        assertTrue(
+            "AutofillCipherCallbackActivity relays the unlock result through onNewIntent, so singleTop is intentional.",
+            block.contains("android:launchMode=\"singleTop\"")
+        )
+        val callbackSource = projectFile(
+            "app/src/main/java/com/bastion/app/autofill_ng/AutofillCipherCallbackActivity.kt"
+        ).readText()
+        assertTrue(
+            "singleTop reuse is safe only if the activity handles relaunched intents via onNewIntent.",
+            callbackSource.contains("override fun onNewIntent(intent: Intent)")
+        )
+    }
+
+    /**
+     * 其余返回 EXTRA_AUTHENTICATION_RESULT 的 Activity 必须每次用全新的结果记录，禁止实例复用。
+     */
+    @Test
+    fun otherAuthResultActivitiesMustNotReuseExistingInstances() {
         val manifest = projectFile("app/src/main/AndroidManifest.xml").readText()
         val authResultActivities = listOf(
             ".autofill_ng.BiometricAuthActivity",
             ".autofill_ng.AutofillAuthenticationActivity",
             ".autofill_ng.AutofillUnlockActivity",
-            ".autofill_ng.AutofillCipherCallbackActivity",
             ".autofill_ng.AutofillPickerActivity",
             ".autofill_ng.AutofillPickerActivityV2",
             ".autofill_ng.PasswordSuggestionActivity",

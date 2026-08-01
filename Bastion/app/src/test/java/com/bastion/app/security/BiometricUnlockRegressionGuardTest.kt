@@ -52,12 +52,12 @@ class BiometricUnlockRegressionGuardTest {
             ensureBody.contains("hasKeystoreBlob = false")
         )
         assertTrue(
-            "Password unlock must refresh the keystore wrapper even when an old blob exists.",
-            ensureBody.contains("compatibility wrapper refresh after password unlock")
+            "Password unlock must refresh the keystore wrapper after password unlock.",
+            ensureBody.contains("keystore wrapper refresh after password unlock")
         )
         assertTrue(
-            "Password unlock recovery must not accidentally write a fresh auth-bound wrapper on devices with active biometric auth windows.",
-            ensureBody.contains("persistCompatKeystoreWrappedMdk(actualMdk)")
+            "Password unlock must refresh the keystore wrapper via the AUTH-first path to restore biometric binding.",
+            ensureBody.contains("persistKeystoreWrappedMdk(actualMdk)")
         )
         assertTrue(
             "Password unlock must clear stale MDK auth cooldown after rebuilding key material.",

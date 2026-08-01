@@ -2,29 +2,9 @@ package com.bastion.app.plus
 
 import java.io.File
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlusLocalActivationGuardTest {
-    @Test
-    fun activationCompletesLocallyWithoutBlockingProgressUi() {
-        val paymentSource = projectFile(
-            "app/src/main/java/com/bastion/app/ui/screens/PaymentScreen.kt"
-        ).readText()
-        val mainActivitySource = projectFile(
-            "app/src/main/java/com/bastion/app/MainActivity.kt"
-        ).readText()
-
-        assertTrue(paymentSource.contains("onActivatePlus: () -> Unit"))
-        assertFalse(paymentSource.contains("var isActivating"))
-        assertFalse(paymentSource.contains("CircularProgressIndicator"))
-        val activationCallIndex = paymentSource.indexOf("onActivatePlus()")
-        val navigateBackIndex = paymentSource.indexOf("onNavigateBack()", activationCallIndex + 1)
-        assertTrue(activationCallIndex >= 0)
-        assertTrue(navigateBackIndex > activationCallIndex)
-        assertTrue(mainActivitySource.contains("settingsViewModel.updatePlusActivated(true)"))
-    }
-
     @Test
     fun retiredRemoteLicenseStackIsAbsent() {
         val retiredFiles = listOf(

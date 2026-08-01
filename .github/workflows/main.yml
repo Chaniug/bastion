@@ -227,7 +227,10 @@ jobs:
           # 剩余 6 个的完整根因见 docs/architecture-phaseB-cleanup.md#b21，
           # 其中 5 个是"实现有意演进、测试过时"，1 个（ExpressiveTopBarKeyboard）
           # 疑似真实回归，需真机验证后修实现而非改测试。
-          BASELINE_FAILURES: "6"
+          # 2026-08-01 Phase B.2.1 批次 2：重写 5 个"实现有意演进、测试过时"的守卫断言
+          # （#2 实例复用白名单+onNewIntent / #6 AUTH 优先包装 / #10 KeePass 反死锁 /
+          # #14 中英文案 / #16 Plus 免费化），失败数 6 -> 1（仅剩 #9 疑似真实回归）。
+          BASELINE_FAILURES: "1"
         run: |
           python3 - <<'PY'
           import glob, os, sys
