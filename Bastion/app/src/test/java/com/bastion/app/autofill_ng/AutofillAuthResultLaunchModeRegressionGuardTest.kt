@@ -18,14 +18,14 @@ class AutofillAuthResultLaunchModeRegressionGuardTest {
 
         assertTrue(
             "AutofillCipherCallbackActivity relays the unlock result through onNewIntent, so singleTop is intentional.",
-            block.contains("android:launchMode=\"singleTop\"")
+            block.contains(Regex("android:launchMode\\s*=\\s*\"singleTop\""))
         )
         val callbackSource = projectFile(
             "app/src/main/java/com/bastion/app/autofill_ng/AutofillCipherCallbackActivity.kt"
         ).readText()
         assertTrue(
             "singleTop reuse is safe only if the activity handles relaunched intents via onNewIntent.",
-            callbackSource.contains("override fun onNewIntent(intent: Intent)")
+            callbackSource.contains(Regex("override\\s+fun\\s+onNewIntent\\(\\s*intent:\\s*Intent\\s*\\)"))
         )
     }
 
@@ -48,8 +48,8 @@ class AutofillAuthResultLaunchModeRegressionGuardTest {
             val block = activityBlock(manifest, activityName)
             assertFalse(
                 "$activityName returns AutofillManager.EXTRA_AUTHENTICATION_RESULT and must use a fresh Activity result record.",
-                block.contains("android:launchMode=\"singleTop\"") ||
-                    block.contains("android:launchMode=\"singleTask\"")
+                block.contains(Regex("android:launchMode\\s*=\\s*\"singleTop\"")) ||
+                    block.contains(Regex("android:launchMode\\s*=\\s*\"singleTask\""))
             )
         }
     }

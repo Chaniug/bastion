@@ -123,6 +123,7 @@ B.2.1 已经把存量债清零，但**根因没有消除**——下一次类似�
 | 1b | `utils/WebDavBillingAddressBackupGuardTest.kt`、`utils/WebDavSecurityStorageGuardTest.kt` | 27 处精确子串 → 超集正则（容忍空白/换行、全/半角冒号、敏感变量锚点 `${...}` 保留）；`assertFalse` 守卫保留"牙齿"（正则仍匹配被禁止写法） | #30710476793 `failed=0` | ✅ |
 | 1b(续) | Totp / Sync / CardBrand 等"看日志/格式化"类守卫 | 同 1b 手法 | — | ⬜ |
 | 2 (起) | `keepass/KeePassFolderPathRegressionGuardTest.kt`、`ui/vaultv2/VaultV2ArchiveTopBarStateTest.kt` | 结构类精确 contains（含 `=`/`+` 空白漂移）改为超集正则；`indexOf` 位置排序断言保留精确 | #30711155129 `failed=0` | ✅ |
+| 2 (批2) | `keepass/KeePassPasswordEntryAttachmentRegressionGuardTest.kt`、`autofill_ng/AutofillAuthResultLaunchModeRegressionGuardTest.kt` | 代码片段/`override fun`/manifest 属性（`=` 空白）改容错正则；裸标识符 `firstMatchedContext` 保留精确 | 待 CI | ⬜ |
 | 1c | （待续）XML 资源/属性顺序类守卫 | 正则容错 | — | ⬜ |
 | 2 | （待续）"看方法/结构存在性"类守卫 | Tier B 正则 | — | ⬜ |
 | 3 | （试点）少数可单测类 → Tier A 转行为测试 | 删 readText、转 API 断言 | — | ⬜ |

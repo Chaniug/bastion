@@ -24,11 +24,11 @@ class KeePassPasswordEntryAttachmentRegressionGuardTest {
         )
         assertTrue(
             "Updating a KeePass password entry must patch the existing Entry, not replace it with a fresh Entry.",
-            updateBody.contains("fieldPatch.applyTo(existing)")
+            updateBody.contains(Regex("fieldPatch\\.applyTo\\(\\s*existing\\s*\\)"))
         )
         assertTrue(
             "KeePass field patch must copy the existing Entry so attachments in Entry.binaries survive.",
-            source.contains("return entry.copy(")
+            source.contains(Regex("return\\s+entry\\.copy\\("))
         )
     }
 
