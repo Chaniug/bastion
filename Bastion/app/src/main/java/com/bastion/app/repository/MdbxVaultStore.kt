@@ -43,6 +43,72 @@ import java.util.concurrent.ConcurrentHashMap
 private val UUID_REGEX =
     Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
+private const val MDBX_SCHEMA_FORMAT_VERSION = "MDBX-1"
+private const val MDBX_LEGACY_DRAFT_FORMAT_VERSION = "MDBX-1-DRAFT"
+private const val MDBX_OFFICIAL_RELEASE_LABEL = "MDBX-1.0"
+private const val MDBX_ANDROID_CAPABILITY_FLAGS =
+    "android-official-1.0,sky-portable,tiga-selectable,legacy-test-compatible"
+
+data class MdbxVaultDiagnostics(
+    val databaseId: Long,
+    val filePath: String?,
+    val fileExists: Boolean,
+    val fileSizeBytes: Long,
+    val isReadable: Boolean,
+    val currentDeviceId: String? = null,
+    val unavailableReason: String? = null,
+    val formatVersion: String? = null,
+    val releaseLabel: String? = null,
+    val capabilityFlags: String? = null,
+    val defaultTigaMode: String? = null,
+    val integrityOk: Boolean = false,
+    val integrityMessage: String? = null,
+    val unresolvedConflictCount: Int = 0,
+    val pendingSyncCount: Int = 0,
+    val commitCount: Int = 0,
+    val tombstoneCount: Int = 0,
+    val branchCount: Int = 0,
+    val deviceCount: Int = 0,
+    val snapshotCount: Int = 0,
+    val folderCount: Int = 0,
+    val indexedObjectCount: Int = 0,
+    val entryCount: Int = 0,
+    val deletedEntryCount: Int = 0,
+    val attachmentCount: Int = 0,
+    val externalAttachmentCount: Int = 0,
+    val originalAttachmentBytes: Long = 0,
+    val storedAttachmentBytes: Long = 0,
+    val danglingParentCount: Int = 0,
+    val danglingBranchHeadCount: Int = 0,
+    val danglingDeviceHeadCount: Int = 0,
+    val attachmentChunkMismatchCount: Int = 0,
+    val lastSyncStatus: String,
+    val lastSyncError: String? = null
+) {
+    val structuralIssueCount: Int
+        get() = danglingParentCount + danglingBranchHeadCount +
+            danglingDeviceHeadCount + attachmentChunkMismatchCount
+
+    val healthIssueCount: Int
+        get() = (if (!integrityOk) 1 else 0) + structuralIssueCount +
+            (if (!isReadable) 1 else 0)
+}
+
+data class MdbxConflictSummary(
+    val conflictId: String,
+    val objectType: String,
+    val objectId: String,
+    val baseCommitId: String,
+    val localCommitId: String,
+    val incomingCommitId: String,
+    val conflictingFields: String,
+    val createdAt: String,
+    val localTitle: String? = null,
+    val incomingTitle: String? = null,
+    val localPayloadPreview: String? = null,
+    val incomingPayloadPreview: String? = null
+)
+
 data class MdbxDeltaSummary(
     val commitId: String,
     val deviceId: String,
