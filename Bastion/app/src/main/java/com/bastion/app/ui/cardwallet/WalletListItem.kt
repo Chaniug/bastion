@@ -48,7 +48,7 @@ data class WalletListItem(
         val folderId = item.bitwardenFolderId
         val keePassId = item.keepassDatabaseId
         val groupPath = item.keepassGroupPath
-        val isLocal = vaultId == null && keePassId == null && item.mdbxDatabaseId == null
+        val isLocal = vaultId == null && keePassId == null
         return when (filter) {
             UnifiedCategoryFilterSelection.All -> true
             UnifiedCategoryFilterSelection.Local -> isLocal

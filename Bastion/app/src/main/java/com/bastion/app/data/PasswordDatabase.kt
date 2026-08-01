@@ -42,7 +42,7 @@ import com.bastion.app.keepass.KeePassPendingChangeDao
         // KeePass entry-level pending changes
         KeePassPendingChange::class
     ],
-    version = 73,
+    version = 74,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -2196,6 +2196,120 @@ abstract class PasswordDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_73_74 = object : androidx.room.migration.Migration(73, 74) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                try {
+                    android.util.Log.i("PasswordDatabase", "Starting migration 73→74: remove MDBX (drop tables + drop columns)")
+
+                    // 1. DROP MDBX 专有表
+                    database.execSQL("DROP TABLE IF EXISTS local_mdbx_databases")
+                    database.execSQL("DROP TABLE IF EXISTS mdbx_remote_sources")
+
+                    // 2. 重建 4 张共享表，去掉 mdbx_database_id / mdbx_folder_id 列
+                    val mdbxColumns = setOf("mdbx_database_id", "mdbx_folder_id")
+                    rebuildTableDroppingColumns(database, "password_entries", mdbxColumns)
+                    rebuildTableDroppingColumns(database, "secure_items", mdbxColumns)
+                    rebuildTableDroppingColumns(database, "passkeys", mdbxColumns)
+                    rebuildTableDroppingColumns(database, "categories", setOf("mdbx_database_id"))
+
+                    android.util.Log.i("PasswordDatabase", "Migration 73→74 completed successfully")
+                } catch (e: Exception) {
+                    android.util.Log.e("PasswordDatabase", "Migration 73→74 failed: ${e.message}")
+                    throw e
+                }
+            }
+        }
+
+        /**
+         * 通用表重建辅助：通过 PRAGMA 动态读取旧表结构，
+         * 去掉指定列后建新表并拷贝数据（SQLite < 3.35 不支持 DROP COLUMN），
+         * 最后重命名并重建其余索引。
+         */
+        private fun rebuildTableDroppingColumns(
+            database: androidx.sqlite.db.SupportSQLiteDatabase,
+            tableName: String,
+            columnsToDrop: Set<String>
+        ) {
+            // 1. 读取旧表列定义（过滤要删的列）
+            val columnDefs = mutableListOf<String>()
+            val keptColumns = mutableListOf<String>()
+            database.query("PRAGMA table_info(`$tableName`)").use { cursor ->
+                val nameIdx = cursor.getColumnIndex("name")
+                val typeIdx = cursor.getColumnIndex("type")
+                val notNullIdx = cursor.getColumnIndex("notnull")
+                val dfltIdx = cursor.getColumnIndex("dflt_value")
+                val pkIdx = cursor.getColumnIndex("pk")
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameIdx) ?: continue
+                    if (name in columnsToDrop) continue
+                    val type = cursor.getString(typeIdx) ?: ""
+                    val notNull = cursor.getInt(notNullIdx) == 1
+                    val dflt = cursor.getString(dfltIdx)
+                    val pk = cursor.getInt(pkIdx)
+                    val sb = StringBuilder("\"$name\" $type")
+                    if (pk > 0) {
+                        sb.append(" PRIMARY KEY")
+                        if (pk == 1 && type.equals("INTEGER", ignoreCase = true)) {
+                            sb.append(" AUTOINCREMENT")
+                        }
+                        // Room 生成的 schema 对主键列要求 NOT NULL，此处统一补齐
+                        sb.append(" NOT NULL")
+                    } else {
+                        if (notNull) sb.append(" NOT NULL")
+                        if (dflt != null) sb.append(" DEFAULT $dflt")
+                    }
+                    columnDefs.add(sb.toString())
+                    keptColumns.add("\"$name\"")
+                }
+            }
+            if (columnDefs.isEmpty()) return
+
+            // 2. 读取旧表索引（过滤引用 mdbx 列的索引）
+            data class IndexDef(val name: String, val unique: Boolean, val columns: List<String>)
+            val indexes = mutableListOf<IndexDef>()
+            database.query("PRAGMA index_list(`$tableName`)").use { cursor ->
+                val nameIdx = cursor.getColumnIndex("name")
+                val uniqueIdx = cursor.getColumnIndex("unique")
+                while (cursor.moveToNext()) {
+                    val indexName = cursor.getString(nameIdx) ?: continue
+                    if (indexName.startsWith("sqlite_")) continue
+                    val unique = cursor.getInt(uniqueIdx) == 1
+                    val cols = mutableListOf<String>()
+                    database.query("PRAGMA index_info(`$indexName`)").use { ic ->
+                        val colIdx = ic.getColumnIndex("name")
+                        while (ic.moveToNext()) {
+                            val col = ic.getString(colIdx)
+                            if (col != null && col !in columnsToDrop) {
+                                cols.add("\"$col\"")
+                            }
+                        }
+                    }
+                    if (cols.isNotEmpty()) {
+                        indexes.add(IndexDef(indexName, unique, cols))
+                    }
+                }
+            }
+
+            // 3. 建新表 → 拷贝数据 → 删旧表 → 重命名
+            val newTable = "${tableName}_no_mdbx_tmp"
+            database.execSQL("DROP TABLE IF EXISTS `$newTable`")
+            database.execSQL("CREATE TABLE `$newTable` (${columnDefs.joinToString(", ")})")
+            database.execSQL(
+                "INSERT INTO `$newTable` (${keptColumns.joinToString(", ")}) " +
+                    "SELECT ${keptColumns.joinToString(", ")} FROM `$tableName`"
+            )
+            database.execSQL("DROP TABLE `$tableName`")
+            database.execSQL("ALTER TABLE `$newTable` RENAME TO `$tableName`")
+
+            // 4. 重建索引
+            for (index in indexes) {
+                val prefix = if (index.unique) "CREATE UNIQUE INDEX IF NOT EXISTS" else "CREATE INDEX IF NOT EXISTS"
+                database.execSQL(
+                    "$prefix `$index.name` ON `$tableName` (${index.columns.joinToString(", ")})"
+                )
+            }
+        }
+
         private fun addColumnIfMissing(
             database: androidx.sqlite.db.SupportSQLiteDatabase,
             tableName: String,
@@ -2297,7 +2411,8 @@ abstract class PasswordDatabase : RoomDatabase() {
                         MIGRATION_69_70,   // KeePass entry-level pending changes
                         MIGRATION_70_71,   // KeePass pending base snapshots
                         MIGRATION_71_72,   // KeePass sync state updated timestamp
-                        MIGRATION_72_73    // Encrypted timeline version snapshots
+                        MIGRATION_72_73,   // Encrypted timeline version snapshots
+                        MIGRATION_73_74    // Remove MDBX: drop tables + drop columns
                     )
                     // 启用多进程失效通知：IME 跑在 :ime 独立进程，主进程需要
                     // 感知 IME 进程对数据库的修改（例如最近填充时间戳等）。

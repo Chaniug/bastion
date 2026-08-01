@@ -303,8 +303,6 @@ class DocumentViewModel(
         categoryId: Long? = null,
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null,
         replicaGroupId: String? = null
@@ -327,8 +325,6 @@ class DocumentViewModel(
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                 bitwardenVaultId = bitwardenVaultId,
                 bitwardenFolderId = bitwardenFolderId,
                 syncStatus = if (bitwardenVaultId != null) "PENDING" else "NONE",
@@ -364,8 +360,6 @@ class DocumentViewModel(
         categoryId: Long? = null,
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null,
         replicaGroupId: String? = null
@@ -427,8 +421,6 @@ class DocumentViewModel(
                     keepassGroupPath = keepassIdentity.groupPath,
                     keepassEntryUuid = keepassIdentity.entryUuid,
                     keepassGroupUuid = keepassIdentity.groupUuid,
-                    mdbxDatabaseId = mdbxDatabaseId,
-                    mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                     bitwardenVaultId = bitwardenVaultId,
                     bitwardenFolderId = bitwardenFolderId,
                     replicaGroupId = replicaGroupId ?: existingItem.replicaGroupId,
@@ -511,11 +503,8 @@ class DocumentViewModel(
         keepassGroupPath: String?,
         bitwardenVaultId: Long?,
         bitwardenFolderId: String?,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null
     ): Boolean {
         val existingItem = repository.getItemById(id) ?: return false
-        val targetMdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null
         val target = when {
             bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)
             keepassDatabaseId != null -> StorageTarget.KeePass(keepassDatabaseId, keepassGroupPath)
@@ -543,8 +532,6 @@ class DocumentViewModel(
             keepassGroupUuid = keepassIdentity.groupUuid,
             bitwardenVaultId = bitwardenVaultId,
             bitwardenFolderId = bitwardenFolderId,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = targetMdbxFolderId,
             updatedAt = Date()
         )
         val transition = SecureItemBitwardenTransitionResolver.resolve(

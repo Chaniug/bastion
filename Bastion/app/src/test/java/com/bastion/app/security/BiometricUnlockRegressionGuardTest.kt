@@ -499,7 +499,7 @@ class BiometricUnlockRegressionGuardTest {
                 migrationSource.contains("CardWalletDataCodec.parseDocumentData")
         )
         assertTrue(
-            "Migration must use DAO column updates instead of repositories, so MDBX/Bitwarden/KeePass/autofill chains do not see a user edit.",
+            "Migration must use DAO column updates instead of repositories, so Bitwarden/KeePass/autofill chains do not see a user edit.",
             migrationSource.contains("passwordEntryDao.updateAuthenticatorKey") &&
                 migrationSource.contains("secureItemDao.updateItemData") &&
                 passwordDaoSource.contains("UPDATE password_entries SET authenticatorKey = :authenticatorKey WHERE id = :id") &&

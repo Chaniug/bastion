@@ -69,8 +69,6 @@ class BillingAddressViewModel(
         isFavorite: Boolean = false,
         imagePaths: String = "",
         categoryId: Long? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         replicaGroupId: String? = null
     ) {
         viewModelScope.launch {
@@ -82,8 +80,6 @@ class BillingAddressViewModel(
                 notes = notes,
                 isFavorite = isFavorite,
                 categoryId = categoryId,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                 replicaGroupId = replicaGroupId,
                 imagePaths = imagePaths,
                 createdAt = Date(),
@@ -106,8 +102,6 @@ class BillingAddressViewModel(
         isFavorite: Boolean = false,
         imagePaths: String = "",
         categoryId: Long? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         replicaGroupId: String? = null
     ) {
         viewModelScope.launch {
@@ -186,8 +180,6 @@ class BillingAddressViewModel(
                 bitwardenRevisionDate = null,
                 bitwardenLocalModified = false,
                 syncStatus = "NONE",
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                 replicaGroupId = replicaGroupId ?: existingItem.replicaGroupId,
                 updatedAt = Date(),
                 imagePaths = imagePaths
@@ -269,8 +261,6 @@ class BillingAddressViewModel(
     suspend fun copyAddressToStorage(
         item: SecureItem,
         categoryId: Long?,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null
     ): Long? {
         if (item.itemType != ItemType.BILLING_ADDRESS) return null
         val addressData = parseAddressData(item.itemData) ?: return null
@@ -282,9 +272,7 @@ class BillingAddressViewModel(
             isFavorite = item.isFavorite,
             itemData = encodeAddressDataForLocalStorage(addressData),
             imagePaths = item.imagePaths,
-            categoryId = if (mdbxDatabaseId == null) categoryId else null,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
+            categoryId = categoryId,
             createdAt = Date(),
             updatedAt = Date()
         )
@@ -294,15 +282,13 @@ class BillingAddressViewModel(
     suspend fun moveAddressToStorage(
         id: Long,
         categoryId: Long?,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null
     ): Boolean {
         val existingItem = repository.getItemById(id) ?: return false
         if (existingItem.itemType != ItemType.BILLING_ADDRESS) return false
         val addressData = parseAddressData(existingItem.itemData) ?: return false
         val updatedItem = existingItem.copy(
             itemData = encodeAddressDataForLocalStorage(addressData),
-            categoryId = if (mdbxDatabaseId == null) categoryId else null,
+            categoryId = categoryId,
             keepassDatabaseId = null,
             keepassGroupPath = null,
             keepassEntryUuid = null,
@@ -313,8 +299,6 @@ class BillingAddressViewModel(
             bitwardenRevisionDate = null,
             bitwardenLocalModified = false,
             syncStatus = "NONE",
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
             updatedAt = Date()
         )
         repository.updateItem(updatedItem)

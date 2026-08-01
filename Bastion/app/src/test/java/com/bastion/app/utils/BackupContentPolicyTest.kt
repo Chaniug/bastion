@@ -16,7 +16,6 @@ class BackupContentPolicyTest {
         val entries = listOf(
             password("local"),
             password("bitwarden", bitwardenVaultId = 1L, bitwardenCipherId = "cipher"),
-            password("mdbx", mdbxDatabaseId = 2L, mdbxFolderId = "folder"),
             password("keepass", keepassDatabaseId = 3L, keepassEntryUuid = "entry")
         )
 
@@ -24,11 +23,10 @@ class BackupContentPolicyTest {
             .filter { BackupContentPolicy.shouldIncludePassword(it, BackupContentScope.ALL_OFFLINE) }
             .map(BackupContentPolicy::sanitizePasswordForBastionBackup)
 
-        assertEquals(4, sanitized.size)
+        assertEquals(3, sanitized.size)
         sanitized.forEach { entry ->
             assertTrue(entry.isLocalOnlyEntry())
             assertNull(entry.keepassDatabaseId)
-            assertNull(entry.mdbxDatabaseId)
             assertNull(entry.bitwardenVaultId)
         }
     }
@@ -51,7 +49,6 @@ class BackupContentPolicyTest {
         val items = listOf(
             secureItem("local"),
             secureItem("bitwarden", bitwardenVaultId = 1L, bitwardenCipherId = "cipher"),
-            secureItem("mdbx", mdbxDatabaseId = 2L, mdbxFolderId = "folder"),
             secureItem("keepass", keepassDatabaseId = 3L, keepassEntryUuid = "entry")
         )
 
@@ -59,11 +56,10 @@ class BackupContentPolicyTest {
             .filter { BackupContentPolicy.shouldIncludeSecureItem(it, BackupContentScope.ALL_OFFLINE) }
             .map(BackupContentPolicy::sanitizeSecureItemForBastionBackup)
 
-        assertEquals(4, sanitized.size)
+        assertEquals(3, sanitized.size)
         sanitized.forEach { item ->
             assertTrue(item.isLocalOnlyItem())
             assertNull(item.keepassDatabaseId)
-            assertNull(item.mdbxDatabaseId)
             assertNull(item.bitwardenVaultId)
             assertEquals("NONE", item.syncStatus)
         }
@@ -87,8 +83,6 @@ class BackupContentPolicyTest {
         title: String,
         keepassDatabaseId: Long? = null,
         keepassEntryUuid: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenCipherId: String? = null,
         categoryId: Long? = null
@@ -100,8 +94,6 @@ class BackupContentPolicyTest {
             password = "secret",
             keepassDatabaseId = keepassDatabaseId,
             keepassEntryUuid = keepassEntryUuid,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = mdbxFolderId,
             bitwardenVaultId = bitwardenVaultId,
             bitwardenCipherId = bitwardenCipherId,
             categoryId = categoryId
@@ -112,8 +104,6 @@ class BackupContentPolicyTest {
         title: String,
         keepassDatabaseId: Long? = null,
         keepassEntryUuid: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenCipherId: String? = null
     ): SecureItem {
@@ -123,8 +113,6 @@ class BackupContentPolicyTest {
             itemData = "{}",
             keepassDatabaseId = keepassDatabaseId,
             keepassEntryUuid = keepassEntryUuid,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = mdbxFolderId,
             bitwardenVaultId = bitwardenVaultId,
             bitwardenCipherId = bitwardenCipherId,
             syncStatus = "SYNCED"
@@ -134,7 +122,6 @@ class BackupContentPolicyTest {
     private fun passkey(
         rpName: String,
         keepassDatabaseId: Long? = null,
-        mdbxDatabaseId: Long? = null,
         bitwardenVaultId: Long? = null,
         bitwardenCipherId: String? = null
     ): PasskeyEntry {
@@ -148,7 +135,6 @@ class BackupContentPolicyTest {
             publicKey = "public-key",
             privateKeyAlias = "private-key",
             keepassDatabaseId = keepassDatabaseId,
-            mdbxDatabaseId = mdbxDatabaseId,
             bitwardenVaultId = bitwardenVaultId,
             bitwardenCipherId = bitwardenCipherId,
             syncStatus = if (bitwardenCipherId.isNullOrBlank()) "NONE" else "SYNCED"

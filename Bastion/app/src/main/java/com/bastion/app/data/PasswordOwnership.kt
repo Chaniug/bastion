@@ -21,9 +21,8 @@ sealed class PasswordOwnership {
 
 fun isLocalPasswordOwnership(
     keepassDatabaseId: Long?,
-    bitwardenVaultId: Long?,
-    mdbxDatabaseId: Long? = null
-): Boolean = keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null
+    bitwardenVaultId: Long?
+): Boolean = keepassDatabaseId == null && bitwardenVaultId == null
 
 fun PasswordEntry.resolveOwnership(): PasswordOwnership {
     val hasKeePassBinding = keepassDatabaseId != null

@@ -17,7 +17,7 @@ import com.bastion.app.util.TotpDataResolver
  *
  * This migrates only the local Room cache shape. It intentionally updates DAO
  * columns directly instead of going through repositories, so it cannot be
- * interpreted as a user edit by MDBX, Bitwarden, KeePass, or backup sync.
+ * interpreted as a user edit by Bitwarden, KeePass, or backup sync.
  */
 class SensitiveFieldMigrationManager(
     context: Context,

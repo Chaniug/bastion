@@ -182,9 +182,7 @@ class WalletListItemTest {
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null,
         keepassDatabaseId: Long? = null,
-        keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null
+        keepassGroupPath: String? = null
     ): SecureItem =
         SecureItem(
             id = id,
@@ -196,8 +194,6 @@ class WalletListItemTest {
             bitwardenFolderId = bitwardenFolderId,
             keepassDatabaseId = keepassDatabaseId,
             keepassGroupPath = keepassGroupPath,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = mdbxFolderId
         )
 
     private fun sampleCardData(): BankCardData =

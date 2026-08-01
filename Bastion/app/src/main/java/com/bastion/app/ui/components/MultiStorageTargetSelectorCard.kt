@@ -269,10 +269,8 @@ fun buildMultiStorageTarget(
     categoryId: Long?,
     keepassDatabaseId: Long?,
     keepassGroupPath: String?,
-    mdbxDatabaseId: Long? = null,
     bitwardenVaultId: Long?,
-    bitwardenFolderId: String?,
-    mdbxFolderId: String? = null
+    bitwardenFolderId: String?
 ): StorageTarget {
     return when {
         bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)

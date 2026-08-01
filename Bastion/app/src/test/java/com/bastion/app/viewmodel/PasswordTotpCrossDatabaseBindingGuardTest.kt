@@ -96,7 +96,7 @@ class PasswordTotpCrossDatabaseBindingGuardTest {
             passwordScreen.contains("PasswordTotpPickerSourceFilter") &&
                 passwordScreen.contains("filter_keepass") &&
                 passwordScreen.contains("filter_bitwarden") &&
-                passwordScreen.contains("MDBX")
+                passwordScreen.contains("BastionLocal")
         )
         assertTrue(
             "Authenticator picker search field should hide the Material TextField underline.",

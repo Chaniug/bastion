@@ -2428,8 +2428,6 @@ class PasswordViewModel(
             keepassGroupPath = null,
             keepassEntryUuid = null,
             keepassGroupUuid = null,
-            mdbxDatabaseId = null,
-            mdbxFolderId = null,
             bitwardenVaultId = null,
             bitwardenCipherId = null,
             bitwardenFolderId = null,
@@ -2680,7 +2678,7 @@ class PasswordViewModel(
                     processedCount++
                     onProgress?.invoke(processedCount, totalCount)
                 } else if (!isBitwardenCipher) {
-                    // Local deletes are flushed below through repository batch APIs so MDBX gets one commit per vault.
+                    // Local deletes are flushed below through repository batch APIs as one commit per vault.
                 } else {
                     processedCount++
                     onProgress?.invoke(processedCount, totalCount)
@@ -3357,15 +3355,7 @@ class PasswordViewModel(
                 val data = parseStoredTotpData(item)
                 if (data?.boundPasswordId == passwordId) item to data else null
             }
-            val preferred = if (boundPassword?.mdbxDatabaseId != null) {
-                candidates.firstOrNull { (item, _) ->
-                    item.mdbxDatabaseId == boundPassword.mdbxDatabaseId
-                }
-            } else {
-                candidates.firstOrNull { (item, _) ->
-                    item.mdbxDatabaseId == null
-                }
-            } ?: candidates.firstOrNull()
+            val preferred = candidates.firstOrNull()
             preferred?.second
         }.flowOn(Dispatchers.Default)
     }
@@ -3391,7 +3381,7 @@ class PasswordViewModel(
         idPairs.forEach { (sourceId, newId) ->
             val sourcePassword = sourcePasswords[sourceId] ?: return@forEach
             val newPassword = newPasswords[newId] ?: return@forEach
-            if (newPassword.mdbxDatabaseId == null || !copiedNewPasswordIds.add(newId)) {
+            if (!copiedNewPasswordIds.add(newId)) {
                 return@forEach
             }
 
@@ -3422,8 +3412,6 @@ class PasswordViewModel(
                     keepassGroupPath = null,
                     keepassEntryUuid = null,
                     keepassGroupUuid = null,
-                    mdbxDatabaseId = newPassword.mdbxDatabaseId,
-                    mdbxFolderId = newPassword.mdbxFolderId,
                     bitwardenVaultId = null,
                     bitwardenCipherId = null,
                     bitwardenFolderId = null,
@@ -3442,8 +3430,6 @@ class PasswordViewModel(
                     itemData = Json.encodeToString(normalizedData),
                     isFavorite = false,
                     categoryId = null,
-                    mdbxDatabaseId = newPassword.mdbxDatabaseId,
-                    mdbxFolderId = newPassword.mdbxFolderId,
                     createdAt = now,
                     updatedAt = now
                 )
@@ -3486,8 +3472,7 @@ class PasswordViewModel(
 
         val candidates = storedTotps.filter { (_, data) -> data.boundPasswordId == sourcePassword.id }
         val preferredStored = candidates.firstOrNull { (item, data) ->
-            item.mdbxDatabaseId == sourcePassword.mdbxDatabaseId &&
-                item.bitwardenVaultId == sourcePassword.bitwardenVaultId &&
+            item.bitwardenVaultId == sourcePassword.bitwardenVaultId &&
                 (passwordTotpKey == null || buildTotpCopyIdentityKey(data) == passwordTotpKey)
         } ?: candidates.firstOrNull { (_, data) ->
             passwordTotpKey != null && buildTotpCopyIdentityKey(data) == passwordTotpKey
@@ -3989,7 +3974,6 @@ class PasswordViewModel(
                     boundNoteId = draftEntry.boundNoteId,
                     keepassDatabaseId = draftEntry.keepassDatabaseId,
                     keepassGroupPath = draftEntry.keepassGroupPath,
-                    mdbxDatabaseId = draftEntry.mdbxDatabaseId,
                     authenticatorKey = draftEntry.authenticatorKey,
                     passkeyBindings = draftEntry.passkeyBindings,
                     sshKeyData = draftEntry.sshKeyData,

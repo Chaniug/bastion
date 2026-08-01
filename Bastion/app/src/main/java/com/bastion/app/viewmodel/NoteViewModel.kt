@@ -50,8 +50,7 @@ data class NoteDraftStorageTarget(
     val keepassDatabaseId: Long? = null,
     val keepassGroupPath: String? = null,
     val bitwardenVaultId: Long? = null,
-    val bitwardenFolderId: String? = null,
-    val mdbxDatabaseId: Long? = null
+    val bitwardenFolderId: String? = null
 )
 
 class NoteViewModel(
@@ -279,8 +278,6 @@ class NoteViewModel(
         imagePaths: String = "",
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null,
         replicaGroupId: String? = null
@@ -311,8 +308,6 @@ class NoteViewModel(
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                 bitwardenVaultId = bitwardenVaultId,
                 bitwardenFolderId = bitwardenFolderId,
                 syncStatus = if (bitwardenVaultId != null) "PENDING" else "NONE",
@@ -349,8 +344,6 @@ class NoteViewModel(
         imagePaths: String = "",
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null,
         replicaGroupId: String? = null
@@ -395,8 +388,6 @@ class NoteViewModel(
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null,
                 bitwardenVaultId = bitwardenVaultId,
                 bitwardenCipherId = transition.cipherId,
                 bitwardenFolderId = bitwardenFolderId,
@@ -693,11 +684,8 @@ class NoteViewModel(
         keepassGroupPath: String? = item.keepassGroupPath,
         bitwardenVaultId: Long? = item.bitwardenVaultId,
         bitwardenFolderId: String? = item.bitwardenFolderId,
-        mdbxDatabaseId: Long? = item.mdbxDatabaseId,
-        mdbxFolderId: String? = item.mdbxFolderId
     ): Boolean {
         if (item.itemType != ItemType.NOTE) return false
-        val targetMdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null
         val target = when {
             bitwardenVaultId != null -> StorageTarget.Bitwarden(bitwardenVaultId, bitwardenFolderId)
             keepassDatabaseId != null -> StorageTarget.KeePass(keepassDatabaseId, keepassGroupPath)
@@ -741,8 +729,6 @@ class NoteViewModel(
             bitwardenCipherId = transition.cipherId,
             bitwardenRevisionDate = transition.revisionDate,
             bitwardenLocalModified = transition.localModified,
-            mdbxDatabaseId = mdbxDatabaseId,
-            mdbxFolderId = targetMdbxFolderId,
             syncStatus = transition.syncStatus,
             updatedAt = Date()
         )

@@ -483,7 +483,6 @@ private fun SecureItem.toAggregatePasswordEntry(
         keepassGroupPath = keepassGroupPath,
         keepassEntryUuid = keepassEntryUuid,
         keepassGroupUuid = keepassGroupUuid,
-        mdbxDatabaseId = mdbxDatabaseId,
         authenticatorKey = authenticatorKey,
         bitwardenVaultId = bitwardenVaultId,
         bitwardenCipherId = bitwardenCipherId,
@@ -506,7 +505,6 @@ private fun PasskeyEntry.toAggregatePasswordEntry(): PasswordEntry {
         categoryId = categoryId,
         keepassDatabaseId = keepassDatabaseId,
         keepassGroupPath = keepassGroupPath,
-        mdbxDatabaseId = mdbxDatabaseId,
         bitwardenVaultId = bitwardenVaultId,
         bitwardenCipherId = bitwardenCipherId,
         bitwardenFolderId = bitwardenFolderId
@@ -521,8 +519,8 @@ private fun SecureItem.matchesAggregateCategory(
     return when (filter) {
         is CategoryFilter.All -> true
         is CategoryFilter.Archived -> false
-        is CategoryFilter.Local -> keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null
-        is CategoryFilter.LocalOnly -> keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null
+        is CategoryFilter.Local -> keepassDatabaseId == null && bitwardenVaultId == null
+        is CategoryFilter.LocalOnly -> keepassDatabaseId == null && bitwardenVaultId == null
         is CategoryFilter.Starred -> isFavorite
         is CategoryFilter.Uncategorized -> effectiveCategoryId == null
         is CategoryFilter.LocalStarred ->
@@ -533,7 +531,6 @@ private fun SecureItem.matchesAggregateCategory(
             effectiveCategoryId == filter.categoryId &&
                 keepassDatabaseId == null &&
                 bitwardenVaultId == null &&
-                mdbxDatabaseId == null
         is CategoryFilter.KeePassDatabase -> keepassDatabaseId == filter.databaseId
         is CategoryFilter.KeePassGroupFilter ->
             keepassDatabaseId == filter.databaseId && keepassGroupPath == filter.groupPath
@@ -555,18 +552,17 @@ private fun PasskeyEntry.matchesAggregateCategory(filter: CategoryFilter): Boole
     return when (filter) {
         is CategoryFilter.All -> true
         is CategoryFilter.Archived -> false
-        is CategoryFilter.Local -> keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null
-        is CategoryFilter.LocalOnly -> keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null
+        is CategoryFilter.Local -> keepassDatabaseId == null && bitwardenVaultId == null
+        is CategoryFilter.LocalOnly -> keepassDatabaseId == null && bitwardenVaultId == null
         is CategoryFilter.Starred -> false
         is CategoryFilter.Uncategorized -> categoryId == null
         is CategoryFilter.LocalStarred -> false
         is CategoryFilter.LocalUncategorized ->
-            keepassDatabaseId == null && bitwardenVaultId == null && mdbxDatabaseId == null && categoryId == null
+            keepassDatabaseId == null && bitwardenVaultId == null && categoryId == null
         is CategoryFilter.Custom ->
             categoryId == filter.categoryId &&
                 keepassDatabaseId == null &&
                 bitwardenVaultId == null &&
-                mdbxDatabaseId == null
         is CategoryFilter.KeePassDatabase -> keepassDatabaseId == filter.databaseId
         is CategoryFilter.KeePassGroupFilter ->
             keepassDatabaseId == filter.databaseId && keepassGroupPath == filter.groupPath

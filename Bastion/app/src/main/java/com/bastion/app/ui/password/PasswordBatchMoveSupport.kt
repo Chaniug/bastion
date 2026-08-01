@@ -151,8 +151,6 @@ internal fun toLocationState(entry: PasswordEntry): TimelinePasswordLocationStat
         categoryId = entry.categoryId,
         keepassDatabaseId = entry.keepassDatabaseId,
         keepassGroupPath = entry.keepassGroupPath,
-        mdbxDatabaseId = entry.mdbxDatabaseId,
-        mdbxFolderId = entry.mdbxFolderId,
         bitwardenVaultId = entry.bitwardenVaultId,
         bitwardenCipherId = entry.bitwardenCipherId,
         bitwardenFolderId = entry.bitwardenFolderId,

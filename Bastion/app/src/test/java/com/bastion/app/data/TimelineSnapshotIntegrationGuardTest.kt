@@ -76,7 +76,7 @@ class TimelineSnapshotIntegrationGuardTest {
         assertTrue(source.contains("if (entry.keepassDatabaseId != null) return false"))
         assertTrue(source.contains("if (item.keepassDatabaseId != null) return false"))
         assertTrue(source.contains("bitwardenVaultId = null"))
-        assertTrue(source.contains("mdbxDatabaseId = null"))
+        assertTrue(source.contains("keepassDatabaseId = null"))
         assertTrue(source.contains("replicaGroupId = null"))
     }
 

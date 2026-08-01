@@ -32,7 +32,6 @@ data class NoteEditorUiState(
     val selectedCategoryId: Long? = null,
     val keepassDatabaseId: Long? = null,
     val keepassGroupPath: String? = null,
-    val mdbxDatabaseId: Long? = null,
     val bitwardenVaultId: Long? = null,
     val bitwardenFolderId: String? = null,
     val selectedStorageTargets: List<StorageTarget> = emptyList(),
@@ -63,7 +62,6 @@ private data class NoteEditDraft(
     val categoryId: Long?,
     val keepassDatabaseId: Long?,
     val keepassGroupPath: String?,
-    val mdbxDatabaseId: Long?,
     val bitwardenVaultId: Long?,
     val bitwardenFolderId: String?,
     val imagePaths: List<String>,
@@ -110,7 +108,6 @@ class NoteEditorViewModel(
                 selectedCategoryId = draft.categoryId,
                 keepassDatabaseId = draft.keepassDatabaseId,
                 keepassGroupPath = draft.keepassGroupPath,
-                mdbxDatabaseId = draft.mdbxDatabaseId,
                 bitwardenVaultId = draft.bitwardenVaultId,
                 bitwardenFolderId = draft.bitwardenFolderId,
                 selectedStorageTargets = listOf(note.toStorageTarget()),
@@ -149,8 +146,6 @@ class NoteEditorViewModel(
             initialKeePassDatabaseId ?: draftStorageTarget.keepassDatabaseId ?: rememberedStorageTarget?.keepassDatabaseId
         val resolvedKeepassGroupPath =
             normalizedInitialKeePassGroupPath ?: normalizedDraftKeePassGroupPath ?: normalizedRememberedKeePassGroupPath
-        val resolvedMdbxDatabaseId =
-            draftStorageTarget.mdbxDatabaseId ?: rememberedStorageTarget?.mdbxDatabaseId
         val resolvedBitwardenVaultId =
             initialBitwardenVaultId ?: draftStorageTarget.bitwardenVaultId ?: rememberedStorageTarget?.bitwardenVaultId
         val resolvedBitwardenFolderId =
@@ -159,7 +154,6 @@ class NoteEditorViewModel(
         val hasResolvedStorage = resolvedCategoryId != null ||
             resolvedKeepassDatabaseId != null ||
             resolvedKeepassGroupPath != null ||
-            resolvedMdbxDatabaseId != null ||
             resolvedBitwardenVaultId != null ||
             resolvedBitwardenFolderId != null
         if (!hasResolvedStorage) {
@@ -169,7 +163,6 @@ class NoteEditorViewModel(
                     selectedCategoryId = null,
                     keepassDatabaseId = null,
                     keepassGroupPath = null,
-                    mdbxDatabaseId = null,
                     bitwardenVaultId = null,
                     bitwardenFolderId = null,
                     selectedStorageTargets = listOf(defaultTarget),
@@ -198,7 +191,6 @@ class NoteEditorViewModel(
                 selectedCategoryId = resolvedCategoryId,
                 keepassDatabaseId = resolvedKeepassDatabaseId,
                 keepassGroupPath = resolvedKeepassGroupPath,
-                mdbxDatabaseId = resolvedMdbxDatabaseId,
                 bitwardenVaultId = resolvedBitwardenVaultId,
                 bitwardenFolderId = resolvedBitwardenFolderId,
                 selectedStorageTargets = listOf(initialTarget),
@@ -235,8 +227,7 @@ class NoteEditorViewModel(
     fun selectCategory(categoryId: Long?) {
         _uiState.update {
             it.copy(
-                selectedCategoryId = categoryId,
-                mdbxDatabaseId = null
+                selectedCategoryId = categoryId
             )
         }
     }
@@ -246,7 +237,6 @@ class NoteEditorViewModel(
             it.copy(
                 keepassDatabaseId = databaseId,
                 keepassGroupPath = if (databaseId == it.keepassDatabaseId) it.keepassGroupPath else null,
-                mdbxDatabaseId = null,
                 bitwardenVaultId = if (databaseId != null) null else it.bitwardenVaultId,
                 bitwardenFolderId = if (databaseId != null) null else it.bitwardenFolderId
             )
@@ -257,7 +247,6 @@ class NoteEditorViewModel(
         _uiState.update {
             it.copy(
                 bitwardenVaultId = vaultId,
-                mdbxDatabaseId = null,
                 keepassGroupPath = if (vaultId != null) null else it.keepassGroupPath,
                 keepassDatabaseId = if (vaultId != null) null else it.keepassDatabaseId
             )
@@ -286,7 +275,6 @@ class NoteEditorViewModel(
                 selectedCategoryId = (primaryTarget as? StorageTarget.BastionLocal)?.categoryId,
                 keepassDatabaseId = (primaryTarget as? StorageTarget.KeePass)?.databaseId,
                 keepassGroupPath = (primaryTarget as? StorageTarget.KeePass)?.groupPath,
-                mdbxDatabaseId = null,
                 bitwardenVaultId = (primaryTarget as? StorageTarget.Bitwarden)?.vaultId,
                 bitwardenFolderId = (primaryTarget as? StorageTarget.Bitwarden)?.folderId,
                 selectedStorageTargets = normalizedTargets,
@@ -449,7 +437,6 @@ private fun SecureItem.toNoteEditDraft(): NoteEditDraft {
         categoryId = categoryId,
         keepassDatabaseId = keepassDatabaseId,
         keepassGroupPath = keepassGroupPath,
-        mdbxDatabaseId = mdbxDatabaseId,
         bitwardenVaultId = bitwardenVaultId,
         bitwardenFolderId = bitwardenFolderId,
         imagePaths = NoteContentCodec.decodeImagePaths(imagePaths),

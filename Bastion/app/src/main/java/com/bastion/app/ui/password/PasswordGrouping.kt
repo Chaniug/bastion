@@ -45,8 +45,6 @@ fun buildPasswordSourceKey(entry: PasswordEntry): String {
             "bw-local:${entry.bitwardenVaultId}:${entry.bitwardenFolderId.orEmpty()}"
         entry.keepassDatabaseId != null ->
             "kp:${entry.keepassDatabaseId}:${entry.keepassGroupPath.orEmpty()}"
-        entry.mdbxDatabaseId != null ->
-            "mdbx:${entry.mdbxDatabaseId}:${entry.categoryId ?: "root"}"
         else -> "local:${entry.categoryId ?: "root"}"
     }
 }

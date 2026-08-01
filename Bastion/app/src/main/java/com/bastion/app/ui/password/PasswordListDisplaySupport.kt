@@ -117,7 +117,6 @@ internal fun applyQuickFolderRootVisibility(
         entries.filter { entry ->
             entry.keepassDatabaseId == null &&
                 entry.bitwardenVaultId == null &&
-                entry.mdbxDatabaseId == null &&
                 entry.categoryId == null
         }
     }

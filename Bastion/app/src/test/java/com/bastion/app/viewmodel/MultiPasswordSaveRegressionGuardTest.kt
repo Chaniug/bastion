@@ -559,7 +559,7 @@ class MultiPasswordSaveRegressionGuardTest {
             .substringBefore("confirmButton = {")
 
         assertTrue(
-            "CreateCategoryDialog content must scroll vertically so long local/MDBX/KeePass folder lists cannot push the name field off-screen.",
+            "CreateCategoryDialog content must scroll vertically so long local/KeePass folder lists cannot push the name field off-screen.",
             dialogSource.contains("import androidx.compose.foundation.verticalScroll") &&
                 dialogSource.contains("val createDialogContentScroll = rememberScrollState()") &&
                 dialogTextBody.contains(".verticalScroll(createDialogContentScroll)") &&
@@ -985,7 +985,7 @@ class MultiPasswordSaveRegressionGuardTest {
                 quickScanRoute.contains("targets = quickScanTargetsForCurrentFilter()")
         )
         assertFalse(
-            "Quick TOTP scan must not call saveTotpItem directly because that bypasses MDBX/KeePass/Bitwarden targets.",
+            "Quick TOTP scan must not call saveTotpItem directly because that bypasses KeePass/Bitwarden targets.",
             quickScanRoute.contains("totpViewModel.saveTotpItem(")
         )
     }

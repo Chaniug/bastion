@@ -753,8 +753,6 @@ fun PasskeyListScreen(
                 categoryId = null,
                 keepassDatabaseId = null,
                 keepassGroupPath = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
                 bitwardenFolderId = null,
                 bitwardenVaultId = null
             )
@@ -762,8 +760,6 @@ fun PasskeyListScreen(
                 categoryId = target.categoryId,
                 keepassDatabaseId = null,
                 keepassGroupPath = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
                 bitwardenFolderId = null,
                 bitwardenVaultId = null
             )
@@ -772,30 +768,22 @@ fun PasskeyListScreen(
                 bitwardenFolderId = null,
                 keepassGroupPath = null,
                 keepassDatabaseId = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null
             )
             is UnifiedMoveCategoryTarget.BitwardenFolderTarget -> passkey.copy(
                 bitwardenVaultId = target.vaultId,
                 bitwardenFolderId = target.folderId,
                 keepassGroupPath = null,
                 keepassDatabaseId = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null
             )
             is UnifiedMoveCategoryTarget.KeePassDatabaseTarget -> passkey.copy(
                 keepassDatabaseId = target.databaseId,
                 keepassGroupPath = null,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
                 bitwardenFolderId = null,
                 bitwardenVaultId = null
             )
             is UnifiedMoveCategoryTarget.KeePassGroupTarget -> passkey.copy(
                 keepassDatabaseId = target.databaseId,
                 keepassGroupPath = target.groupPath,
-                mdbxDatabaseId = null,
-                mdbxFolderId = null,
                 bitwardenFolderId = null,
                 bitwardenVaultId = null
             )

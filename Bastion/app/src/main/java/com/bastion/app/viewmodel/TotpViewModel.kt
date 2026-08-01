@@ -313,8 +313,7 @@ class TotpViewModel(
                 keepassDatabaseId = password.keepassDatabaseId,
                 keepassGroupPath = password.keepassGroupPath,
                 bitwardenVaultId = password.bitwardenVaultId,
-                bitwardenFolderId = password.bitwardenFolderId,
-                mdbxDatabaseId = password.mdbxDatabaseId
+                bitwardenFolderId = password.bitwardenFolderId
             )
         }
 
@@ -995,16 +994,6 @@ class TotpViewModel(
                 } else {
                     boundPassword?.keepassGroupPath
                 },
-                mdbxDatabaseId = if (preserveSelectedSourceStorage) {
-                    preferredItem?.first?.mdbxDatabaseId
-                } else {
-                    boundPassword?.mdbxDatabaseId
-                },
-                mdbxFolderId = if (preserveSelectedSourceStorage) {
-                    preferredItem?.first?.mdbxFolderId
-                } else {
-                    boundPassword?.mdbxFolderId
-                },
                 bitwardenVaultId = preferredItem?.first?.bitwardenVaultId
                     .takeIf { preserveSelectedSourceStorage },
                 bitwardenFolderId = preferredItem?.first?.bitwardenFolderId
@@ -1050,8 +1039,6 @@ class TotpViewModel(
         categoryId: Long? = null,
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null,
         bitwardenVaultId: Long? = null,
         bitwardenFolderId: String? = null
     ) {
@@ -1066,8 +1053,6 @@ class TotpViewModel(
                     categoryId = categoryId,
                     keepassDatabaseId = keepassDatabaseId,
                     keepassGroupPath = keepassGroupPath,
-                    mdbxDatabaseId = mdbxDatabaseId,
-                    mdbxFolderId = mdbxFolderId,
                     bitwardenVaultId = bitwardenVaultId,
                     bitwardenFolderId = bitwardenFolderId,
                     followBoundPasswordStorage = totpData.boundPasswordId != null
@@ -1075,7 +1060,7 @@ class TotpViewModel(
             } catch (e: Exception) {
                 Log.e(
                     "TotpViewModel",
-                    "saveTotpItem failed id=$id categoryId=$categoryId keepassDatabaseId=$keepassDatabaseId mdbxDatabaseId=$mdbxDatabaseId bitwardenVaultId=$bitwardenVaultId error=${e::class.java.simpleName}: ${e.message}",
+                    "saveTotpItem failed id=$id categoryId=$categoryId keepassDatabaseId=$keepassDatabaseId bitwardenVaultId=$bitwardenVaultId error=${e::class.java.simpleName}: ${e.message}",
                     e
                 )
             }
@@ -1130,8 +1115,6 @@ class TotpViewModel(
                                 categoryId = target.categoryId,
                                 keepassDatabaseId = null,
                                 keepassGroupPath = null,
-                                mdbxDatabaseId = null,
-                                mdbxFolderId = null,
                                 bitwardenVaultId = null,
                                 bitwardenFolderId = null,
                                 followBoundPasswordStorage = false,
@@ -1146,8 +1129,6 @@ class TotpViewModel(
                                 categoryId = null,
                                 keepassDatabaseId = target.databaseId,
                                 keepassGroupPath = target.groupPath,
-                                mdbxDatabaseId = null,
-                                mdbxFolderId = null,
                                 bitwardenVaultId = null,
                                 bitwardenFolderId = null,
                                 followBoundPasswordStorage = false,
@@ -1162,8 +1143,6 @@ class TotpViewModel(
                                 categoryId = null,
                                 keepassDatabaseId = null,
                                 keepassGroupPath = null,
-                                mdbxDatabaseId = null,
-                                mdbxFolderId = null,
                                 bitwardenVaultId = target.vaultId,
                                 bitwardenFolderId = target.folderId,
                                 followBoundPasswordStorage = false,
@@ -1225,8 +1204,6 @@ class TotpViewModel(
         categoryId: Long?,
         keepassDatabaseId: Long?,
         keepassGroupPath: String?,
-        mdbxDatabaseId: Long?,
-        mdbxFolderId: String?,
         bitwardenVaultId: Long?,
         bitwardenFolderId: String?,
         followBoundPasswordStorage: Boolean,
@@ -1252,18 +1229,7 @@ class TotpViewModel(
         } else {
             keepassDatabaseId
         }
-        val resolvedMdbxDatabaseId = if (shouldFollowBoundPassword) {
-            boundPassword?.mdbxDatabaseId ?: mdbxDatabaseId
-        } else {
-            mdbxDatabaseId
-        }
-        val resolvedMdbxFolderId = if (resolvedMdbxDatabaseId == null) {
-            null
-        } else if (shouldFollowBoundPassword) {
-            boundPassword?.mdbxFolderId ?: mdbxFolderId
-        } else {
-            mdbxFolderId
-        }
+
         val resolvedKeepassGroupPath = when {
             resolvedKeepassDatabaseId == null -> null
             shouldFollowBoundPassword -> boundPassword?.keepassGroupPath
@@ -1312,8 +1278,6 @@ class TotpViewModel(
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
-                mdbxDatabaseId = resolvedMdbxDatabaseId,
-                mdbxFolderId = resolvedMdbxFolderId,
                 bitwardenVaultId = resolvedBitwardenVaultId,
                 bitwardenFolderId = resolvedBitwardenFolderId,
                 bitwardenCipherId = transition.cipherId,
@@ -1341,8 +1305,6 @@ class TotpViewModel(
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
-                mdbxDatabaseId = resolvedMdbxDatabaseId,
-                mdbxFolderId = resolvedMdbxFolderId,
                 bitwardenVaultId = resolvedBitwardenVaultId,
                 bitwardenFolderId = resolvedBitwardenFolderId,
                 bitwardenCipherId = transition.cipherId,
@@ -1401,7 +1363,7 @@ class TotpViewModel(
             ) ?: run {
                 Log.e(
                     "TotpViewModel",
-                    "saveTotpItemInternal failed while creating item keepassDatabaseId=$resolvedKeepassDatabaseId mdbxDatabaseId=$resolvedMdbxDatabaseId bitwardenVaultId=$resolvedBitwardenVaultId"
+                    "saveTotpItemInternal failed while creating item keepassDatabaseId=$resolvedKeepassDatabaseId bitwardenVaultId=$resolvedBitwardenVaultId"
                 )
                 return null
             }
@@ -1773,7 +1735,6 @@ class TotpViewModel(
                         bitwardenCipherId = null,
                         bitwardenRevisionDate = null,
                         bitwardenLocalModified = false,
-                        mdbxDatabaseId = null,
                         syncStatus = "NONE",
                         updatedAt = Date()
                     )
@@ -1883,20 +1844,12 @@ class TotpViewModel(
         keepassDatabaseId: Long? = null,
         keepassGroupPath: String? = null,
         bitwardenVaultId: Long? = null,
-        bitwardenFolderId: String? = null,
-        mdbxDatabaseId: Long? = null,
-        mdbxFolderId: String? = null
+        bitwardenFolderId: String? = null
     ): Boolean {
         return try {
             val item = repository.getItemById(id) ?: return false
             val totpData = parseStoredTotpData(item) ?: return false
-            val targetMdbxFolderId = if (mdbxDatabaseId != null) mdbxFolderId else null
             val updatedData = when {
-                mdbxDatabaseId != null -> totpData.copy(
-                    boundPasswordId = null,
-                    categoryId = null,
-                    keepassDatabaseId = null
-                )
                 keepassDatabaseId != null -> totpData.copy(keepassDatabaseId = keepassDatabaseId)
                 bitwardenVaultId != null -> totpData.copy(keepassDatabaseId = null)
                 else -> totpData.copy(categoryId = categoryId)
@@ -1911,15 +1864,13 @@ class TotpViewModel(
                     item.itemData,
                     Json.encodeToString(updatedData)
                 ),
-                categoryId = if (mdbxDatabaseId != null) null else categoryId,
+                categoryId = categoryId,
                 keepassDatabaseId = keepassDatabaseId,
                 keepassGroupPath = keepassIdentity.groupPath,
                 keepassEntryUuid = keepassIdentity.entryUuid,
                 keepassGroupUuid = keepassIdentity.groupUuid,
                 bitwardenVaultId = bitwardenVaultId,
                 bitwardenFolderId = bitwardenFolderId,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = targetMdbxFolderId,
                 updatedAt = Date()
             )
             val transition = resolveBitwardenTransition(
@@ -1948,7 +1899,7 @@ class TotpViewModel(
             if (keepassSync.isFailure) {
                 Log.e(
                     "TotpViewModel",
-                    "TOTP move failed before local update; sourceId=$id keepassTarget=$keepassDatabaseId mdbxTarget=$mdbxDatabaseId bitwardenTarget=$bitwardenVaultId error=${keepassSync.exceptionOrNull()?.message}"
+                    "TOTP move failed before local update; sourceId=$id keepassTarget=$keepassDatabaseId bitwardenTarget=$bitwardenVaultId error=${keepassSync.exceptionOrNull()?.message}"
                 )
                 return false
             }

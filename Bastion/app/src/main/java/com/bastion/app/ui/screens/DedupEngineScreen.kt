@@ -513,7 +513,7 @@ private fun TargetSelectionSheet(
         ) {
             SheetHeader("目标数据库", "只向目标新增内容", onDismiss)
             Text(
-                "Bastion 本地和 MDBX 支持写入；KeePass 与 Bitwarden 只作为来源。",
+                "Bastion 本地支持写入；KeePass 与 Bitwarden 只作为来源。",
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

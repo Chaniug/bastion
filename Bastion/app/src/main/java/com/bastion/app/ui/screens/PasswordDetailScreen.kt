@@ -153,7 +153,6 @@ private fun resolvePasswordDetailGroupPasswords(
                 else -> 3
             }
         }.thenBy { it.keepassDatabaseId ?: Long.MAX_VALUE }
-            .thenBy { it.mdbxDatabaseId ?: Long.MAX_VALUE }
             .thenBy { it.bitwardenVaultId ?: Long.MAX_VALUE }
             .thenBy { it.id }
     )

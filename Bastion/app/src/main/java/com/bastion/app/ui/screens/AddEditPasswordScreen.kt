@@ -344,10 +344,6 @@ fun AddEditPasswordScreen(
     var editingKeePassEntryUuid by rememberSaveable { mutableStateOf<String?>(null) }
     val keepassDatabases by (localKeePassViewModel?.allDatabases ?: kotlinx.coroutines.flow.flowOf(emptyList())).collectAsState(initial = emptyList())
 
-    // 实体字段保留值（编辑时回环，字段仍在实体上）
-    var mdbxDatabaseId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var mdbxFolderId by rememberSaveable { mutableStateOf<String?>(null) }
-
     // Bitwarden Vault 选择
     var bitwardenVaultId by rememberSaveable { mutableStateOf<Long?>(null) }
     var bitwardenFolderId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -1198,8 +1194,6 @@ fun AddEditPasswordScreen(
                     keepassDatabaseId = entry.keepassDatabaseId
                     keepassGroupPath = entry.keepassGroupPath
                     editingKeePassEntryUuid = entry.keepassEntryUuid
-                    mdbxDatabaseId = entry.mdbxDatabaseId
-                    mdbxFolderId = entry.mdbxFolderId
                     bitwardenVaultId = entry.bitwardenVaultId
                     bitwardenFolderId = entry.bitwardenFolderId
                     currentReplicaGroupId = entry.replicaGroupId
@@ -1498,8 +1492,6 @@ fun AddEditPasswordScreen(
                 boundNoteId = boundNoteId,
                 keepassDatabaseId = keepassDatabaseId,
                 keepassGroupPath = keepassGroupPath,
-                mdbxDatabaseId = mdbxDatabaseId,
-                mdbxFolderId = mdbxFolderId,
                 bitwardenVaultId = bitwardenVaultId,  // ✅ 保存到 Bitwarden Vault
                 bitwardenFolderId = bitwardenFolderId,
                 authenticatorKey = if (isBarcodeMode) "" else currentAuthKey,  // ✅ 保存验证器密钥

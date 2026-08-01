@@ -69,7 +69,7 @@ class CardWalletSyncScopeTest {
 
         listOf(bankCardEditor, documentEditor).forEach { source ->
             assertFalse(
-                "Wallet editors should notify Bitwarden mutations through BitwardenRepository; creating BitwardenViewModel here triggers startup sync even for local/MDBX/KeePass edits.",
+                "Wallet editors should notify Bitwarden mutations through BitwardenRepository; creating BitwardenViewModel here triggers startup sync even for local/KeePass edits.",
                 source.contains("bitwardenSyncViewModel")
             )
             assertFalse(source.contains("BitwardenViewModel = viewModel()"))
@@ -87,7 +87,7 @@ class CardWalletSyncScopeTest {
         assertTrue(mainScreen.contains("BottomNavItem.CardWallet -> cardWalletBitwardenVaultId != null"))
         assertTrue(mainScreen.contains("BottomNavItem.CardWallet -> cardWalletBitwardenVaultId"))
         assertFalse(
-            "Card wallet must not use activeVault as its Bitwarden page context; local/MDBX/KeePass wallet scopes would show Bitwarden sync.",
+            "Card wallet must not use activeVault as its Bitwarden page context; local/KeePass wallet scopes would show Bitwarden sync.",
             mainScreen.contains("BottomNavItem.CardWallet,\n        BottomNavItem.Notes")
         )
         assertTrue(contentSource.contains("onBitwardenScopeChanged: (Long?) -> Unit"))
