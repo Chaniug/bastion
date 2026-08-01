@@ -203,9 +203,9 @@ jobs:
             echo "- no results" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      # 5) 排错辅助：打印环境/缓存信息，验证缓存生效与定位慢点
+      # 5) 排错辅助：仅在失败时打印环境/缓存信息（成功时省几秒，出包更快）
       - name: Diagnostics - cache & environment
-        if: always()
+        if: failure()
         run: |
           echo "Gradle wrapper:"; grep distributionUrl gradle/wrapper/gradle-wrapper.properties || true
           echo "Build cache dir size:"; du -sh ~/.gradle/caches/build-cache-1 2>/dev/null || echo "n/a"
