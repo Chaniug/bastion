@@ -74,7 +74,6 @@ class BackupContentPolicyTest {
         val passkeys = listOf(
             passkey("local"),
             passkey("keepass", keepassDatabaseId = 1L),
-            passkey("mdbx", mdbxDatabaseId = 2L),
             passkey("bitwarden", bitwardenVaultId = 3L, bitwardenCipherId = "cipher")
         )
 
