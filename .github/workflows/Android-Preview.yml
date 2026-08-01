@@ -1,7 +1,7 @@
 name: Android Preview Build
 
 on:
-  # 说明：main / dev 推送的预览包现统一由 main.yml（Android CI debug）产出并发布到 preview Release。
+  # 说明：main / dev 推送的预览包现统一由 main.yml（Android CI debug）流水线产出并发布到 preview Release。
   # 本流水线不再随 push 自动跑 release 构建（main 合入可省约 11 分钟/次），避免与 CI debug 重复构建同一 preview Release。
   # - pull_request：仅做 Debug 构建校验，不发布（所有发布步骤均 if: != 'pull_request' 护着）。
   # - workflow_dispatch：手动触发，构建 Release 预览包并发布到 preview Release。
