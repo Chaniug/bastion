@@ -427,6 +427,13 @@ class BastionAccessibilityService : AccessibilityService() {
             )
         }
 
+        // Bitwarden 式：填充带 OTP 的凭据后，把 OTP 显式留在系统剪贴板，并取消挂起的
+        // “临时剪贴板还原”（否则会在填充完成数秒后把已复制的 OTP 抹掉），使其出现在输入法
+        // 剪贴板中供用户粘贴。无论 OTP 字段是否被自动识别均执行，避免 OTP 被静默丢弃。
+        if (otp.isNotBlank()) {
+            leaveOtpInClipboard(otp)
+        }
+
         Log.d(
             TAG,
             "Accessibility fill success: pkg=$activePackageName, usernameFilled=$usernameFilled, " +
@@ -949,6 +956,28 @@ class BastionAccessibilityService : AccessibilityService() {
 
             resetTemporaryClipboardSessionLocked()
         }
+    }
+
+    /**
+     * 填充完成后把 OTP 显式写入系统剪贴板，并取消挂起的“临时剪贴板还原”。
+     *
+     * 根因：无障碍注入走 [setNodeText] → [setTemporaryClipboard] + [scheduleTemporaryClipboardRestore]
+     * （约 500ms 后把剪贴板还原到填充前快照）。认证填充主路径的 OTP 复制协程先完成、无障碍注入
+     * 在用户回到浏览器后（1–3s）才发生，于是还原会在数秒后把已复制的 OTP 抹掉。此处在填充收尾
+     * 显式取消还原并把 OTP 写入剪贴板，使其稳定留存、出现在输入法剪贴板中供粘贴。
+     * 写入时不设 IS_SENSITIVE，否则输入法（如 Gboard）剪贴板历史不会收录该内容。
+     */
+    private fun leaveOtpInClipboard(otp: String) {
+        synchronized(temporaryClipboardLock) {
+            // 取消挂起的还原，避免其把剪贴板还原到填充前快照、抹掉刚复制的 OTP。
+            temporaryClipboardRestoreRunnable?.let(clipboardHandler::removeCallbacks)
+            temporaryClipboardRestoreRunnable = null
+            // 仅清会话状态，不还原（避免把刚复制的 OTP 换回旧内容）。
+            resetTemporaryClipboardSessionLocked()
+        }
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+        runCatchingObserved { clipboard.setPrimaryClip(ClipData.newPlainText("OTP Code", otp)) }
+        Log.d(TAG, "OTP left in clipboard after accessibility fill (len=${otp.length}), pkg=$lastPackageName")
     }
 
     private fun resetTemporaryClipboardSessionLocked() {

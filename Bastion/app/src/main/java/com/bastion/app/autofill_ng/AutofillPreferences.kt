@@ -307,8 +307,11 @@ class AutofillPreferences(private val context: Context) {
         }
     }
 
+    // OTP 自动复制默认开启：自动填充带 TOTP 的凭据后，2FA 码即进入剪贴板供粘贴，
+    // 对齐 Bitwarden 行为（修复 Edge/WebView 上 OTP 不进输入法剪贴板的问题）。
+    // 用户仍可在设置中关闭；关闭后无障碍兜底路径仍会把 OTP 留在剪贴板。
     val isAutoCopyOtpEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[KEY_AUTO_COPY_OTP] ?: false
+        preferences[KEY_AUTO_COPY_OTP] ?: true
     }
 
     suspend fun setAutoCopyOtpEnabled(enabled: Boolean) {
