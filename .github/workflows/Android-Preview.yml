@@ -2,7 +2,7 @@ name: Android Preview Build
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
     paths:
       - 'Bastion/**/*.kt'
       - 'Bastion/**/*.java'
@@ -20,6 +20,8 @@ on:
       - 'Bastion/**/*.kts'
       - 'Bastion/gradle/**'
   workflow_dispatch:
+# 说明：dev 推送的 debug APK 现由 main.yml（Android CI debug）流水线产出并发布到 preview Release。
+# dev 不再自动触发 release 构建（省约 11 分钟/次）；需要 release 预览时手动 Run workflow。
 
 permissions:
   contents: write

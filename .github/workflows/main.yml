@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # 发 debug APK 到 preview Release 需要
 
 # 取消策略：false = 连续推送时新 run 排队而非取消旧 run。
 # 旧 run 跑完会把构建/配置缓存暖热，后续 run 命中缓存更快（公开仓库 CI 分钟无限，无成本顾虑）。
@@ -93,6 +93,86 @@ jobs:
             Bastion/app/build/outputs/apk/debug/*.apk
             Bastion/app/build/outputs/apk/debug/*.APK
           if-no-files-found: error
+
+      # 2.5) push 到 dev/main 时，把 debug APK 发布到 preview Release，方便直接从 Release 页下载真机验证
+      - name: Generate preview version suffix
+        if: github.event_name == 'push'
+        id: preview_meta
+        shell: bash
+        run: |
+          suffix="build.$(date -u +%Y%m%d%H%M)"
+          echo "preview_version_suffix=$suffix" >> "$GITHUB_OUTPUT"
+
+      - name: Cleanup previous preview release assets
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          release_id="$(gh api repos/${{ github.repository }}/releases/tags/preview --jq '.id' 2>/dev/null || true)"
+          if [ -z "$release_id" ]; then
+            echo "No existing preview release assets to clean"
+            exit 0
+          fi
+          asset_ids="$(gh api repos/${{ github.repository }}/releases/${release_id}/assets --paginate --jq '.[].id')"
+          if [ -z "$asset_ids" ]; then
+            echo "Preview release has no existing assets"
+            exit 0
+          fi
+          while IFS= read -r asset_id; do
+            [ -z "$asset_id" ] && continue
+            echo "Deleting previous preview asset id=${asset_id}"
+            gh api -X DELETE repos/${{ github.repository }}/releases/assets/${asset_id}
+          done <<< "$asset_ids"
+
+      - name: Collect debug APK metadata
+        if: github.event_name == 'push'
+        id: apk_meta
+        shell: bash
+        run: |
+          cd app/build/outputs/apk/debug
+          apk_list="$(find . -maxdepth 1 -type f \( -iname '*.apk' -o -iname '*.APK' \) -printf '%f\n' | sort)"
+          apk_count="$(printf '%s\n' "$apk_list" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$apk_count" = "0" ]; then
+            echo "No debug APK found"; ls -la; exit 1
+          fi
+          apk_markdown="$(printf '%s\n' "$apk_list" | sed '/^$/d' | sed 's/^/> *   `/; s/$/`/')"
+          echo "apk_count=${apk_count}" >> "$GITHUB_OUTPUT"
+          {
+            echo "apk_list<<EOF"
+            printf '%s\n' "$apk_markdown"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish Debug APK to preview Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: preview
+          target_commitish: ${{ github.sha }}
+          name: "⚠️ Development Preview (${{ steps.preview_meta.outputs.preview_version_suffix }})"
+          body: |
+            > **⚠️ 开发预览版本 (Debug APK)**
+            >
+            > 此版本为 debug 构建产物，用于快速体验最新代码，可能包含未完成功能或 Bug。
+            > 正式使用请下载 Stable 版本。
+            > ---
+            > **构建信息：**
+            > * **Build Suffix**: `${{ steps.preview_meta.outputs.preview_version_suffix }}`
+            > * **Build Type**: `debug`
+            > * **Commit SHA**: `${{ github.sha }}`
+            > * **Ref**: `${{ github.ref }}`
+            > **Generated APKs:**
+            ${{ steps.apk_meta.outputs.apk_list }}
+          files: |
+            Bastion/app/build/outputs/apk/debug/*.apk
+            Bastion/app/build/outputs/apk/debug/*.APK
+          draft: false
+          prerelease: true
+          make_latest: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 3) 单测（非阻塞，门禁已过不拖慢出包；保留排错信号）
       - name: Run unit tests (non-blocking)
