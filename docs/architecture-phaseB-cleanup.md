@@ -76,28 +76,63 @@ private const val SOURCE_BASTION = "bastion"
 
 #### B.2.1 摸清 19 个失败测试
 
-当前 `BASELINE_FAILURES=19`，但基线是"黑盒"——不知道哪些测试在失败。**第一步是获取失败名单**：
+**状态**：✅ 已完成（2026-08-01，CI run #30704111010）
 
-```bash
-# 在 CI 日志的 "Enforce unit test failure baseline" 步骤中提取
-# 或本地运行：./gradlew testDebugUnitTest 2>&1 | grep "FAILED"
-```
+当前 `BASELINE_FAILURES=19`，基线是"黑盒"。已从 CI 日志提取完整名单（共 525 测试，19 失败）：
 
-**执行步骤**：
-1. 从最近一次 CI run 的日志中提取 19 个失败测试的完整类名 + 方法名
-2. 逐个分析失败原因（是真实 bug、过时断言、还是环境问题）
-3. 可修复的直接修复，不可修复的记录原因并 @Ignore
-4. 修好一个就下调基线 1（棘轮下降）
+| # | 测试类 | 方法 | 失败原因分类 | 修复状态 |
+| --- | --- | --- | --- | --- |
+| 1 | `ActiveFillHardeningRegressionGuardTest` | notificationFillIsOptInThrottledAndBoundToTheDetectedApp | 待分析 | ⬜ |
+| 2 | `AutofillAuthResultLaunchModeRegressionGuardTest` | authResultActivitiesMustNotReuseExistingInstances | 待分析 | ⬜ |
+| 3 | `AutofillDetectionIntegrationGuardTest` | parserAndAuthenticationCallbackShareTheConflictPolicy | 待分析 | ⬜ |
+| 4 | `AutofillDropdownClickRegressionGuardTest` | dropdownCipherSuggestionsUseDirectValuesAndKeepManualFallback | 待分析 | ⬜ |
+| 5 | `AutofillInlineClickRegressionGuardTest` | directInlineSuggestionsUseRealAuthenticationCallbackInsteadOfNoopIntent | 待分析 | ⬜ |
+| 6 | `BiometricUnlockRegressionGuardTest` | mdkWrapperRebuildHandlesInvalidatedAndUnrecoverableKeystoreKeys | 待分析 | ⬜ |
+| 7 | `BiometricUnlockRegressionGuardTest` | pageSwitchHotPathsDoNotRunAuthOrBitwardenSyncWorkOnMainThread | 待分析 | ⬜ |
+| 8 | `CardBrandIconTest` | cardBrandIconFrameFollowsAppThemeInsteadOfSystemTheme | 待分析 | ⬜ |
+| 9 | `ExpressiveTopBarKeyboardRegressionGuardTest` | searchFieldRestoresKeyboardWhenPressedAfterSystemDismissal | 待分析 | ⬜ |
+| 10 | `KeePassOperationAvailabilityTest` | remoteDatabaseBlocksUnsafeSyncStates | 待分析 | ⬜ |
+| 11 | `MultiPasswordSaveRegressionGuardTest` | normalPasswordPageRunsBatchDeleteThroughQuickStatusBar | 待分析 | ⬜ |
+| 12 | `MultiPasswordSaveRegressionGuardTest` | normalPasswordPageShowsBatchTransferInQuickStatusBar | 待分析 | ⬜ |
+| 13 | `MultiPasswordSaveRegressionGuardTest` | saveFailuresAreReportedWithNonSecretDiagnostics | 待分析 | ⬜ |
+| 14 | `PasswordSuggestionUiRegressionGuardTest` | primaryActionUsesShortLabelInEnglishAndChinese | 待分析 | ⬜ |
+| 15 | `PasskeyRemarkAndNavigationGuardTest` | authenticatorAndPasskeyShareOneDockDestinationWithBidirectionalControls | 待分析 | ⬜ |
+| 16 | `PlusLocalActivationGuardTest` | activationCompletesLocallyWithoutBlockingProgressUi | 待分析 | ⬜ |
+| 17 | `SplashThemeResourceTest` | startupUsesOnlyTheAndroidSystemSplashLayer | 待分析 | ⬜ |
+| 18 | `SplashThemeResourceTest` | systemSplashFallbackUsesBastionM3LightAndDarkColors | 待分析 | ⬜ |
+| 19 | `TimelineSnapshotIntegrationGuardTest` | roomDatabaseRegistersVersion73SnapshotMigration | **守卫断言过时**（Phase A 版本 73→74） | ✅ 已修复 |
+
+**已修复**：第 19 项（`adc16a70`），将断言从 `version = 73` / `Migration(72, 73)` / `MIGRATION_72_73` 更新为 `version = 74` / `Migration(73, 74)` / `MIGRATION_73_74`。
+
+**统计**：525 总测试，19 失败。移除第 19 项后剩余 18 个待分析。
 
 #### B.2.2 5 个 `.kt.disabled` 文件处置
 
-| 文件 | 处置建议 |
-| --- | --- |
-| `autofill/DirectEntryModeResolverTest.kt.disabled` | 评估是否仍需要，需要则修复启用，不需要则删除 |
-| `autofill/core/AutofillLoggerTest.kt.disabled` | 同上 |
-| `autofill/core/MetricsCollectorTest.kt.disabled` | 同上 |
-| `autofill/strategy/MatchingStrategyTest.kt.disabled` | 同上 |
-| `autofill/v2/BitwardenLikeAutofillMatcherTest.kt.disabled` | 同上 |
+**状态**：✅ 已完成（2026-08-01）
+
+背景：这 5 个文件都位于已废弃的 `com.bastion.app.autofill.*` 包下。该包在 autofill 重构中整体迁移为
+`com.bastion.app.autofill_ng.*`，测试文件当时被改名挂起而非同步迁移，此后一直是死文件
+（`Rebrand: Monica Pass -> Bastion` 提交 `4899931c` 后再无改动）。
+
+| 文件 | 被测类现状 | 处置 |
+| --- | --- | --- |
+| `autofill/DirectEntryModeResolverTest.kt.disabled` | `DirectEntryModeResolver` 主代码已不存在 | 🗑 删除 |
+| `autofill/core/MetricsCollectorTest.kt.disabled` | `MetricsCollector` 主代码已不存在 | 🗑 删除 |
+| `autofill/strategy/MatchingStrategyTest.kt.disabled` | 整个 `strategy` 包已不存在（由 `DomainMatchStrategy.kt` 取代） | 🗑 删除 |
+| `autofill/v2/BitwardenLikeAutofillMatcherTest.kt.disabled` | 已被 `autofill_ng/BitwardenLikeAutofillMatcherNgTest.kt`（205 行 / 9 用例）完整取代 | 🗑 删除 |
+| `autofill/core/AutofillLoggerTest.kt.disabled` | `AutofillLogger` 仍在役（`autofill_ng/core/AutofillLogger.kt`），API 完全兼容 | ♻️ 迁移复活 |
+
+**复活细节**：`AutofillLoggerTest` 迁移到 `autofill_ng/core/AutofillLoggerTest.kt`，package 改为
+`com.bastion.app.autofill_ng.core`，测试体零改动。13 个用例覆盖日志分级、元数据、
+4 类脱敏规则（密码/邮箱/手机号/身份证）、500 条环形缓冲上限、导出、统计、清除、异常附带。
+
+可行性依据：
+- `AutofillLogger` 的 Android 依赖只有 `android.util.Log`，且模块已开启 `unitTests.returnDefaultValues = true`
+- `BoundedLogExecutorFactory` 是纯 JVM `ThreadPoolExecutor`，无 Android 依赖
+- 未调用 `initialize(context)` 时 `persistentLogFile == null`，文件 IO 路径直接短路
+- 全仓无其它测试引用 `AutofillLogger`，单例静态状态无跨测试污染风险
+
+**净效果**：测试文件数 -4，有效用例数 +13，`src/test` 下 `.disabled` 文件归零。
 
 #### B.2.3 守卫测试脆弱性治理
 
@@ -246,16 +281,16 @@ sealed interface ItemOwnership<out K : KeePassBinding, out B : BitwardenBinding>
 
 ## 三、优先级与建议执行顺序
 
-| 优先级 | 任务 | 预估工作量 | 风险 | 建议执行者 |
-| --- | --- | --- | --- | --- |
-| **P0** | B.1 遗留命名收敛 | 1-2 小时 | 低 | 单 agent |
-| **P0** | B.2.1 摸清 19 个失败测试 | 1 小时 | 无 | 单 agent |
-| **P0** | B.2.2 处置 5 个 .disabled 文件 | 2-3 小时 | 低 | 单 agent |
-| **P1** | B.2.3 守卫测试治理 | 4-6 小时 | 中 | 单 agent |
-| **P1** | B.3 PasswordViewModel 拆分 | 8-16 小时 | 中高 | 多 agent 接力 |
-| **P2** | B.4 密封类同形收敛 | 4-8 小时 | 中 | 单 agent（B.3 完成后） |
-| **P2** | B.5 Screen 文件拆分 | 8-16 小时 | 低 | 多 agent 接力 |
-| **P3** | B.6 DedupMergeTarget 扩展 | 4-8 小时 | 中 | 单 agent（B.4 完成后） |
+| 优先级 | 任务 | 预估工作量 | 风险 | 建议执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| **P0** | B.1 遗留命名收敛 | 1-2 小时 | 低 | 单 agent | ✅ 完成（`54c2111f`，CI #30704111010） |
+| **P0** | B.2.1 摸清 19 个失败测试 | 1 小时 | 无 | 单 agent | ✅ 名单已摸清，修复 1/19（`adc16a70`） |
+| **P0** | B.2.2 处置 5 个 .disabled 文件 | 2-3 小时 | 低 | 单 agent | ✅ 完成（删 4 复活 1） |
+| **P1** | B.2.3 守卫测试治理 | 4-6 小时 | 中 | 单 agent | ⬜ 未开始 |
+| **P1** | B.3 PasswordViewModel 拆分 | 8-16 小时 | 中高 | 多 agent 接力 | ⬜ 未开始 |
+| **P2** | B.4 密封类同形收敛 | 4-8 小时 | 中 | 单 agent（B.3 完成后） | ⬜ 未开始 |
+| **P2** | B.5 Screen 文件拆分 | 8-16 小时 | 低 | 多 agent 接力 | ⬜ 未开始 |
+| **P3** | B.6 DedupMergeTarget 扩展 | 4-8 小时 | 中 | 单 agent（B.4 完成后） | ⬜ 未开始 |
 
 > **性能优化任务**见 Phase C：[`docs/architecture-phaseC-performance.md`](architecture-phaseC-performance.md)
 

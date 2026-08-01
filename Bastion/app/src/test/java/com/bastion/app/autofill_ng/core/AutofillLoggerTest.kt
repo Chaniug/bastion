@@ -1,4 +1,4 @@
-package com.bastion.app.autofill.core
+package com.bastion.app.autofill_ng.core
 
 import org.junit.Test
 import org.junit.Assert.*
@@ -7,12 +7,16 @@ import org.junit.After
 
 /**
  * AutofillLogger 单元测试
- * 
+ *
  * 测试日志系统的核心功能:
  * - 日志记录
  * - 自动脱敏
  * - 日志导出
  * - 统计信息
+ *
+ * 说明：本测试原先位于已废弃的 `com.bastion.app.autofill.core` 包下，
+ * 以 `.kt.disabled` 形式长期挂起。Phase B.2.2 将其迁移到现役的
+ * `com.bastion.app.autofill_ng.core` 包并重新启用。
  */
 class AutofillLoggerTest {
     
