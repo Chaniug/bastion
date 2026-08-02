@@ -140,8 +140,8 @@ internal class PasswordMoveExecutor(
         entries.forEach { entry ->
             val updatedEntry = buildUpdatedEntry(entry)
             val customFields = resolveKeePassCustomFieldsForSync(
-                entryId = entry.id,
-                customFieldsOverride = null
+                entry.id,
+                null
             )
             val keepassSync = keepassPasswordUpdateExecutor.syncUpdatedEntry(
                 existingEntry = entry,
