@@ -94,11 +94,14 @@ class PasswordViewModel(
     private val secureItemRepository: SecureItemRepository? = null,
     private val customFieldRepository: CustomFieldRepository? = null,
     context: Context? = null,
-    private val localKeePassDatabaseDao: LocalKeePassDatabaseDao? = null
+    private val localKeePassDatabaseDao: LocalKeePassDatabaseDao? = null,
+    // B.3 集群 8：无依赖协作者改为构造参数注入（默认值保持调用方零改动）。
+    private val bitwardenSnapshotPreviewParser: BitwardenSyncSnapshotPreviewParser = BitwardenSyncSnapshotPreviewParser(),
+    private val passwordCommandStateFactory: PasswordCommandStateFactory = PasswordCommandStateFactory(),
+    private val archiveFilterController: PasswordArchiveFilterController = PasswordArchiveFilterController()
 ) : ViewModel() {
     private val decryptLock = Any()
     private val appContext: Context? = context?.applicationContext
-    private val bitwardenSnapshotPreviewParser = BitwardenSyncSnapshotPreviewParser()
 
     companion object {
         // 过滤器持久化类型字面量的唯一真源在 CategoryFilterCodec（B.3 集群 4）。
@@ -186,7 +189,6 @@ class PasswordViewModel(
         securityManager = securityManager,
         decryptForDisplay = ::decryptForDisplay
     )
-    private val passwordCommandStateFactory = PasswordCommandStateFactory()
     private val passwordProviderRegistry = PasswordProviderRegistry(
         providers = listOf(
             KeePassPasswordProvider(
@@ -267,7 +269,6 @@ class PasswordViewModel(
     
     private val _categoryFilter = MutableStateFlow<CategoryFilter>(CategoryFilter.All)
     val categoryFilter = _categoryFilter.asStateFlow()
-    private val archiveFilterController = PasswordArchiveFilterController()
 
     // 归档/取消归档编排（B.3 集群 6）。KeePass 侧的三个操作以函数引用注入，
     // 实现仍留在本类——它们依赖 keepassBridge 与解密副作用，属集群 3 范围。

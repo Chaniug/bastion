@@ -20,7 +20,11 @@ sealed class CategoryFilter {
     data class BitwardenVaultUncategorized(val vaultId: Long) : CategoryFilter()
 }
 
-internal class PasswordArchiveFilterController {
+/**
+ * 归档筛选状态控制器（B.3 集群 1 迁移至此；集群 8 提升为 public 以便作为
+ * `PasswordViewModel` 构造参数注入——无状态、无敏感逻辑，公开无风险）。
+ */
+class PasswordArchiveFilterController {
     private var returnFilter: CategoryFilter? = null
 
     fun open(currentFilter: CategoryFilter): CategoryFilter {
