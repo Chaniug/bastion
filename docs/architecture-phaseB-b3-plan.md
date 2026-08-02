@@ -79,9 +79,9 @@
 | 集群 | 内容 | CI | 守卫(OTP/密码) | 真机 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 顶层类型搬迁（CategoryFilter+PasswordArchiveFilterController→CategoryFilter.kt；BitwardenRecoveryResult+BitwardenSyncRawHistoryItem→BitwardenSyncTypes.kt） | ✅ 30725125903+30725511081 | ✅ 0 失败 | — | ✅ 完成 |
-| 2 | Bitwarden 离线缓存 → `BitwardenOfflineSecretCacheFacade` | ✅ 30726186131 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 2 | Bitwarden 离线缓存 → `BitwardenOfflineSecretCacheFacade` | ✅ 30726186131 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 3 | KeePass 同步协调器 | — | — | — | ⬜ **延后**（见 §七） |
-| 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 5 | 跨存储迁移 | — | — | — | ⬜ |
 | 6 | 删除/归档编排 | — | — | — | ⬜ |
 | 7 | 主密码/历史 | — | — | — | ⬜ |

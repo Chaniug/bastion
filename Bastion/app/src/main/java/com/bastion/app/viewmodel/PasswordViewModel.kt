@@ -71,7 +71,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.Date
-import java.net.URI
 import java.util.Locale
 import java.util.UUID
 
@@ -772,152 +771,36 @@ class PasswordViewModel(
         return "$sourceKey|$title|$website|$username"
     }
 
-    private fun normalizeWebsiteForGhostGrouping(value: String): String {
-        val raw = value.trim()
-        if (raw.isEmpty()) return ""
-        return raw
-            .lowercase(Locale.ROOT)
-            .removePrefix("http://")
-            .removePrefix("https://")
-            .removePrefix("www.")
-            .trimEnd('/')
-    }
+    // ── 以下为 PasswordEntryMatching 的薄委托（B.3 集群 5a）────────────────
+    // 实现已搬迁到同包的 PasswordEntryMatching.kt（纯函数、无状态）。
+    // 此处保留同名私有函数作为委托，使全部既有调用点的文本形态保持不变。
 
-    private fun pickBestEntry(candidates: List<PasswordEntry>): PasswordEntry? {
-        return candidates.maxWithOrNull(
-            compareBy<PasswordEntry> { it.notes.length }
-                .thenBy { it.website.length }
-                .thenBy { it.username.length }
-                .thenBy { if (it.isFavorite) 1 else 0 }
-                .thenBy { if (it.hasOwnershipConflict()) 2 else if (!it.isLocalOnlyEntry()) 1 else 0 }
-                .thenBy { it.updatedAt.time }
-        )
-    }
+    private fun normalizeWebsiteForGhostGrouping(value: String): String =
+        PasswordEntryMatching.normalizeWebsiteForGhostGrouping(value)
 
-    private data class BitwardenComparableSignature(
-        val username: String,
-        val title: String,
-        val domain: String
-    )
+    private fun pickBestEntry(candidates: List<PasswordEntry>): PasswordEntry? =
+        PasswordEntryMatching.pickBestEntry(candidates)
 
-    /**
-     * "Local only" means:
-     * 1) not a KeePass item
-     * 2) not an already-synced Bitwarden cipher
-     * 3) no matching item exists in any Bitwarden vault
-     */
-    private fun filterLocalOnlyComparedToBitwarden(entries: List<PasswordEntry>): List<PasswordEntry> {
-        if (entries.isEmpty()) return emptyList()
+    private fun filterLocalOnlyComparedToBitwarden(entries: List<PasswordEntry>): List<PasswordEntry> =
+        PasswordEntryMatching.filterLocalOnlyComparedToBitwarden(entries)
 
-        val bitwardenIndexByUsername = entries
-            .asSequence()
-            .filter { it.keepassDatabaseId == null && it.bitwardenVaultId != null && it.bitwardenCipherId != null }
-            .map {
-                BitwardenComparableSignature(
-                    username = normalizeComparableText(it.username),
-                    title = normalizeComparableText(it.title),
-                    domain = extractComparableDomain(it.website)
-                )
-            }
-            .filter { it.username.isNotBlank() && (it.title.isNotBlank() || it.domain.isNotBlank()) }
-            .groupBy { it.username }
+    private fun normalizeComparableText(value: String): String =
+        PasswordEntryMatching.normalizeComparableText(value)
 
-        return entries.filter { entry ->
-            isLocalOnlyComparedToBitwarden(entry, bitwardenIndexByUsername)
-        }
-    }
+    private fun matchesSearchQuery(entry: PasswordEntry, query: String): Boolean =
+        PasswordEntryMatching.matchesSearchQuery(entry, query)
 
-    private fun isLocalOnlyComparedToBitwarden(
-        entry: PasswordEntry,
-        bitwardenIndexByUsername: Map<String, List<BitwardenComparableSignature>>
-    ): Boolean {
-        if (!entry.isLocalOnlyEntry()) return false
-        if (entry.bitwardenCipherId != null) return false
+    private fun extractComparableDomain(value: String): String =
+        PasswordEntryMatching.extractComparableDomain(value)
 
-        val username = normalizeComparableText(entry.username)
-        if (username.isBlank()) return true
+    private fun buildDedupeKey(entry: PasswordEntry): String =
+        PasswordEntryMatching.buildDedupeKey(entry)
 
-        val domain = extractComparableDomain(entry.website)
-        val title = normalizeComparableText(entry.title)
-        if (domain.isBlank() && title.isBlank()) return true
+    private fun normalizeDedupeText(value: String): String =
+        PasswordEntryMatching.normalizeDedupeText(value)
 
-        val candidates = bitwardenIndexByUsername[username] ?: return true
-        val matched = candidates.any { candidate ->
-            (domain.isNotBlank() && domain == candidate.domain) ||
-                (title.isNotBlank() && title == candidate.title)
-        }
-        return !matched
-    }
-
-    private fun normalizeComparableText(value: String): String {
-        return value.trim().lowercase(Locale.ROOT)
-    }
-
-    private fun matchesSearchQuery(entry: PasswordEntry, query: String): Boolean {
-        val normalizedQuery = query.trim().lowercase(Locale.ROOT)
-        if (normalizedQuery.isBlank()) return true
-        return entry.title.lowercase(Locale.ROOT).contains(normalizedQuery) ||
-            entry.website.lowercase(Locale.ROOT).contains(normalizedQuery) ||
-            entry.username.lowercase(Locale.ROOT).contains(normalizedQuery) ||
-            entry.appName.lowercase(Locale.ROOT).contains(normalizedQuery) ||
-            entry.appPackageName.lowercase(Locale.ROOT).contains(normalizedQuery)
-    }
-
-    private fun extractComparableDomain(value: String): String {
-        val raw = value.trim()
-        if (raw.isEmpty()) return ""
-
-        return runCatchingObserved {
-            val withScheme = if (raw.contains("://")) raw else "https://$raw"
-            val host = URI(withScheme).host?.lowercase(Locale.ROOT)?.removePrefix("www.") ?: ""
-            if (host.isNotBlank()) host else raw
-                .lowercase(Locale.ROOT)
-                .removePrefix("http://")
-                .removePrefix("https://")
-                .removePrefix("www.")
-                .substringBefore('/')
-        }.getOrElse {
-            raw.lowercase(Locale.ROOT)
-                .removePrefix("http://")
-                .removePrefix("https://")
-                .removePrefix("www.")
-                .substringBefore('/')
-        }.trim()
-    }
-
-    private fun buildDedupeKey(entry: PasswordEntry): String {
-        val title = normalizeDedupeText(entry.title)
-        val username = normalizeDedupeText(entry.username)
-        val website = normalizeWebsiteForDedupe(entry.website)
-        return "$title|$username|$website"
-    }
-
-    private fun normalizeDedupeText(value: String): String {
-        return value.trim().lowercase(Locale.ROOT)
-    }
-
-    private fun normalizeWebsiteForDedupe(value: String): String {
-        val raw = value.trim()
-        if (raw.isEmpty()) return ""
-
-        return runCatchingObserved {
-            val withScheme = if (raw.contains("://")) raw else "https://$raw"
-            val uri = URI(withScheme)
-            val host = (uri.host ?: "").lowercase(Locale.ROOT).removePrefix("www.")
-            if (host.isEmpty()) return@runCatchingObserved raw.lowercase(Locale.ROOT).trimEnd('/')
-
-            val port = uri.port
-            val hostWithPort = if (port == -1 || port == 80 || port == 443) host else "$host:$port"
-            val path = (uri.path ?: "").trim().trimEnd('/').lowercase(Locale.ROOT)
-            if (path.isBlank()) hostWithPort else "$hostWithPort$path"
-        }.getOrElse {
-            raw.lowercase(Locale.ROOT)
-                .removePrefix("http://")
-                .removePrefix("https://")
-                .removePrefix("www.")
-                .trimEnd('/')
-        }
-    }
+    private fun normalizeWebsiteForDedupe(value: String): String =
+        PasswordEntryMatching.normalizeWebsiteForDedupe(value)
 
     private fun decryptForDisplay(encryptedPassword: String): String {
         return decodePasswordOrNull(encryptedPassword).orEmpty()
