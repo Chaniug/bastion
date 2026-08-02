@@ -5,8 +5,9 @@
 >
 > **创建时间**：2026-08-02
 > **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **6 ✅**；`PasswordViewModel` 4162 → 3700 行，
-> 累计 -462；集群 6 已按 §7.7 完成抽取（18 个 mockk 行为测试护航，CI `total=559 failed=0`）；
-> 剩集群 3/5c/7/8）
+> 累计 -462；集群 6 已按 §7.7 完成抽取（18 个 mockk 行为测试护航，CI `total=571 failed=0`）；
+> 集群 5c 的**行为测试网已建成**（`PasswordMoveBehaviorTest` 12 个，见 §7.9），待抽取；
+> 剩集群 3/5c(抽取)/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -86,7 +87,7 @@
 | 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
-| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4；**待补行为测试** |
+| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | ✅ 30731085994（`total=571 failed=0`） | ✅ 0 失败 | 待真机抽查 | 🟡 **行为测试网已建成**（12 个，见 §7.9），待抽取 |
 | 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671 + 30729317779（`total=559 failed=0`） | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f + 用户复核）| ✅ 完成（见 §7.7） |
 | 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
 | 8 | 构造注入 | — | — | — | ⬜ 见 §7.6（只有 3/9 可行） |
@@ -293,3 +294,33 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 
 **验证**：CI `failed=0` + 7 守卫绿（守卫不引用这些文件）；**真机 ✅ 通过（2026-08-02）**：
 荣耀 / Android 17 实测 Bitwarden 库滚动流畅，密码填充 / 归档 / OTP·TOTP 验证码均无异常。
+
+### 7.9 集群 5c 行为测试网：move* 跨存储迁移（2026-08-02）
+
+`PasswordMoveBehaviorTest`（12 个 mockk 用例，CI `total=571 failed=0`，run 30731085994）
+覆盖 `movePasswordsToCategory` / `...ToKeePassDatabase` / `...ToKeePassGroup` /
+`...ToBitwardenFolder` / `moveKeePassPasswordsToBastionCategoryAwait` 全部入口：
+
+1. **本地迁移语义**：迁入类别必须清 KeePass 归属（`updateKeePassDatabaseForPasswords(ids, null)`）；
+   空 ids 短路；纯本地条目不触碰任何删除。
+2. **KeePass 目标绑定**：`bindPasswordToTarget` 纯函数（目标 db/group 绑定 + bitwarden 字段清空），
+   空桥下 `syncUpdatedEntry` 走 `persistUpdate` → 本地写回可断言。
+3. **迁出 KeePass（databaseId=null）**：清空 keepass 全绑定 + bitwarden 全绑定。
+4. **Bitwarden 绑定条目迁出**：原条目带 cipherId 时走 `queueCipherDelete`，仓库不可用（context=null）
+   必须抛 `IllegalStateException("Bitwarden 仓库不可用")` —— 这是真实语义，不可静默迁移。
+5. **KeePass 源删除在 KDBX 侧**：`deleteMovedKeePassPasswordSources` 经 bridge 删 KDBX 条目，
+   空桥 no-op 成功，**本地行绝不调 `deletePasswordEntry`**（迁移≠删除）——测试据此断言
+   `coVerify(exactly = 0)`。
+6. **public 入口**：`movePasswordsToCategory` 经 `viewModelScope.launch`（Unconfined 同步执行）
+   触发 await 路径，无需 `advanceUntilIdle`。
+
+**夹具事实**（context=null 下全链路可达的机制）：
+- `canWriteKeePassDatabase`：`localKeePassDatabaseDao == null` 时返回 **true**（放行）→
+  move 到 KeePass 的绑定写回路径可测；
+- `KeePassPasswordUpdateExecutor` / `KeePassPasswordDeleteExecutor`：bridge null 时
+  update 只走 `persistUpdate`、delete 返回 true，均不触碰 KDBX；
+- `materializeMovedKeePassAttachments`：`appContext == null` 直接返回；
+- `resolveKeePassCustomFieldsForSync`：`customFieldRepository == null` 返回空列表。
+
+**遗留**：KDBX 真实写入/删除、附件物化、Bitwarden 云端删除的实际交互由真机验证兜底；
+抽取 `PasswordMoveExecutor` 时须保持上述 6 类断言全绿。
