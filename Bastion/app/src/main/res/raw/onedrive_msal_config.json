@@ -1,7 +1,7 @@
 {
   "client_id": "51306f8c-de1c-41da-8ae0-df00d1e830cb",
   "authorization_user_agent": "DEFAULT",
-  "redirect_uri": "msauth://com.bastion.app/FwPDMDAjg96%2B0gxjMKKmnQS%2FdQA%3D",
+  "redirect_uri": "msauth://com.bastion.app/FwPDMDAjg96+0gxjMKKmnQS/dQA=",
   "account_mode": "MULTIPLE",
   "broker_redirect_uri_registered": false,
   "authorities": [
