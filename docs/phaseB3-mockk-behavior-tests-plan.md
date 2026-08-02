@@ -3,7 +3,7 @@
 > **文档目的**：按准则 #5 要求，在落地 mockk 基础设施与行为测试前写出完整计划，用户确认后执行。
 >
 > **创建时间**：2026-08-02
-> **状态**：📋 待确认
+> **状态**：🟡 执行中 —— 用户已确认；Step 0 ✅（CI 30728150825）、Step 1 ✅（CI 30728548671，`total=559 failed=0`）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**
 
@@ -25,17 +25,32 @@
 
 ## 二、改动范围（三步走）
 
-### Step 0：依赖与版本（1 文件，~3 行）
+### Step 0：依赖与版本（✅ 已完成，CI 30728150825 绿）
 
 | 文件 | 操作 | 内容 |
 | --- | --- | --- |
-| `Bastion/gradle/libs.versions.toml` | 新增 version | `mockk = "1.13.12"`（支持 Kotlin 2.0.21 的最新稳定版） |
+| `Bastion/gradle/libs.versions.toml` | 新增 version | `mockk = "1.13.17"` |
 | `Bastion/gradle/libs.versions.toml` | 新增 library | `mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }` |
 | `Bastion/app/build.gradle` | 新增依赖 | `testImplementation libs.mockk` |
+| `.../viewmodel/behavior/MockkInfrastructureSmokeTest.kt` | 新增 | 3 个冒烟测试，证明 mockk 在本项目约束下可用 |
 
 > **零风险**：`testImplementation` 不进 APK，仅 unit test classpath。
 
-### Step 1：为集群 6（删除/归档）补行为测试（~2-3 个测试文件）
+#### ⚠️ 版本选型：**必须**用 1.13.17，不得升到 1.14.x
+
+排查过程：查 mockk 仓库各 tag 的构建配置，确认它自身用哪个 Kotlin 编译。
+
+| mockk 版本 | 自身构建用的 Kotlin | 产物 metadata | 与本项目（kotlin 2.0.21）| 
+| --- | --- | --- | --- |
+| 1.13.17（1.13.x 末版）| `kotlinDefault = "2.0.0"` | 2.0 | ✅ 兼容 |
+| 1.14.x（含 latest 1.14.11）| `kotlin = "2.2.21"` | 2.2 | ❌ 报 `incompatible version of Kotlin` |
+
+Kotlin 编译器读不了比自身新的 metadata。1.14.x 会在**编译期**直接失败，
+不是运行时警告。该结论已写进 `libs.versions.toml` 的注释，防止后续 agent 盲目升级。
+
+若将来项目把 `kotlin` 升到 2.2+，可同步把 mockk 升到 1.14.x。
+
+### Step 1：为集群 6（删除/归档）补行为测试（✅ 已完成，CI 30728548671，`total=559 failed=0`）
 
 **为什么从集群 6 开始**：
 - 删除/归档是用户最在意的「密码条目」热路径。
@@ -44,24 +59,51 @@
   `archivePassword` 决定走 KeePass 组路径 / Bitwarden 标记 / Local 标记。
 - 补完测试后集群 6 抽取时就有回归网了。
 
-**测试文件清单**：
+**实际落地文件**（都在 `app/src/test/.../viewmodel/behavior/`）：
 
-1. **`PasswordDeleteOrchestratorTest.kt`**（约 80-120 行）
-   - `deletePasswordEntry` 分流三态测试：Bitwarden cipher → 调 `handleBitwardenQueuedDelete`；trash 开启 → 调 `moveEntryToTrash`；trash 关闭 → 调 `permanentlyDeleteEntry`
-   - `deletePasswordEntriesBatch` 批量分流 + `onProgress` 回调计数
-   - `permanentlyDeleteEntry` 与 `permanentlyDeleteEntryLocalOnly` 的 repository 调用链验证
+| 文件 | 内容 |
+| --- | --- |
+| `MainDispatcherRule.kt` | 用 `UnconfinedTestDispatcher` 顶替 `Dispatchers.Main`，使 `viewModelScope.launch` 在测试中**同步**执行，调用后可立即断言 |
+| `PasswordDeleteBehaviorTest.kt` | 7 个测试：本地软删除、Bitwarden 墓碑、无 cipherId 回落、批量单次提交、进度回调首末值、空列表短路 |
+| `PasswordArchiveBehaviorTest.kt` | 8 个测试：本地/Bitwarden 归档元数据、已归档短路、回收站条目不得归档、批量归档、取消归档清标志、**来源以归档元数据为准** |
 
-2. **`PasswordArchiveOrchestratorTest.kt`**（约 80-120 行）
-   - `archivePassword` → `archivePasswordsInternal` → `archiveSingleEntry` 调用链
-   - `archiveEntryByProvider` 三态：KeePass 归档路径创建成功/失败/跳过
-   - `unarchivePasswordsAwait` → `unarchiveEntryByProvider` 恢复路径
-   - `buildArchiveSyncMeta` / `buildUnarchiveSyncMeta` 纯函数输出验证（不需要 mock，直接用 fixture 测）
+**mock 策略（实测可行，接力 agent 照抄即可）**：
+- `PasswordRepository` / `SecurityManager` 均为 Kotlin final class → 只能 `mockk`，且用 `relaxed = true`
+  （编排链会顺带触碰几十个仓库方法，逐个打桩不现实）。
+- 用 `slot<PasswordEntry>()` + `capture()` 抓写回实体，断言其状态字段，
+  这比只验证「方法被调用了」强得多。
 
-**mock 策略**：
-- `PasswordRepository` mock：`coEvery` 伪造所有 DB 操作
-- `SecurityManager` mock：不需要（删除/归档不碰加密）
-- `keepassBridge`：用 `KeePassCompatibilityBridge` 的 mock（需要时 `mockk` 或 spy）
-- 测试用 `runTest`（coroutines-test 已有）+ `StandardTestDispatcher` 替代 `viewModelScope.launch`
+#### 夹具关键约定：`context = null`
+
+`PasswordViewModel` 的多个协作者由 `context` 派生，传 null 后全部退化：
+
+| 字段 | 表达式 | context=null 时 |
+| --- | --- | --- |
+| `settingsManager` | `context?.let { SettingsManager(it) }` | null |
+| `bitwardenRepository` | `context?.let { BitwardenRepository.getInstance(...) }` | null |
+| `keepassBridge` | 需 context + `localKeePassDatabaseDao` 同时非空 | null |
+
+好处：删除路径收敛到纯本地分支，断言目标唯一（只剩 `repository` 交互），
+且完全避开 Android Framework。
+
+#### 三个实测踩坑点（接力 agent 必读）
+
+1. **`viewModelScope` 需要 Main dispatcher**：不装 `MainDispatcherRule` 直接构造 VM 会抛
+   `IllegalStateException: Module with the Main dispatcher had failed to initialize`。
+2. **`init` 块的并发污染是伪风险**：init 起了 3 个 `Dispatchers.IO` 维护任务，
+   但它们都以 `repository.getAllPasswordEntries().first()` 开头 ——
+   relaxed mock 返回的 Flow 不发射任何元素，`first()` 抛 `NoSuchElementException`，
+   被 `runCatchingObserved` 吞掉，**走不到任何写方法**，因此不会干扰 `coVerify` 计数。
+3. **`OperationLogger` 在单测中安全**：其 `log()` 首行判 `database == null` 即早退，
+   而单测从不调 `OperationLogger.init(context)`。配合 `unitTests.returnDefaultValues = true`
+   （本项目已开启），`android.util.Log.*` 也不会抛 "not mocked"。
+
+#### 本夹具覆盖不到的分支（已登记，勿遗漏）
+
+`settingsManager = null` ⇒ `trashSettings = null` ⇒ `trashEnabled` 恒取兜底值 `true`。
+因此**「回收站关闭 → 永久删除」分支无法覆盖**
+（`permanentlyDeleteEntry` / `permanentlyDeleteEntryLocalOnly` / `applyLocalDeleteBatch` 的 else 分支）。
+该分支需等**集群 8 把 `settingsManager` 改为构造注入**后补齐。
 
 ### Step 2：为集群 5c（跨存储迁移）补行为测试（~1 个测试文件）
 
@@ -129,8 +171,55 @@ Step 2 后抽取集群 5c → CI green + 守卫 green → 推 dev → 合并 mai
 
 ---
 
-## 七、确认清单（请用户在开始前回复）
+## 七、确认清单
 
-- [ ] 接受 `testImplementation` 引入 mockk（不进 APK、不影响真机安装包大小）
-- [ ] 接受按「集群 6 → 5c → 7 → 3」的顺序补行为测试（从最紧急的密码条目路径开始）
-- [ ] 接受每步独立 CI + 真机抽查闸门
+- [x] 接受 `testImplementation` 引入 mockk（不进 APK、不影响真机安装包大小）
+- [x] 接受按「集群 6 → 5c → 7 → 3」的顺序补行为测试（从最紧急的密码条目路径开始）
+- [x] 接受每步独立 CI + 真机抽查闸门
+
+> 用户已于 2026-08-02 确认。
+
+---
+
+## 八、附带产出：CI 测试统计 annotation（排错基建）
+
+### 问题
+
+准则 #3 要求「排错要看 GitHub Actions 运行日志」，但本地环境里：
+
+```
+results-receiver.actions.githubusercontent.com  → 198.18.0.58   （保留段）
+productionresultssa9.blob.core.windows.net      → 198.18.0.60   （保留段）
+```
+
+`198.18.0.0/15` 是 RFC 2544 基准测试保留段，说明这两个域名被 **DNS 劫持**。
+后果是 `gh run view --log` 与 `gh run download` **全部返回 EOF**——
+run log 和 artifact 的真实下载源都在 blob 上，只有 `api.github.com` 是通的。
+
+这不是偶发网络抖动，而是稳定复现的环境特性，会持续拖慢每一次排错。
+
+### 解决
+
+在 `main.yml` 的基线闸门里加一行 GitHub Actions workflow command：
+
+```python
+print(
+    f"::notice title=Unit test stats::total={total} failed={failed} "
+    f"baseline={baseline} verdict={verdict}"
+)
+```
+
+`::notice` 会被 Actions 转成 **check-run annotation**，而 annotation 走 checks API
+（`api.github.com`），是本环境唯一稳定可读的回传通道。
+
+### 用法（接力 agent 直接抄）
+
+```bash
+CR=$(gh api repos/Chaniug/bastion/commits/<sha>/check-runs --jq '.check_runs[0].id')
+gh api "repos/Chaniug/bastion/check-runs/$CR/annotations" \
+  --jq '.[] | "\(.annotation_level) | \(.title) | \(.message)"'
+# → notice | Unit test stats | total=559 failed=0 baseline=0 verdict=PASS
+```
+
+失败时基线闸门本就会发 `::error`，同样能通过这个通道读到失败测试名单。
+**不必再尝试下载日志或 artifact。**

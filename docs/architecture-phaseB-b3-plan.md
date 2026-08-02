@@ -4,7 +4,8 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅；`PasswordViewModel` 4162 → 3895 行，累计 -267；剩集群 3/5c/6/7/8）
+> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅；`PasswordViewModel` 4162 → 3895 行，累计 -267；
+> 集群 6 的**行为测试网已建成**（18 个 mockk 测试，见 `phaseB3-mockk-behavior-tests-plan.md`），待抽取；剩集群 3/5c/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -84,10 +85,10 @@
 | 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
 | 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
-| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4 |
-| 6 | 删除/归档编排 | — | — | — | ⬜ |
-| 7 | 主密码/历史 | — | — | — | ⬜ |
-| 8 | 构造注入 | — | — | — | ⬜ |
+| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4；**待补行为测试** |
+| 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671（`total=559 failed=0`） | ✅ 0 失败 | 待抽查 | 🟡 **行为测试网已建成**（18 个），待抽取 |
+| 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
+| 8 | 构造注入 | — | — | — | ⬜ 见 §7.6（只有 3/9 可行） |
 
 ---
 
@@ -185,3 +186,49 @@ bitwardenRepository、`decodePasswordOrNull`、以及附件本地化门禁
 合并任何一方都会静默改变自动填充的候选列表——属于用户明令不得回归的填充路径。
 若要统一，必须**先补自动填充搜索的行为测试**，再以测试为准绳收敛。
 当前已在 `PasswordEntryMatching` 类注释中标注该差异。
+
+### 7.6 纯函数缝已挖尽 + 集群 8 只有 1/3 可行（2026-08-02 复扫结论）
+
+#### （a）纯函数抽取到此为止
+
+集群 5a/5b 后重跑纯度扫描（脚本判据同 §7.4）：177 个顶层函数中「纯」的还剩 31 个、
+共 223 行——但其中绝大多数是 **5a/5b 留下的委托桩**（3 行一个），
+真正未抽的新料仅约 60 行，且彼此毫无内聚
+（`copyPasswordToBastionLocal` / `quickAddPassword` / `buildTotpCopyIdentityKey` / `parseStoredTotpData` …）。
+
+**结论**：强行凑成一个新文件只会造出杂物抽屉，可读性反而更差。
+B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测试网 —— 这正是引入 mockk 的直接动因。
+
+#### （b）集群 8「9 个协作者构造注入」只有 3 个可行
+
+原计划写的是「把 9 个内部 `new` 的协作者改为构造参数注入」，实测**其中 6 个做不到**：
+
+| 协作者 | 初始化表达式依赖 | 可否构造注入 |
+| --- | --- | --- |
+| `PasswordCommandStateFactory` | 无依赖 | ✅ 可 |
+| `PasswordArchiveFilterController` | 无依赖 | ✅ 可 |
+| `BitwardenSyncSnapshotPreviewParser` | 无依赖 | ✅ 可 |
+| `keepassBridge` | `context` + `localKeePassDatabaseDao` + `securityManager` | ❌ |
+| `keepassPassword{Delete,Create,Update}Executor` | `keepassBridge`（实例属性）| ❌ |
+| `defaultPasswordProvider` | `::decodePasswordOrNull`（实例方法引用）| ❌ |
+| `passwordProviderRegistry` | 同上 + `securityManager::encryptData` | ❌ |
+
+**根因**：Kotlin 构造参数的默认值只能引用**前序构造参数**，不能引用实例属性或
+`this` 的方法引用。`private val x = Foo(::instanceMethod)` 这类初始化式一旦挪进构造签名就编译不过。
+
+**可行改法**（若将来要做）：把默认值改为**工厂 lambda 参数**，例如
+`providerRegistryFactory: (PasswordViewModel) -> PasswordProviderRegistry = { ... }`，
+或引入真正的 DI（Hilt）。二者都属于跨越 B.3 范围的架构改动，应单列任务，不要塞进集群 8。
+
+#### （c）测试基建现状（决定后续所有集群的可行性）
+
+| 项 | 现状 |
+| --- | --- |
+| 测试文件总数 | 139 |
+| 其中读源码做**文本断言**的 | 53（`*RegressionGuardTest` 主力） |
+| 引入 mockk 前的 mock 框架 | **无**（无 mockk / Mockito / Robolectric）|
+| `PasswordRepository` | Kotlin **final class**，79 个公开方法（非接口）|
+| `SecurityManager` | Kotlin **final class**（非接口）|
+
+即：在引入 mockk 之前，**物理上写不出**编排类的行为测试——既不能继承造 Fake，也不能 mock。
+这就是集群 3/5c/6/7 全部零覆盖的根因，而非疏忽。
