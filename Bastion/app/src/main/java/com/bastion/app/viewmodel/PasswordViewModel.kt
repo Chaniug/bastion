@@ -105,23 +105,24 @@ class PasswordViewModel(
     private val bitwardenSnapshotPreviewParser = BitwardenSyncSnapshotPreviewParser()
 
     companion object {
-        private const val SAVED_FILTER_ALL = "all"
-        private const val SAVED_FILTER_ARCHIVED = "archived"
-        private const val SAVED_FILTER_LOCAL = "local"
-        private const val SAVED_FILTER_LOCAL_ONLY = "local_only"
-        private const val SAVED_FILTER_STARRED = "starred"
-        private const val SAVED_FILTER_UNCATEGORIZED = "uncategorized"
-        private const val SAVED_FILTER_LOCAL_STARRED = "local_starred"
-        private const val SAVED_FILTER_LOCAL_UNCATEGORIZED = "local_uncategorized"
-        private const val SAVED_FILTER_CUSTOM = "custom"
-        private const val SAVED_FILTER_KEEPASS_DATABASE = "keepass_database"
-        private const val SAVED_FILTER_KEEPASS_GROUP = "keepass_group"
-        private const val SAVED_FILTER_KEEPASS_DATABASE_STARRED = "keepass_database_starred"
-        private const val SAVED_FILTER_KEEPASS_DATABASE_UNCATEGORIZED = "keepass_database_uncategorized"
-        private const val SAVED_FILTER_BITWARDEN_VAULT = "bitwarden_vault"
-        private const val SAVED_FILTER_BITWARDEN_FOLDER = "bitwarden_folder"
-        private const val SAVED_FILTER_BITWARDEN_VAULT_STARRED = "bitwarden_vault_starred"
-        private const val SAVED_FILTER_BITWARDEN_VAULT_UNCATEGORIZED = "bitwarden_vault_uncategorized"
+        // 过滤器持久化类型字面量的唯一真源在 CategoryFilterCodec（B.3 集群 4）。
+        // 此处保留同名别名，使 persistCategoryFilter 的分支文本与调用点保持不变。
+        private const val SAVED_FILTER_ALL = CategoryFilterCodec.SAVED_FILTER_ALL
+        private const val SAVED_FILTER_LOCAL = CategoryFilterCodec.SAVED_FILTER_LOCAL
+        private const val SAVED_FILTER_LOCAL_ONLY = CategoryFilterCodec.SAVED_FILTER_LOCAL_ONLY
+        private const val SAVED_FILTER_STARRED = CategoryFilterCodec.SAVED_FILTER_STARRED
+        private const val SAVED_FILTER_UNCATEGORIZED = CategoryFilterCodec.SAVED_FILTER_UNCATEGORIZED
+        private const val SAVED_FILTER_LOCAL_STARRED = CategoryFilterCodec.SAVED_FILTER_LOCAL_STARRED
+        private const val SAVED_FILTER_LOCAL_UNCATEGORIZED = CategoryFilterCodec.SAVED_FILTER_LOCAL_UNCATEGORIZED
+        private const val SAVED_FILTER_CUSTOM = CategoryFilterCodec.SAVED_FILTER_CUSTOM
+        private const val SAVED_FILTER_KEEPASS_DATABASE = CategoryFilterCodec.SAVED_FILTER_KEEPASS_DATABASE
+        private const val SAVED_FILTER_KEEPASS_GROUP = CategoryFilterCodec.SAVED_FILTER_KEEPASS_GROUP
+        private const val SAVED_FILTER_KEEPASS_DATABASE_STARRED = CategoryFilterCodec.SAVED_FILTER_KEEPASS_DATABASE_STARRED
+        private const val SAVED_FILTER_KEEPASS_DATABASE_UNCATEGORIZED = CategoryFilterCodec.SAVED_FILTER_KEEPASS_DATABASE_UNCATEGORIZED
+        private const val SAVED_FILTER_BITWARDEN_VAULT = CategoryFilterCodec.SAVED_FILTER_BITWARDEN_VAULT
+        private const val SAVED_FILTER_BITWARDEN_FOLDER = CategoryFilterCodec.SAVED_FILTER_BITWARDEN_FOLDER
+        private const val SAVED_FILTER_BITWARDEN_VAULT_STARRED = CategoryFilterCodec.SAVED_FILTER_BITWARDEN_VAULT_STARRED
+        private const val SAVED_FILTER_BITWARDEN_VAULT_UNCATEGORIZED = CategoryFilterCodec.SAVED_FILTER_BITWARDEN_VAULT_UNCATEGORIZED
         private const val MONICA_MANUAL_STACK_GROUP_FIELD_TITLE = "__bastion_manual_stack_group"
         private const val MONICA_NO_STACK_FIELD_TITLE = "__bastion_no_stack"
         private const val MONICA_KEEPASS_ARCHIVE_ROOT_GROUP_NAME = ".Bastion"
@@ -1766,58 +1767,7 @@ class PasswordViewModel(
     }
 
     private fun decodeSavedCategoryFilter(settings: com.bastion.app.data.AppSettings): CategoryFilter {
-        val type = settings.lastPasswordCategoryFilterType.lowercase(Locale.ROOT)
-        return when (type) {
-            SAVED_FILTER_ALL -> CategoryFilter.All
-            SAVED_FILTER_ARCHIVED -> CategoryFilter.Archived
-            SAVED_FILTER_LOCAL -> CategoryFilter.Local
-            SAVED_FILTER_LOCAL_ONLY -> CategoryFilter.LocalOnly
-            SAVED_FILTER_STARRED -> CategoryFilter.Starred
-            SAVED_FILTER_UNCATEGORIZED -> CategoryFilter.Uncategorized
-            SAVED_FILTER_LOCAL_STARRED -> CategoryFilter.LocalStarred
-            SAVED_FILTER_LOCAL_UNCATEGORIZED -> CategoryFilter.LocalUncategorized
-            SAVED_FILTER_CUSTOM -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.Custom(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_KEEPASS_DATABASE -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.KeePassDatabase(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_KEEPASS_DATABASE_STARRED -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.KeePassDatabaseStarred(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_KEEPASS_DATABASE_UNCATEGORIZED -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.KeePassDatabaseUncategorized(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_KEEPASS_GROUP -> {
-                val databaseId = settings.lastPasswordCategoryFilterPrimaryId
-                val groupPath = settings.lastPasswordCategoryFilterText
-                if (databaseId != null && !groupPath.isNullOrBlank()) {
-                    CategoryFilter.KeePassGroupFilter(databaseId, groupPath)
-                } else {
-                    CategoryFilter.All
-                }
-            }
-            SAVED_FILTER_BITWARDEN_VAULT -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.BitwardenVault(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_BITWARDEN_VAULT_STARRED -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.BitwardenVaultStarred(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_BITWARDEN_VAULT_UNCATEGORIZED -> settings.lastPasswordCategoryFilterPrimaryId
-                ?.let { CategoryFilter.BitwardenVaultUncategorized(it) }
-                ?: CategoryFilter.All
-            SAVED_FILTER_BITWARDEN_FOLDER -> {
-                val vaultId = settings.lastPasswordCategoryFilterSecondaryId
-                    ?: settings.lastPasswordCategoryFilterPrimaryId
-                val folderId = settings.lastPasswordCategoryFilterText
-                if (vaultId != null && !folderId.isNullOrBlank()) {
-                    CategoryFilter.BitwardenFolderFilter(folderId, vaultId)
-                } else {
-                    CategoryFilter.All
-                }
-            }
-            else -> CategoryFilter.All
-        }
+        return CategoryFilterCodec.decode(settings)
     }
 
     private fun persistCategoryFilter(filter: CategoryFilter) {
