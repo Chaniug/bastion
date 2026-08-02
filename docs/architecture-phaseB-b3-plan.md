@@ -260,3 +260,36 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 **遗留**：`context = null` 夹具只能覆盖本地（PROVIDER_LOCAL）分支，KeePass/Bitwarden
 路径的行为测试仍缺 —— 与集群 3/8 的解耦（factory lambda 或 Hilt）绑定，
 需真机专项抽查（荣耀 / Android 17，KeePass 库条目归档/取消归档）。
+
+### 7.8 主页面滚动卡顿修复：方案 A（TOTP 滚动降频，2026-08-02）
+
+**用户反馈**：Bitwarden 库同步后，主页面下划滚动密码条目卡顿、不跟手。
+
+**根因**（全链路排查结论）：
+
+| 环节 | 位置 | 事实 |
+| --- | --- | --- |
+| 全局 ticker | `ui/totp/TotpTicker.kt:16` | 平滑模式**每 50ms** 向全局 `StateFlow` emit |
+| 卡片订阅 | `ui/password/PasswordCardDisplayContent.kt:91` | 每个可见 TOTP 卡每 50ms 重组（code+进度全重算）|
+| 默认开关 | `data/AppSettings.kt:514/540` | `validatorSmoothProgress=true`、`passwordCardShowAuthenticator=true` 默认开 |
+| Bitwarden 落库 | `bitwarden/service/CipherSyncProcessor.kt:350` | 同步时条目带 `login.totp` 即加密写入 `authenticatorKey` → Bitwarden 库条目普遍带 TOTP |
+
+即：一屏常驻多张验证码卡片，每 50ms 全部重组 → 滚动时主线程被重组抢占 → 掉帧。
+
+**方案 A 修复**（用户确认；纯 UI，未触碰业务/守卫，3 文件 +17/-6）：
+
+1. `PasswordListContent.kt`：`val isListScrolling by remember { derivedStateOf { listState.isScrollInProgress } }`
+   —— `isScrollInProgress` 只在滚动开始/结束翻转，derivedStateOf 保证不会每帧触发重组。
+2. `PasswordListRows.kt`：`passwordPageListRows` 新增 `isListScrolling` 参数，三处
+   `smoothAuthenticatorProgress = ... && !isListScrolling` —— 滚动中验证码行从 50ms
+   平滑刷新**降为秒级刷新**（复用既有 `secondTicker` 路径，`smooth=false` 本就是设置里的
+   既有行为），松手恢复平滑进度条。
+3. `StackedPasswordGroup.kt`：`isMergedPasswordCard` 的 `getPasswordInfoKey` 组内计算
+   用 `remember(passwords)` 缓存，避免每帧 O(n) 字符串拼接（Bitwarden 条目多时明显）。
+
+**设计要点**：所有 TOTP 卡渲染入口（分组堆叠 / 手动堆叠 / supplementary 聚合卡）都汇聚到
+`PasswordListRows.kt` 三处，一处降频全链路生效；`rememberPasswordAuthenticatorDisplayState`
+的 `smoothProgress=false` 分支是既有代码（设置里关闭平滑即走此路径），零新增刷新机制。
+
+**验证**：CI `failed=0` + 7 守卫绿（守卫不引用这些文件）；需真机（荣耀 / Android 17）
+验证 Bitwarden 库滚动流畅度，以及 TOTP 卡在滚动中 code 秒级刷新、松手恢复平滑进度条。
