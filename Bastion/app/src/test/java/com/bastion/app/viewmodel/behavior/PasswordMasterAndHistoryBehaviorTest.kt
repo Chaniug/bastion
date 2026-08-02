@@ -1,13 +1,17 @@
 package com.bastion.app.viewmodel.behavior
 
+import com.bastion.app.bitwarden.service.BitwardenSyncSnapshotPreviewParser
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.PasswordHistoryEntry
 import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.viewmodel.PasswordHistoryRecorder
 import com.bastion.app.viewmodel.PasswordViewModel
+import io.mockk.capture
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -240,5 +244,95 @@ class PasswordMasterAndHistoryBehaviorTest {
 
         assertEquals("只保留 SYNC_RESPONSE 记录", 1, items.size)
         assertEquals("保留记录 id", 1L, items[0].id)
+    }
+
+    // ---------------------------------------------------------------------
+    // saveSecurityQuestions：密保问题落库（B.3 集群 7 TODO 补全）
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `saveSecurityQuestions stores two questions via security manager`() = runTest {
+        val repository = mockk<PasswordRepository>(relaxed = true)
+        val securityManager = mockk<SecurityManager>(relaxed = true)
+        val viewModel = newViewModel(repository, securityManager)
+
+        viewModel.saveSecurityQuestions(
+            listOf(
+                "What was the name of your first pet?" to "Tommy",
+                "In what city were you born?" to "Shanghai"
+            )
+        )
+
+        val question1Id = slot<Int>()
+        val answer1 = slot<String>()
+        val question2Id = slot<Int>()
+        val answer2 = slot<String>()
+        coVerify(exactly = 1) {
+            securityManager.setSecurityQuestions(
+                capture(question1Id),
+                capture(answer1),
+                capture(question2Id),
+                capture(answer2),
+                any(),
+                any()
+            )
+        }
+        assertEquals("第一问解析为预置问题 id", 1, question1Id.captured)
+        assertEquals("答案应小写化", "tommy", answer1.captured)
+        assertEquals("第二问解析为预置问题 id", 3, question2Id.captured)
+        assertEquals("答案应小写化", "shanghai", answer2.captured)
+    }
+
+    // ---------------------------------------------------------------------
+    // PasswordHistoryRecorder：savePasswordHistorySnapshot（去重 / 加密）
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `history snapshot skips insert when latest history already matches`() = runTest {
+        val repository = mockk<PasswordRepository>(relaxed = true)
+        val securityManager = mockk<SecurityManager>(relaxed = true)
+        coEvery { repository.getPasswordHistoryByEntryIdSync(7L) } returns listOf(
+            historyEntry(id = 1L, entryId = 7L, password = "enc-latest")
+        )
+        val recorder = PasswordHistoryRecorder(
+            repository = repository,
+            securityManager = securityManager,
+            bitwardenRepository = null,
+            bitwardenSnapshotPreviewParser = BitwardenSyncSnapshotPreviewParser(),
+            decryptForDisplay = { input -> if (input == "enc-latest") "same-password" else input },
+            decodePasswordOrNull = { null }
+        )
+
+        recorder.savePasswordHistorySnapshot(entryId = 7L, plainPassword = "same-password")
+
+        // 最新历史解密后与当前明文相同 → 去重跳过，不插入、不 trim。
+        coVerify(exactly = 0) { repository.insertPasswordHistory(any()) }
+        coVerify(exactly = 0) { repository.trimPasswordHistory(any(), any()) }
+    }
+
+    @Test
+    fun `history snapshot inserts encrypted entry when password changed`() = runTest {
+        val repository = mockk<PasswordRepository>(relaxed = true)
+        val securityManager = mockk<SecurityManager>(relaxed = true)
+        coEvery { repository.getPasswordHistoryByEntryIdSync(7L) } returns listOf(
+            historyEntry(id = 1L, entryId = 7L, password = "enc-latest")
+        )
+        coEvery { securityManager.encryptDataLegacyCompat("new-password") } returns "enc-new"
+        val recorder = PasswordHistoryRecorder(
+            repository = repository,
+            securityManager = securityManager,
+            bitwardenRepository = null,
+            bitwardenSnapshotPreviewParser = BitwardenSyncSnapshotPreviewParser(),
+            decryptForDisplay = { input -> if (input == "enc-latest") "old-password" else input },
+            decodePasswordOrNull = { null }
+        )
+
+        recorder.savePasswordHistorySnapshot(entryId = 7L, plainPassword = "new-password")
+
+        val written = slot<PasswordHistoryEntry>()
+        coVerify(exactly = 1) { repository.insertPasswordHistory(capture(written)) }
+        assertEquals("加密写入新历史条目", "enc-new", written.captured.password)
+        assertEquals("entryId 透传", 7L, written.captured.entryId)
+        coVerify(exactly = 1) { repository.trimPasswordHistory(7L, 10) }
     }
 }

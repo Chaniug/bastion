@@ -123,7 +123,6 @@ class PasswordViewModel(
         private const val MONICA_NO_STACK_FIELD_TITLE = "__bastion_no_stack"
         private const val MONICA_KEEPASS_ARCHIVE_ROOT_GROUP_NAME = ".Bastion"
         private const val MONICA_KEEPASS_ARCHIVE_GROUP_NAME = "Archive"
-        private const val PASSWORD_HISTORY_LIMIT = 10
         private const val KEEPASS_BATCH_DELETE_CHUNK_SIZE = 40
     }
 
@@ -171,6 +170,21 @@ class PasswordViewModel(
     private val defaultPasswordProvider = DefaultPasswordProvider(
         decodePassword = ::decodePasswordOrNull,
         encryptPassword = securityManager::encryptData
+    )
+    // 主密码 / 历史编排（B.3 集群 7）。依赖 VM 内被 10+ 处复用的带解密副作用
+    // 私有逻辑（decryptForDisplay / decodePasswordOrNull），以函数引用注入，实现留在本类。
+    private val passwordHistoryRecorder = PasswordHistoryRecorder(
+        repository = repository,
+        securityManager = securityManager,
+        bitwardenRepository = bitwardenRepository,
+        bitwardenSnapshotPreviewParser = bitwardenSnapshotPreviewParser,
+        decryptForDisplay = ::decryptForDisplay,
+        decodePasswordOrNull = ::decodePasswordOrNull
+    )
+    private val masterPasswordOps = MasterPasswordOps(
+        repository = repository,
+        securityManager = securityManager,
+        decryptForDisplay = ::decryptForDisplay
     )
     private val passwordCommandStateFactory = PasswordCommandStateFactory()
     private val passwordProviderRegistry = PasswordProviderRegistry(
@@ -1045,17 +1059,6 @@ class PasswordViewModel(
             current = decrypted
         }
         return current
-    }
-
-    private suspend fun decodeHistoryPasswordForDisplay(entry: PasswordHistoryEntry): String {
-        val decoded = decryptForDisplay(entry.password)
-        if (decoded.isBlank()) return ""
-
-        val stableEncoded = securityManager.encryptDataLegacyCompat(decoded)
-        if (stableEncoded != entry.password) {
-            repository.updatePasswordHistoryPassword(entry.id, stableEncoded)
-        }
-        return decoded
     }
 
     private fun syncKeePassDatabase(databaseId: Long, forceRefresh: Boolean = false) {
@@ -2163,20 +2166,7 @@ class PasswordViewModel(
     }
 
     private suspend fun savePasswordHistorySnapshot(entryId: Long, plainPassword: String) {
-        if (plainPassword.isBlank()) return
-
-        val latestHistory = repository.getPasswordHistoryByEntryIdSync(entryId).firstOrNull()
-        val latestPassword = latestHistory?.let { decryptForDisplay(it.password) }
-        if (latestPassword == plainPassword) return
-
-        repository.insertPasswordHistory(
-            PasswordHistoryEntry(
-                entryId = entryId,
-                password = securityManager.encryptDataLegacyCompat(plainPassword),
-                lastUsedAt = Date()
-            )
-        )
-        repository.trimPasswordHistory(entryId, PASSWORD_HISTORY_LIMIT)
+        passwordHistoryRecorder.savePasswordHistorySnapshot(entryId, plainPassword)
     }
     
     fun deletePasswordEntry(entry: PasswordEntry) {
@@ -2654,18 +2644,7 @@ class PasswordViewModel(
     }
 
     fun getPasswordHistoryFlow(passwordId: Long): Flow<List<PasswordHistoryEntry>> {
-        return repository.getPasswordHistoryByEntryId(passwordId)
-            .map { entries ->
-                entries.mapNotNull { entry ->
-                    val decoded = decodeHistoryPasswordForDisplay(entry)
-                    if (decoded.isBlank()) {
-                        null
-                    } else {
-                        entry.copy(password = decoded)
-                    }
-                }
-            }
-            .flowOn(Dispatchers.IO)
+        return passwordHistoryRecorder.getPasswordHistoryFlow(passwordId)
     }
 
     /**
@@ -2684,29 +2663,7 @@ class PasswordViewModel(
         vaultId: Long,
         cipherId: String
     ): Flow<List<BitwardenSyncRawHistoryItem>> {
-        if (cipherId.isBlank()) return flowOf(emptyList())
-        return repository.getBitwardenSyncRawRecords(vaultId, cipherId)
-            .map { entries ->
-                entries.map { entry ->
-                    val payload = decodePasswordOrNull(entry.payloadCipherText)
-                    BitwardenSyncRawHistoryItem(
-                        id = entry.id,
-                        operation = entry.operation,
-                        endpoint = entry.endpoint,
-                        payloadSource = entry.payloadSource,
-                        payloadDigest = entry.payloadDigest,
-                        responseCode = entry.responseCode,
-                        success = entry.success,
-                        capturedAt = entry.capturedAt,
-                        payload = payload,
-                        preview = bitwardenSnapshotPreviewParser.parse(
-                            payload = payload,
-                            symmetricKey = bitwardenRepository?.getCachedSymmetricKey(vaultId)
-                        )
-                    )
-                }.filter { it.payloadSource == "SYNC_RESPONSE" }
-            }
-            .flowOn(Dispatchers.IO)
+        return passwordHistoryRecorder.getBitwardenSyncRawHistoryFlow(vaultId, cipherId)
     }
 
     fun deletePasswordHistoryEntry(historyId: Long) {
@@ -2945,51 +2902,26 @@ class PasswordViewModel(
     /**
      * Change master password
      * 修改主密码并重新加密所有数据
+     *
+     * 实现已抽取到 [MasterPasswordOps]（B.3 集群 7）。变更成功后恢复认证态。
      */
     fun changePassword(currentPassword: String, newPassword: String) {
         viewModelScope.launch {
-            // 1. 验证当前密码
-            if (!securityManager.verifyMasterPassword(currentPassword)) {
-                // TODO: 通知UI密码错误
-                return@launch
+            if (masterPasswordOps.changePassword(currentPassword, newPassword)) {
+                _isAuthenticated.value = true
             }
-            
-            // 2. 获取所有加密数据
-            val allPasswords = repository.getAllPasswordEntries().first()
-            
-            // 3. 使用当前密码解密所有数据
-            val decryptedPasswords = allPasswords.map { entry ->
-                entry.copy(password = decryptForDisplay(entry.password))
-            }
-            
-            // 4. 设置新密码
-            securityManager.setMasterPassword(newPassword)
-            
-            // 5. 使用新密码重新加密所有数据
-            decryptedPasswords.forEach { entry ->
-                repository.updatePasswordEntry(entry.copy(
-                    password = securityManager.encryptData(entry.password),
-                    updatedAt = Date()
-                ))
-            }
-            
-            // 6. 重新认证
-            _isAuthenticated.value = true
         }
     }
     
     /**
      * Save security questions
      * 保存密保问题
+     *
+     * 实现已抽取到 [MasterPasswordOps]（B.3 集群 7，原 TODO 已补全落库）。
      */
     fun saveSecurityQuestions(questions: List<Pair<String, String>>) {
         viewModelScope.launch {
-            // TODO: 保存到DataStore或数据库
-            // 答案应该加密存储
-            questions.forEach { (question, answer) ->
-                val encryptedAnswer = securityManager.encryptData(answer.lowercase())
-                // 存储 question 和 encryptedAnswer
-            }
+            masterPasswordOps.saveSecurityQuestions(questions)
         }
     }
 
