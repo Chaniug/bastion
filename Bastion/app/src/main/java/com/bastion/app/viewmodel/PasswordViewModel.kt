@@ -246,6 +246,17 @@ class PasswordViewModel(
     val categoryFilter = _categoryFilter.asStateFlow()
     private val archiveFilterController = PasswordArchiveFilterController()
 
+    // 归档/取消归档编排（B.3 集群 6）。KeePass 侧的三个操作以函数引用注入，
+    // 实现仍留在本类——它们依赖 keepassBridge 与解密副作用，属集群 3 范围。
+    private val archiveOrchestrator = PasswordArchiveOrchestrator(
+        repository = repository,
+        stateFactory = passwordCommandStateFactory,
+        commandPolicyOf = passwordProviderRegistry::commandPolicy,
+        ensureArchiveGroupPath = ::ensureKeePassArchiveGroupPath,
+        resolveRestorePathOrRoot = ::resolveKeePassRestorePathOrRoot,
+        moveEntryGroupPath = ::moveKeePassEntryGroupPath
+    )
+
     private val _expandedGroups = MutableStateFlow<Set<String>>(emptySet())
     val expandedGroups: StateFlow<Set<String>> = _expandedGroups.asStateFlow()
 
@@ -2660,217 +2671,11 @@ class PasswordViewModel(
     }
 
     private suspend fun archivePasswordsInternal(ids: List<Long>) {
-        if (ids.isEmpty()) return
-        val entries = repository.getPasswordsByIds(ids)
-            .filter { !it.isDeleted }
-        entries.forEach { entry ->
-            archiveSingleEntry(entry)
-        }
+        archiveOrchestrator.archivePasswordsInternal(ids)
     }
 
     private suspend fun unarchivePasswordsInternal(ids: List<Long>) {
-        if (ids.isEmpty()) return
-        val entries = repository.getPasswordsByIds(ids)
-            .filter { !it.isDeleted }
-        entries.forEach { entry ->
-            unarchiveSingleEntry(entry)
-        }
-    }
-
-    private suspend fun archiveSingleEntry(entry: PasswordEntry) {
-        if (entry.isArchived || entry.isDeleted) return
-
-        val now = Date()
-        val commandPolicy = passwordProviderRegistry.commandPolicy(entry)
-        val providerType = commandPolicy.archiveProviderType
-        val keepassDatabaseId = entry.keepassDatabaseId
-
-        var archivedEntry = passwordCommandStateFactory.createArchivedEntry(
-            entry = entry,
-            now = now,
-            commandPolicy = commandPolicy
-        )
-        repository.updatePasswordEntry(archivedEntry)
-
-        val archiveResult = archiveEntryByProvider(
-            entry = archivedEntry,
-            keepassDatabaseId = keepassDatabaseId,
-            providerType = providerType
-        )
-        archivedEntry = archiveResult.entry
-
-        repository.upsertArchiveSyncMeta(buildArchiveSyncMeta(
-            entry = entry,
-            providerType = providerType,
-            keepassDatabaseId = keepassDatabaseId,
-            syncStatus = archiveResult.syncStatus,
-            lastError = archiveResult.lastError
-        ))
-    }
-
-    private suspend fun unarchiveSingleEntry(entry: PasswordEntry) {
-        if (!entry.isArchived || entry.isDeleted) return
-
-        val now = Date()
-        val archiveMeta = repository.getArchiveSyncMeta(entry.id)
-        val commandPolicy = passwordProviderRegistry.commandPolicy(entry)
-        val providerType = archiveMeta?.providerType ?: commandPolicy.archiveProviderType
-        val keepassDatabaseId = entry.keepassDatabaseId
-
-        var unarchivedEntry = passwordCommandStateFactory.createUnarchivedEntry(
-            entry = entry,
-            now = now,
-            commandPolicy = commandPolicy
-        )
-        repository.updatePasswordEntry(unarchivedEntry)
-
-        val unarchiveResult = unarchiveEntryByProvider(
-            entry = unarchivedEntry,
-            archiveMeta = archiveMeta,
-            keepassDatabaseId = keepassDatabaseId,
-            providerType = providerType
-        )
-        unarchivedEntry = unarchiveResult.entry
-
-        repository.upsertArchiveSyncMeta(buildUnarchiveSyncMeta(
-            entry = entry,
-            archiveMeta = archiveMeta,
-            providerType = providerType,
-            keepassDatabaseId = keepassDatabaseId,
-            syncStatus = unarchiveResult.syncStatus,
-            lastError = unarchiveResult.lastError
-        ))
-    }
-
-    private data class ArchiveOperationResult(
-        val entry: PasswordEntry,
-        val syncStatus: String,
-        val lastError: String?
-    )
-
-    private suspend fun archiveEntryByProvider(
-        entry: PasswordEntry,
-        keepassDatabaseId: Long?,
-        providerType: String
-    ): ArchiveOperationResult {
-        if (providerType != PasswordArchiveSyncMeta.PROVIDER_KEEPASS_GROUP) {
-            return ArchiveOperationResult(
-                entry = entry,
-                syncStatus = defaultArchiveSyncStatus(providerType),
-                lastError = null
-            )
-        }
-
-        val targetArchivePath = ensureKeePassArchiveGroupPath(keepassDatabaseId)
-        if (targetArchivePath == null) {
-            return ArchiveOperationResult(
-                entry = entry,
-                syncStatus = PasswordArchiveSyncMeta.STATUS_FAILED,
-                lastError = "KeePass archive group unavailable"
-            )
-        }
-        val moveResult = moveKeePassEntryGroupPath(entry = entry, targetGroupPath = targetArchivePath)
-        if (moveResult.isFailure) {
-            return ArchiveOperationResult(
-                entry = entry,
-                syncStatus = PasswordArchiveSyncMeta.STATUS_FAILED,
-                lastError = moveResult.exceptionOrNull()?.message ?: "KeePass archive move failed"
-            )
-        }
-
-        val archivedEntry = entry.copy(keepassGroupPath = targetArchivePath, updatedAt = Date())
-        repository.updatePasswordEntry(archivedEntry)
-        return ArchiveOperationResult(
-            entry = archivedEntry,
-            syncStatus = PasswordArchiveSyncMeta.STATUS_SYNCED,
-            lastError = null
-        )
-    }
-
-    private suspend fun unarchiveEntryByProvider(
-        entry: PasswordEntry,
-        archiveMeta: PasswordArchiveSyncMeta?,
-        keepassDatabaseId: Long?,
-        providerType: String
-    ): ArchiveOperationResult {
-        if (providerType != PasswordArchiveSyncMeta.PROVIDER_KEEPASS_GROUP) {
-            return ArchiveOperationResult(
-                entry = entry,
-                syncStatus = defaultArchiveSyncStatus(providerType),
-                lastError = null
-            )
-        }
-
-        val preferredPath = archiveMeta?.originKeePassGroupPath
-        val restorePath = resolveKeePassRestorePathOrRoot(keepassDatabaseId, preferredPath)
-        val moveResult = moveKeePassEntryGroupPath(entry = entry, targetGroupPath = restorePath)
-        if (moveResult.isFailure) {
-            return ArchiveOperationResult(
-                entry = entry,
-                syncStatus = PasswordArchiveSyncMeta.STATUS_FAILED,
-                lastError = moveResult.exceptionOrNull()?.message ?: "KeePass unarchive move failed"
-            )
-        }
-
-        val restoredEntry = entry.copy(keepassGroupPath = restorePath, updatedAt = Date())
-        repository.updatePasswordEntry(restoredEntry)
-        val lastError = if (preferredPath != null && preferredPath != restorePath) {
-            "Origin group missing, restored to root"
-        } else {
-            null
-        }
-        return ArchiveOperationResult(
-            entry = restoredEntry,
-            syncStatus = PasswordArchiveSyncMeta.STATUS_SYNCED,
-            lastError = lastError
-        )
-    }
-
-    private fun defaultArchiveSyncStatus(providerType: String): String {
-        return if (providerType == PasswordArchiveSyncMeta.PROVIDER_LOCAL) {
-            PasswordArchiveSyncMeta.STATUS_SYNCED
-        } else {
-            PasswordArchiveSyncMeta.STATUS_PENDING
-        }
-    }
-
-    private fun buildArchiveSyncMeta(
-        entry: PasswordEntry,
-        providerType: String,
-        keepassDatabaseId: Long?,
-        syncStatus: String,
-        lastError: String?
-    ): PasswordArchiveSyncMeta {
-        return PasswordArchiveSyncMeta(
-            entryId = entry.id,
-            providerType = providerType,
-            originKeePassDatabaseId = keepassDatabaseId,
-            originKeePassGroupPath = entry.keepassGroupPath,
-            originBitwardenFolderId = entry.bitwardenFolderId,
-            syncStatus = syncStatus,
-            lastError = lastError,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-
-    private fun buildUnarchiveSyncMeta(
-        entry: PasswordEntry,
-        archiveMeta: PasswordArchiveSyncMeta?,
-        providerType: String,
-        keepassDatabaseId: Long?,
-        syncStatus: String,
-        lastError: String?
-    ): PasswordArchiveSyncMeta {
-        return PasswordArchiveSyncMeta(
-            entryId = entry.id,
-            providerType = providerType,
-            originKeePassDatabaseId = archiveMeta?.originKeePassDatabaseId ?: keepassDatabaseId,
-            originKeePassGroupPath = archiveMeta?.originKeePassGroupPath,
-            originBitwardenFolderId = archiveMeta?.originBitwardenFolderId ?: entry.bitwardenFolderId,
-            syncStatus = syncStatus,
-            lastError = lastError,
-            updatedAt = System.currentTimeMillis()
-        )
+        archiveOrchestrator.unarchivePasswordsInternal(ids)
     }
 
     private suspend fun moveKeePassEntryGroupPath(
