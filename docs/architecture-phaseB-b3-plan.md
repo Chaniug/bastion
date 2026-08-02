@@ -4,7 +4,7 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ 完成，CI 绿 `30725125903`+`30725511081`；集群 2（Bitwarden 离线缓存）准备中）
+> **状态**：🟡 执行中（集群 1 ✅ / 集群 2 ✅ / 集群 4 ✅；`PasswordViewModel` 4162 → 4044 行；剩集群 3/5/6/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -79,10 +79,73 @@
 | 集群 | 内容 | CI | 守卫(OTP/密码) | 真机 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 顶层类型搬迁（CategoryFilter+PasswordArchiveFilterController→CategoryFilter.kt；BitwardenRecoveryResult+BitwardenSyncRawHistoryItem→BitwardenSyncTypes.kt） | ✅ 30725125903+30725511081 | ✅ 0 失败 | — | ✅ 完成 |
-| 2 | Bitwarden 离线缓存 | — | — | — | ⬜ |
-| 3 | KeePass 同步协调器 | — | — | — | ⬜ |
-| 4 | 类别过滤状态 | — | — | — | ⬜ |
+| 2 | Bitwarden 离线缓存 → `BitwardenOfflineSecretCacheFacade` | ✅ 30726186131 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 3 | KeePass 同步协调器 | — | — | — | ⬜ **延后**（见 §七） |
+| 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
 | 5 | 跨存储迁移 | — | — | — | ⬜ |
 | 6 | 删除/归档编排 | — | — | — | ⬜ |
 | 7 | 主密码/历史 | — | — | — | ⬜ |
 | 8 | 构造注入 | — | — | — | ⬜ |
+
+---
+
+## 七、执行中的顺序调整与踩坑记录（接力 agent 必读）
+
+### 7.1 集群 3（KeePass 同步协调器）为何延后
+
+原计划顺序是 1→2→3，实际执行时把 **集群 4 提前到集群 3 之前**，理由：
+
+- `PasswordViewModel.kt` 中 KeePass 相关引用达 **359 处**，远超集群 2（8 处）与集群 4（33 处）。
+- 集群 3 范围内含 **TOTP 投影**（`KeePassTotpProjectionMatcher` 相关路径），
+  直接触碰用户明令不得回归的验证码链路。
+- 当前守卫对 KeePass↔TOTP 投影的覆盖是「源码文本断言」而非行为测试，
+  重构过程中**守卫无法真正兜住语义回归**，只能兜住文本不变。
+
+**结论**：集群 3 应在两个前置条件满足后再动 ——
+（a）为 TOTP 投影补一组**行为测试**（Tier A），不再只依赖文本断言；
+（b）用户完成一次针对 KeePass 库 + TOTP 的真机专项抽查，确立可信基线。
+在此之前优先推进低风险集群（5/6/7 中的无状态部分）。
+
+### 7.2 守卫陷阱：`substringAfter` 抽取型断言（集群 4 实测）
+
+`PasswordArchiveReturnFilterGuardTest` 的断言方式是：
+
+```kotlin
+val persistence = source.substringAfter("private fun persistCategoryFilter(")
+val archivedBranch = persistence.substringAfter("is CategoryFilter.Archived ->")
+    .substringBefore("is CategoryFilter.Local ->")
+assertFalse(archivedBranch.contains("updateLastPasswordCategoryFilter"))
+```
+
+**陷阱**：Kotlin 的 `substringAfter` 在**找不到分隔符时返回原字符串**（而非空串）。
+因此若把 `persistCategoryFilter` 整个搬出 `PasswordViewModel.kt`，
+`persistence` 会退化为**整个源文件**，`archivedBranch` 随之覆盖大段无关代码，
+断言会以一种**看似合理实则失真**的方式变红或变绿——两种都是错误信号。
+
+**处置**（本次采用）：集群 4 只搬 **decode 侧**（纯函数、无锚点依赖），
+`persistCategoryFilter` **刻意留在 VM 内**保住锚点；17 个 `SAVED_FILTER_*`
+字面量的唯一真源移入 `CategoryFilterCodec`，VM 内保留同名 `const` 别名，
+使 persist 分支的**文本形态完全不变**。
+
+**通用规则**：搬迁任何函数前，先 `grep -rn "substringAfter(\"...fun 目标函数" app/src/test`，
+命中即说明该函数是**守卫锚点**，只能原地保留或先将守卫升级为 Tier A 行为测试。
+
+### 7.3 推送网络：GitHub 直连 IP 会**逐 IP、逐端点**失效
+
+实测现象：同一时刻 `140.82.113.3` 对 `https://github.com/...`（网页/克隆）返回 **200**，
+但对 `.../info/refs?service=git-receive-pack`（**推送**端点）返回 **000**（连接被中断）。
+即「能拉不能推」，仅测 curl 首页会误判为网络正常。
+
+**正确探测方式**（判定某 IP 是否可推送）：
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" --resolve github.com:443:<IP> \
+  -u "x-access-token:$(gh auth token)" \
+  "https://github.com/Chaniug/bastion.git/info/refs?service=git-receive-pack"
+# 200 = 可推送；000 = 该 IP 推送端点不通，换 IP
+```
+
+**候选 IP**：`140.82.112.3` / `140.82.113.3` / `140.82.114.3` / `140.82.116.3` / `20.205.243.166`
+（`api.github.com` 用 `140.82.113.5`）。修改 `/etc/hosts` 后**必须同步写入 `~/.user_hosts`**，
+否则工作区重启会被还原。本次多轮推送中可用 IP 从 `.113.3` 漂移到 `.114.3`，
+建议接力 agent 直接写一个「探测→切 hosts→重试」的循环脚本，不要手工试。
