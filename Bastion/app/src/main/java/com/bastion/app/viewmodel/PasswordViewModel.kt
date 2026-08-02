@@ -79,25 +79,6 @@ import com.bastion.app.bitwarden.repository.BitwardenRepository
 import com.bastion.app.bitwarden.sync.syncForUserVisibleRequest
 import com.bastion.app.data.bitwarden.BitwardenFolder
 
-sealed class BitwardenRecoveryResult {
-    object Success : BitwardenRecoveryResult()
-    data class Error(val message: String) : BitwardenRecoveryResult()
-    data class EmptyVaultBlocked(val reason: String) : BitwardenRecoveryResult()
-}
-
-data class BitwardenSyncRawHistoryItem(
-    val id: Long,
-    val operation: String,
-    val endpoint: String,
-    val payloadSource: String,
-    val payloadDigest: String,
-    val responseCode: Int?,
-    val success: Boolean,
-    val capturedAt: Long,
-    val payload: String?,
-    val preview: BitwardenSyncSnapshotPreview? = null
-)
-
 private const val PASSWORD_SCROLL_LOG_TAG = "PasswordScrollDebug"
 
 private data class KeePassCustomFieldFingerprint(
