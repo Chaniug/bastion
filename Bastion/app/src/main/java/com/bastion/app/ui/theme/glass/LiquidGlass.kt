@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.shape.Shape
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -53,7 +55,7 @@ data class LiquidGlassTokens(
             return if (isDark) {
                 LiquidGlassTokens(
                     // 深色：以 surface 为基底，掺入极少量白提亮，半透明
-                    containerColor = (surface * 0.72f + Color.White * 0.06f).copy(alpha = 0.62f),
+                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.72f, whiteFactor = 0.06f, alpha = 0.62f),
                     borderColor = Color.White.copy(alpha = 0.18f),
                     highlightColor = Color.White.copy(alpha = 0.12f),
                     elevation = 6.dp,
@@ -62,7 +64,7 @@ data class LiquidGlassTokens(
             } else {
                 LiquidGlassTokens(
                     // 浅色：surface 偏白带，半透明，镜面更亮
-                    containerColor = (surface * 0.55f + Color.White * 0.45f).copy(alpha = 0.58f),
+                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.55f, whiteFactor = 0.45f, alpha = 0.58f),
                     borderColor = Color.White.copy(alpha = 0.6f),
                     highlightColor = Color.White.copy(alpha = 0.4f),
                     elevation = 3.dp,
@@ -72,6 +74,22 @@ data class LiquidGlassTokens(
         }
     }
 }
+
+/**
+ * 将 surface 与白色按比例混合（白色各通道 = 1f），并设定整体不透明度。
+ * 不使用 Color 的算术运算符，兼容各 Compose 版本。
+ */
+private fun blendSurfaceWhite(
+    surface: Color,
+    surfaceFactor: Float,
+    whiteFactor: Float,
+    alpha: Float
+): Color = Color(
+    red = surface.red * surfaceFactor + whiteFactor,
+    green = surface.green * surfaceFactor + whiteFactor,
+    blue = surface.blue * surfaceFactor + whiteFactor,
+    alpha = alpha
+)
 
 /**
  * 把任意 [Surface]/[androidx.compose.foundation.layout.Box] 变成玻璃材质。
@@ -85,6 +103,7 @@ data class LiquidGlassTokens(
  * 玻璃观感由半透明 + 反光实现，这是业界通行的做法）。降级场景（API < 31）
  * 与启用场景外观一致，仅缺少背景层折射模糊。
  */
+@Composable
 fun Modifier.liquidGlass(
     enabled: Boolean = LocalLiquidGlass.current,
     tokens: LiquidGlassTokens = LiquidGlassTokens.fromCurrent(isSystemInDarkTheme()),
@@ -134,9 +153,10 @@ fun LiquidGlassSurface(
             .fillMaxSize()
             .clip(shape)
             .background(tokens.containerColor, shape)
+        val blurPx = with(LocalDensity.current) { tokens.blurRadius.toPx() }
         val bgWithBlur = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             bgModifier.graphicsLayer {
-                renderEffect = BlurEffect(tokens.blurRadius.toPx(), tokens.blurRadius.toPx())
+                renderEffect = BlurEffect(blurPx, blurPx)
             }
         } else {
             bgModifier
@@ -153,21 +173,21 @@ private fun BoxWithGlass(
     shape: Shape,
     highlightColor: Color
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        content()
-        // 顶部镜面高光
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .background(
-                    Brush.verticalGradient(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(shape)
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    brush = Brush.verticalGradient(
                         colors = listOf(highlightColor, Color.Transparent),
                         startY = 0f,
-                        endY = 0.5f
-                    ),
-                    shape
+                        endY = size.height * 0.5f
+                    )
                 )
-        )
+            }
+    ) {
+        content()
     }
 }
