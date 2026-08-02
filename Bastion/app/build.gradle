@@ -387,6 +387,9 @@ dependencies {
     // Testing
     testImplementation libs.junit
     testImplementation libs.kotlin.coroutines.test
+    // 仅单元测试 classpath，不进 APK。用于给 PasswordViewModel 的有状态编排
+    // （删除/归档/跨存储迁移）补行为测试——这些路径此前零守卫覆盖。
+    testImplementation libs.mockk
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
     androidTestImplementation platform(libs.androidx.compose.bom)
