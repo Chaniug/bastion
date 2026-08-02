@@ -4,10 +4,9 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **6 ✅**；`PasswordViewModel` 4162 → 3700 行，
-> 累计 -462；集群 6 已按 §7.7 完成抽取（18 个 mockk 行为测试护航，CI `total=571 failed=0`）；
-> 集群 5c 的**行为测试网已建成**（`PasswordMoveBehaviorTest` 12 个，见 §7.9），待抽取；
-> 剩集群 3/5c(抽取)/7/8）
+> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **5c ✅** / **6 ✅**；`PasswordViewModel` 4162 → 3539 行，
+> 累计 **-623**；集群 5c 已按 §7.10 完成抽取（12 个 mockk 行为测试护航，CI `total=571 failed=0`）；
+> 剩集群 3/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -87,7 +86,7 @@
 | 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
-| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | ✅ 30731085994（`total=571 failed=0`） | ✅ 0 失败 | 待真机抽查 | 🟡 **行为测试网已建成**（12 个，见 §7.9），待抽取 |
+| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | ✅ 30731085994 + 30732001927（`total=571 failed=0`） | ✅ 0 失败 | 待真机抽查 | ✅ 完成（见 §7.10） |
 | 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671 + 30729317779（`total=559 failed=0`） | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f + 用户复核）| ✅ 完成（见 §7.7） |
 | 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
 | 8 | 构造注入 | — | — | — | ⬜ 见 §7.6（只有 3/9 可行） |
@@ -324,3 +323,35 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 
 **遗留**：KDBX 真实写入/删除、附件物化、Bitwarden 云端删除的实际交互由真机验证兜底；
 抽取 `PasswordMoveExecutor` 时须保持上述 6 类断言全绿。
+
+### 7.10 集群 5c 抽取完成：PasswordMoveExecutor + 函数类型命名参数陷阱（2026-08-02）
+
+行为测试网（§7.9，12 个用例）建成后照集群 6 模式抽取，CI `total=571 failed=0`
+（run 30732001927），VM 3700 → 3539 行（累计 4162 → 3539，**-623**）。
+
+**注入策略**（与集群 6 一致）：
+- 实例注入：`repository` / `keepassPasswordUpdateExecutor` / `keepassPasswordDeleteExecutor`
+  / `bitwardenRepository` / `appContext`；
+- 函数引用注入（实现留在 VM）：`resolveKeePassCustomFieldsForSync`（VM 其他 4 处复用）、
+  `decodePasswordOrNull`（VM 8 处复用 + 解密副作用）、`canWriteKeePassDatabase`
+  （依赖 VM 构造参数 `localKeePassDatabaseDao`）；
+- `materializeMovedKeePassAttachments` 整体搬入（仅依赖 `appContext` + `AttachmentContainer` 单例）。
+
+**踩坑（编译失败，务必传给后续 agent）**：
+
+> **Kotlin 禁止对函数类型调用使用命名参数**（`Named arguments are prohibited for
+> function types`）。原 VM 中 `resolveKeePassCustomFieldsForSync(entryId = ...,
+> customFieldsOverride = ...)` 是**具名方法**调用；变成 executor 构造注入的
+> **函数类型参数**后，调用处必须改为**位置参数** `resolveKeePassCustomFieldsForSync(entry.id, null)`。
+> 逐字节等价脚本（比对函数体文本）**发现不了**这类编译差异——文本相同但调用语义不同。
+> 教训：搬迁后凡是被注入为函数类型的调用点，都要手动检查命名参数。
+
+**诊断手段**（DNS 劫持下读 CI 编译错误）：`gh run view --log` / `gh run download` 被
+`results-receiver`/`productionresultssa*.blob.core.windows.net` 劫持为 198.18.0.0/15，
+日志不可达。已在 build gate 步骤加 `tee /tmp/build_log.txt` + `::notice title=build_gate::$line`
+（grep `^e: |error:|FAILURE|Caused by:`）输出到 annotation，经
+`gh api repos/.../check-runs/<id>/annotations` 可读。**该诊断步骤保留在 main.yml**，
+后续编译失败直接读 annotation 定位。
+
+**遗留**：KDBX 真实写入/删除、附件物化、Bitwarden 云端删除的真机交互待抽查；
+抽取 `PasswordMoveExecutor` 后 `PasswordMoveBehaviorTest` 12 个用例全绿（行为语义未变）。
