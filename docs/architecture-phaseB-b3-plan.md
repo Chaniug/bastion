@@ -4,7 +4,7 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ / 集群 2 ✅ / 集群 4 ✅；`PasswordViewModel` 4162 → 4044 行；剩集群 3/5/6/7/8）
+> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅；`PasswordViewModel` 4162 → 3895 行，累计 -267；剩集群 3/5c/6/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -82,7 +82,9 @@
 | 2 | Bitwarden 离线缓存 → `BitwardenOfflineSecretCacheFacade` | ✅ 30726186131 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 3 | KeePass 同步协调器 | — | — | — | ⬜ **延后**（见 §七） |
 | 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
-| 5 | 跨存储迁移 | — | — | — | ⬜ |
+| 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4 |
 | 6 | 删除/归档编排 | — | — | — | ⬜ |
 | 7 | 主密码/历史 | — | — | — | ⬜ |
 | 8 | 构造注入 | — | — | — | ⬜ |
@@ -147,5 +149,39 @@ curl -s -o /dev/null -w "%{http_code}" --resolve github.com:443:<IP> \
 
 **候选 IP**：`140.82.112.3` / `140.82.113.3` / `140.82.114.3` / `140.82.116.3` / `20.205.243.166`
 （`api.github.com` 用 `140.82.113.5`）。修改 `/etc/hosts` 后**必须同步写入 `~/.user_hosts`**，
-否则工作区重启会被还原。本次多轮推送中可用 IP 从 `.113.3` 漂移到 `.114.3`，
+否则工作区重启会被还原。本次多轮推送中可用 IP 从 `.113.3` 漂移到 `.114.3` 再到 `.112.3`，
 建议接力 agent 直接写一个「探测→切 hosts→重试」的循环脚本，不要手工试。
+
+### 7.4 集群 5 的实际拆法：先纯函数（5a/5b），`move*` 编排（5c）留后
+
+原计划集群 5 是「跨存储迁移 → `PasswordMoveExecutor`」。实际执行时先做了
+**5a/5b（纯函数抽取）**，把 `move*` 编排留作 5c，理由：
+
+对 VM 做过一轮**纯度扫描**（判据：函数体不出现 repository / StateFlow /
+viewModelScope / securityManager / keepass / bitwarden / Log / context 等标记），
+177 个顶层函数中有 42 个是纯函数，合计约 292 行。其中「文本规范化 + 去重键 +
+匹配判定 + 内存筛选」这一簇高度内聚且零依赖，抽出来**收益确定、风险接近于零**，
+应当优先做完。
+
+相比之下 `move*` 簇（5c）依赖 repository、两个 KeePass executor、
+bitwardenRepository、`decodePasswordOrNull`、以及附件本地化门禁
+（`materializeMovedKeePassAttachments` 失败即阻断源删除），属于真正的有状态编排，
+必须走构造注入而非搬迁，风险等级与集群 6/7 相当。
+
+**已确认**：`move*` 全簇（`movePasswordsToCategory` / `...ToKeePassDatabase` /
+`...ToKeePassGroup` / `...ToBitwardenFolder` / `movePasswordsToKeePassInternal` /
+`deleteMovedKeePassPasswordSources` / `materializeMovedKeePassAttachments`）
+**未被任何守卫测试引用**，抽取时不受锚点约束——但这也意味着**没有回归网**，
+5c 落地前应先补一组行为测试。
+
+### 7.5 已知重复实现：`matchesSearchQuery` 有两份，刻意不合并
+
+| 位置 | 是否 trim 查询串 | 比对字段 |
+| --- | --- | --- |
+| `PasswordEntryMatching.matchesSearchQuery` | ✅ trim | title / website / username / appName / **appPackageName** |
+| `AutofillPickerActivityV2.kt:3741`（私有扩展） | ❌ 不 trim | title / appName / username / website |
+
+两者命中集合**不同**：自动填充侧不比对包名、且保留查询串首尾空格。
+合并任何一方都会静默改变自动填充的候选列表——属于用户明令不得回归的填充路径。
+若要统一，必须**先补自动填充搜索的行为测试**，再以测试为准绳收敛。
+当前已在 `PasswordEntryMatching` 类注释中标注该差异。
