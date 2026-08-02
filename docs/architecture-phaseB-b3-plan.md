@@ -291,5 +291,5 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 `PasswordListRows.kt` 三处，一处降频全链路生效；`rememberPasswordAuthenticatorDisplayState`
 的 `smoothProgress=false` 分支是既有代码（设置里关闭平滑即走此路径），零新增刷新机制。
 
-**验证**：CI `failed=0` + 7 守卫绿（守卫不引用这些文件）；需真机（荣耀 / Android 17）
-验证 Bitwarden 库滚动流畅度，以及 TOTP 卡在滚动中 code 秒级刷新、松手恢复平滑进度条。
+**验证**：CI `failed=0` + 7 守卫绿（守卫不引用这些文件）；**真机 ✅ 通过（2026-08-02）**：
+荣耀 / Android 17 实测 Bitwarden 库滚动流畅，密码填充 / 归档 / OTP·TOTP 验证码均无异常。
