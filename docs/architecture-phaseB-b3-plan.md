@@ -4,8 +4,9 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅；`PasswordViewModel` 4162 → 3895 行，累计 -267；
-> 集群 6 的**行为测试网已建成**（18 个 mockk 测试，见 `phaseB3-mockk-behavior-tests-plan.md`），待抽取；剩集群 3/5c/7/8）
+> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **6 ✅**；`PasswordViewModel` 4162 → 3700 行，
+> 累计 -462；集群 6 已按 §7.7 完成抽取（18 个 mockk 行为测试护航，CI `total=559 failed=0`）；
+> 剩集群 3/5c/7/8）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -86,7 +87,7 @@
 | 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4；**待补行为测试** |
-| 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671（`total=559 failed=0`） | ✅ 0 失败 | 待抽查 | 🟡 **行为测试网已建成**（18 个），待抽取 |
+| 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671 + 30729317779（`total=559 failed=0`） | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成（见 §7.7） |
 | 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
 | 8 | 构造注入 | — | — | — | ⬜ 见 §7.6（只有 3/9 可行） |
 
@@ -232,3 +233,30 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 
 即：在引入 mockk 之前，**物理上写不出**编排类的行为测试——既不能继承造 Fake，也不能 mock。
 这就是集群 3/5c/6/7 全部零覆盖的根因，而非疏忽。
+
+### 7.7 集群 6 的抽取做法：行为测试网 → 构造注入 → 薄委托（2026-08-02）
+
+集群 6（删除/归档编排）是本项目第一个**先补行为测试、再动手抽取**的集群，流程如下：
+
+1. **Step 0/1（mockk 基建 + 行为测试）**：引入 mockk **1.13.17**（版本选择见
+   `phaseB3-mockk-behavior-tests-plan.md`，1.14.x 与项目 Kotlin 2.0.21 元数据不兼容），
+   建成 18 个行为测试（`PasswordDeleteBehaviorTest` 6 个 + `PasswordArchiveBehaviorTest` 9 个 +
+   `MockkInfrastructureSmokeTest` 3 个），全部走 `context = null` 夹具
+   （VM 协作者退化为 null，删除路径坍缩为纯本地分支，断言目标唯一）。
+   CI `total=559 failed=0`（run 30728548671）。
+2. **抽取**：`PasswordArchiveOrchestrator`（256 行，9 个函数）逐字节搬迁，业务逻辑零改动，
+   用脚本对比搬迁前后函数体确认**逐字节等价**（仅机械重命名：
+   `commandPolicyOf(entry)`、`stateFactory.create`、`ensureKeePassArchiveGroupPath` 等）。
+   CI `total=559 failed=0`（run 30729317779）。
+3. **KeePass 侧用函数引用注入而非整体搬走**：`ensureArchiveGroupPath` /
+   `resolveRestorePathOrRoot` / `moveEntryGroupPath` 三者依赖 `keepassBridge`（组合构造：
+   context + DAO + securityManager）且内部复用带解密副作用的
+   `resolvePlainPasswordForKeePass` / `resolveKeePassCustomFieldsForSync` —— 整体搬走会牵动
+   KeePass 与 TOTP 投影链路（集群 3 范围，用户明令不得回归）。故只注入函数引用，
+   **实现继续留在 VM**。该模式与集群 2 `BitwardenOfflineSecretCacheFacade` 一致（已验证）。
+4. **守卫锚点零破坏**：`openArchiveView` / `closeArchiveView` / `archivedPasswordsForUi` /
+   `persistCategoryFilter` 等锚点函数全部留在 VM，未触碰任何 `substringAfter` 抽取型断言。
+
+**遗留**：`context = null` 夹具只能覆盖本地（PROVIDER_LOCAL）分支，KeePass/Bitwarden
+路径的行为测试仍缺 —— 与集群 3/8 的解耦（factory lambda 或 Hilt）绑定，
+需真机专项抽查（荣耀 / Android 17，KeePass 库条目归档/取消归档）。
