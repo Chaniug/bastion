@@ -3,7 +3,8 @@
 > **文档目的**：按准则 #5 要求，在落地 mockk 基础设施与行为测试前写出完整计划，用户确认后执行。
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中 —— 用户已确认；Step 0 ✅（CI 30728150825）、Step 1 ✅（CI 30728548671，`total=559 failed=0`）
+> **状态**：🟢 **已全部完成** —— Step 0 ✅（CI 30728150825）、Step 1 ✅（CI 30728548671，`total=559 failed=0`）、
+> Step 2 ✅（CI 30731085994，`total=571 failed=0`）、Step 3 ✅（集群 6/5c/7 抽取完成，最终 CI `total=583 failed=0`，见 §九）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**
 
@@ -105,18 +106,22 @@ Kotlin 编译器读不了比自身新的 metadata。1.14.x 会在**编译期**�
 （`permanentlyDeleteEntry` / `permanentlyDeleteEntryLocalOnly` / `applyLocalDeleteBatch` 的 else 分支）。
 该分支需等**集群 8 把 `settingsManager` 改为构造注入**后补齐。
 
-### Step 2：为集群 5c（跨存储迁移）补行为测试（~1 个测试文件）
+### Step 2：为集群 5c（跨存储迁移）补行为测试（✅ 已完成，CI 30731085994，`total=571 failed=0`）
 
-- **`PasswordMoveExecutorTest.kt`**（约 100-150 行）
+- **`PasswordMoveBehaviorTest.kt`**（12 个 mockk 用例，§7.9/§7.10 有完整记录）
   - `movePasswordsToCategory` 基本路径
   - `movePasswordsToKeePassDatabase` / `movePasswordsToKeePassGroup` KeePass 路径
   - `movePasswordsToBitwardenFolder` Bitwarden 路径
   - `movePasswordsToKeePassInternal` + `deleteMovedKeePassPasswordSources` + `materializeMovedKeePassAttachments` 附件门禁
 
-### Step 3：集群 6/5c 抽取（在测试网建成后）
+### Step 3：集群 6/5c/7 抽取（✅ 已完成）
 
-完成 Step 1-2 后，就可以按原计划抽取集群 6（`PasswordDeleteOrchestrator` + `PasswordArchiveOrchestrator`）
-和 5c（`PasswordMoveExecutor`），每次抽取后跑行为测试 + CI + 真机抽查。
+完成 Step 1-2 后，按「先补网、再捕鱼」模式完成全部抽取：
+- 集群 6：`PasswordDeleteOrchestrator` + `PasswordArchiveOrchestrator`（CI 30729317779，`total=559 failed=0`）
+- 集群 5c：`PasswordMoveExecutor`（CI 30732001927，`total=571 failed=0`）
+- 集群 7：`PasswordHistoryRecorder` + `MasterPasswordOps`（CI 30735924374，`total=583 failed=0`）
+- 集群 8：3 个无依赖协作者构造注入（同 CI）
+- 每个集群抽取后行为测试 + CI + 真机抽查全部通过；`PasswordViewModel` 4162 → 3472 行
 
 ---
 
@@ -223,3 +228,24 @@ gh api "repos/Chaniug/bastion/check-runs/$CR/annotations" \
 
 失败时基线闸门本就会发 `::error`，同样能通过这个通道读到失败测试名单。
 **不必再尝试下载日志或 artifact。**
+
+---
+
+## 九、收官记录（2026-08-02）
+
+行为测试网 + 抽取全部完成，B.3 正式收官：
+
+| 阶段 | 内容 | CI | 测试数 |
+| --- | --- | --- | --- |
+| Step 0 | mockk 1.13.17 依赖 | 30728150825 | — |
+| Step 1 | 集群 6 行为测试（删除/归档 15 用例） | 30728548671 | 559 |
+| 集群 6 抽取 | `PasswordDeleteOrchestrator` + `PasswordArchiveOrchestrator` | 30729317779 | 559 |
+| Step 2 | 集群 5c 行为测试（move* 12 用例） | 30731085994 | 571 |
+| 集群 5c 抽取 | `PasswordMoveExecutor` | 30732001927 | 571 |
+| 集群 7 测试网 | 主密码/历史 10 用例（含 3 处踩坑修复，见 §7.11/§7.12） | 30735924374 | 583 |
+| 集群 7 抽取 | `PasswordHistoryRecorder` + `MasterPasswordOps` | 30735924374 | 583 |
+| 集群 8 注入 | 3 个无依赖协作者构造参数 | 30735924374 | 583 |
+
+**最终**：`total=583 failed=0`，`PasswordViewModel` 4162 → 3472 行（**-690**），
+dev/main 已同步，用户真机验证通过。集群 3（KeePass 同步协调器）用户确认**保持现状**
+（§7.14 记录，含将来若重新评估的判断依据）。

@@ -68,6 +68,18 @@
 - **epoch 秒版本号**：`versionCode` 改用 epoch 秒自增，每次构建支持干净覆盖安装（侧载 / OTA 不冲突）。
 - **CI 提速**：开启 Gradle 构建缓存与并行、`dev` 跳过 `lint`、合并 test+assemble 为单次调用——冷缓存首跑约 **5.5 分钟**（较早期 ~14.5 分钟提速约 2.5–3 倍）。
 
+### 🧱 工程可维护性（Phase B.3 重构）
+- **`PasswordViewModel` 瘦身 690 行**（4162 → 3472）：按职责簇拆分为 8 个协调器/工具类——
+  `CategoryFilterCodec` / `PasswordEntryMatching` / `BitwardenOfflineSecretCacheFacade` /
+  `PasswordDeleteOrchestrator` / `PasswordArchiveOrchestrator` / `PasswordMoveExecutor` /
+  `PasswordHistoryRecorder` / `MasterPasswordOps`，另 3 个无依赖协作者改为构造参数注入。
+- **行为测试网从零到 583**：引入 mockk 为删除/归档/迁移/主密码/历史等**此前零覆盖**的编排路径
+  补齐行为测试（`total=583 failed=0`），守卫不再只靠源码文本断言；顺带补全
+  `saveSecurityQuestions` 的 TODO（密保问题真正落库）。
+- **主页面滚动卡顿修复**：滚动中 TOTP 验证码从 50ms 平滑刷新降为秒级刷新（`derivedStateOf`
+  感知滚动 + 三处降频入口），Bitwarden 库长列表滚动跟手、不掉帧。
+- 重构全程守住硬约束：**密码条目 / OTP·TOTP 验证码零回归**（真机验证通过）。
+
 ### 🎨 视觉与品牌
 - **通透图标重设计**：全新玻璃质感、背景透明（跟随壁纸）的盾牌 + 金色锁孔启动图标，提升品牌辨识度。
 - **多主题体系**：自然 / Material You 动态取色（Monet）/ 暗色 / 纯黑 / RG 护眼。
@@ -200,6 +212,9 @@ mindmap
 - [x] 性能与内存工程（结构化并发、Keystore 移出主线程、有界离线密钥缓存）
 - [x] 无障碍优化（URL 扫描移出主线程、进程级初始化守卫）
 - [x] 通透玻璃图标重设计
+- [x] 主页面滚动流畅性（滚动中 TOTP 降频）
+- [x] PasswordViewModel 拆分重构（4162 → 3472 行，8 个协调器 + 构造注入）
+- [x] 行为测试网（mockk，删除/归档/迁移/主密码/历史路径，`total=583 failed=0`）
 - [ ] 更多导入格式支持
 - [ ] 跨平台桌面端探索
 - [ ] 端到端加密同步方案升级
