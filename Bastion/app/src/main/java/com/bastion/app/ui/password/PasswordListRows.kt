@@ -37,6 +37,7 @@ import com.bastion.app.ui.password.toPasswordPageCardItemUi
 import com.bastion.app.viewmodel.PasswordViewModel
 
 internal fun LazyListScope.passwordPageListRows(
+    isListScrolling: Boolean,
     passwordPageListItems: List<PasswordPageListItemUi>,
     effectiveStackCardMode: StackCardMode,
     expandedGroups: Set<String>,
@@ -380,7 +381,7 @@ internal fun LazyListScope.passwordPageListRows(
                     showAuthenticator = appSettings.passwordCardShowAuthenticator,
                     hideOtherContentWhenAuthenticator = appSettings.passwordCardHideOtherContentWhenAuthenticator,
                     totpTimeOffsetSeconds = appSettings.totpTimeOffset,
-                    smoothAuthenticatorProgress = appSettings.validatorSmoothProgress,
+                    smoothAuthenticatorProgress = appSettings.validatorSmoothProgress && !isListScrolling,
                     decryptAuthenticatorKey = decryptAuthenticatorKey
                 )
             }
@@ -415,7 +416,7 @@ internal fun LazyListScope.passwordPageListRows(
                     showAuthenticator = appSettings.passwordCardShowAuthenticator,
                     hideOtherContentWhenAuthenticator = appSettings.passwordCardHideOtherContentWhenAuthenticator,
                     totpTimeOffsetSeconds = appSettings.totpTimeOffset,
-                    smoothAuthenticatorProgress = appSettings.validatorSmoothProgress,
+                    smoothAuthenticatorProgress = appSettings.validatorSmoothProgress && !isListScrolling,
                     decryptAuthenticatorKey = decryptAuthenticatorKey
                 )
             }
@@ -462,7 +463,7 @@ internal fun LazyListScope.passwordPageListRows(
                     showAuthenticator = aggregateUiState.cardStyle.showAuthenticator,
                     hideOtherContentWhenAuthenticator = aggregateUiState.cardStyle.hideOtherContentWhenAuthenticator,
                     totpTimeOffsetSeconds = aggregateUiState.cardStyle.totpTimeOffsetSeconds,
-                    smoothAuthenticatorProgress = aggregateUiState.cardStyle.smoothAuthenticatorProgress,
+                    smoothAuthenticatorProgress = aggregateUiState.cardStyle.smoothAuthenticatorProgress && !isListScrolling,
                     decryptAuthenticatorKey = decryptAuthenticatorKey,
                     iconCardsEnabled = aggregateUiState.cardStyle.iconCardsEnabled,
                     enableSharedBounds = false,

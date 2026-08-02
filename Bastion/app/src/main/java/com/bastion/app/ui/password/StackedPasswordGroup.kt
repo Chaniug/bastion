@@ -60,9 +60,12 @@ fun StackedPasswordGroup(
     val leadPassword = passwords.firstOrNull() ?: return
     val collapsedTitle = displayTitle?.takeIf { it.isNotBlank() } ?: leadPassword.title
 
-    // 检查是否为多密码合并卡片(除密码外信息完全相同)
-    val isMergedPasswordCard = passwords.size > 1 && 
-        passwords.map { getPasswordInfoKey(it) }.distinct().size == 1
+    // 检查是否为多密码合并卡片(除密码外信息完全相同)。
+    // remember(passwords) 缓存：组内密码数量在滚动重组期间不变时，避免每帧 O(n) 字符串拼接。
+    val isMergedPasswordCard = remember(passwords) {
+        passwords.size > 1 &&
+            passwords.map { getPasswordInfoKey(it) }.distinct().size == 1
+    }
     
     // 如果选择“始终展开”，则直接平铺展示，不使用堆叠容器
     if (stackCardMode == StackCardMode.ALWAYS_EXPANDED) {

@@ -1888,6 +1888,12 @@ private fun PasswordListMainPaneHost(
     aggregateConfig: PasswordListAggregateConfig?,
     decryptAuthenticatorKey: ((String) -> String)?
 ) {
+    // 滚动期间把 TOTP 验证码行从 50ms 平滑刷新降为秒级刷新（方案 A，见 docs §7.8），
+    // 避免可见验证码卡片每帧重组导致滚动掉帧。isScrollInProgress 只在滚动开始/结束时翻转，
+    // derivedStateOf 保证不会每帧触发重组。
+    val isListScrolling by remember {
+        derivedStateOf { listState.isScrollInProgress }
+    }
     PasswordListMainPane(
         canCollapseExpandedGroups = canCollapseExpandedGroups,
         outsideTapInteractionSource = outsideTapInteractionSource,
@@ -1965,6 +1971,7 @@ private fun PasswordListMainPaneHost(
         quickFolderStyle = quickFolderStyle,
         renderPasswordRows = {
             passwordPageListRows(
+                isListScrolling = isListScrolling,
                 passwordPageListItems = passwordPageListItems,
                 effectiveStackCardMode = effectiveStackCardMode,
                 expandedGroups = expandedGroups,
