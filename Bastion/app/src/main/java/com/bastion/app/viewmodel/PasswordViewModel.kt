@@ -139,9 +139,12 @@ class PasswordViewModel(
     private val passwordHistoryManager: PasswordHistoryManager? = context?.let { PasswordHistoryManager(it) }
     private val settingsManager: com.bastion.app.utils.SettingsManager? = context?.let { com.bastion.app.utils.SettingsManager(it) }
     private val bitwardenRepository: BitwardenRepository? = context?.let { BitwardenRepository.getInstance(it.applicationContext) }
-    private val bitwardenOfflineSecretCache: BitwardenOfflineSecretCache? = context?.applicationContext?.let {
-        BitwardenOfflineSecretCache(it, securityManager)
-    }
+    private val bitwardenOfflineSecretCacheFacade = BitwardenOfflineSecretCacheFacade(
+        cache = context?.applicationContext?.let {
+            BitwardenOfflineSecretCache(it, securityManager)
+        },
+        decodePassword = ::decodePasswordOrNull
+    )
     private val keepassBridge = if (context != null && localKeePassDatabaseDao != null) {
         KeePassCompatibilityBridge(
             KeePassWorkspaceRepository(
@@ -968,7 +971,7 @@ class PasswordViewModel(
             beforeEntryIds
                 .filterNot(afterEntryIds::contains)
                 .forEach { entryId ->
-                    bitwardenOfflineSecretCache?.clear(entryId)
+                    bitwardenOfflineSecretCacheFacade.clear(entryId)
                 }
         }
         return result
@@ -995,18 +998,17 @@ class PasswordViewModel(
     }
 
     private fun loadBitwardenOfflineCachedSecret(entry: PasswordEntry): String? {
-        return bitwardenOfflineSecretCache?.recall(entry)
+        return bitwardenOfflineSecretCacheFacade.recall(entry)
     }
 
     private fun rememberBitwardenOfflineCachedSecret(entry: PasswordEntry, plainSecret: String) {
-        if (plainSecret.isBlank()) return
-        bitwardenOfflineSecretCache?.remember(entry, plainSecret)
+        bitwardenOfflineSecretCacheFacade.remember(entry, plainSecret)
     }
 
     suspend fun clearBitwardenOfflineSecretCacheForVault(vaultId: Long): Int {
-        val cache = bitwardenOfflineSecretCache ?: return 0
+        if (!bitwardenOfflineSecretCacheFacade.isAvailable()) return 0
         val entries = bitwardenRepository?.getPasswordEntries(vaultId).orEmpty()
-        entries.forEach { entry -> cache.clear(entry.id) }
+        bitwardenOfflineSecretCacheFacade.clearAll(entries.map { entry -> entry.id })
         return entries.size
     }
 
@@ -1016,17 +1018,7 @@ class PasswordViewModel(
     }
 
     private fun rememberDecodedBitwardenSecrets(entries: List<PasswordEntry>): Int {
-        val cache = bitwardenOfflineSecretCache ?: return 0
-        var warmedCount = 0
-        entries.forEach { entry ->
-            if (!entry.hasBitwardenCipherBinding() || entry.password.isBlank()) return@forEach
-            val decoded = decodePasswordOrNull(entry.password)
-            if (!decoded.isNullOrBlank()) {
-                cache.warmMemory(entry, decoded)
-                warmedCount += 1
-            }
-        }
-        return warmedCount
+        return bitwardenOfflineSecretCacheFacade.rememberDecodedSecrets(entries)
     }
 
     private suspend fun repairLegacyDetachedKeePassEntries() {
