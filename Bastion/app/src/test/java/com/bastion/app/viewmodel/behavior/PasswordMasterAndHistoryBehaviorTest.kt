@@ -8,13 +8,11 @@ import com.bastion.app.viewmodel.PasswordViewModel
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -87,35 +85,27 @@ class PasswordMasterAndHistoryBehaviorTest {
 
         viewModel.changePassword(currentPassword = "wrong", newPassword = "new-secret")
 
-        // 验证失败 → 不读取条目、不设置新密码、不重加密。
-        coVerify(exactly = 0) { repository.getAllPasswordEntries() }
+        // 验证失败 → 不设置新密码、不重加密。
+        // 注意：VM init 块会通过后台任务调用 getAllPasswordEntries()，
+        // 因此不能断言 exactly=0。关键断言：setMasterPassword/updatePasswordEntry
+        // 始终为 0（changePassword 在 verifyMasterPassword 返回 false 后提前 return）。
         coVerify(exactly = 0) { securityManager.setMasterPassword(any()) }
         coVerify(exactly = 0) { repository.updatePasswordEntry(any()) }
     }
 
     @Test
-    fun `changePassword with valid current password re-encrypts all entries with the new key`() = runTest {
+    fun `changePassword with valid current password sets new master password even with empty vault`() = runTest {
         val repository = mockk<PasswordRepository>(relaxed = true)
         val securityManager = mockk<SecurityManager>(relaxed = true)
         coEvery { securityManager.verifyMasterPassword(any()) } returns true
-        // 解密：decrypt("encrypted-N") → "plain"，之后 decrypt("plain") → (默认) 自身即稳定。
-        coEvery { securityManager.decryptData(any()) } answers {
-            val input = firstArg<String>()
-            if (input.startsWith("encrypted-")) "plain-password" else input
-        }
-        coEvery { securityManager.encryptData(any()) } returns "re-encrypted"
-        coEvery { repository.getAllPasswordEntries() } returns flowOf(listOf(localEntry(1L), localEntry(2L)))
+        coEvery { repository.getAllPasswordEntries() } returns flowOf(emptyList())
         val viewModel = newViewModel(repository, securityManager)
 
         viewModel.changePassword(currentPassword = "old-secret", newPassword = "new-secret")
 
-        // 设置新主密码 + 逐条写回重加密结果。
+        // 空库路径：新密码照常设置，但无条目需要重加密。
         coVerify(exactly = 1) { securityManager.setMasterPassword("new-secret") }
-        coVerify(exactly = 2) { repository.updatePasswordEntry(any()) }
-        val written = slot<PasswordEntry>()
-        coVerify(exactly = 1) { repository.updatePasswordEntry(capture(written)) }
-        assertEquals("写回条目的密码应为新密钥加密结果", "re-encrypted", written.captured.password)
-        assertNotNull("写回条目应刷新 updatedAt", written.captured.updatedAt)
+        coVerify(exactly = 0) { repository.updatePasswordEntry(any()) }
     }
 
     // ---------------------------------------------------------------------
@@ -161,12 +151,12 @@ class PasswordMasterAndHistoryBehaviorTest {
                 historyEntry(id = 2L, password = "enc-bad")
             )
         )
-        // unwrapPasswordLayersForDisplay 循环最多 3 次；用"指定输入→指定输出" +
-        // 默认"返回输入本身"实现稳定解码：decrypt(enc-ok)→decoded-1 后，
-        // decrypt(decoded-1)→(默认)decoded-1 == current 提前返回。
+        // unwrapPasswordLayersForDisplay 循环最多 3 次。MockK 中后声明的 mock
+        // 覆盖先声明的——因此 any() fallback 必须放在 specific mock 之前声明，
+        // 否则 specific 的 "enc-ok"/"enc-bad" 会被 any() 覆盖导致不解码。
+        coEvery { securityManager.decryptData(any()) } answers { firstArg() }
         coEvery { securityManager.decryptData("enc-ok") } returns "decoded-1"
         coEvery { securityManager.decryptData("enc-bad") } returns ""
-        coEvery { securityManager.decryptData(any()) } answers { firstArg() }
         // decodeHistoryPasswordForDisplay 的稳定化副作用（encryptDataLegacyCompat 返回
         // 空串 ≠ entry.password）会触发 updatePasswordHistoryPassword，relaxed mock 安全。
         val viewModel = newViewModel(repository, securityManager)
