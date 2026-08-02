@@ -7,7 +7,6 @@ import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.viewmodel.PasswordHistoryRecorder
 import com.bastion.app.viewmodel.PasswordViewModel
-import io.mockk.capture
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
