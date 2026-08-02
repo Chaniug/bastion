@@ -4,7 +4,7 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 进行中）
+> **状态**：🟡 执行中（集群 1 ✅ CI 绿 `30725125903`；集群 2 待启动）
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -78,7 +78,7 @@
 
 | 集群 | 内容 | CI | 守卫(OTP/密码) | 真机 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 顶层类型搬迁（CategoryFilter + PasswordArchiveFilterController → CategoryFilter.kt） | 🟡 待 CI | 🟡 待 CI | — | ✅ 已提交 dev（CI 验证中） |
+| 1 | 顶层类型搬迁（CategoryFilter + PasswordArchiveFilterController → CategoryFilter.kt） | ✅ 30725125903 | ✅ 0 失败 | — | ✅ 完成（dev 379c9939） |
 | 2 | Bitwarden 离线缓存 | — | — | — | ⬜ |
 | 3 | KeePass 同步协调器 | — | — | — | ⬜ |
 | 4 | 类别过滤状态 | — | — | — | ⬜ |
