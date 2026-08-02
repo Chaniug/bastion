@@ -288,6 +288,18 @@ jobs:
           for name in names:
               print(f"  FAILED  {name}")
 
+          # 把统计发成 annotation。原因：本仓库的协作环境里
+          # blob.core.windows.net（run log / artifact 的实际下载源）会被 DNS 劫持到
+          # 198.18.0.0/15 保留段，`gh run view --log` 与 `gh run download` 全部拿不到数据，
+          # 只有 api.github.com 通。annotation 走 checks API，因此是唯一稳定可读的回传通道。
+          # 有了它，排错时用
+          #   gh api repos/<owner>/<repo>/check-runs/<id>/annotations
+          # 就能直接看到 total/failed，不必再下载日志。
+          print(
+              f"::notice title=Unit test stats::total={total} failed={failed} "
+              f"baseline={baseline} verdict={verdict}"
+          )
+
           if failed > baseline:
               print(
                   f"::error title=New test regressions::失败数 {failed} 超过基线 {baseline}，"
