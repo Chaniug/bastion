@@ -93,7 +93,18 @@ jobs:
       # 1) 门禁：仅编译并产出 Debug APK（最快出包路径，不跑测试）
       # push 时注入固定签名，使 debug APK 与 stable release APK 签名一致，可互相覆盖安装
       - name: Build Debug APK (build gate)
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: |
+          set +e
+          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee /tmp/build_log.txt
+          BUILD_EXIT=${PIPESTATUS[0]}
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            echo "::notice title=Build gate diagnostics::build_failed=true"
+            grep -E "^e: |error:|FAILURE|Caused by:" /tmp/build_log.txt | head -40 | while IFS= read -r line; do
+              echo "::notice title=build_gate::$line"
+            done
+            exit "$BUILD_EXIT"
+          fi
+          echo "::notice title=Build gate diagnostics::build_failed=false"
         env:
           BASTION_KS_FILE: ${{ github.event_name == 'push' && format('{0}/release.jks', github.workspace) || '' }}
           BASTION_KS_STORE_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_STORE_PASSWORD || '' }}
