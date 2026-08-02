@@ -632,6 +632,7 @@ fun BastionApp(
         darkTheme = darkTheme,
         oledPureBlackEnabled = settings.oledPureBlackEnabled,
         colorScheme = settings.colorScheme,
+        liquidGlassEnabled = settings.liquidGlassEnabled,
         customPrimaryColor = settings.customPrimaryColor,
         customSecondaryColor = settings.customSecondaryColor,
         customTertiaryColor = settings.customTertiaryColor,

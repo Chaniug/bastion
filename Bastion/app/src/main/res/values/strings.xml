@@ -704,6 +704,8 @@
     <string name="oled_pure_black">OLED绝对深色</string>
     <string name="oled_pure_black_description">在深色模式下将背景和表面容器强制切换为纯黑。</string>
     <string name="oled_pure_black_dark_mode_hint">仅在应用处于深色模式时生效。</string>
+    <string name="liquid_glass">液态玻璃</string>
+    <string name="liquid_glass_description">为顶部栏、底部导航与弹窗赋予半透明磨砂玻璃质感（兼容深浅色，可在设置中开启）。</string>
     <string name="appearance_sheet_description">选择应用外观模式，并决定深色表面是否切换为 OLED 绝对深色。</string>
     <string name="appearance_with_oled_subtitle">%1$s · OLED绝对深色</string>
 

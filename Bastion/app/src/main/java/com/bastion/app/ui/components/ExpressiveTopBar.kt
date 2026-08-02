@@ -10,6 +10,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -46,6 +47,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
+import com.bastion.app.ui.theme.glass.LocalLiquidGlass
+import com.bastion.app.ui.theme.glass.liquidGlass
 
 internal fun initialSearchTextFieldValue(searchQuery: String): TextFieldValue =
     TextFieldValue(
@@ -75,6 +78,7 @@ fun ExpressiveTopBar(
     onSearchExpandedChange: (Boolean) -> Unit,
     searchHint: String? = null,
     modifier: Modifier = Modifier,
+    glass: Boolean = LocalLiquidGlass.current,
     navigationIcon: @Composable (() -> Unit)? = null,
     onActionPillBoundsChanged: ((Rect) -> Unit)? = null,
     collapsedTitleEndPadding: Dp = 180.dp,
@@ -124,7 +128,8 @@ fun ExpressiveTopBar(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 88.dp)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .liquidGlass(enabled = glass, shape = RectangleShape),
         contentAlignment = Alignment.Center
     ) {
         // 1. 标题区 (在左侧，始终占位，只改变透明度)
@@ -159,6 +164,7 @@ fun ExpressiveTopBar(
                 modifier = Modifier
 
                     .height(56.dp)
+                    .liquidGlass(enabled = glass, shape = RoundedCornerShape(50))
                     .onGloballyPositioned { coordinates ->
                         onActionPillBoundsChanged?.invoke(coordinates.boundsInWindow())
                     }
@@ -173,7 +179,7 @@ fun ExpressiveTopBar(
                             totalDrag += dragAmount
                             // 阈值设为 40px，避免过于灵敏
                             val threshold = 40f
-                            
+
                             if (!isSearchExpanded && totalDrag < -threshold) {
                                 change.consume()
                                 onSearchExpandedChange(true)
@@ -188,7 +194,7 @@ fun ExpressiveTopBar(
                         }
                     },
                 shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 2.dp
             ) {
                 // 内容切换

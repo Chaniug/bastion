@@ -151,6 +151,8 @@ fun ThemeAndColorSchemeScreen(
             oledPureBlackEnabled = settings.oledPureBlackEnabled,
             onThemeSelected = { settingsViewModel.updateThemeMode(it) },
             onOledPureBlackChanged = { settingsViewModel.updateOledPureBlackEnabled(it) },
+            liquidGlassEnabled = settings.liquidGlassEnabled,
+            onLiquidGlassChanged = { settingsViewModel.updateLiquidGlassEnabled(it) },
             onDismiss = { showThemeSheet = false }
         )
     }
