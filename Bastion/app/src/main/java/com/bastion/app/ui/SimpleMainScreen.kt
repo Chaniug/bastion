@@ -734,6 +734,7 @@ fun SimpleMainScreen(
     onNavigateToStandaloneSettings: () -> Unit = {},
     onNavigateToBitwardenLogin: () -> Unit = {},
     onNavigateToAddSend: () -> Unit = {},
+    onManageKeePassDatabase: (Long) -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit,
     initialTab: Int = 0
 ) {
@@ -1948,6 +1949,7 @@ fun SimpleMainScreen(
                     onOpenVaultV2ArchivePage = {
                         vaultV2PaneState.openArchiveView()
                     },
+                    onManageKeePassDatabase = onManageKeePassDatabase,
                     onClearAllData = onClearAllData,
                     cardWalletSubTab = cardWalletSubTab,
                     passwordHistoryPageMode = passwordHistoryPageMode,
@@ -2096,6 +2098,7 @@ fun SimpleMainScreen(
                     onOpenArchivePage = {
                         vaultV2PaneState.openArchiveView()
                     },
+                    onManageKeePassDatabase = onManageKeePassDatabase,
                     onOpenCommonAccountTemplates = onNavigateToCommonAccountTemplates,
                     onScanFidoQr = onNavigateToFidoQrScan,
                     onOpenStandaloneSettings = onNavigateToStandaloneSettings,
@@ -2490,6 +2493,7 @@ fun SimpleMainScreen(
                         onOpenArchivePage = {
                             vaultV2PaneState.openArchiveView()
                         },
+                        onManageKeePassDatabase = onManageKeePassDatabase,
                         onOpenCommonAccountTemplates = onNavigateToCommonAccountTemplates,
                         onScanFidoQr = onNavigateToFidoQrScan,
                         onOpenStandaloneSettings = onNavigateToStandaloneSettings,

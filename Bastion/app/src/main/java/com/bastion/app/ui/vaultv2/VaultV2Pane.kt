@@ -1202,6 +1202,7 @@ fun VaultV2Pane(
 	onOpenHistory: () -> Unit,
 	onOpenTrashPage: () -> Unit,
 	onOpenArchivePage: () -> Unit,
+	onManageKeePassDatabase: (Long) -> Unit = {},
 	onOpenCommonAccountTemplates: () -> Unit,
 	onScanFidoQr: () -> Unit = {},
 	onOpenStandaloneSettings: () -> Unit = {},
@@ -2729,6 +2730,7 @@ fun VaultV2Pane(
 				bitwardenVaults = bitwardenVaults,
 				getBitwardenFolders = passwordViewModel::getBitwardenFolders,
 				getKeePassGroups = localKeePassViewModel::getGroups,
+				onManageKeePassDatabase = onManageKeePassDatabase,
 				quickFilterContent = {
 					VaultV2QuickFilterFlow(
 						configuredQuickFilterItems = configuredQuickFilterItems,

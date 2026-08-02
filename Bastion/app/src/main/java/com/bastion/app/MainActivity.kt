@@ -1183,6 +1183,9 @@ fun BastionContent(
                         launchSingleTop = true
                     }
                 },
+                onManageKeePassDatabase = {
+                    navController.navigate(Screen.LocalKeePass.route)
+                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(

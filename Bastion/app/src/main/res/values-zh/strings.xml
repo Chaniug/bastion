@@ -831,7 +831,6 @@
     <string name="v2_send_subtitle">安全分享敏感信息</string>
     <string name="v2_sync_title">同步中心</string>
     <string name="v2_sync_subtitle">管理 Bitwarden 等服务的同步</string>
-    <string name="v2_source_local">本地</string>
     <string name="v2_source_bitwarden">Bitwarden</string>
     <string name="v2_source_keepass">KeePass</string>
     <string name="v2_filter_all">全部</string>
@@ -842,7 +841,8 @@
     <string name="v2_no_items">密码库为空</string>
     <string name="v2_connect_bitwarden">连接 Bitwarden</string>
     
-    <string name="filter_bastion">Bastion</string>
+    <string name="filter_bastion">本地</string>
+    <string name="manage_database">管理数据库</string>
     <string name="filter_bitwarden">Bitwarden</string>
     <string name="move">移动</string>
     <string name="move_to_category">移动到分类</string>

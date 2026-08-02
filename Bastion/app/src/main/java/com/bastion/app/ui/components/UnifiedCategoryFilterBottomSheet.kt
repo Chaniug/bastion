@@ -60,6 +60,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Inventory2
@@ -185,6 +186,7 @@ fun UnifiedCategoryFilterBottomSheet(
     onDeleteKeePassGroup: ((databaseId: Long, groupPath: String) -> Unit)? = null,
     onMoveCategory: ((category: Category, targetParentCategoryId: Long?) -> Unit)? = null,
     onMoveKeePassGroup: ((sourceDatabaseId: Long, groupPath: String, targetDatabaseId: Long, targetParentPath: String?) -> Unit)? = null,
+    onManageKeePassDatabase: ((Long) -> Unit)? = null,
     quickFilterContent: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     if (!visible) return
@@ -291,6 +293,14 @@ fun UnifiedCategoryFilterBottomSheet(
                         }
                     },
                     menu = {
+                        if (onManageKeePassDatabase != null) {
+                            IconButton(onClick = { onManageKeePassDatabase.invoke(database.id) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = stringResource(R.string.manage_database)
+                                )
+                            }
+                        }
                         IconButton(onClick = {
                             keepassExpanded[database.id] = !expanded
                         }) {
