@@ -366,7 +366,7 @@ sealed interface ItemOwnership<out K : KeePassBinding, out B : BitwardenBinding>
 | **P0** | B.2.1 摸清并清零 19 个失败测试 | 1 小时 | 无 | 单 agent | ✅ 19/19 已修复（19 → 0，`af6c2c63`） |
 | **P0** | B.2.2 处置 5 个 .disabled 文件 | 2-3 小时 | 低 | 单 agent | ✅ 完成（删 4 复活 1） |
 | **P1** | B.2.3 守卫测试治理 | 4-6 小时 | 中 | 单 agent | 🟢 治理目标达成（高脆弱非关键守卫已加固 + 写法规范已沉淀；关键 OTP/密码守卫有意保留 Tier C 精确，详见治理文档） |
-| **P1** | B.3 PasswordViewModel 拆分 | 8-16 小时 | 中高 | 多 agent 接力 | 🟡 进行中（集群 1 ✅，CI `30725125903` 绿；剩集群 2-8） |
+| **P1** | B.3 PasswordViewModel 拆分 | 8-16 小时 | 中高 | 多 agent 接力 | 🟡 进行中（集群 1 ✅，CI `30725125903`+`30725511081` 绿；剩集群 2-8） |
 | **P2** | B.4 密封类同形收敛 | 4-8 小时 | 中 | 单 agent（B.3 完成后） | ⬜ 未开始 |
 | **P2** | B.5 Screen 文件拆分 | 8-16 小时 | 低 | 多 agent 接力 | ⬜ 未开始 |
 | **P3** | B.6 DedupMergeTarget 扩展 | 4-8 小时 | 中 | 单 agent（B.4 完成后） | ⬜ 未开始 |
