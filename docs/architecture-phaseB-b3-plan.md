@@ -4,9 +4,9 @@
 > 按职责簇拆分为多个协调器/工具类。**本文档即约定 #5 要求的"重点改动计划"，确认后逐步实施。**
 >
 > **创建时间**：2026-08-02
-> **状态**：🟡 执行中（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **5c ✅** / **6 ✅**；`PasswordViewModel` 4162 → 3539 行，
-> 累计 **-623**；集群 5c 已按 §7.10 完成抽取（12 个 mockk 行为测试护航，CI `total=571 failed=0`）；
-> 剩集群 3/7/8）
+> **状态**：🟢 **B 计划全部完成**（集群 1 ✅ / 2 ✅ / 4 ✅ / 5a ✅ / 5b ✅ / **5c ✅** / **6 ✅** / **7 ✅** / **8 ✅**）；
+> `PasswordViewModel` 4162 → 3472 行，累计 **-690**；集群 7/8 已按 §7.11/§7.12 完成
+> （10 个 mockk 行为测试护航，CI `total=583 failed=0`）；剩集群 3 见 §七 待办条件
 > **前置**：B.1 ✅、B.2.1 ✅、B.2.2 ✅、B.2.3 ✅（治理目标达成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **硬约束**：**不得引入密码条目 / 验证码（OTP/TOTP）回归**（用户明确要求）
@@ -88,8 +88,8 @@
 | 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | ✅ 30731085994 + 30732001927（`total=571 failed=0`） | ✅ 0 失败 | 待真机抽查 | ✅ 完成（见 §7.10） |
 | 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671 + 30729317779（`total=559 failed=0`） | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f + 用户复核）| ✅ 完成（见 §7.7） |
-| 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
-| 8 | 构造注入 | — | — | — | ⬜ 见 §7.6（只有 3/9 可行） |
+| 7 | 主密码/历史 | ✅ 30735924374（`total=583 failed=0`） | ✅ 0 失败 | 待真机抽查 | ✅ 完成（见 §7.11） |
+| 8 | 构造注入 | ✅ 30735924374（`total=583 failed=0`） | ✅ 0 失败 | — | ✅ 完成（见 §7.12） |
 
 ---
 
@@ -355,3 +355,152 @@ B.3 后续必须转向**有状态编排的抽取**，而那要求先有行为测
 
 **遗留**：KDBX 真实写入/删除、附件物化、Bitwarden 云端删除的真机交互待抽查；
 抽取 `PasswordMoveExecutor` 后 `PasswordMoveBehaviorTest` 12 个用例全绿（行为语义未变）。
+
+### 7.11 集群 7 完成：测试网修复 + PasswordHistoryRecorder/MasterPasswordOps 抽取（2026-08-02）
+
+分三步走（照 §7.7 集群 6 流程）：
+
+**Step 1 — 行为测试网**（`PasswordMasterAndHistoryBehaviorTest`，8 个用例）：
+`changePassword` 双分支 / `getPasswordHistoryFlow` 解码过滤 / 历史删除清空 /
+`getBitwardenSyncRawHistoryFlow`（空 cipherId 短路 + SYNC_RESPONSE 过滤）。
+夹具沿用 `context=null` + relaxed `securityManager`（`verifyMasterPassword` 默认 false
+测失败分支，`answers` 覆盖 true 测成功分支）。
+
+**踩坑 1 — VM init 后台任务污染 mock 计数**：VM init 块在 `Dispatchers.IO` 启动
+`repairLegacyDetachedKeePassEntries` / `repairLegacyOwnershipConflicts` /
+`warmupBitwardenOfflineSecretCache`，三者都调 `repository.getAllPasswordEntries().first()`。
+导致：
+- `coVerify(exactly=0) { getAllPasswordEntries() }` 必挂（init 已调用）→ 去掉该断言，只留
+  `setMasterPassword` / `updatePasswordEntry` 零次断言；
+- mock `flowOf(listOf(entry1, entry2))` 时 init 任务拿到非空列表继续写操作 → MockKException。
+  改为 mock `flowOf(emptyList())` 只测**空库路径**（非空重加密留给抽取后的 ops 直测）。
+
+**踩坑 2 — MockK 后声明覆盖先声明**：`coEvery { decryptData("enc-ok") } returns "decoded-1"`
+**后**于 `coEvery { decryptData(any()) } answers { firstArg() }` 声明时，specific mock 被
+`any()` **覆盖**（MockK 按声明序匹配，后者胜），导致两条历史都不解码、断言 1 条失败。
+修复：`any()` fallback 必须放在 specific mock **之前**声明。
+
+**踩坑 3 — `io.mockk.capture` 不存在**：`capture` 是 `coVerify/coEvery` receiver
+（MockKMatcherScope）的**成员函数**，不是顶层函数。`import io.mockk.capture` 导致
+`compileDebugUnitTestKotlin` 失败 → 单测 XML 缺失 → baseline 校验报"XML 缺失"
+（表象与编译错误无关，极易误判）。直接删 import，块内 `capture(slot)` 正常解析。
+
+**Step 2 — 抽取**（CI `total=583 failed=0`，run 30735924374）：
+- **`PasswordHistoryRecorder`**（137 行，4 函数）：`savePasswordHistorySnapshot` /
+  `decodeHistoryPasswordForDisplay`（逐字节搬迁）、`getPasswordHistoryFlow` /
+  `getBitwardenSyncRawHistoryFlow`。注入：`repository` / `securityManager` /
+  `bitwardenRepository`（可空）/ `bitwardenSnapshotPreviewParser` 实例 +
+  `decryptForDisplay` / `decodePasswordOrNull` 函数引用（VM 10+ 处复用留 VM）。
+- **`MasterPasswordOps`**（100 行，2 函数）：`changePassword` 改为**返回 Boolean**
+  （验证失败返回 false），VM 薄委托按返回值恢复 `_isAuthenticated`——语义与搬迁前
+  （验证失败提前 return 不设认证态）等价；`saveSecurityQuestions` **TODO 补全**：
+  落地到 `securityManager.setSecurityQuestions`（存储设施已存在且被
+  `SecurityQuestionsSetupScreen` 使用；`(questionText, answer)` 列表按序映射问题 1/2，
+  文本不匹配预置问题则视为自定义问题）。
+- **`PASSWORD_HISTORY_LIMIT`** 移入 recorder companion；VM 保留 6 个薄委托 +
+  私有 `savePasswordHistorySnapshot` 中转（VM 内部调用点 2122 不变）。
+- 测试网扩到 **10 个用例**：+`saveSecurityQuestions` 落库参数断言（预置问题 id 解析 /
+  答案小写化）、+`savePasswordHistorySnapshot` 直测 recorder（去重跳过 / 加密插入）。
+
+VM 3539 → 3472 行（集群 7 净 -67，累计 4162 → 3472，**-690**）。
+
+**遗留**：`changePassword` 全量重加密的非空库路径暂由空库用例 + 代码审查覆盖，
+抽取后 `MasterPasswordOps` 独立可测；密保问题 UI 已直连 `setSecurityQuestions`，
+VM 入口无 UI 调用方（行为测试已锁定）。
+
+### 7.12 集群 8 完成：3 个无依赖协作者构造注入（2026-08-02）
+
+§7.6 判定 9 个内部 new 协作者仅 3 个可行，实测注入成功（CI `total=583 failed=0`，
+run 30735924374）：
+
+| 协作者 | 可见性 | 注入方式 |
+| --- | --- | --- |
+| `BitwardenSyncSnapshotPreviewParser` | public | 构造参数，默认值 `= BitwardenSyncSnapshotPreviewParser()` |
+| `PasswordCommandStateFactory` | public | 构造参数，默认值 `= PasswordCommandStateFactory()` |
+| `PasswordArchiveFilterController` | 原 internal → **public** | 构造参数，默认值 `= PasswordArchiveFilterController()` |
+
+**坑：public 构造参数不能暴露 internal 类型**（`'public' function exposes its
+'internal' parameter type`）。`PasswordArchiveFilterController` 原为 internal
+（集群 1 迁移时设定），改为 public：无状态、无敏感逻辑，公开无风险（已在
+`CategoryFilter.kt` 类注释中说明缘由）。
+
+3 个参数均带默认值 → 现有 7 个调用方（`MainActivity` / `AutofillPickerActivityV2` /
+`AutofillSaveTransparentActivity` / 4 个行为测试网）**零改动**。VM 内部引用点
+（`passwordHistoryRecorder` 构造 / `archiveOrchestrator` 的 `stateFactory` /
+`archiveFilterController` 三调用 / 批量删除 tombstone 创建）不变。
+
+**未注入的 6 个**（§7.6 根因：Kotlin 构造参数默认值只能引用前序参数）：
+`keepassBridge`（依赖 context+DAO+securityManager）、`keepassPassword{Delete,Create,Update}Executor`
+（依赖 keepassBridge 实例属性）、`defaultPasswordProvider` / `passwordProviderRegistry`
+（依赖 `::decodePasswordOrNull` 实例方法引用）。留待**工厂 lambda 参数**或 **Hilt**，
+单列任务，不再塞入 B 计划。
+
+**B 计划收官状态**：集群 1/2/4/5a/5b/5c/6/7/8 全部完成；唯一剩余集群 3
+（KeePass 同步协调器，含 TOTP 投影）按 §7.1 需先补行为测试 + 真机专项抽查再动。
+
+### 7.11 集群 7 完成：PasswordHistoryRecorder + MasterPasswordOps（2026-08-02）
+
+行为测试网 `PasswordMasterAndHistoryBehaviorTest` 建成并修复后（见 §7.12），照集群 6/5c 模式抽取，
+CI `total=583 failed=0`（run 30735924374），VM 3539 → 3471 行（累计 4162 → 3471，**-691**）。
+
+**PasswordHistoryRecorder**（137 行，4 函数）：
+- `savePasswordHistorySnapshot`：历史快照去重/trim/加密（逐字节搬迁）
+- `decodeHistoryPasswordForDisplay`：历史密码解码 + 规范回写（逐字节搬迁）
+- `getPasswordHistoryFlow`：历史展示流（解码过滤）
+- `getBitwardenSyncRawHistoryFlow`：同步原始历史流（`SYNC_RESPONSE` 过滤）
+- 注入：`repository` / `securityManager` / `bitwardenRepository`（可空）/
+  `bitwardenSnapshotPreviewParser` 实例 + `decryptForDisplay` / `decodePasswordOrNull` 函数引用；
+  `PASSWORD_HISTORY_LIMIT` 移入本类 companion。
+
+**MasterPasswordOps**（100 行，2 函数）：
+- `changePassword`：改为返回 `Boolean`（验证失败提前返回 false），VM 薄委托按返回值恢复
+  `_isAuthenticated` —— 语义与搬迁前等价（验证失败不设认证态）；
+- `saveSecurityQuestions`：**TODO 补全**——落到 `securityManager.setSecurityQuestions`
+  （存储设施已存在且被 `SecurityQuestionsSetupScreen` 使用）；无调用方的死代码桩变为真实落库。
+
+**VM 保留 6 个薄委托**：`getPasswordHistoryFlow` / `getBitwardenSyncRawHistoryFlow` /
+`deletePasswordHistoryEntry` / `clearPasswordHistory` / `changePassword` / `saveSecurityQuestions`
++ 私有 `savePasswordHistorySnapshot` 中转（内部调用点不变）。
+
+**测试网扩到 10 个用例**：+`saveSecurityQuestions` 落库参数断言（预置问题 id 解析 / 答案小写化）、
++`savePasswordHistorySnapshot` 直测 recorder（去重跳过 / 加密插入 + trim 10）。
+
+### 7.12 集群 7 测试网踩坑三连（2026-08-02，务必传给后续 agent）
+
+**坑 1：VM init 后台任务污染 mock 计数。** VM init 块启动 2 个 Dispatchers.IO 任务
+（`repairLegacyDetachedKeePassEntries` / `warmupBitwardenOfflineSecretCache`）都调用
+`repository.getAllPasswordEntries().first()`。行为测试里：
+- 不能断言 `coVerify(exactly=0){ getAllPasswordEntries() }`（init 必调）；
+- mock 非空列表会诱使 init 任务进入写操作污染计数 → `changePassword` 空库路径
+  改用 `flowOf(emptyList())` 验证"设置新密码 + 零重加密"。
+
+**坑 2：MockK 后声明的 mock 覆盖先声明的。** `decryptData(any())` 若在
+`decryptData("enc-ok")` **之后**声明，会覆盖 specific mock → 两个条目都不解码 →
+`entries.size` 断言失败。**`any()` fallback 必须放在 specific mock 之前声明。**
+
+**坑 3：`io.mockk.capture` 顶层 import 不存在。** MockK 的 `capture(slot)` 是
+`coVerify { }` 作用域成员函数（`MockKVerificationScope`），**不需要也不允许**
+`import io.mockk.capture` —— 写了会编译失败 `Unresolved reference 'capture'`。
+正确用法只 import `io.mockk.slot`（先例见 `PasswordArchiveBehaviorTest`）。
+
+### 7.13 集群 8 完成：3 个无依赖协作者构造注入（2026-08-02）
+
+§7.6 预判"3/9 可行"，落地验证一致（run 30735924374，CI `total=583 failed=0`）：
+
+| 协作者 | 注入方式 | 备注 |
+| --- | --- | --- |
+| `BitwardenSyncSnapshotPreviewParser` | 构造参数（默认值） | public、无依赖 |
+| `PasswordCommandStateFactory` | 构造参数（默认值） | public、无依赖 |
+| `PasswordArchiveFilterController` | 构造参数（默认值） | 原 internal → **提升为 public**（public 构造参数不能暴露 internal 类型；无状态无敏感逻辑，公开无风险） |
+
+3 个构造参数均带默认值，7 个调用方（MainActivity / AutofillPickerActivityV2 /
+AutofillSaveTransparentActivity / 4 个行为测试网）零改动。VM 内部引用点
+（passwordHistoryRecorder 构造 / archiveOrchestrator stateFactory / archiveFilterController
+调用 / 批量删除 tombstone 创建）不变。
+
+**其余 6 个不可注入**（`keepassBridge` / `keepassPassword{Delete,Create,Update}Executor` /
+`defaultPasswordProvider` / `passwordProviderRegistry`）：依赖 `context` 或实例方法引用，
+Kotlin 构造参数默认值只能引用前序参数（§7.6 根因）。留待工厂 lambda 或 Hilt 单列任务。
+
+**B.3 剩余**：集群 3（KeePass 同步协调器，含 TOTP 投影）—— 需先补 TOTP 投影行为测试
+（Tier A）+ 真机专项抽查（§7.1 前置条件）后再动。
