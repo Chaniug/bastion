@@ -82,7 +82,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.RectangleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.bastion.app.ui.theme.glass.LocalLiquidGlass
 import com.bastion.app.ui.theme.glass.liquidGlass
 import androidx.compose.ui.graphics.Path
@@ -2042,7 +2042,7 @@ fun SimpleMainScreen(
                         containerColor = if (LocalLiquidGlass.current) Color.Transparent else MaterialTheme.colorScheme.surface,
                         modifier = Modifier.liquidGlass(
                             enabled = LocalLiquidGlass.current,
-                            shape = RectangleShape
+                            shape = RoundedCornerShape(0.dp)
                         )
                     ) {
                         tabs.forEach { item ->

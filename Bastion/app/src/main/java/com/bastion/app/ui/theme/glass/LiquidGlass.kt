@@ -6,8 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RectangleShape
-import androidx.compose.foundation.shape.Shape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -107,7 +107,7 @@ private fun blendSurfaceWhite(
 fun Modifier.liquidGlass(
     enabled: Boolean = LocalLiquidGlass.current,
     tokens: LiquidGlassTokens = LiquidGlassTokens.fromCurrent(isSystemInDarkTheme()),
-    shape: Shape = RectangleShape
+    shape: Shape = RoundedCornerShape(0.dp)
 ): Modifier = if (!enabled) this else this
     .background(tokens.containerColor, shape)
     .drawWithContent {
@@ -130,7 +130,7 @@ fun Modifier.liquidGlass(
 @Composable
 fun LiquidGlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RectangleShape,
+    shape: Shape = RoundedCornerShape(0.dp),
     enabled: Boolean = LocalLiquidGlass.current,
     tokens: LiquidGlassTokens = LiquidGlassTokens.fromCurrent(isSystemInDarkTheme()),
     content: @Composable () -> Unit

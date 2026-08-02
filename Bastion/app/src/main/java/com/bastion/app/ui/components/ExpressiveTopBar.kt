@@ -10,7 +10,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -129,7 +128,7 @@ fun ExpressiveTopBar(
             .fillMaxWidth()
             .heightIn(min = 88.dp)
             .padding(horizontal = 24.dp, vertical = 16.dp)
-            .liquidGlass(enabled = glass, shape = RectangleShape),
+            .liquidGlass(enabled = glass, shape = RoundedCornerShape(0.dp)),
         contentAlignment = Alignment.Center
     ) {
         // 1. 标题区 (在左侧，始终占位，只改变透明度)
