@@ -83,8 +83,8 @@
 | 2 | Bitwarden 离线缓存 → `BitwardenOfflineSecretCacheFacade` | ✅ 30726186131 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
 | 3 | KeePass 同步协调器 | — | — | — | ⬜ **延后**（见 §七） |
 | 4 | 类别过滤解码 → `CategoryFilterCodec` | ✅ 30726656548 | ✅ 0 失败 | ✅ 通过 | ✅ 完成 |
-| 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
-| 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | 待抽查 | ✅ 完成 |
+| 5a | 匹配/去重纯函数 → `PasswordEntryMatching`（10 个函数） | ✅ 30727252608 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
+| 5b | `applyCategoryFilterInMemory` 并入 `PasswordEntryMatching` | ✅ 30727505041 | ✅ 0 失败 | ✅ 通过（build.202608020221 / 44e0657f）| ✅ 完成 |
 | 5c | 跨存储迁移 `move*` → `PasswordMoveExecutor` | — | — | — | ⬜ 有状态，见 §7.4；**待补行为测试** |
 | 6 | 删除/归档编排 | ✅ 30728150825 + 30728548671（`total=559 failed=0`） | ✅ 0 失败 | 待抽查 | 🟡 **行为测试网已建成**（18 个），待抽取 |
 | 7 | 主密码/历史 | — | — | — | ⬜ **待补行为测试** |
