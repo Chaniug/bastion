@@ -225,19 +225,22 @@ class PasswordMasterAndHistoryBehaviorTest {
         val repository = mockk<PasswordRepository>(relaxed = true)
         val securityManager = mockk<SecurityManager>(relaxed = true)
         val viewModel = newViewModel(repository, securityManager)
-        val syncEntry = com.bastion.app.viewmodel.BitwardenSyncRawHistoryItem(
+        val syncRecord = com.bastion.app.data.bitwarden.BitwardenSyncRawEntryRecord(
             id = 1L,
+            vaultId = 1L,
+            bitwardenCipherId = "c1",
             operation = "UPDATE",
             endpoint = "/cipher",
+            payloadCipherText = "encrypted-payload",
             payloadSource = "SYNC_RESPONSE",
             payloadDigest = "digest",
             responseCode = 200,
             success = true,
-            capturedAt = 1_700_000_000_000L,
-            payload = "encrypted-payload"
+            capturedAt = 1_700_000_000_000L
         )
-        val otherEntry = syncEntry.copy(id = 2L, payloadSource = "LOCAL_MUTATION")
-        coEvery { repository.getBitwardenSyncRawRecords(any(), any()) } returns flowOf(listOf(syncEntry, otherEntry))
+        val otherRecord = syncRecord.copy(id = 2L, payloadSource = "LOCAL_MUTATION")
+        coEvery { repository.getBitwardenSyncRawRecords(any(), any()) } returns
+            flowOf(listOf(syncRecord, otherRecord))
         // decodePasswordOrNull → decryptData（relaxed 返回空串），preview parser 需要
         // bitwardenRepository 的对称密钥——context=null 时 bitwardenRepository 为 null，
         // parser 走 null 分支，安全。
