@@ -23,6 +23,52 @@ import java.util.Locale
  */
 internal object PasswordEntryMatching {
 
+    /**
+     * 按当前分类过滤器在内存中筛选条目。18 个分支与 [CategoryFilter] 一一对应，
+     * 纯筛选、不排序、不去重，保持传入顺序。
+     *
+     * 两个分支刻意返回全集：
+     * - [CategoryFilter.Archived]：归档视图的取舍在上游完成
+     * - [CategoryFilter.LocalOnly]：需要与完整数据集比对，由
+     *   [filterLocalOnlyComparedToBitwarden] 单独处理
+     */
+    fun applyCategoryFilterInMemory(
+        entries: List<PasswordEntry>,
+        filter: CategoryFilter
+    ): List<PasswordEntry> {
+        return when (filter) {
+            is CategoryFilter.All -> entries
+            is CategoryFilter.Archived -> entries
+            is CategoryFilter.Local -> entries.filter { it.isLocalOnlyEntry() }
+            is CategoryFilter.LocalOnly -> entries // handled separately because it needs full dataset comparison
+            is CategoryFilter.Starred -> entries.filter { it.isFavorite }
+            is CategoryFilter.Uncategorized -> entries.filter { it.categoryId == null }
+            is CategoryFilter.LocalStarred -> entries.filter { it.isLocalOnlyEntry() && it.isFavorite }
+            is CategoryFilter.LocalUncategorized -> entries.filter { it.isLocalOnlyEntry() && it.categoryId == null }
+            is CategoryFilter.Custom -> entries.filter { it.categoryId == filter.categoryId && it.isLocalOnlyEntry() }
+            is CategoryFilter.KeePassDatabase -> entries.filter { it.keepassDatabaseId == filter.databaseId }
+            is CategoryFilter.KeePassGroupFilter -> entries.filter {
+                it.keepassDatabaseId == filter.databaseId && it.keepassGroupPath == filter.groupPath
+            }
+            is CategoryFilter.KeePassDatabaseStarred -> entries.filter {
+                it.keepassDatabaseId == filter.databaseId && it.isFavorite
+            }
+            is CategoryFilter.KeePassDatabaseUncategorized -> entries.filter {
+                it.keepassDatabaseId == filter.databaseId && it.keepassGroupPath.isNullOrBlank()
+            }
+            is CategoryFilter.BitwardenVault -> entries.filter { it.bitwardenVaultId == filter.vaultId }
+            is CategoryFilter.BitwardenFolderFilter -> entries.filter {
+                it.bitwardenVaultId == filter.vaultId && it.bitwardenFolderId == filter.folderId
+            }
+            is CategoryFilter.BitwardenVaultStarred -> entries.filter {
+                it.bitwardenVaultId == filter.vaultId && it.isFavorite
+            }
+            is CategoryFilter.BitwardenVaultUncategorized -> entries.filter {
+                it.bitwardenVaultId == filter.vaultId && it.bitwardenFolderId == null
+            }
+        }
+    }
+
     /** 比较用文本规范化：去空白 + 转小写。 */
     fun normalizeComparableText(value: String): String {
         return value.trim().lowercase(Locale.ROOT)

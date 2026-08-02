@@ -660,39 +660,7 @@ class PasswordViewModel(
     private fun applyCategoryFilterInMemory(
         entries: List<PasswordEntry>,
         filter: CategoryFilter
-    ): List<PasswordEntry> {
-        return when (filter) {
-            is CategoryFilter.All -> entries
-            is CategoryFilter.Archived -> entries
-            is CategoryFilter.Local -> entries.filter { it.isLocalOnlyEntry() }
-            is CategoryFilter.LocalOnly -> entries // handled separately because it needs full dataset comparison
-            is CategoryFilter.Starred -> entries.filter { it.isFavorite }
-            is CategoryFilter.Uncategorized -> entries.filter { it.categoryId == null }
-            is CategoryFilter.LocalStarred -> entries.filter { it.isLocalOnlyEntry() && it.isFavorite }
-            is CategoryFilter.LocalUncategorized -> entries.filter { it.isLocalOnlyEntry() && it.categoryId == null }
-            is CategoryFilter.Custom -> entries.filter { it.categoryId == filter.categoryId && it.isLocalOnlyEntry() }
-            is CategoryFilter.KeePassDatabase -> entries.filter { it.keepassDatabaseId == filter.databaseId }
-            is CategoryFilter.KeePassGroupFilter -> entries.filter {
-                it.keepassDatabaseId == filter.databaseId && it.keepassGroupPath == filter.groupPath
-            }
-            is CategoryFilter.KeePassDatabaseStarred -> entries.filter {
-                it.keepassDatabaseId == filter.databaseId && it.isFavorite
-            }
-            is CategoryFilter.KeePassDatabaseUncategorized -> entries.filter {
-                it.keepassDatabaseId == filter.databaseId && it.keepassGroupPath.isNullOrBlank()
-            }
-            is CategoryFilter.BitwardenVault -> entries.filter { it.bitwardenVaultId == filter.vaultId }
-            is CategoryFilter.BitwardenFolderFilter -> entries.filter {
-                it.bitwardenVaultId == filter.vaultId && it.bitwardenFolderId == filter.folderId
-            }
-            is CategoryFilter.BitwardenVaultStarred -> entries.filter {
-                it.bitwardenVaultId == filter.vaultId && it.isFavorite
-            }
-            is CategoryFilter.BitwardenVaultUncategorized -> entries.filter {
-                it.bitwardenVaultId == filter.vaultId && it.bitwardenFolderId == null
-            }
-        }
-    }
+    ): List<PasswordEntry> = PasswordEntryMatching.applyCategoryFilterInMemory(entries, filter)
 
     private fun filterGhostEntriesForDisplay(entries: List<PasswordEntry>): List<PasswordEntry> {
         if (entries.size <= 1) return entries
