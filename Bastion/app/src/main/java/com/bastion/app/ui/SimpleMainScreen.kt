@@ -82,6 +82,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import com.bastion.app.ui.theme.glass.LocalLiquidGlass
+import com.bastion.app.ui.theme.glass.liquidGlass
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -2036,7 +2038,11 @@ fun SimpleMainScreen(
 
                     NavigationBar(
                         tonalElevation = 0.dp,
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = if (LocalLiquidGlass.current) Color.Transparent else MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.liquidGlass(
+                            enabled = LocalLiquidGlass.current,
+                            shape = RoundedCornerShape(0.dp)
+                        )
                     ) {
                         tabs.forEach { item ->
                             val label = stringResource(item.shortLabelRes())

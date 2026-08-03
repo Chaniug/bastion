@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ColorScheme as MaterialColorScheme
@@ -17,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.bastion.app.data.ColorScheme
+import com.bastion.app.ui.theme.glass.LocalLiquidGlass
 
 // ============================================
 // 📱 默认配色方案 (Material Design 3 默认紫色)
@@ -946,6 +948,7 @@ fun BastionTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     oledPureBlackEnabled: Boolean = false,
     colorScheme: ColorScheme = ColorScheme.DEFAULT,
+    liquidGlassEnabled: Boolean = false,
     customPrimaryColor: Long = 0xFF6650a4,
     customSecondaryColor: Long = 0xFF625b71,
     customTertiaryColor: Long = 0xFF7D5260,
@@ -1242,11 +1245,13 @@ fun BastionTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = finalColorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalLiquidGlass provides liquidGlassEnabled) {
+        MaterialTheme(
+            colorScheme = finalColorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 private fun MaterialColorScheme.withPureBlackSurfaces(): MaterialColorScheme {

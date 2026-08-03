@@ -18,8 +18,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.bastion.app.ui.theme.glass.LocalLiquidGlass
+import com.bastion.app.ui.theme.glass.liquidGlass
 
 @Composable
 internal fun BottomSheetAnimatedVisibility(
@@ -54,16 +57,25 @@ internal fun BastionModalBottomSheet(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     tonalElevation: Dp = 0.dp,
     showDragHandle: Boolean = true,
+    glass: Boolean = LocalLiquidGlass.current,
+    modifier: Modifier = Modifier,
     contentWindowInsets: @Composable () -> WindowInsets = {
         BottomSheetDefaults.modalWindowInsets
     },
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    val glassModifier = if (glass) {
+        Modifier.liquidGlass(enabled = true, shape = sheetShape)
+    } else {
+        Modifier
+    }
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        containerColor = containerColor,
+        modifier = modifier.then(glassModifier),
+        shape = sheetShape,
+        containerColor = if (glass) Color.Transparent else containerColor,
         tonalElevation = tonalElevation,
         contentWindowInsets = contentWindowInsets,
         dragHandle = if (showDragHandle) {

@@ -300,6 +300,10 @@ jobs:
           print(f"total={total} failed={failed} baseline={baseline}")
           for name in names:
               print(f"  FAILED  {name}")
+              # 每个失败测试单独打一条注解：step summary / 日志在协作环境里
+              # 因 blob.core.windows.net 被 DNS 劫持拿不到，唯有 checks API 注解稳定可读。
+              # 这样 `gh api .../check-runs/<id>/annotations` 能直接列出失败测试名。
+              print(f"::error title=Failed test::{name}")
 
           # 把统计发成 annotation。原因：本仓库的协作环境里
           # blob.core.windows.net（run log / artifact 的实际下载源）会被 DNS 劫持到
