@@ -1,51 +1,29 @@
 package com.bastion.app.ui.theme.glass
 
-import android.graphics.RenderEffect as PlatformRenderEffect
-import android.graphics.Shader
 import android.os.Build
-import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RenderEffect as ComposeRenderEffect
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
-import androidx.compose.ui.node.DrawModifierNode
-import androidx.compose.ui.node.GlobalPositionAwareModifierNode
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.currentValueOf
-import androidx.compose.ui.node.invalidateDraw
-import androidx.compose.ui.platform.LocalGraphicsContext
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocal
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.drawscope.translate
 
 /**
  * 全局开关：液态玻璃是否启用。
@@ -55,55 +33,29 @@ import androidx.compose.ui.graphics.drawscope.translate
 val LocalLiquidGlass = compositionLocalOf { false }
 
 /**
- * 背景捕获状态：由 [glazeSource] 写入"背后内容"的离屏图层与坐标，
- * 供玻璃材质组件（[liquidGlass]）采样并模糊，实现真正的背景模糊（非只模糊自身）。
+ * 背景捕获状态的占位容器。
  *
- * 这是 Haze 风格的成熟做法：用 [GraphicsLayer] 把背景录进离屏图层，
- * 再用 [PlatformRenderEffect] 做模糊，玻璃层平移正确偏移后绘制该图层。
+ * **当前实现（纯 Compose 降级版）**：不再录制离屏图层，此类仅作为 CompositionLocal
+ * 的占位存在，保持 [com.bastion.app.ui.theme.BastionTheme] 与各玻璃组件的调用链不变。
+ * 以后若找到在 Honor / 各厂商 GPU 驱动上稳定的真模糊方案，可在此恢复图层捕获逻辑。
+ *
+ * 历史背景：此前用 `GraphicsLayer.record` + `RenderEffect.createBlurEffect` 做真背景
+ * 模糊，在 Honor（Android 17 / API36）上触发渲染线程 native 崩溃（Java try/catch 无法
+ * 捕获），连续 3 版闪退。根因是嵌套图层录制 + RenderEffect 在部分厂商 GPU 驱动上
+ * 不稳定。故先移除整条 native 路径，退化为纯 Compose 磨砂玻璃，100% 不崩。
  */
-class GlassBackdropState {
-    /** 背后内容录制的离屏图层（由 glazeSource 写入）。 */
-    internal var contentLayer: GraphicsLayer? = null
-
-    /** 背景源在 root 坐标系中的位置（由 glazeSource 写入）。 */
-    internal var sourcePosition: Offset = Offset.Zero
-
-    /** 背景源尺寸。 */
-    internal var sourceSize: Size = Size.Unspecified
-
-    /**
-     * 源每次重新录制内容时自增。玻璃节点监听此值以在滚动/动画时实时重绘模糊背景。
-     */
-    internal var contentVersion: Long by mutableLongStateOf(0)
-
-    /**
-     * 源正在把自身内容录进 contentLayer 时为 true，避免玻璃节点在"被录制"时
-     * 又去采样 contentLayer 造成图层套图层的反馈/崩溃（Haze 的 contentDrawing 机制）。
-     */
-    internal var contentDrawing: Boolean = false
-
-    private val listeners = mutableListOf<() -> Unit>()
-
-    internal fun addListener(l: () -> Unit) {
-        if (l !in listeners) listeners += l
-    }
-
-    internal fun removeListener(l: () -> Unit) {
-        listeners -= l
-    }
-
-    internal fun notifyListeners() {
-        for (l in listeners) l()
-    }
-}
+class GlassBackdropState
 
 /**
- * 背景捕获状态的 CompositionLocal。由 [com.bastion.app.ui.theme.BastionTheme]
- * 提供；玻璃组件读取它来拿到要模糊的背景图层。
+ * [GlassBackdropState] 的 CompositionLocal。由 [com.bastion.app.ui.theme.BastionTheme]
+ * 提供；当前为占位，玻璃组件不再从中读取图层。
  */
 val LocalGlassBackdrop = compositionLocalOf { GlassBackdropState() }
 
-/** 真背景模糊需要 Android 12（API 31）以上的 RenderEffect；更低版本回退到半透明方案。 */
+/**
+ * 保留给 [com.bastion.app.ui.theme.BastionTheme] 判断是否需要包裹 glazeSource。
+ * 当前始终为 true（让 Theme.kt 的条件分支保持原样），但 glazeSource 本身已是 no-op。
+ */
 internal val GLASS_BLUR_SUPPORTED: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /**
@@ -112,19 +64,20 @@ internal val GLASS_BLUR_SUPPORTED: Boolean = Build.VERSION.SDK_INT >= Build.VERS
  * 设计依据综合自三个成熟的 Android 玻璃态实现方案：
  *
  * 1. **Haze 风格（Chris Banes 的 RenderEffect 背景捕获）**：真背景模糊的核心技法，
- *    本实现即采用此思路（自研、无外部依赖）。
+ *    本实现曾采用此思路（自研、无外部依赖），但在 Honor 真机上触发 native 崩溃，
+ *    故暂时降级为纯 Compose 方案。
  * 2. **Yang-Ya-Chao 玻璃态设计系统**：纯 Compose 实现，
  *    核心是 `1dp 顶部内高光线` + `1dp 渐变描边` + 低透明填充 + 外投影。
  * 3. **androidengineers Glassmorphism 指南**：推荐低透明填充 + 渐变描边 + 投影。
  *
- * 视觉构成（从底到顶，API31+ 走真模糊）：
- * - 背后内容的实时模糊（RenderEffect，半径 ~18dp）
- * - 低透明 tint（背后内容透出 + 轻微 vibrancy）
+ * 视觉构成（从底到顶，当前为纯 Compose 降级版，无真模糊）：
+ * - 低透明 tint（半透明填充，模拟磨砂玻璃的通透感）
  * - 1dp 顶部内高光线（模拟玻璃上边缘的光反射，克制，不出现矩形带）
  * - 1dp 上亮下暗渐变描边（模拟光照衰减）
  * - 轻微外投影（建立与内容的深度分离）
  *
- * < API31 或捕获不可用时，回退为"低透明填充 + 高光 + 渐变描边"（无真模糊，但不会崩）。
+ * 此方案只使用 drawRect / verticalGradient / shadow，不涉及 GraphicsLayer 或
+ * RenderEffect，不会触发 GPU 驱动 native 崩溃。
  */
 data class LiquidGlassTokens(
     val containerColor: Color,     // 半透明 tint（极透明，让内容透出 + vibrancy）
@@ -177,16 +130,6 @@ private fun blendSurfaceWhite(
 )
 
 /**
- * Android RenderEffect 官方标注的模糊半径上限（0 < radius <= 25 px）。
- * 超出上限在部分厂商 GPU 驱动上可能触发渲染线程崩溃（native crash，Java 层无法捕获），
- * 因此这里显式 clamp，避免把大半径传给底层。
- */
-private const val MAX_BLUR_RADIUS_PX = 25f
-
-/** 最小模糊半径（px），避免 0 半径导致 RenderEffect 创建失败或退化。 */
-private const val MIN_BLUR_RADIUS_PX = 0.5f
-
-/**
  * 在 [DrawScope] 内绘制玻璃的两层光学叠加：1dp 顶部内高光线 + 渐变描边。
  *
  * 这是 Yang-Ya-Chao 设计系统的核心技巧：高光只有 **1dp 高**（不是矩形带），
@@ -209,108 +152,36 @@ private fun DrawScope.glassHighlights(tokens: LiquidGlassTokens) {
 }
 
 // ============================================================
-// 背景捕获：glazeSource
+// 背景捕获：glazeSource（当前为 no-op，保留接口兼容）
 // ============================================================
 
 /**
- * 把修饰对象背后的内容录制进 [GlassBackdropState.contentLayer]（离屏 [GraphicsLayer]），
- * 供液态玻璃组件模糊采样。应包裹在浮层（顶栏/底栏/弹窗）**背后**的内容上。
+ * 把修饰对象背后的内容录制进 [GlassBackdropState]（离屏图层），
+ * 供液态玻璃组件模糊采样。
  *
- * - API31+：内容被录进独立 [GraphicsLayer]，玻璃层对其做 RenderEffect 模糊。
- * - <API31：无真模糊，玻璃回退为半透明方案（此修饰符仍正常上屏，只是玻璃不模糊）。
+ * **当前为 no-op 透传**：Honor 真机上 `GraphicsLayer.record` + `RenderEffect`
+ * 触发 native 崩溃，故移除录制逻辑。此函数保留签名，仅透传内容，不产生任何
+ * 离屏图层或 GPU 操作。以后恢复真模糊时在此接回。
  */
-fun Modifier.glazeSource(state: GlassBackdropState): Modifier = this.then(GlazeSourceElement(state))
-
-private data class GlazeSourceElement(
-    val state: GlassBackdropState
-) : ModifierNodeElement<GlazeSourceNode>() {
-    override fun create(): GlazeSourceNode = GlazeSourceNode(state)
-    override fun update(node: GlazeSourceNode) {
-        node.state = state
-    }
-}
-
-private class GlazeSourceNode(
-    state: GlassBackdropState
-) : Modifier.Node(),
-    CompositionLocalConsumerModifierNode,
-    GlobalPositionAwareModifierNode,
-    DrawModifierNode {
-
-    var state: GlassBackdropState = state
-        set(value) {
-            if (value === field) return
-            field = value
-        }
-
-    private var layer: GraphicsLayer? = null
-
-    // 在 onAttach 时缓存，避免 onDetach 阶段读取 CompositionLocal（可能抛异常）。
-    private var graphicsContext: androidx.compose.ui.graphics.GraphicsContext? = null
-
-    override val shouldAutoInvalidate: Boolean = false
-
-    override fun onAttach() {
-        graphicsContext = currentValueOf(LocalGraphicsContext)
-    }
-
-    override fun onGloballyPositioned(coordinates: androidx.compose.ui.layout.LayoutCoordinates) {
-        Snapshot.withoutReadObservation {
-            state.sourcePosition = coordinates.positionInRoot()
-            state.sourceSize = coordinates.size.toSize()
-        }
-    }
-
-    override fun ContentDrawScope.draw() {
-        state.contentDrawing = true
-        try {
-            if (!isAttached) return
-            if (size.minDimension >= 1f) {
-                val ctx = currentValueOf(LocalGraphicsContext)
-                val contentLayer = layer ?: ctx.createGraphicsLayer().also { layer = it }
-                state.contentLayer = contentLayer
-                // 录制 + 上屏 + 通知 整体防护：任何一步在个别 GPU/驱动上偶发异常都不允许
-                // 冒泡导致整页闪退，失败时直接把内容画到屏幕（玻璃降级为半透明）。
-                try {
-                    contentLayer.record {
-                        this@draw.drawContent()
-                    }
-                    state.contentVersion++
-                    // 再把内容正常画到屏幕上
-                    drawLayer(contentLayer)
-                    state.notifyListeners()
-                } catch (e: Exception) {
-                    Log.e("LiquidGlass", "source record/draw failed; drawing content directly", e)
-                    this@draw.drawContent()
-                }
-            } else {
-                drawContent()
-            }
-        } finally {
-            state.contentDrawing = false
-        }
-    }
-
-    override fun onDetach() {
-        layer?.let { graphicsContext?.releaseGraphicsLayer(it) }
-        layer = null
-        state.contentLayer = null
-        graphicsContext = null
-    }
-}
+fun Modifier.glazeSource(state: GlassBackdropState): Modifier = this
 
 // ============================================================
-// 玻璃材质：liquidGlass
+// 玻璃材质：liquidGlass（纯 Compose 降级版，无真模糊）
 // ============================================================
 
 /**
  * 把任意 [androidx.compose.foundation.layout.Box] / [Surface] 变成玻璃材质。
  *
- * - 启用且 API31+ 且已捕获到背景：绘制**背后内容的实时模糊** + tint + 高光 + 渐变描边。
- * - 否则回退为半透明填充 + 高光 + 渐变描边（不报错、不崩）。
+ * **当前实现**：纯 Compose 磨砂玻璃 —— 半透明 tint + 1dp 顶部内高光 + 渐变描边 +
+ * 外投影。不使用 GraphicsLayer / RenderEffect，不会触发 GPU 驱动 native 崩溃。
  *
- * 模糊通过 [GlassBackdropState]（由 [glazeSource] 填充）采样背后内容，
- * 平移 `sourcePos - glassPos` 使背景对齐（同一 root 坐标系）。
+ * 视觉上是通透的磨砂玻璃质感（无真背景模糊），在 Honor 及各厂商机型上 100% 稳定。
+ * 以后找到安全的真模糊方案时，在此恢复模糊绘制逻辑。
+ *
+ * @param enabled 是否启用玻璃材质（false 时直接返回原 Modifier）
+ * @param tokens 玻璃材质参数（颜色/高光/描边/投影）
+ * @param shape 玻璃形状（用于裁剪与投影）
+ * @param blurRadiusDp 模糊半径（当前降级版未使用，保留参数兼容调用方）
  */
 @Composable
 fun Modifier.liquidGlass(
@@ -321,169 +192,42 @@ fun Modifier.liquidGlass(
 ): Modifier = if (!enabled) this else this
     .shadow(elevation = tokens.elevation, shape = shape, clip = false)
     .clip(shape)
-    .then(LiquidGlassElement(enabled, tokens, shape, blurRadiusDp))
+    .then(LiquidGlassElement(tokens))
 
 private data class LiquidGlassElement(
-    val enabled: Boolean,
-    val tokens: LiquidGlassTokens,
-    val shape: Shape,
-    val blurRadiusDp: Dp
+    val tokens: LiquidGlassTokens
 ) : ModifierNodeElement<LiquidGlassNode>() {
-    override fun create(): LiquidGlassNode = LiquidGlassNode(enabled, tokens, shape, blurRadiusDp)
+    override fun create(): LiquidGlassNode = LiquidGlassNode(tokens)
     override fun update(node: LiquidGlassNode) {
-        node.enabled = enabled
         node.tokens = tokens
-        node.shape = shape
-        node.blurRadiusDp = blurRadiusDp
-    }
-}
-
-private class LiquidGlassNode(
-    enabled: Boolean,
-    tokens: LiquidGlassTokens,
-    shape: Shape,
-    blurRadiusDp: Dp
-) : Modifier.Node(),
-    CompositionLocalConsumerModifierNode,
-    GlobalPositionAwareModifierNode,
-    DrawModifierNode {
-
-    var enabled: Boolean by mutableStateOf(enabled)
-    var tokens: LiquidGlassTokens by mutableStateOf(tokens)
-    var shape: Shape by mutableStateOf(shape)
-    var blurRadiusDp: Dp by mutableStateOf(blurRadiusDp)
-
-    private var glassPos: Offset = Offset.Zero
-    private var effectLayer: GraphicsLayer? = null
-    private var graphicsContext: androidx.compose.ui.graphics.GraphicsContext? = null
-    // 注意：必须在 onAttach 之后才读取 CompositionLocal，构造期读取会拿到默认值（且不稳定）。
-    private var backdropState: GlassBackdropState = GlassBackdropState()
-    private val redrawListener: () -> Unit = { invalidateDraw() }
-
-    override val shouldAutoInvalidate: Boolean = true
-
-    override fun onAttach() {
-        graphicsContext = currentValueOf(LocalGraphicsContext)
-        backdropState = currentValueOf(LocalGlassBackdrop)
-        backdropState.addListener(redrawListener)
-    }
-
-    override fun onGloballyPositioned(coordinates: androidx.compose.ui.layout.LayoutCoordinates) {
-        val newPos = coordinates.positionInRoot()
-        if (newPos != glassPos) {
-            glassPos = newPos
-            invalidateDraw()
-        }
-    }
-
-    override fun ContentDrawScope.draw() {
-        // 源正在把自身内容录进 contentLayer 时（contentDrawing=true），本节点是源的子树，
-        // 它的绘制会被一起录进图层。此时必须完全跳过玻璃绘制，否则玻璃自身的 tint/高光会
-        // 被烘焙进源图层，后续采样时产生"双重影像"（玻璃在自己背后又模糊出一层自己）。
-        // 真实的模糊绘制发生在源录制结束后的重绘（contentDrawing=false）里，由源
-        // notifyListeners() 触发本节点的 invalidateDraw() 完成，绘制在源图层之上。
-        if (backdropState.contentDrawing) return
-
-        try {
-            val showBlur = enabled &&
-                GLASS_BLUR_SUPPORTED &&
-                backdropState.contentLayer?.takeUnless { it.isReleased } != null
-
-            if (showBlur) {
-                // 模糊成功与否都叠 tint：失败时该 tint 即退化方案（无真模糊的半透明玻璃）
-                drawBlurredBackdrop()
-                drawRect(color = tokens.containerColor)
-            } else if (enabled) {
-                // 回退：半透明填充（无真模糊 / 未捕获到背景）
-                drawRect(color = tokens.containerColor)
-            }
-
-            // 原内容（透明背景 + 子元素）画在 tint/模糊之上
-            drawContent()
-
-            if (enabled) {
-                glassHighlights(tokens)
-            }
-        } catch (e: Exception) {
-            // 终极兜底：玻璃绘制的任何 Java 异常都不允许冒泡导致整页闪退，
-            // 直接退化为"只画内容"（等价于未启用玻璃）。
-            Log.e("LiquidGlass", "glass draw degraded to plain content", e)
-            drawContent()
-        }
-    }
-
-    /**
-     * 绘制真实模糊背景。返回是否成功绘制了模糊层；false 表示模糊不可用，
-     * 调用方应退化为半透明 tint。
-     *
-     * 内部所有步骤（layer 创建、RenderEffect 设置、record、drawLayer）均包 try/catch，
-     * 任何异常都会被吞掉并返回 false —— 这是 Honor 真机闪退修复的核心：此前
-     * `ensureEffectLayer` 的 createGraphicsLayer / renderEffect 在 try 之外，
-     * 且 18dp 半径换算像素后超出 RenderEffect 官方上限（25px），异常直接冒泡闪退。
-     */
-    private fun DrawScope.drawBlurredBackdrop(): Boolean {
-        val src = backdropState.contentLayer
-            ?.takeUnless { it.isReleased }
-            ?: return false
-        val ctx = graphicsContext ?: return false
-        // Android RenderEffect 的 blur 半径官方上限 25px；超出上限在部分驱动上会 native 崩溃。
-        val blurPx = blurRadiusDp.toPx().coerceIn(MIN_BLUR_RADIUS_PX, MAX_BLUR_RADIUS_PX)
-        val layer = try {
-            ensureEffectLayer(blurPx)
-        } catch (e: Exception) {
-            Log.e("LiquidGlass", "blur layer creation failed; tint-only fallback", e)
-            null
-        } ?: return false
-        return try {
-            val offset = backdropState.sourcePosition - glassPos
-            layer.record {
-                translate(left = offset.x, top = offset.y) {
-                    drawLayer(src)
-                }
-            }
-            // 形状裁剪已由 liquidGlass() 的 Modifier.clip(shape) 负责，此处直接绘制即可，
-            // 避免依赖 androidx.compose.ui.graphics.drawscope.clip（该包级函数在本项目 Compose
-            // 版本里未直接暴露）。最终玻璃内容会被 Modifier 层的 clip 裁到 shape 内。
-            drawLayer(layer)
-            true
-        } catch (e: Exception) {
-            // 真机（不同 GPU / RenderThread 驱动）上 RenderEffect + 嵌套 GraphicsLayer 偶发异常。
-            // 不抛飞、降级为半透明 tint，避免整页闪退；日志便于后续精确定位。
-            Log.e("LiquidGlass", "blur draw failed; tint-only fallback (blurPx=$blurPx)", e)
-            false
-        }
-    }
-
-    private fun ensureEffectLayer(blurPx: Float): GraphicsLayer? {
-        effectLayer?.let { return it }
-        val ctx = graphicsContext ?: return null
-        return try {
-            ctx.createGraphicsLayer().also {
-                if (GLASS_BLUR_SUPPORTED && blurPx > 0f) {
-                    it.renderEffect = PlatformRenderEffect
-                        .createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
-                        .asComposeRenderEffect()
-                }
-                effectLayer = it
-            }
-        } catch (e: Exception) {
-            // createGraphicsLayer 或 renderEffect 设置失败（驱动/系统兼容问题）：
-            // 返回 null 表示模糊不可用，玻璃退化为半透明 tint，绝不冒泡闪退。
-            Log.e("LiquidGlass", "ensureEffectLayer failed; blur disabled (blurPx=$blurPx)", e)
-            null
-        }
-    }
-
-    override fun onDetach() {
-        backdropState.removeListener(redrawListener)
-        effectLayer?.let { graphicsContext?.releaseGraphicsLayer(it) }
-        effectLayer = null
-        graphicsContext = null
     }
 }
 
 /**
- * 玻璃容器。通过半透明 + 真实背景模糊（API31+）+ 微妙高光还原玻璃质感。
+ * 玻璃绘制节点（纯 Compose，仅 drawRect / 渐变，无 GPU 离屏操作）。
+ */
+private class LiquidGlassNode(
+    tokens: LiquidGlassTokens
+) : Modifier.Node(), DrawModifierNode {
+
+    var tokens: LiquidGlassTokens = tokens
+
+    override val shouldAutoInvalidate: Boolean = true
+
+    override fun ContentDrawScope.draw() {
+        // 1) 半透明 tint：磨砂玻璃的通透感（让背后内容透出 + 轻微 vibrancy）
+        drawRect(color = tokens.containerColor)
+
+        // 2) 原内容（透明背景 + 子元素）画在 tint 之上
+        drawContent()
+
+        // 3) 顶部内高光线 + 渐变描边（光照边缘效果）
+        glassHighlights(tokens)
+    }
+}
+
+/**
+ * 玻璃容器。通过半透明 + 微妙高光还原玻璃质感。
  *
  * 调用方需通过 [modifier] 或父布局为该容器提供尺寸。
  */
