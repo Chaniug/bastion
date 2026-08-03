@@ -3,6 +3,7 @@ package com.bastion.app.ui.theme.glass
 import android.graphics.RenderEffect as PlatformRenderEffect
 import android.graphics.Shader
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -256,8 +257,16 @@ private class GlazeSourceNode(
                 val contentLayer = layer ?: ctx.createGraphicsLayer().also { layer = it }
                 state.contentLayer = contentLayer
                 // 把背后内容录进离屏图层
-                contentLayer.record {
+                try {
+                    contentLayer.record {
+                        this@draw.drawContent()
+                    }
+                } catch (e: Exception) {
+                    // 录制失败（个别 GPU / 驱动上 record 偶发异常）：直接把内容画到屏幕，
+                    // 放弃离屏捕获，玻璃降级为半透明（不抛飞，避免整页闪退）。
+                    Log.e("LiquidGlass", "source record failed; drawing content directly", e)
                     this@draw.drawContent()
+                    return
                 }
                 state.contentVersion++
                 // 再把内容正常画到屏幕上
@@ -335,13 +344,15 @@ private class LiquidGlassNode(
     private var glassPos: Offset = Offset.Zero
     private var effectLayer: GraphicsLayer? = null
     private var graphicsContext: androidx.compose.ui.graphics.GraphicsContext? = null
-    private val backdropState: GlassBackdropState = currentValueOf(LocalGlassBackdrop)
+    // 注意：必须在 onAttach 之后才读取 CompositionLocal，构造期读取会拿到默认值（且不稳定）。
+    private var backdropState: GlassBackdropState = GlassBackdropState()
     private val redrawListener: () -> Unit = { invalidateDraw() }
 
     override val shouldAutoInvalidate: Boolean = true
 
     override fun onAttach() {
         graphicsContext = currentValueOf(LocalGraphicsContext)
+        backdropState = currentValueOf(LocalGlassBackdrop)
         backdropState.addListener(redrawListener)
     }
 
@@ -384,24 +395,31 @@ private class LiquidGlassNode(
 
     private fun DrawScope.drawBlurredBackdrop() {
         val src = backdropState.contentLayer ?: return
+        val ctx = graphicsContext ?: return
         val blurPx = blurRadiusDp.toPx()
-        val layer = ensureEffectLayer(blurPx)
-        val offset = backdropState.sourcePosition - glassPos
-        layer.record {
-            translate(left = offset.x, top = offset.y) {
-                drawLayer(src)
+        if (blurPx <= 0f) return
+        val layer = ensureEffectLayer(blurPx) ?: return
+        try {
+            val offset = backdropState.sourcePosition - glassPos
+            layer.record {
+                translate(left = offset.x, top = offset.y) {
+                    drawLayer(src)
+                }
             }
+            // 形状裁剪已由 liquidGlass() 的 Modifier.clip(shape) 负责，此处直接绘制即可，
+            // 避免依赖 androidx.compose.ui.graphics.drawscope.clip（该包级函数在本项目 Compose
+            // 版本里未直接暴露）。最终玻璃内容会被 Modifier 层的 clip 裁到 shape 内。
+            drawLayer(layer)
+        } catch (e: Exception) {
+            // 真机（不同 GPU / RenderThread 驱动）上 RenderEffect + 嵌套 GraphicsLayer 偶发异常。
+            // 不抛飞、降级为半透明 tint，避免整页闪退；日志便于后续精确定位。
+            Log.e("LiquidGlass", "blur draw failed; falling back to tint-only", e)
         }
-        // 形状裁剪已由 liquidGlass() 的 Modifier.clip(shape) 负责，此处直接绘制即可，
-        // 避免依赖 androidx.compose.ui.graphics.drawscope.clip（该包级函数在本项目 Compose
-        // 版本里未直接暴露）。最终玻璃内容会被 Modifier 层的 clip 裁到 shape 内。
-        drawLayer(layer)
     }
 
-    private fun ensureEffectLayer(blurPx: Float): GraphicsLayer {
+    private fun ensureEffectLayer(blurPx: Float): GraphicsLayer? {
         effectLayer?.let { return it }
-        val ctx = graphicsContext
-            ?: error("GraphicsContext unavailable for liquid glass effect layer")
+        val ctx = graphicsContext ?: return null
         return ctx.createGraphicsLayer().also {
             if (GLASS_BLUR_SUPPORTED && blurPx > 0f) {
                 it.renderEffect = PlatformRenderEffect
