@@ -19,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -32,31 +33,35 @@ val LocalLiquidGlass = compositionLocalOf { false }
 /**
  * 液态玻璃材质参数。
  *
- * 设计依据：Apple HIG「Materials / Liquid Glass」——
- * 玻璃是一种浮在内容层之上的**功能层**，让背后内容透出并滚动，
- * 通过半透明 + 镜面边缘高光（specular rim）+ 斜向反光（sheen）+ 投影建立层次。
- * 颜色取自当前 [MaterialTheme.colorScheme]，因此天然适配深浅色与任意配色方案。
+ * 设计依据综合自三个成熟的 Android 玻璃态实现方案：
  *
- * 说明：Compose 的模糊（BlurEffect/Modifier.blur）只作用于节点「自身内容」，
- * 无法像系统合成器那样折射背后真实的内容（列表/背景）。因此玻璃的「通透感」由
- * 半透明填充 + 高光实现——这与 Apple 的 clear Liquid Glass 变体一致，也避免了
- * 折射导致文字不可读的争议。真机（API 31+）上 [LiquidGlassSurface] 保留
- * 折射模糊钩子，供需要更强磨砂效果时启用。
+ * 1. **Haze 库 / sinasamaki**（Chris Banes）：用 [dev.chrisbanes.haze] 实现真 backdrop blur，
+ *    配合 `blurRadius=30dp` + `tint=Black(0.2f)` + `Hairline 渐变描边`。
+ *    参见 https://www.sinasamaki.com/glassmorphic-bottom-navigation-in-jetpack-compose/
  *
- * @param containerColor 半透明填充（染色自 surface），内容可透出，承载玻璃质感
- * @param rimColor       顶部镜面高光描边（specular rim）的亮色
- * @param sheenColor     斜向反光（liquid sheen）颜色，模拟光线掠过玻璃
- * @param bottomShadowColor 底部内阴影颜色，营造玻璃的厚度/体积感
- * @param rimAlpha       发丝级描边（边缘 catch）的不透明度
- * @param elevation      投影高度，建立与内容的层次
+ * 2. **Yang-Ya-Chao 玻璃态设计系统**：纯 Compose 实现，
+ *    核心是 `1dp 顶部内高光线` + `1dp 渐变描边` + `alpha 12~18% 填充` + 外投影。
+ *    参见 https://github.com/Yang-Ya-Chao/android-design-system-skills/blob/master/glassmorphism.md
+ *
+ * 3. **androidengineers Glassmorphism 指南**：推荐 `alpha=0.15 默认填充` +
+ *    `border alpha 0.1~0.4` + `elevation=8dp`。
+ *    参见 https://androidengineers.substack.com/p/creating-stunning-glassmorphism-effects
+ *
+ * 本实现采用**纯 Compose 方案**（方案 2+3 的融合），无需额外依赖。
+ * 如需真 backdrop blur 可后续引入 Haze 库升级为方案 1。
+ *
+ * 视觉构成（从底到顶）：
+ * - 半透明填充（alpha 12~22%，背后内容清晰透出）
+ * - 1dp 顶部内高光线（模拟玻璃上边缘的光反射）
+ * - 1dp 渐变描边（上亮下暗，模拟光照衰减）
+ * - 轻微外投影（建立与内容的深度分离）
  */
 data class LiquidGlassTokens(
-    val containerColor: Color,
-    val rimColor: Color,
-    val sheenColor: Color,
-    val bottomShadowColor: Color,
-    val rimAlpha: Float,
-    val elevation: Dp
+    val containerColor: Color,     // 半透明填充（极透明，让内容透出）
+    val innerHighlightColor: Color, // 顶部 1dp 内高光线颜色
+    val borderTopColor: Color,      // 描边上端（较亮）
+    val borderBotColor: Color,      // 描边下端（较暗/近透明）
+    val elevation: Dp               // 投影高度
 ) {
     companion object {
         @Composable
@@ -64,23 +69,21 @@ data class LiquidGlassTokens(
             val surface = MaterialTheme.colorScheme.surface
             return if (isDark) {
                 LiquidGlassTokens(
-                    // 深色：以 surface 为基底提亮，半透明，背后内容透出
-                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.80f, whiteFactor = 0.12f, alpha = 0.52f),
-                    rimColor = Color.White.copy(alpha = 0.9f),
-                    sheenColor = Color.White.copy(alpha = 0.14f),
-                    bottomShadowColor = Color.Black.copy(alpha = 0.30f),
-                    rimAlpha = 0.5f,
-                    elevation = 8.dp
+                    // 深色模式：更透明的填充 + 较亮的内高光 + 白色渐变描边
+                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.78f, whiteFactor = 0.10f, alpha = 0.18f),
+                    innerHighlightColor = Color.White.copy(alpha = 0.45f),
+                    borderTopColor = Color.White.copy(alpha = 0.55f),
+                    borderBotColor = Color.White.copy(alpha = 0.10f),
+                    elevation = 6.dp
                 )
             } else {
                 LiquidGlassTokens(
-                    // 浅色：surface 偏白带，半透明，镜面更亮
-                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.42f, whiteFactor = 0.58f, alpha = 0.60f),
-                    rimColor = Color.White,
-                    sheenColor = Color.White.copy(alpha = 0.28f),
-                    bottomShadowColor = Color.Black.copy(alpha = 0.10f),
-                    rimAlpha = 0.6f,
-                    elevation = 4.dp
+                    // 浅色模式：稍不透明的填充 + 更亮的内高光 + 白→灰渐变描边
+                    containerColor = blendSurfaceWhite(surface, surfaceFactor = 0.40f, whiteFactor = 0.60f, alpha = 0.22f),
+                    innerHighlightColor = Color.White.copy(alpha = 0.50f),
+                    borderTopColor = Color.White.copy(alpha = 0.75f),
+                    borderBotColor = Color.Black.copy(alpha = 0.08f),
+                    elevation = 3.dp
                 )
             }
         }
@@ -104,46 +107,38 @@ private fun blendSurfaceWhite(
 )
 
 /**
- * 在 [DrawScope] 内绘制玻璃的三层光学叠加：顶部镜面高光、斜向反光、底部内阴影。
- * 调用方需先 [DrawScope.drawContent] 画出前景内容，再调用本方法叠加高光。
+ * 在 [DrawScope] 内绘制玻璃的两层光学叠加：1dp 顶部内高光线 + 渐变描边。
+ *
+ * 这是 Yang-Ya-Chao 设计系统的核心技巧：高光只有 **1dp 高**（不是矩形带），
+ * 描边是 **上亮下暗的渐变**（不是均匀实色）。两者共同营造「光照在玻璃边缘」的效果。
  */
 private fun DrawScope.glassHighlights(tokens: LiquidGlassTokens) {
-    // 1) 顶部镜面高光（specular rim）：贴顶的一束亮线，向下快速淡出
+    // 1) 顶部内高光线：仅 1dp 高的细线，模拟玻璃上边缘的光反射
+    drawRect(
+        color = tokens.innerHighlightColor,
+        topLeft = Offset.Zero,
+        size = size.copy(height = 1.dp.toPx())
+    )
+    // 2) 渐变描边：上端较亮 → 下端近透明，模拟光照沿玻璃表面衰减
     drawRect(
         brush = Brush.verticalGradient(
-            colors = listOf(tokens.rimColor, Color.Transparent),
-            startY = 0f,
-            endY = size.height * 0.16f
-        )
-    )
-    // 2) 斜向反光（liquid sheen）：左上到右下的柔和光斑，模拟光线掠过玻璃
-    drawRect(
-        brush = Brush.linearGradient(
-            colors = listOf(tokens.sheenColor, Color.Transparent),
-            start = Offset(0f, 0f),
-            end = Offset(size.width * 0.75f, size.height * 0.55f)
-        )
-    )
-    // 3) 底部内阴影：营造玻璃的厚度/体积感
-    drawRect(
-        brush = Brush.verticalGradient(
-            colors = listOf(Color.Transparent, tokens.bottomShadowColor),
-            startY = size.height * 0.82f,
-            endY = size.height
-        )
+            colors = listOf(tokens.borderTopColor, tokens.borderBotColor)
+        ),
+        style = Stroke(width = 1.dp.toPx())
     )
 }
 
 /**
  * 把任意 [androidx.compose.foundation.layout.Box] / [Surface] 变成玻璃材质。
  *
- * 视觉构成（参考 Apple Liquid Glass 规范）：
- * - 半透明填充：背后内容透出，建立「功能层浮于内容层之上」的层次
- * - 顶部镜面高光 + 斜向反光：玻璃的液体光泽
- * - 发丝级描边：锐利的边缘 catch
- * - 投影：与下方内容的深度分离
+ * 视觉效果（对齐 Haze / Yang-Ya-Chao / androidengineers 三大成熟方案）：
+ * - 极透明填充（alpha 12~22%），背后内容清晰透出
+ * - 1dp 顶部内高光线（不是矩形带）
+ * - 1dp 上亮下暗渐变描边（不是实色）
+ * - 轻微外投影
  *
- * 兼容全 API 等级；仅作用于本节点自身，不模糊背后真实内容（见 [LiquidGlassTokens] 说明）。
+ * 兼容全 API 等级；不模糊背后真实内容（Compose 层限制）。
+ * 如需真 backdrop blur，可引入 [dev.chrisbanes.haze:haze-jetpack-compose] 升级。
  */
 @Composable
 fun Modifier.liquidGlass(
@@ -158,10 +153,9 @@ fun Modifier.liquidGlass(
         drawContent()
         glassHighlights(tokens)
     }
-    .border(width = 0.75.dp, color = tokens.rimColor.copy(alpha = tokens.rimAlpha), shape = shape)
 
 /**
- * 玻璃容器。内容不会被模糊；通过半透明 + 高光还原玻璃质感。
+ * 玻璃容器。通过半透明 + 微妙高光还原玻璃质感。
  *
  * 调用方需通过 [modifier] 或父布局为该容器提供尺寸。
  */
