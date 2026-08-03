@@ -177,6 +177,16 @@ private fun blendSurfaceWhite(
 )
 
 /**
+ * Android RenderEffect 官方标注的模糊半径上限（0 < radius <= 25 px）。
+ * 超出上限在部分厂商 GPU 驱动上可能触发渲染线程崩溃（native crash，Java 层无法捕获），
+ * 因此这里显式 clamp，避免把大半径传给底层。
+ */
+private const val MAX_BLUR_RADIUS_PX = 25f
+
+/** 最小模糊半径（px），避免 0 半径导致 RenderEffect 创建失败或退化。 */
+private const val MIN_BLUR_RADIUS_PX = 0.5f
+
+/**
  * 在 [DrawScope] 内绘制玻璃的两层光学叠加：1dp 顶部内高光线 + 渐变描边。
  *
  * 这是 Yang-Ya-Chao 设计系统的核心技巧：高光只有 **1dp 高**（不是矩形带），
@@ -235,10 +245,13 @@ private class GlazeSourceNode(
 
     private var layer: GraphicsLayer? = null
 
+    // 在 onAttach 时缓存，避免 onDetach 阶段读取 CompositionLocal（可能抛异常）。
+    private var graphicsContext: androidx.compose.ui.graphics.GraphicsContext? = null
+
     override val shouldAutoInvalidate: Boolean = false
 
     override fun onAttach() {
-        // 图层在首次 draw 时惰性创建
+        graphicsContext = currentValueOf(LocalGraphicsContext)
     }
 
     override fun onGloballyPositioned(coordinates: androidx.compose.ui.layout.LayoutCoordinates) {
@@ -249,29 +262,27 @@ private class GlazeSourceNode(
     }
 
     override fun ContentDrawScope.draw() {
+        state.contentDrawing = true
         try {
-            state.contentDrawing = true
             if (!isAttached) return
             if (size.minDimension >= 1f) {
                 val ctx = currentValueOf(LocalGraphicsContext)
                 val contentLayer = layer ?: ctx.createGraphicsLayer().also { layer = it }
                 state.contentLayer = contentLayer
-                // 把背后内容录进离屏图层
+                // 录制 + 上屏 + 通知 整体防护：任何一步在个别 GPU/驱动上偶发异常都不允许
+                // 冒泡导致整页闪退，失败时直接把内容画到屏幕（玻璃降级为半透明）。
                 try {
                     contentLayer.record {
                         this@draw.drawContent()
                     }
+                    state.contentVersion++
+                    // 再把内容正常画到屏幕上
+                    drawLayer(contentLayer)
+                    state.notifyListeners()
                 } catch (e: Exception) {
-                    // 录制失败（个别 GPU / 驱动上 record 偶发异常）：直接把内容画到屏幕，
-                    // 放弃离屏捕获，玻璃降级为半透明（不抛飞，避免整页闪退）。
-                    Log.e("LiquidGlass", "source record failed; drawing content directly", e)
+                    Log.e("LiquidGlass", "source record/draw failed; drawing content directly", e)
                     this@draw.drawContent()
-                    return
                 }
-                state.contentVersion++
-                // 再把内容正常画到屏幕上
-                drawLayer(contentLayer)
-                state.notifyListeners()
             } else {
                 drawContent()
             }
@@ -281,9 +292,10 @@ private class GlazeSourceNode(
     }
 
     override fun onDetach() {
-        layer?.let { currentValueOf(LocalGraphicsContext).releaseGraphicsLayer(it) }
+        layer?.let { graphicsContext?.releaseGraphicsLayer(it) }
         layer = null
         state.contentLayer = null
+        graphicsContext = null
     }
 }
 
@@ -305,7 +317,7 @@ fun Modifier.liquidGlass(
     enabled: Boolean = LocalLiquidGlass.current,
     tokens: LiquidGlassTokens = LiquidGlassTokens.fromCurrent(isSystemInDarkTheme()),
     shape: Shape = RoundedCornerShape(0.dp),
-    blurRadiusDp: Dp = 18.dp
+    blurRadiusDp: Dp = 10.dp
 ): Modifier = if (!enabled) this else this
     .shadow(elevation = tokens.elevation, shape = shape, clip = false)
     .clip(shape)
@@ -372,34 +384,57 @@ private class LiquidGlassNode(
         // notifyListeners() 触发本节点的 invalidateDraw() 完成，绘制在源图层之上。
         if (backdropState.contentDrawing) return
 
-        val showBlur = enabled &&
-            GLASS_BLUR_SUPPORTED &&
-            backdropState.contentLayer != null
+        try {
+            val showBlur = enabled &&
+                GLASS_BLUR_SUPPORTED &&
+                backdropState.contentLayer?.takeUnless { it.isReleased } != null
 
-        if (showBlur) {
-            drawBlurredBackdrop()
-            // tint：在模糊背景上叠一层极低透明填充，做出通透/vibrancy 感
-            drawRect(color = tokens.containerColor)
-        } else if (enabled) {
-            // 回退：半透明填充（无真模糊 / 未捕获到背景）
-            drawRect(color = tokens.containerColor)
-        }
+            if (showBlur) {
+                // 模糊成功与否都叠 tint：失败时该 tint 即退化方案（无真模糊的半透明玻璃）
+                drawBlurredBackdrop()
+                drawRect(color = tokens.containerColor)
+            } else if (enabled) {
+                // 回退：半透明填充（无真模糊 / 未捕获到背景）
+                drawRect(color = tokens.containerColor)
+            }
 
-        // 原内容（透明背景 + 子元素）画在 tint/模糊之上
-        drawContent()
+            // 原内容（透明背景 + 子元素）画在 tint/模糊之上
+            drawContent()
 
-        if (enabled) {
-            glassHighlights(tokens)
+            if (enabled) {
+                glassHighlights(tokens)
+            }
+        } catch (e: Exception) {
+            // 终极兜底：玻璃绘制的任何 Java 异常都不允许冒泡导致整页闪退，
+            // 直接退化为"只画内容"（等价于未启用玻璃）。
+            Log.e("LiquidGlass", "glass draw degraded to plain content", e)
+            drawContent()
         }
     }
 
-    private fun DrawScope.drawBlurredBackdrop() {
-        val src = backdropState.contentLayer ?: return
-        val ctx = graphicsContext ?: return
-        val blurPx = blurRadiusDp.toPx()
-        if (blurPx <= 0f) return
-        val layer = ensureEffectLayer(blurPx) ?: return
-        try {
+    /**
+     * 绘制真实模糊背景。返回是否成功绘制了模糊层；false 表示模糊不可用，
+     * 调用方应退化为半透明 tint。
+     *
+     * 内部所有步骤（layer 创建、RenderEffect 设置、record、drawLayer）均包 try/catch，
+     * 任何异常都会被吞掉并返回 false —— 这是 Honor 真机闪退修复的核心：此前
+     * `ensureEffectLayer` 的 createGraphicsLayer / renderEffect 在 try 之外，
+     * 且 18dp 半径换算像素后超出 RenderEffect 官方上限（25px），异常直接冒泡闪退。
+     */
+    private fun DrawScope.drawBlurredBackdrop(): Boolean {
+        val src = backdropState.contentLayer
+            ?.takeUnless { it.isReleased }
+            ?: return false
+        val ctx = graphicsContext ?: return false
+        // Android RenderEffect 的 blur 半径官方上限 25px；超出上限在部分驱动上会 native 崩溃。
+        val blurPx = blurRadiusDp.toPx().coerceIn(MIN_BLUR_RADIUS_PX, MAX_BLUR_RADIUS_PX)
+        val layer = try {
+            ensureEffectLayer(blurPx)
+        } catch (e: Exception) {
+            Log.e("LiquidGlass", "blur layer creation failed; tint-only fallback", e)
+            null
+        } ?: return false
+        return try {
             val offset = backdropState.sourcePosition - glassPos
             layer.record {
                 translate(left = offset.x, top = offset.y) {
@@ -410,23 +445,32 @@ private class LiquidGlassNode(
             // 避免依赖 androidx.compose.ui.graphics.drawscope.clip（该包级函数在本项目 Compose
             // 版本里未直接暴露）。最终玻璃内容会被 Modifier 层的 clip 裁到 shape 内。
             drawLayer(layer)
+            true
         } catch (e: Exception) {
             // 真机（不同 GPU / RenderThread 驱动）上 RenderEffect + 嵌套 GraphicsLayer 偶发异常。
             // 不抛飞、降级为半透明 tint，避免整页闪退；日志便于后续精确定位。
-            Log.e("LiquidGlass", "blur draw failed; falling back to tint-only", e)
+            Log.e("LiquidGlass", "blur draw failed; tint-only fallback (blurPx=$blurPx)", e)
+            false
         }
     }
 
     private fun ensureEffectLayer(blurPx: Float): GraphicsLayer? {
         effectLayer?.let { return it }
         val ctx = graphicsContext ?: return null
-        return ctx.createGraphicsLayer().also {
-            if (GLASS_BLUR_SUPPORTED && blurPx > 0f) {
-                it.renderEffect = PlatformRenderEffect
-                    .createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
-                    .asComposeRenderEffect()
+        return try {
+            ctx.createGraphicsLayer().also {
+                if (GLASS_BLUR_SUPPORTED && blurPx > 0f) {
+                    it.renderEffect = PlatformRenderEffect
+                        .createBlurEffect(blurPx, blurPx, Shader.TileMode.CLAMP)
+                        .asComposeRenderEffect()
+                }
+                effectLayer = it
             }
-            effectLayer = it
+        } catch (e: Exception) {
+            // createGraphicsLayer 或 renderEffect 设置失败（驱动/系统兼容问题）：
+            // 返回 null 表示模糊不可用，玻璃退化为半透明 tint，绝不冒泡闪退。
+            Log.e("LiquidGlass", "ensureEffectLayer failed; blur disabled (blurPx=$blurPx)", e)
+            null
         }
     }
 
