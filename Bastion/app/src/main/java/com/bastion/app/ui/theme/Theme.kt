@@ -27,6 +27,7 @@ import com.bastion.app.ui.theme.glass.GlassBackdropState
 import com.bastion.app.ui.theme.glass.LocalGlassBackdrop
 import com.bastion.app.ui.theme.glass.LocalLiquidGlass
 import com.bastion.app.ui.theme.glass.glazeSource
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 
 // ============================================
 // 📱 默认配色方案 (Material Design 3 默认紫色)
@@ -1254,10 +1255,17 @@ fun BastionTheme(
     }
 
     // 背景捕获状态：供液态玻璃组件采样并模糊"背后内容"。仅在玻璃开启且设备支持
-    // RenderEffect（API31+）时才让内容被录制，避免低端设备无谓的离屏渲染开销。
+    // RenderEffect（API31+ 且非荣耀/华为黑名单）时才录制背景层，避免低端设备无谓的离屏渲染开销。
     val backdropState = remember { GlassBackdropState() }
     val glassContent: @Composable () -> Unit = if (liquidGlassEnabled && GLASS_BLUR_SUPPORTED) {
-        { Box(modifier = Modifier.fillMaxSize().glazeSource(backdropState)) { content() } }
+        // 真模糊设备：创建 GraphicsLayer 注入 backdropState，供 glazeSource 录制、liquidGlass 采样
+        {
+            val backdropLayer = rememberGraphicsLayer()
+            androidx.compose.runtime.SideEffect {
+                backdropState.backdropLayer = backdropLayer
+            }
+            Box(modifier = Modifier.fillMaxSize().glazeSource(backdropState)) { content() }
+        }
     } else {
         content
     }
