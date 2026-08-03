@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RenderEffect as ComposeRenderEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -41,9 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.drawscope.clip
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.inspector.InspectorInfo
 
 /**
  * 全局开关：液态玻璃是否启用。
@@ -216,11 +215,6 @@ private data class GlazeSourceElement(
     override fun update(node: GlazeSourceNode) {
         node.state = state
     }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "glazeSource"
-        properties["state"] = state
-    }
 }
 
 private class GlazeSourceNode(
@@ -319,13 +313,6 @@ private data class LiquidGlassElement(
         node.shape = shape
         node.blurRadiusDp = blurRadiusDp
     }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "liquidGlass"
-        properties["enabled"] = enabled
-        properties["shape"] = shape
-        properties["blurRadiusDp"] = blurRadiusDp
-    }
 }
 
 private class LiquidGlassNode(
@@ -403,9 +390,10 @@ private class LiquidGlassNode(
                 drawLayer(src)
             }
         }
-        clip(shape) {
-            drawLayer(layer)
-        }
+        // 形状裁剪已由 liquidGlass() 的 Modifier.clip(shape) 负责，此处直接绘制即可，
+        // 避免依赖 androidx.compose.ui.graphics.drawscope.clip（该包级函数在本项目 Compose
+        // 版本里未直接暴露）。最终玻璃内容会被 Modifier 层的 clip 裁到 shape 内。
+        drawLayer(layer)
     }
 
     private fun ensureEffectLayer(blurPx: Float): GraphicsLayer {
