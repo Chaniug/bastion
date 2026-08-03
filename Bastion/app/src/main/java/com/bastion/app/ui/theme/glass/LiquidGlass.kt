@@ -35,7 +35,7 @@ val LocalLiquidGlass = compositionLocalOf { false }
  *
  * 设计依据综合自三个成熟的 Android 玻璃态实现方案：
  *
- * 1. **Haze 库 / sinasamaki**（Chris Banes）：用 [dev.chrisbanes.haze] 实现真 backdrop blur，
+ * 1. **Haze 库 / sinasamaki**（Chris Banes）：用 Haze 库实现真 backdrop blur，
  *    配合 `blurRadius=30dp` + `tint=Black(0.2f)` + `Hairline 渐变描边`。
  *    参见 https://www.sinasamaki.com/glassmorphic-bottom-navigation-in-jetpack-compose/
  *
@@ -138,7 +138,7 @@ private fun DrawScope.glassHighlights(tokens: LiquidGlassTokens) {
  * - 轻微外投影
  *
  * 兼容全 API 等级；不模糊背后真实内容（Compose 层限制）。
- * 如需真 backdrop blur，可引入 [dev.chrisbanes.haze:haze-jetpack-compose] 升级。
+ * 如需真 backdrop blur，可引入 Haze 库（Jetpack Compose 版）升级。
  */
 @Composable
 fun Modifier.liquidGlass(
