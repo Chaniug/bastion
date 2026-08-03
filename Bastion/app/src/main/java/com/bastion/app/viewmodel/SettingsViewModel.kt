@@ -72,8 +72,6 @@ class SettingsViewModel(
 
     fun updateOledPureBlackEnabled(enabled: Boolean) = commitUpdate { updateOledPureBlackEnabled(enabled) }
 
-    fun updateLiquidGlassEnabled(enabled: Boolean) = commitUpdate { updateLiquidGlassEnabled(enabled) }
-
     fun updateColorScheme(colorScheme: ColorScheme) = commitUpdate { updateColorScheme(colorScheme) }
     
     fun updateLanguage(language: Language) = commitUpdate { updateLanguage(language) }

@@ -26,8 +26,6 @@ fun AppearanceSelectionSheet(
     oledPureBlackEnabled: Boolean,
     onThemeSelected: (ThemeMode) -> Unit,
     onOledPureBlackChanged: (Boolean) -> Unit,
-    liquidGlassEnabled: Boolean = false,
-    onLiquidGlassChanged: (Boolean) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -139,26 +137,26 @@ fun AppearanceSelectionSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onLiquidGlassChanged(!liquidGlassEnabled) }
+                        .clickable { onOledPureBlackChanged(!oledPureBlackEnabled) }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = context.getString(R.string.liquid_glass),
+                            text = context.getString(R.string.oled_pure_black),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = context.getString(R.string.liquid_glass_description),
+                            text = context.getString(R.string.oled_pure_black_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Switch(
-                        checked = liquidGlassEnabled,
-                        onCheckedChange = onLiquidGlassChanged
+                        checked = oledPureBlackEnabled,
+                        onCheckedChange = onOledPureBlackChanged
                     )
                 }
             }

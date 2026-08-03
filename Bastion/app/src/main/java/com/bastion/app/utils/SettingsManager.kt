@@ -147,7 +147,6 @@ class SettingsManager(private val context: Context) {
     companion object {
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val OLED_PURE_BLACK_ENABLED_KEY = booleanPreferencesKey("oled_pure_black_enabled")
-        private val LIQUID_GLASS_ENABLED_KEY = booleanPreferencesKey("liquid_glass_enabled")
         private val COLOR_SCHEME_KEY = stringPreferencesKey("color_scheme")
         private val CUSTOM_PRIMARY_COLOR_KEY = longPreferencesKey("custom_primary_color")
         private val CUSTOM_SECONDARY_COLOR_KEY = longPreferencesKey("custom_secondary_color")
@@ -492,7 +491,6 @@ class SettingsManager(private val context: Context) {
                 preferences[THEME_MODE_KEY] ?: ThemeMode.SYSTEM.name
             ),
             oledPureBlackEnabled = preferences[OLED_PURE_BLACK_ENABLED_KEY] ?: false,
-            liquidGlassEnabled = preferences[LIQUID_GLASS_ENABLED_KEY] ?: false,
             colorScheme = runCatchingObserved {
                 ColorScheme.valueOf(
                     preferences[COLOR_SCHEME_KEY] ?: ColorScheme.DEFAULT.name
@@ -704,12 +702,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updateOledPureBlackEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[OLED_PURE_BLACK_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateLiquidGlassEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[LIQUID_GLASS_ENABLED_KEY] = enabled
         }
     }
 

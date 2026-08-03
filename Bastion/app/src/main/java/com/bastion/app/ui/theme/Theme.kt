@@ -3,17 +3,13 @@ package com.bastion.app.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ColorScheme as MaterialColorScheme
 import androidx.compose.ui.graphics.toArgb
@@ -22,12 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.bastion.app.data.ColorScheme
-import com.bastion.app.ui.theme.glass.GLASS_BLUR_SUPPORTED
-import com.bastion.app.ui.theme.glass.GlassBackdropState
-import com.bastion.app.ui.theme.glass.LocalGlassBackdrop
-import com.bastion.app.ui.theme.glass.LocalLiquidGlass
-import com.bastion.app.ui.theme.glass.glazeSource
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 
 // ============================================
 // 📱 默认配色方案 (Material Design 3 默认紫色)
@@ -957,7 +947,6 @@ fun BastionTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     oledPureBlackEnabled: Boolean = false,
     colorScheme: ColorScheme = ColorScheme.DEFAULT,
-    liquidGlassEnabled: Boolean = false,
     customPrimaryColor: Long = 0xFF6650a4,
     customSecondaryColor: Long = 0xFF625b71,
     customTertiaryColor: Long = 0xFF7D5260,
@@ -1254,32 +1243,11 @@ fun BastionTheme(
         }
     }
 
-    // 背景捕获状态：供液态玻璃组件采样并模糊"背后内容"。仅在玻璃开启且设备支持
-    // RenderEffect（API31+ 且非荣耀/华为黑名单）时才录制背景层，避免低端设备无谓的离屏渲染开销。
-    val backdropState = remember { GlassBackdropState() }
-    val glassContent: @Composable () -> Unit = if (liquidGlassEnabled && GLASS_BLUR_SUPPORTED) {
-        // 真模糊设备：创建 GraphicsLayer 注入 backdropState，供 glazeSource 录制、liquidGlass 采样
-        {
-            val backdropLayer = rememberGraphicsLayer()
-            androidx.compose.runtime.SideEffect {
-                backdropState.backdropLayer = backdropLayer
-            }
-            Box(modifier = Modifier.fillMaxSize().glazeSource(backdropState)) { content() }
-        }
-    } else {
-        content
-    }
-
-    CompositionLocalProvider(
-        LocalLiquidGlass provides liquidGlassEnabled,
-        LocalGlassBackdrop provides backdropState
-    ) {
-        MaterialTheme(
-            colorScheme = finalColorScheme,
-            typography = Typography,
-            content = glassContent
-        )
-    }
+    MaterialTheme(
+        colorScheme = finalColorScheme,
+        typography = Typography,
+        content = content
+    )
 }
 
 private fun MaterialColorScheme.withPureBlackSurfaces(): MaterialColorScheme {

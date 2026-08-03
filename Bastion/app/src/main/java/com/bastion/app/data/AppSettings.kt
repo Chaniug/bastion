@@ -499,7 +499,6 @@ data class AppSettings(
     val screenshotProtectionEnabled: Boolean = false, // Prevent screenshots by default
     val clipboardAutoClearSeconds: Int = 0, // 复制账号/密码后自动清除剪切板，0=关闭
     val dynamicColorEnabled: Boolean = true, // 动态颜色默认开启
-    val liquidGlassEnabled: Boolean = false, // 液态玻璃材质（默认关闭，设置中开启）
     val quickSetupCompleted: Boolean = false, // 首次快速初始化是否已完成/跳过
     val bottomNavVisibility: BottomNavVisibility = BottomNavVisibility(),
     val bottomNavOrder: List<BottomNavContentTab> = BottomNavContentTab.DEFAULT_ORDER,
