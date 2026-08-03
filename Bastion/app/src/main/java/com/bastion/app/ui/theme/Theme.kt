@@ -3,6 +3,8 @@ package com.bastion.app.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -11,6 +13,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ColorScheme as MaterialColorScheme
 import androidx.compose.ui.graphics.toArgb
@@ -18,7 +21,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.bastion.app.data.ColorScheme
+import com.bastion.app.ui.theme.glass.GLASS_BLUR_SUPPORTED
+import com.bastion.app.ui.theme.glass.GlassBackdropState
+import com.bastion.app.ui.theme.glass.LocalGlassBackdrop
 import com.bastion.app.ui.theme.glass.LocalLiquidGlass
+import com.bastion.app.ui.theme.glass.glazeSource
 
 // ============================================
 // 📱 默认配色方案 (Material Design 3 默认紫色)
@@ -1245,11 +1252,23 @@ fun BastionTheme(
         }
     }
 
-    CompositionLocalProvider(LocalLiquidGlass provides liquidGlassEnabled) {
+    // 背景捕获状态：供液态玻璃组件采样并模糊"背后内容"。仅在玻璃开启且设备支持
+    // RenderEffect（API31+）时才让内容被录制，避免低端设备无谓的离屏渲染开销。
+    val backdropState = remember { GlassBackdropState() }
+    val glassContent: @Composable () -> Unit = if (liquidGlassEnabled && GLASS_BLUR_SUPPORTED) {
+        { Box(modifier = Modifier.fillMaxSize().glazeSource(backdropState)) { content() } }
+    } else {
+        content
+    }
+
+    CompositionLocalProvider(
+        LocalLiquidGlass provides liquidGlassEnabled,
+        LocalGlassBackdrop provides backdropState
+    ) {
         MaterialTheme(
             colorScheme = finalColorScheme,
             typography = Typography,
-            content = content
+            content = glassContent
         )
     }
 }
