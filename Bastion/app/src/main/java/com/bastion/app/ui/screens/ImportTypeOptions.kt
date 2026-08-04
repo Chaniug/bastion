@@ -51,6 +51,13 @@ fun importTypeOptions(): List<ImportTypeInfo> {
             title = stringResource(R.string.import_type_stratum_title),
             description = stringResource(R.string.import_type_stratum_desc),
             fileHint = stringResource(R.string.import_type_stratum_file_hint)
+        ),
+        ImportTypeInfo(
+            key = "bitwarden_json",
+            icon = Icons.Default.Description,
+            title = stringResource(R.string.import_type_bitwarden_json_title),
+            description = stringResource(R.string.import_type_bitwarden_json_desc),
+            fileHint = stringResource(R.string.import_type_bitwarden_json_file_hint)
         )
     )
 }

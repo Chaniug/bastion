@@ -48,6 +48,9 @@ fun ImportDataScreen(
     onImportKdbx: suspend (Uri, String, Uri?) -> Result<Int> = { _, _, _ -> Result.failure(Exception("Not implemented")) },  // KDBX导入
     onImportKeePassCsv: suspend (Uri) -> Result<Int> = onImport,  // KeePass CSV导入
     onImportBitwardenCsv: suspend (Uri) -> Result<Int> = onImport,  // Bitwarden CSV导入
+    onImportBitwardenJson: suspend (Uri) -> Result<Int> = onImport,  // Bitwarden JSON导入（明文）
+    onImportEncryptedBitwardenJson: suspend (Uri, String) -> Result<Int> = { _, _ -> Result.failure(Exception("Not implemented")) },  // Bitwarden 加密JSON导入
+    onIsEncryptedBitwarden: suspend (Uri) -> Boolean = { false },  // 判断 Bitwarden JSON 是否加密
     onImportProtonPassCsv: suspend (Uri) -> Result<Int> = onImport,  // Proton Pass CSV导入
     onImportChromeCsv: suspend (Uri) -> Result<Int> = onImport,  // Chrome CSV导入
     onImportPasswordKeyboardCsv: suspend (
@@ -220,6 +223,20 @@ fun ImportDataScreen(
                                                         } else {
                                                             handleImportResult(Result.failure(error), context, snackbarHostState, effectiveImportType, onNavigateBack)
                                                         }
+                                                    }
+                                                }
+                                                "bitwarden_json" -> {
+                                                    // Bitwarden JSON 导入：先判断是否加密，加密则弹密码框
+                                                    val isEncrypted = onIsEncryptedBitwarden(uri)
+                                                    if (isEncrypted) {
+                                                        isImporting = false
+                                                        showPasswordDialog = true
+                                                        passwordError = null
+                                                        aegisPassword = ""
+                                                        return@launch
+                                                    } else {
+                                                        val result = onImportBitwardenJson(uri)
+                                                        handleImportResult(result, context, snackbarHostState, effectiveImportType, onNavigateBack)
                                                     }
                                                 }
                                                 "kdbx" -> {
@@ -430,6 +447,7 @@ fun ImportDataScreen(
                             "password_keyboard_csv" -> FileOperationHelper.importFromCsv(act)
                             "aegis" -> FileOperationHelper.importFromJson(act)
                             "stratum" -> FileOperationHelper.importFromStratum(act)
+                            "bitwarden_json" -> FileOperationHelper.importFromJson(act)
                             else -> FileOperationHelper.importFromCsv(act)
                         }
                     } ?: run {
@@ -678,16 +696,16 @@ fun ImportDataScreen(
                                 val result = when (importType) {
                                     "bastion_zip" -> onImportZip(uri, aegisPassword)
                                     "stratum" -> onImportStratum(uri, aegisPassword)
+                                    "bitwarden_json" -> onImportEncryptedBitwardenJson(uri, aegisPassword)
                                     else -> onImportEncryptedAegis(uri, aegisPassword)
                                 }
 
                                 result.onSuccess { count ->
-                                    val message = if (importType == "bastion_zip") {
-                                        context.getString(R.string.import_data_zip_restore_success_count, count)
-                                    } else if (importType == "stratum") {
-                                        context.getString(R.string.import_data_stratum_import_success_count, count)
-                                    } else {
-                                        context.getString(R.string.import_data_aegis_import_success_count, count)
+                                    val message = when (importType) {
+                                        "bastion_zip" -> context.getString(R.string.import_data_zip_restore_success_count, count)
+                                        "stratum" -> context.getString(R.string.import_data_stratum_import_success_count, count)
+                                        "bitwarden_json" -> context.getString(R.string.import_data_bitwarden_json_import_success_count, count)
+                                        else -> context.getString(R.string.import_data_aegis_import_success_count, count)
                                     }
                                     snackbarHostState.showSnackbar(message)
                                     onNavigateBack()

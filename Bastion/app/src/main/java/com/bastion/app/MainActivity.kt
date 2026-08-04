@@ -2491,6 +2491,15 @@ fun BastionContent(
                 onImportBitwardenCsv = { uri ->
                     dataExportImportViewModel.importBitwardenCsv(uri)
                 },
+                onImportBitwardenJson = { uri ->
+                    dataExportImportViewModel.importBitwardenJson(uri)
+                },
+                onImportEncryptedBitwardenJson = { uri, password ->
+                    dataExportImportViewModel.importEncryptedBitwardenJson(uri, password)
+                },
+                onIsEncryptedBitwarden = { uri ->
+                    dataExportImportViewModel.isEncryptedBitwardenFile(uri)
+                },
                 onImportProtonPassCsv = { uri ->
                     dataExportImportViewModel.importProtonPassCsv(uri)
                 },

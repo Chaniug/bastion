@@ -2964,6 +2964,10 @@
     <string name="import_type_csv_bitwarden_title">Bitwarden CSV</string>
     <string name="import_type_csv_bitwarden_desc">导入 Bitwarden 导出的 CSV 文件</string>
     <string name="import_type_csv_bitwarden_file_hint">选择 Bitwarden .csv 文件</string>
+    <string name="import_type_bitwarden_json_title">Bitwarden JSON</string>
+    <string name="import_type_bitwarden_json_desc">导入 Bitwarden 导出的 JSON 文件（明文或密码保护加密）</string>
+    <string name="import_type_bitwarden_json_file_hint">选择 Bitwarden .json 文件</string>
+    <string name="import_data_bitwarden_json_import_success_count">成功导入 %d 条 Bitwarden 数据</string>
     <string name="import_type_csv_proton_pass_title">Proton Pass CSV</string>
     <string name="import_type_csv_proton_pass_desc">导入 Proton Pass 导出的 CSV 文件</string>
     <string name="import_type_csv_proton_pass_file_hint">选择 Proton Pass .csv 文件</string>
