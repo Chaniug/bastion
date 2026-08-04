@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
@@ -46,8 +45,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
-import com.bastion.app.ui.theme.glass.LocalLiquidGlass
-import com.bastion.app.ui.theme.glass.liquidGlass
 
 internal fun initialSearchTextFieldValue(searchQuery: String): TextFieldValue =
     TextFieldValue(
@@ -77,7 +74,6 @@ fun ExpressiveTopBar(
     onSearchExpandedChange: (Boolean) -> Unit,
     searchHint: String? = null,
     modifier: Modifier = Modifier,
-    glass: Boolean = LocalLiquidGlass.current,
     navigationIcon: @Composable (() -> Unit)? = null,
     onActionPillBoundsChanged: ((Rect) -> Unit)? = null,
     collapsedTitleEndPadding: Dp = 180.dp,
@@ -127,8 +123,7 @@ fun ExpressiveTopBar(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 88.dp)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-            .liquidGlass(enabled = glass, shape = RoundedCornerShape(0.dp)),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         // 1. 标题区 (在左侧，始终占位，只改变透明度)
@@ -163,7 +158,6 @@ fun ExpressiveTopBar(
                 modifier = Modifier
 
                     .height(56.dp)
-                    .liquidGlass(enabled = glass, shape = RoundedCornerShape(50))
                     .onGloballyPositioned { coordinates ->
                         onActionPillBoundsChanged?.invoke(coordinates.boundsInWindow())
                     }
@@ -193,7 +187,7 @@ fun ExpressiveTopBar(
                         }
                     },
                 shape = RoundedCornerShape(50),
-                color = if (glass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 2.dp
             ) {
                 // 内容切换

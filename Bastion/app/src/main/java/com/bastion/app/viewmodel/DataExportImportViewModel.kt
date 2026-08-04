@@ -31,6 +31,22 @@ import com.bastion.app.util.DataExportImportManager
 import com.bastion.app.util.TotpDataResolver
 import com.bastion.app.util.TotpUriParser
 import com.bastion.app.notes.domain.NoteContentCodec
+import com.bastion.app.bitwarden.export.BitwardenJsonExporter
+import com.bastion.app.bitwarden.export.BitwardenPlainExport
+import com.bastion.app.bitwarden.export.BwCard
+import com.bastion.app.bitwarden.export.BwExportItem
+import com.bastion.app.bitwarden.export.BwField
+import com.bastion.app.bitwarden.export.BwIdentity
+import com.bastion.app.bitwarden.export.BwLogin
+import com.bastion.app.bitwarden.import.BitwardenJsonImport
+import com.bastion.app.data.Category
+import com.bastion.app.data.model.BankCardData
+import com.bastion.app.data.model.CardType
+import com.bastion.app.data.model.CardWalletDataCodec
+import com.bastion.app.data.model.DocumentData
+import com.bastion.app.data.model.DocumentType
+import com.bastion.app.data.model.SecureCustomField
+import com.bastion.app.data.model.SecureCustomFieldType
 import com.bastion.app.utils.BackupContentScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -61,6 +77,11 @@ class DataExportImportViewModel(
     )
 
     private val exportManager = DataExportImportManager(context)
+    private val bitwardenExportJson = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        prettyPrint = true
+    }
     private val securityManager by lazy { SecurityManager(context) }
     private val customFieldRepository by lazy {
         CustomFieldRepository(PasswordDatabase.getDatabase(context).customFieldDao())
@@ -212,17 +233,26 @@ class DataExportImportViewModel(
         passwordKeyboardTagHandling: DataExportImportManager.PasswordKeyboardTagHandling =
             DataExportImportManager.PasswordKeyboardTagHandling.CONVERT_TO_CUSTOM_FIELD
     ): Result<Int> {
+        return exportManager.importData(
+            inputUri = inputUri,
+            formatHint = formatHint,
+            passwordKeyboardTagHandling = passwordKeyboardTagHandling
+        ).fold(
+            onSuccess = { insertImportedItems(it, source = formatHint?.name ?: "CSV_AUTO") },
+            onFailure = { Result.failure(it) }
+        )
+    }
+
+    /**
+     * 将已解析的导入项写入数据库（密码条目存入 PasswordEntry，其它类型存入 SecureItem）。
+     * 由 CSV 导入与 Bitwarden JSON 导入共用。
+     */
+    private suspend fun insertImportedItems(
+        items: List<DataExportImportManager.ExportItem>,
+        source: String = "IMPORT"
+    ): Result<Int> {
         return try {
-            // 导入数据
-            val result = exportManager.importData(
-                inputUri = inputUri,
-                formatHint = formatHint,
-                passwordKeyboardTagHandling = passwordKeyboardTagHandling
-            )
-            
-            result.fold(
-                onSuccess = { items ->
-                    android.util.Log.d("DataImport", "ViewModel收到 ${items.size} 条导入数据")
+            android.util.Log.d("DataImport", "ViewModel收到 ${items.size} 条导入数据")
                     var count = 0
                     var errorCount = 0
                     var skippedCount = 0
@@ -400,19 +430,13 @@ class DataExportImportViewModel(
                     
                     android.util.Log.d("DataImport", "导入完成: 成功=$count, 跳过=$skippedCount, 失败=$errorCount")
                     logImportSummary(
-                        source = formatHint?.name ?: "CSV_AUTO",
+                        source = source,
                         importedCount = count,
                         skippedCount = skippedCount,
                         failedCount = errorCount
                     )
                     Result.success(count)
-                },
-                onFailure = { error ->
-                    android.util.Log.e("DataImport", "导入失败: ${error.message}", error)
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
+            } catch (e: Exception) {
             android.util.Log.e("DataImport", "导入异常: ${e.message}", e)
             Result.failure(e)
         }
@@ -430,6 +454,266 @@ class DataExportImportViewModel(
      */
     suspend fun importBitwardenCsv(inputUri: Uri): Result<Int> {
         return importData(inputUri, DataExportImportManager.CsvFormat.BITWARDEN_PASSWORD)
+    }
+
+    /**
+     * 判断 Bitwarden 导出文件是否为密码保护加密格式。
+     */
+    suspend fun isEncryptedBitwardenFile(inputUri: Uri): Boolean {
+        return runCatching { BitwardenJsonImport.isEncryptedExport(readUriText(inputUri)) }
+            .getOrDefault(false)
+    }
+
+    /**
+     * 导入 Bitwarden JSON 文件（明文或密码保护加密）。
+     * 若文件为加密格式，则抛出 [com.bastion.app.utils.WebDavHelper.PasswordRequiredException]，
+     * 由 UI 弹出密码框后调用 [importEncryptedBitwardenJson]。
+     */
+    suspend fun importBitwardenJson(inputUri: Uri): Result<Int> {
+        return try {
+            val content = readUriText(inputUri)
+            if (BitwardenJsonImport.isEncryptedExport(content)) {
+                throw com.bastion.app.utils.WebDavHelper.PasswordRequiredException()
+            }
+            val plain = BitwardenJsonImport.parsePlain(content)
+            val items = buildBitwardenExportItems(plain)
+            insertImportedItems(items, source = "BITWARDEN_JSON")
+        } catch (e: Exception) {
+            android.util.Log.e("DataImport", "Bitwarden JSON 导入失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 导入密码保护的 Bitwarden JSON 文件（先解密再解析）。
+     */
+    suspend fun importEncryptedBitwardenJson(inputUri: Uri, password: String): Result<Int> {
+        return try {
+            val content = readUriText(inputUri)
+            val plain = BitwardenJsonImport.decryptAndParse(content, password)
+            val items = buildBitwardenExportItems(plain)
+            insertImportedItems(items, source = "BITWARDEN_JSON")
+        } catch (e: Exception) {
+            android.util.Log.e("DataImport", "Bitwarden 加密 JSON 导入失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    private fun readUriText(uri: Uri): String {
+        val stream = context.contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("无法读取文件，请检查文件是否存在")
+        return stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+    }
+
+    /**
+     * 将 Bitwarden 明文导出结构映射为应用内部导入项（ExportItem），复用与 CSV 导入相同的入库逻辑。
+     */
+    private suspend fun buildBitwardenExportItems(plain: BitwardenPlainExport): List<DataExportImportManager.ExportItem> {
+        val existingCategories = passwordRepository.getAllCategories().first()
+        val folderNameById = plain.folders.associate { it.id to it.name }
+        val folderToCategory = mutableMapOf<String, Long?>()
+
+        // 事先把每个文件夹解析为应用分类（涉及挂起插入，必须在 map 之前完成，
+        // 因为 .map 的 lambda 不是协程上下文，无法调用挂起函数）。
+        for (item in plain.items) {
+            val folderId = item.folderId ?: continue
+            if (folderToCategory.containsKey(folderId)) continue
+            val existing = existingCategories.firstOrNull { it.bitwardenFolderId == folderId }
+            val catId = if (existing != null) {
+                existing.id
+            } else {
+                val name = (folderNameById[folderId] ?: "Bitwarden").ifBlank { "Bitwarden" }
+                val newId = passwordRepository.insertCategory(
+                    Category(
+                        name = name,
+                        sortOrder = existingCategories.size + folderToCategory.size,
+                        bitwardenFolderId = folderId
+                    )
+                )
+                if (newId > 0) newId else null
+            }
+            folderToCategory[folderId] = catId
+        }
+
+        return plain.items.map { item ->
+            val catId = item.folderId?.let { folderToCategory[it] }
+            mapBitwardenItemToExportItem(item, catId)
+        }
+    }
+
+    private fun mapBitwardenItemToExportItem(
+        item: BwExportItem,
+        catId: Long?
+    ): DataExportImportManager.ExportItem {
+        val title = item.name.ifBlank { "(无标题)" }
+        val notes = item.notes ?: ""
+        val base = DataExportImportManager.ExportItem(
+            id = 0,
+            itemType = ItemType.PASSWORD.name,
+            title = title,
+            itemData = "",
+            notes = notes,
+            isFavorite = item.favorite,
+            imagePaths = "",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+            categoryId = catId,
+            bitwardenFolderId = item.folderId,
+            importedCustomFields = mapBitwardenFields(item.fields)
+        )
+
+        // 自身导出（未知类型）时会写入 bastion_item_type / bastion_item_data 隐藏字段，优先原样还原
+        val bastionType = item.fields?.firstOrNull { it.name == "bastion_item_type" }?.value
+        if (!bastionType.isNullOrBlank()) {
+            return base.copy(
+                itemType = bastionType,
+                itemData = item.fields?.firstOrNull { it.name == "bastion_item_data" }?.value ?: ""
+            )
+        }
+
+        return when (item.type) {
+            1 -> mapBitwardenLogin(item, base)
+            2 -> mapBitwardenSecureNote(item, base, notes)
+            3 -> mapBitwardenCard(item, base)
+            4 -> mapBitwardenIdentity(item, base)
+            else -> mapBitwardenSecureNote(item, base, notes)
+        }
+    }
+
+    private fun mapBitwardenLogin(
+        item: BwExportItem,
+        base: DataExportImportManager.ExportItem
+    ): DataExportImportManager.ExportItem {
+        val login = item.login ?: BwLogin()
+        val website = login.uris?.firstOrNull()?.uri ?: ""
+        val username = login.username ?: ""
+        val password = login.password ?: ""
+        val notes = item.notes ?: ""
+        val itemData = buildString {
+            append("website:").append(website).append(";")
+            append("username:").append(username).append(";")
+            append("password:").append(password).append(";")
+            append("email:").append("").append(";")
+            append("phone:").append("").append(";")
+            append("notes:").append(notes)
+        }
+        return base.copy(
+            itemType = ItemType.PASSWORD.name,
+            itemData = itemData,
+            importedAuthenticatorKey = login.totp
+        )
+    }
+
+    private fun mapBitwardenSecureNote(
+        item: BwExportItem,
+        base: DataExportImportManager.ExportItem,
+        notes: String
+    ): DataExportImportManager.ExportItem {
+        val content = notes.ifBlank { item.name }
+        val extraFields = item.fields?.filter { it.name != "bastion_item_type" && it.name != "bastion_item_data" }
+        val finalContent = if (!extraFields.isNullOrEmpty()) {
+            val appended = extraFields.joinToString("\n") { "${it.name}: ${it.value ?: ""}" }
+            "$content\n\n$appended"
+        } else {
+            content
+        }
+        val (itemData, _) = NoteContentCodec.encode(content = finalContent)
+        // 笔记类型不单独存储自定义字段，已并入正文避免丢失
+        return base.copy(itemType = ItemType.NOTE.name, itemData = itemData, importedCustomFields = emptyList())
+    }
+
+    private fun mapBitwardenCard(
+        item: BwExportItem,
+        base: DataExportImportManager.ExportItem
+    ): DataExportImportManager.ExportItem {
+        val card = item.card ?: BwCard()
+        val customFields = item.fields?.mapNotNull { f ->
+            val label = f.name
+            if (label.isNullOrBlank()) null
+            else SecureCustomField(
+                label = label,
+                value = f.value ?: "",
+                type = if (f.type == 1) SecureCustomFieldType.HIDDEN else SecureCustomFieldType.TEXT
+            )
+        } ?: emptyList()
+        val bankCard = BankCardData(
+            cardNumber = card.number ?: "",
+            cardholderName = card.cardholderName ?: "",
+            expiryMonth = card.expMonth ?: "",
+            expiryYear = card.expYear ?: "",
+            cvv = card.code ?: "",
+            brand = card.brand ?: "",
+            customFields = customFields
+        )
+        val itemData = CardWalletDataCodec.encodeBankCardData(bankCard)
+        return base.copy(itemType = ItemType.BANK_CARD.name, itemData = itemData, importedCustomFields = emptyList())
+    }
+
+    private fun mapBitwardenIdentity(
+        item: BwExportItem,
+        base: DataExportImportManager.ExportItem
+    ): DataExportImportManager.ExportItem {
+        val id = item.identity ?: BwIdentity()
+        val docTypeField = item.fields?.firstOrNull { it.name == "bastion_document_type" }?.value
+        val docType = runCatching { DocumentType.valueOf(docTypeField ?: "OTHER") }.getOrDefault(DocumentType.OTHER)
+        val customFields = item.fields
+            ?.filter { !(it.name ?: "").startsWith("bastion_") }
+            ?.mapNotNull { f ->
+                val label = f.name
+                if (label.isNullOrBlank()) null
+                else SecureCustomField(
+                    label = label,
+                    value = f.value ?: "",
+                    type = if (f.type == 1) SecureCustomFieldType.HIDDEN else SecureCustomFieldType.TEXT
+                )
+            } ?: emptyList()
+        val document = DocumentData(
+            documentType = docType,
+            documentNumber = (id.ssn ?: id.passportNumber ?: id.licenseNumber).orEmpty(),
+            fullName = listOf(id.firstName, id.middleName, id.lastName)
+                .filter { !it.isNullOrBlank() }
+                .joinToString(" ")
+                .ifBlank { id.title ?: "" },
+            issuedDate = item.fields?.firstOrNull { it.name == "bastion_issue_date" }?.value ?: "",
+            expiryDate = item.fields?.firstOrNull { it.name == "bastion_expiry_date" }?.value ?: "",
+            issuedBy = item.fields?.firstOrNull { it.name == "bastion_issued_by" }?.value ?: "",
+            nationality = item.fields?.firstOrNull { it.name == "bastion_nationality" }?.value ?: "",
+            additionalInfo = item.fields?.firstOrNull { it.name == "bastion_additional_info" }?.value ?: "",
+            title = id.title ?: "",
+            firstName = id.firstName ?: "",
+            middleName = id.middleName ?: "",
+            lastName = id.lastName ?: "",
+            address1 = id.address1 ?: "",
+            address2 = id.address2 ?: "",
+            address3 = id.address3 ?: "",
+            city = id.city ?: "",
+            stateProvince = id.state ?: "",
+            postalCode = id.postalCode ?: "",
+            country = id.country ?: "",
+            company = id.company ?: "",
+            email = id.email ?: "",
+            phone = id.phone ?: "",
+            ssn = id.ssn ?: "",
+            username = id.username ?: "",
+            passportNumber = id.passportNumber ?: "",
+            licenseNumber = id.licenseNumber ?: "",
+            customFields = customFields
+        )
+        val itemData = CardWalletDataCodec.encodeDocumentData(document)
+        return base.copy(itemType = ItemType.DOCUMENT.name, itemData = itemData, importedCustomFields = emptyList())
+    }
+
+    private fun mapBitwardenFields(fields: List<BwField>?): List<DataExportImportManager.ImportedCustomField> {
+        if (fields.isNullOrEmpty()) return emptyList()
+        return fields.mapNotNull { f ->
+            val name = f.name
+            if (name.isNullOrBlank()) null
+            else DataExportImportManager.ImportedCustomField(
+                title = name,
+                value = f.value ?: "",
+                isProtected = f.type == 1
+            )
+        }
     }
 
     /**
@@ -955,6 +1239,63 @@ class DataExportImportViewModel(
             Result.failure(e)
         } finally {
             preparedFile?.delete()
+        }
+    }
+
+    /**
+     * 导出 Bitwarden 兼容的明文 JSON（可被 Bitwarden 官方导入，或供 bw2keepass 转换）。
+     * @param outputUri 导出文件 URI
+     */
+    suspend fun exportBitwardenJson(outputUri: Uri): Result<String> {
+        return try {
+            val passwordEntries = passwordRepository.getAllPasswordEntries().first()
+            val secureItems = secureItemRepository.getAllItems().first()
+            val categories = passwordRepository.getAllCategories().first()
+
+            val plain = BitwardenJsonExporter(securityManager, categories)
+                .buildPlainExport(passwordEntries, secureItems)
+            val jsonString = bitwardenExportJson.encodeToString(plain)
+
+            writeTextToUri(jsonString, outputUri)
+            Result.success(context.getString(R.string.export_success_bitwarden_json))
+        } catch (e: Exception) {
+            android.util.Log.e("DataExport", "导出 Bitwarden JSON 失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 导出 Bitwarden 兼容的加密 JSON（密码保护信封，结构与 bw2keepass 对称）。
+     * @param outputUri 导出文件 URI
+     * @param exportPassword 导出密码（用于加密整个导出）
+     */
+    suspend fun exportEncryptedBitwardenJson(
+        outputUri: Uri,
+        exportPassword: String
+    ): Result<String> {
+        return try {
+            val passwordEntries = passwordRepository.getAllPasswordEntries().first()
+            val secureItems = secureItemRepository.getAllItems().first()
+            val categories = passwordRepository.getAllCategories().first()
+
+            val exporter = BitwardenJsonExporter(securityManager, categories)
+            val plain = exporter.buildPlainExport(passwordEntries, secureItems)
+            val encrypted = exporter.encryptExport(plain, exportPassword)
+            val jsonString = bitwardenExportJson.encodeToString(encrypted)
+
+            writeTextToUri(jsonString, outputUri)
+            Result.success(context.getString(R.string.export_success_bitwarden_encrypted_json))
+        } catch (e: Exception) {
+            android.util.Log.e("DataExport", "导出加密 Bitwarden JSON 失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun writeTextToUri(text: String, uri: Uri) {
+        withContext(Dispatchers.IO) {
+            context.contentResolver.openOutputStream(uri)?.use { out ->
+                out.write(text.toByteArray(Charsets.UTF_8))
+            } ?: throw IOException("无法写入导出文件")
         }
     }
 

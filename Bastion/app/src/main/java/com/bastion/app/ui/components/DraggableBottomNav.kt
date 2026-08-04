@@ -24,8 +24,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import com.bastion.app.ui.theme.glass.LocalLiquidGlass
-import com.bastion.app.ui.theme.glass.liquidGlass
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -220,10 +218,6 @@ fun DraggableBottomNavScaffold(
                 .fillMaxWidth()
                 .offset { IntOffset(0, offsetValue.roundToInt()) }
                 .height(actualExpandedHeight)
-                .liquidGlass(
-                    enabled = LocalLiquidGlass.current,
-                    shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
-                )
                 .pointerInput(maxOffset) {
                     detectVerticalDragGestures(
                         onDragStart = {
@@ -246,7 +240,7 @@ fun DraggableBottomNavScaffold(
                     )
                 },
             shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius),
-            color = if (LocalLiquidGlass.current) Color.Transparent else MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 8.dp,
             tonalElevation = 2.dp
         ) {

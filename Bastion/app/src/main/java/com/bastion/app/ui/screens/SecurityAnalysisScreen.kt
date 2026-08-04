@@ -852,7 +852,7 @@ private fun CompromisedFlatList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(items) { item ->
+        items(items, key = { it.entry.id }) { item ->
             SecurityDetailEntryRow(
                 entry = item.entry,
                 title = item.entry.title,
@@ -884,7 +884,7 @@ private fun No2faFlatList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(items) { item ->
+        items(items, key = { it.entry.id }) { item ->
             SecurityDetailEntryRow(
                 entry = item.entry,
                 title = item.entry.title,
@@ -916,7 +916,7 @@ private fun InactivePasskeyFlatList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(items) { item ->
+        items(items, key = { it.entry.id }) { item ->
             SecurityDetailEntryRow(
                 entry = item.entry,
                 title = item.entry.title,

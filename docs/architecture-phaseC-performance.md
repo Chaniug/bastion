@@ -3,11 +3,29 @@
 > **文档目的**：针对 Bastion App 的运行时性能问题进行系统性优化，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：设计阶段，待维护者确认优先级
+> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.2 / C.3 / C.4.2-4 / C.6 待维护者确认计划后推进
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **与 Phase B 的关系**：Phase B 关注代码可维护性，Phase C 关注运行时性能。两者可并行推进，互不依赖。
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **真机测试**：荣耀 Android 17
+
+---
+
+## 零、进度记录（dev 分支）
+
+| 批次 | 任务 | 提交 | CI（Android CI debug） | 状态 |
+| --- | --- | --- | --- | --- |
+| Agent 1（低风险） | C.1 主线程 IO + C.4.1 SupervisorJob + C.5 LazyColumn key | 初推 `e4e3e1f5`/`66c2e2b4`/`d43f2950`；修复 `6bc9d132` | #289 失败 → #290 **Success** ✅ | 已完成并通过 CI |
+
+### 关键修正（提交 `6bc9d132`）
+- **C.5 `key` lambda 参数易错点**：`items(...)` 的 `key` lambda 参数是「列表项本身」，应写 `it` 或显式参数名（如 `row ->`），**不能**用内容 lambda 的参数名（如 `warning`/`failure`/`target`/`parsedCard`/`historyItem`/`item`）。初版误用内容 lambda 参数名，导致 8 处 `Unresolved reference '...'`。已全部改为 `it` / 显式 `row ->`。
+- **C.1 `ImagePreview` smart-cast**：`bitmap` 是 `var` 且被 `LaunchedEffect` 捕获，无法 smart-cast；改为先 `val currentBitmap = bitmap` 再判空，局部 `val` 才能 smart-cast 为非空。
+
+### 待办（需维护者确认计划后推进）
+- C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）
+- C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）
+- C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）
+- C.6 Compose 编译器优化（依赖 C.3 的投影 POJO 做 `@Immutable` 标注）
 
 ---
 

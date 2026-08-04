@@ -632,7 +632,6 @@ fun BastionApp(
         darkTheme = darkTheme,
         oledPureBlackEnabled = settings.oledPureBlackEnabled,
         colorScheme = settings.colorScheme,
-        liquidGlassEnabled = settings.liquidGlassEnabled,
         customPrimaryColor = settings.customPrimaryColor,
         customSecondaryColor = settings.customSecondaryColor,
         customTertiaryColor = settings.customTertiaryColor,
@@ -2454,6 +2453,12 @@ fun BastionContent(
                         Result.failure(Exception("无法打开文件"))
                     }
                 },
+                onExportJson = { uri ->
+                    dataExportImportViewModel.exportBitwardenJson(uri)
+                },
+                onExportEncryptedJson = { uri, password ->
+                    dataExportImportViewModel.exportEncryptedBitwardenJson(uri, password)
+                },
                 biometricEnabled = settings.biometricEnabled
             )
         }
@@ -2485,6 +2490,15 @@ fun BastionContent(
                 },
                 onImportBitwardenCsv = { uri ->
                     dataExportImportViewModel.importBitwardenCsv(uri)
+                },
+                onImportBitwardenJson = { uri ->
+                    dataExportImportViewModel.importBitwardenJson(uri)
+                },
+                onImportEncryptedBitwardenJson = { uri, password ->
+                    dataExportImportViewModel.importEncryptedBitwardenJson(uri, password)
+                },
+                onIsEncryptedBitwarden = { uri ->
+                    dataExportImportViewModel.isEncryptedBitwardenFile(uri)
                 },
                 onImportProtonPassCsv = { uri ->
                     dataExportImportViewModel.importProtonPassCsv(uri)

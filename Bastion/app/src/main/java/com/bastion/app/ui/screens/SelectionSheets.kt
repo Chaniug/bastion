@@ -26,8 +26,6 @@ fun AppearanceSelectionSheet(
     oledPureBlackEnabled: Boolean,
     onThemeSelected: (ThemeMode) -> Unit,
     onOledPureBlackChanged: (Boolean) -> Unit,
-    liquidGlassEnabled: Boolean = false,
-    onLiquidGlassChanged: (Boolean) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -125,40 +123,6 @@ fun AppearanceSelectionSheet(
                     Switch(
                         checked = oledPureBlackEnabled,
                         onCheckedChange = onOledPureBlackChanged
-                    )
-                }
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onLiquidGlassChanged(!liquidGlassEnabled) }
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = context.getString(R.string.liquid_glass),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = context.getString(R.string.liquid_glass_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Switch(
-                        checked = liquidGlassEnabled,
-                        onCheckedChange = onLiquidGlassChanged
                     )
                 }
             }

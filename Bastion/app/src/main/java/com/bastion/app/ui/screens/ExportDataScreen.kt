@@ -47,6 +47,10 @@ fun ExportDataScreen(
         Result.failure(Exception("Not implemented"))
     },
     onExportKdbx: suspend (Uri, String) -> Result<String> = { _, _ -> Result.failure(Exception("Not implemented")) },
+    onExportJson: suspend (Uri) -> Result<String> = { Result.failure(Exception("Not implemented")) },
+    onExportEncryptedJson: suspend (Uri, String) -> Result<String> = { _, _ ->
+        Result.failure(Exception("Not implemented"))
+    },
     biometricEnabled: Boolean = false
 ) {
     val context = LocalContext.current
@@ -64,6 +68,11 @@ fun ExportDataScreen(
     var kdbxPassword by remember { mutableStateOf("") }
     var kdbxPasswordVisible by remember { mutableStateOf(false) }
     var showKdbxPasswordDialog by remember { mutableStateOf(false) }
+
+    // 加密 Bitwarden JSON 导出密码
+    var encryptedJsonPassword by remember { mutableStateOf("") }
+    var encryptedJsonPasswordVisible by remember { mutableStateOf(false) }
+    var showEncryptedJsonPasswordDialog by remember { mutableStateOf(false) }
     
     // ZIP 备份选项
     var backupPreferences by remember { mutableStateOf(BackupPreferences()) }
@@ -99,6 +108,8 @@ fun ExportDataScreen(
                     onExportZip(safeUri, backupPreferences)
                 }
                 ExportOption.KDBX -> onExportKdbx(safeUri, kdbxPassword)
+                ExportOption.BITWARDEN_JSON -> onExportJson(safeUri)
+                ExportOption.BITWARDEN_ENCRYPTED_JSON -> onExportEncryptedJson(safeUri, encryptedJsonPassword)
             }
 
             isExporting = false
@@ -181,6 +192,14 @@ fun ExportDataScreen(
                 return
             }
         }
+
+        // 加密 Bitwarden JSON 导出需要密码
+        if (selectedOption == ExportOption.BITWARDEN_ENCRYPTED_JSON) {
+            if (encryptedJsonPassword.isEmpty()) {
+                showEncryptedJsonPasswordDialog = true
+                return
+            }
+        }
         
         // ZIP 备份验证：至少选择一种内容
         if (selectedOption == ExportOption.ZIP_BACKUP && !backupPreferences.hasAnyEnabled()) {
@@ -260,6 +279,56 @@ fun ExportDataScreen(
         )
     }
     
+    // 加密 Bitwarden JSON 导出密码对话框
+    if (showEncryptedJsonPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showEncryptedJsonPasswordDialog = false },
+            title = { Text(stringResource(R.string.encrypted_json_password_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.encrypted_json_password_hint),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = encryptedJsonPassword,
+                        onValueChange = { encryptedJsonPassword = it },
+                        label = { Text(stringResource(R.string.password)) },
+                        visualTransformation = if (encryptedJsonPasswordVisible)
+                            VisualTransformation.None
+                        else
+                            PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { encryptedJsonPasswordVisible = !encryptedJsonPasswordVisible }) {
+                                Icon(
+                                    if (encryptedJsonPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showEncryptedJsonPasswordDialog = false
+                        startExport()
+                    },
+                    enabled = encryptedJsonPassword.isNotEmpty()
+                ) {
+                    Text(stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEncryptedJsonPasswordDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -363,6 +432,24 @@ fun ExportDataScreen(
                 onClick = { selectedOption = ExportOption.KDBX }
             )
 
+            // Bitwarden 明文 JSON 导出（可被 bw2keepass / Bitwarden 导入）
+            ExportOptionCard(
+                icon = Icons.Default.Description,
+                title = stringResource(R.string.export_option_bitwarden_json),
+                description = stringResource(R.string.export_option_bitwarden_json_desc),
+                selected = selectedOption == ExportOption.BITWARDEN_JSON,
+                onClick = { selectedOption = ExportOption.BITWARDEN_JSON }
+            )
+
+            // Bitwarden 加密 JSON 导出（密码保护信封）
+            ExportOptionCard(
+                icon = Icons.Default.Lock,
+                title = stringResource(R.string.export_option_bitwarden_encrypted_json),
+                description = stringResource(R.string.export_option_bitwarden_encrypted_json_desc),
+                selected = selectedOption == ExportOption.BITWARDEN_ENCRYPTED_JSON,
+                onClick = { selectedOption = ExportOption.BITWARDEN_ENCRYPTED_JSON }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
             
             // 导出按钮
@@ -393,28 +480,30 @@ fun ExportDataScreen(
                 }
             }
             
-            // 安全警告
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // 安全警告：仅明文 JSON 导出未加密，需要提示妥善保管
+            if (selectedOption == ExportOption.BITWARDEN_JSON) {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        stringResource(R.string.export_data_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            stringResource(R.string.export_data_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
             }
             
