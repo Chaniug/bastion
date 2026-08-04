@@ -3,7 +3,7 @@
 > **文档目的**：针对 Bastion App 的运行时性能问题进行系统性优化，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.2 / C.3 / C.4.2-4 / C.6 待维护者确认计划后推进
+> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2（Autofill runBlocking）/ C.3（Room SELECT * 投影）为重点改动，实施计划见第七章，待维护者确认后推进**
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **与 Phase B 的关系**：Phase B 关注代码可维护性，Phase C 关注运行时性能。两者可并行推进，互不依赖。
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
@@ -16,16 +16,17 @@
 | 批次 | 任务 | 提交 | CI（Android CI debug） | 状态 |
 | --- | --- | --- | --- | --- |
 | Agent 1（低风险） | C.1 主线程 IO + C.4.1 SupervisorJob + C.5 LazyColumn key | 初推 `e4e3e1f5`/`66c2e2b4`/`d43f2950`；修复 `6bc9d132` | #289 失败 → #290 **Success** ✅ | 已完成并通过 CI |
+| Agent 2（低风险） | C.4.2-4 全局 scope 设计意图注释 + C.6 开启 Compose 编译器稳定性报告 | `ed75ec64` → 合并 main `14d89301` | #300(dev) **Success** → #301(main) **Success** ✅ | 已完成并通过 CI |
 
 ### 关键修正（提交 `6bc9d132`）
 - **C.5 `key` lambda 参数易错点**：`items(...)` 的 `key` lambda 参数是「列表项本身」，应写 `it` 或显式参数名（如 `row ->`），**不能**用内容 lambda 的参数名（如 `warning`/`failure`/`target`/`parsedCard`/`historyItem`/`item`）。初版误用内容 lambda 参数名，导致 8 处 `Unresolved reference '...'`。已全部改为 `it` / 显式 `row ->`。
 - **C.1 `ImagePreview` smart-cast**：`bitmap` 是 `var` 且被 `LaunchedEffect` 捕获，无法 smart-cast；改为先 `val currentBitmap = bitmap` 再判空，局部 `val` 才能 smart-cast 为非空。
 
 ### 待办（需维护者确认计划后推进）
-- C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）
-- C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）
-- C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）
-- C.6 Compose 编译器优化（依赖 C.3 的投影 POJO 做 `@Immutable` 标注）
+- ~~C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）~~ → **已完成（注释落盘，CI #300/#301 通过）**
+- ~~C.6 Compose 编译器优化（报告部分）~~ → **已完成（开启 `composeCompiler.reportsDestination`，CI #300/#301 通过）；`@Immutable` 标注待 C.3 POJO 落地后按稳定性报告实施**
+- **C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）** → 实施计划见第七章
+- **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → 实施计划见第七章
 
 ---
 
@@ -414,6 +415,79 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 - 投影 POJO 放在 `data/` 包下，命名 `XxxListItem`
 - 公共 API 添加 KDoc 注释
 - 不引入新的第三方依赖
+
+---
+
+## 七、重点项实施计划（C.2 / C.3，待维护者确认）
+
+> 本章为**计划**，非已实施代码。按规范 #5，重点改动需维护者确认后再改。
+> 代码现状已基于 2026-08-04 仓库实际源码核对。
+
+### 7.1 C.2 —— Autofill 路径 runBlocking 治理
+
+**现状核对（2026-08-04）：** 全仓仍有 5 处 `runBlocking` 读取 DataStore 配置，1 处无超时：
+
+| 文件:行 | 调用 | 超时保护 | 风险 | 调用上下文 |
+| --- | --- | --- | --- | --- |
+| `autofill_ng/core/AutofillServiceChecker.kt:218` | `AutofillPreferences(context).isAutofillEnabled.first()` | ❌ 无 | **高** | 诊断工具 `checkAppEnabled()`，被 `checkServiceStatus()` / `isServiceAvailable()` 调用（设置页诊断，非系统 binder 热路径，但无超时即隐患） |
+| `ui/base/BaseBastionActivity.kt:52` | `settingsFlow.first().`（语言设置） | ✅ 200ms | 中 | `attachBaseContext`/启动期读语言，阻塞启动线程最多 200ms |
+| `autofill_ng/AutofillPickerActivityV2.kt:403` | `localSettingsManager.settingsFlow.first().autoLockMinutes` | ✅ 200ms | 中 | Autofill 候选 Picker 启动期 |
+| `autofill_ng/AccountFillPolicy.kt:38` | `SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled` | ✅ 200ms | 中 | 填充策略判定 `shouldFillEmailWithAccount()`，填充热路径 |
+| `autofill_ng/builder/FilledDataBuilderNg.kt:37` | `settingsManager.settingsFlow.first().autoLockMinutes` | ✅ 200ms | 中 | 填充数据构建，填充热路径 |
+
+> 备注：另在 `passkey/PasskeyCreateActivity.kt`、`passkey/PasskeyAuthActivity.kt` 见到 `runBlocking` import，但实际调用处已是 suspend/IO 内（注释明确 "无需 runBlocking"），属未清理的 import，不在本任务范围，可顺手清理。
+
+**推荐方案（两档，请二选一）：**
+
+- **方案 A（最小一致，推荐）：统一加 `withTimeout` 兜底。**
+  `AutofillServiceChecker.kt:218` 是唯一无超时点，改为与其余 4 处一致：
+  ```kotlin
+  val isEnabled = try {
+      runBlocking { withTimeout(200) { AutofillPreferences(context).isAutofillEnabled.first() } }
+  } catch (e: TimeoutCancellationException) {
+      true // 默认假设启用，与现有 catch 默认值一致
+  }
+  ```
+  改动极小、风险最低，消除「无超时」这个唯一高亮点；其余 4 处已受 200ms 保护，保持现状即可。
+- **方案 B（架构级，文档原方案）：Autofill 配置预加载到内存缓存。**
+  在 `BastionAutofillServiceNg.onCreate` 预加载 `isAutofillEnabled` / `autoLockMinutes` / `separateUsernameAccountEnabled` 等到一个进程级 `AutofillConfigCache` DataClass，`runBlocking` 调用点改为同步读内存。
+  收益：彻底消除填充热路径上的 `runBlocking` 阻塞；代价：新增缓存类 + 失效/刷新逻辑，改动面大、需真机验证填充延迟。
+
+**真机验证（规范 #8，荣耀 Android 17）：** 系统设置触发 Autofill → 填充正常、无 ANR；尤其方案 B 需验证首次冷启动填充延迟。
+
+---
+
+### 7.2 C.3 —— Room `SELECT *` 列表查询投影优化
+
+**现状核对（2026-08-04）：** `PasswordEntryDao.kt` 与 `SecureItemDao.kt` 中**列表展示类** `Flow<List<...>>` 查询共约 19 个仍 `SELECT *` 返回完整实体（含 `itemData`/`password`/`notes` 等大字段），UI 列表只需 `id`/`title`/`favorite` 等少量列。
+
+**需投影的列表查询（候选）：**
+
+`PasswordEntryDao.kt`（返回 `Flow<List<PasswordEntry>>`）：
+`#12 getAllPasswordEntries`、`#15 getPasswordEntriesByCategory`、`#18 getUncategorizedPasswordEntries`、`#21 getPasswordEntriesByKeePassDatabase`、`#24 getPasswordEntriesByKeePassGroup`、`#27 getPasswordEntriesWithoutKeePassDatabase`、`#33 getFavoritePasswordEntries`、`#39 searchPasswordEntries`、`#427 getDeletedEntries`、`#451 getActiveEntries`、`#457 getArchivedEntries`（另含 `suspend getAllPasswordEntriesSync`/`getActiveEntriesSync` 等同步列表版，一并投影）。
+
+`SecureItemDao.kt`（返回 `Flow<List<SecureItem>>`）：
+`#13 getAllItems`、`#17 getItemsByType`、`#24 searchItems`、`#28 searchItemsByType`、`#32 getFavoriteItems`、`#205 getDeletedItems`、`#217 getActiveItems`、`#223 getActiveItemsByType`（含同步列表版 `getActiveItemsByTypeSync`/`getByKeePassDatabaseIdSync`/`getActiveLocalItemsByTypeSync` 等）。
+
+**明确不投影（保留 `SELECT *`）：**
+- 所有 `WHERE id = :id` 详情查询（列表点击进详情按 id 查完整实体，已有）；
+- Bitwarden 同步类查询（`WHERE bitwarden_vault_id/cipher_id = ...`），同步逻辑依赖完整实体；
+- `CustomField` / `Passkey` / `KeePass` / `BitwardenVault` 等表的查询（不在本任务列表展示范围）。
+
+**实施步骤（分批，每批一个 DAO 方法独立提交推 CI）：**
+1. 新增投影 POJO：`data/PasswordEntryListItem.kt`、`data/SecureItemListItem.kt`（全 `val`、不可变，为 C.6 的 `@Immutable` 做准备）。
+2. 为每个列表查询新增 `...ListItem` DAO 方法（保留原方法，避免一次性改动所有调用点导致大范围编译失败）。
+3. ViewModel 适配：`PasswordViewModel` / `TotpViewModel` / `BankCardViewModel` / `DocumentViewModel` 等列表 Flow 改收 `ListItem` POJO；点击进详情时按 `id` 取完整实体（现有 `getById` 已具备）。
+4. 待全部列表路径切换完成、旧 `SELECT *` 列表方法无引用后，再移除旧方法。
+
+**验证：**
+- 每改一个 DAO 方法推一次 CI（构建闸门 + 单测基线，当前基线 19，性能重构不应引入新失败）。
+- 真机（荣耀 Android 17）：添加 100+ 条目对比首屏列表加载速度。
+
+**风险与注意：**
+- 不修改 `@Entity` 定义、不触碰数据库 schema / 迁移（纯查询层变更）。
+- 投影列需与列表 UI 实际使用的字段逐一核对，避免遗漏导致 NPE / 空显示。
+- 与 C.6 协同：C.3 的 `ListItem` POJO 落地后，回到 C.6 按 `compose_compiler` 报告对其标注 `@Immutable`。
 
 ---
 
