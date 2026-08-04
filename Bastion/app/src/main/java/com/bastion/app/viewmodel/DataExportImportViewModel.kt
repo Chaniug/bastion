@@ -473,7 +473,7 @@ class DataExportImportViewModel(
         return try {
             val content = readUriText(inputUri)
             if (BitwardenJsonImport.isEncryptedExport(content)) {
-                throw com.bastion.app.utils.WebDavHelper.PasswordRequiredException("Bitwarden 导出文件已加密，需要密码")
+                throw com.bastion.app.utils.WebDavHelper.PasswordRequiredException()
             }
             val plain = BitwardenJsonImport.parsePlain(content)
             val items = buildBitwardenExportItems(plain)
@@ -510,19 +510,22 @@ class DataExportImportViewModel(
      */
     private suspend fun buildBitwardenExportItems(plain: BitwardenPlainExport): List<DataExportImportManager.ExportItem> {
         val existingCategories = passwordRepository.getAllCategories().first()
-        val folderToCategory = mutableMapOf<String, Long?>()
         val folderNameById = plain.folders.associate { it.id to it.name }
+        val folderToCategory = mutableMapOf<String, Long?>()
 
-        fun resolveCategory(folderId: String?, folderName: String?): Long? {
-            if (folderId == null) return null
-            folderToCategory[folderId]?.let { return it }
+        // 事先把每个文件夹解析为应用分类（涉及挂起插入，必须在 map 之前完成，
+        // 因为 .map 的 lambda 不是协程上下文，无法调用挂起函数）。
+        for (item in plain.items) {
+            val folderId = item.folderId ?: continue
+            if (folderToCategory.containsKey(folderId)) continue
             val existing = existingCategories.firstOrNull { it.bitwardenFolderId == folderId }
             val catId = if (existing != null) {
                 existing.id
             } else {
+                val name = (folderNameById[folderId] ?: "Bitwarden").ifBlank { "Bitwarden" }
                 val newId = passwordRepository.insertCategory(
                     Category(
-                        name = (folderName ?: "Bitwarden").ifBlank { "Bitwarden" },
+                        name = name,
                         sortOrder = existingCategories.size + folderToCategory.size,
                         bitwardenFolderId = folderId
                     )
@@ -530,11 +533,10 @@ class DataExportImportViewModel(
                 if (newId > 0) newId else null
             }
             folderToCategory[folderId] = catId
-            return catId
         }
 
         return plain.items.map { item ->
-            val catId = resolveCategory(item.folderId, item.folderId?.let { folderNameById[it] })
+            val catId = item.folderId?.let { folderToCategory[it] }
             mapBitwardenItemToExportItem(item, catId)
         }
     }
@@ -552,6 +554,9 @@ class DataExportImportViewModel(
             itemData = "",
             notes = notes,
             isFavorite = item.favorite,
+            imagePaths = "",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
             categoryId = catId,
             bitwardenFolderId = item.folderId,
             importedCustomFields = mapBitwardenFields(item.fields)
@@ -666,7 +671,7 @@ class DataExportImportViewModel(
             documentType = docType,
             documentNumber = (id.ssn ?: id.passportNumber ?: id.licenseNumber).orEmpty(),
             fullName = listOf(id.firstName, id.middleName, id.lastName)
-                .filter { it.isNotBlank() }
+                .filter { !it.isNullOrBlank() }
                 .joinToString(" ")
                 .ifBlank { id.title ?: "" },
             issuedDate = item.fields?.firstOrNull { it.name == "bastion_issue_date" }?.value ?: "",
