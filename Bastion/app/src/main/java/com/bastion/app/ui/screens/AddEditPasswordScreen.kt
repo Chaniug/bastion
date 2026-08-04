@@ -3057,7 +3057,7 @@ fun AddEditPasswordScreen(
                                     text = {
                                         if (bankCards.isEmpty()) Text(stringResource(R.string.no_bank_card_data))
                                         else LazyColumn {
-                                            items(bankCards, key = { parsedCard }) { parsedCard ->
+                                            items(bankCards, key = { it }) { parsedCard ->
                                                 val item = parsedCard.item
                                                 val cardData = parsedCard.cardData
                                                 ListItem(

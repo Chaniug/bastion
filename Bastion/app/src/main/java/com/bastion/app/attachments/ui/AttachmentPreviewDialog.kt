@@ -136,7 +136,8 @@ private fun ImagePreview(uri: Uri) {
         }
     }
 
-    if (bitmap == null) {
+    val currentBitmap = bitmap
+    if (currentBitmap == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = stringResource(R.string.attachment_error_io),
@@ -148,7 +149,7 @@ private fun ImagePreview(uri: Uri) {
     }
 
     Image(
-        bitmap = bitmap,
+        bitmap = currentBitmap,
         contentDescription = null,
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Fit

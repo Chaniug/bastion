@@ -619,7 +619,7 @@ private fun WarningSheet(warnings: List<String>, onDismiss: () -> Unit) {
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(warnings, key = { warning }) { warning ->
+                items(warnings, key = { it }) { warning ->
                     Card(
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
@@ -655,7 +655,7 @@ private fun FailureSheet(result: DedupMergeExecutionResult, onDismiss: () -> Uni
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(result.failures, key = { failure }) { failure ->
+                items(result.failures, key = { it }) { failure ->
                     Card(
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)

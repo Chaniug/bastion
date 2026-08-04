@@ -2241,7 +2241,7 @@ private fun GeneratorHistorySheet(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(filteredHistoryList, key = { historyItem.timestamp }) { historyItem ->
+                    items(filteredHistoryList, key = { it.timestamp }) { historyItem ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
