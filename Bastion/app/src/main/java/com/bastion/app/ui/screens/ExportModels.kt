@@ -5,5 +5,7 @@ package com.bastion.app.ui.screens
  */
 enum class ExportOption {
     ZIP_BACKUP,
-    KDBX
+    KDBX,
+    BITWARDEN_JSON,
+    BITWARDEN_ENCRYPTED_JSON
 }

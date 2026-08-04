@@ -2453,6 +2453,12 @@ fun BastionContent(
                         Result.failure(Exception("无法打开文件"))
                     }
                 },
+                onExportJson = { uri ->
+                    dataExportImportViewModel.exportBitwardenJson(uri)
+                },
+                onExportEncryptedJson = { uri, password ->
+                    dataExportImportViewModel.exportEncryptedBitwardenJson(uri, password)
+                },
                 biometricEnabled = settings.biometricEnabled
             )
         }

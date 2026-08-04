@@ -31,6 +31,7 @@ import com.bastion.app.util.DataExportImportManager
 import com.bastion.app.util.TotpDataResolver
 import com.bastion.app.util.TotpUriParser
 import com.bastion.app.notes.domain.NoteContentCodec
+import com.bastion.app.bitwarden.export.BitwardenJsonExporter
 import com.bastion.app.utils.BackupContentScope
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -61,6 +62,11 @@ class DataExportImportViewModel(
     )
 
     private val exportManager = DataExportImportManager(context)
+    private val bitwardenExportJson = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        prettyPrint = true
+    }
     private val securityManager by lazy { SecurityManager(context) }
     private val customFieldRepository by lazy {
         CustomFieldRepository(PasswordDatabase.getDatabase(context).customFieldDao())
@@ -955,6 +961,63 @@ class DataExportImportViewModel(
             Result.failure(e)
         } finally {
             preparedFile?.delete()
+        }
+    }
+
+    /**
+     * 导出 Bitwarden 兼容的明文 JSON（可被 Bitwarden 官方导入，或供 bw2keepass 转换）。
+     * @param outputUri 导出文件 URI
+     */
+    suspend fun exportBitwardenJson(outputUri: Uri): Result<String> {
+        return try {
+            val passwordEntries = passwordRepository.getAllPasswordEntries().first()
+            val secureItems = secureItemRepository.getAllItems().first()
+            val categories = passwordRepository.getAllCategories().first()
+
+            val plain = BitwardenJsonExporter(securityManager, categories)
+                .buildPlainExport(passwordEntries, secureItems)
+            val jsonString = bitwardenExportJson.encodeToString(plain)
+
+            writeTextToUri(jsonString, outputUri)
+            Result.success(context.getString(R.string.export_success_bitwarden_json))
+        } catch (e: Exception) {
+            android.util.Log.e("DataExport", "导出 Bitwarden JSON 失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 导出 Bitwarden 兼容的加密 JSON（密码保护信封，结构与 bw2keepass 对称）。
+     * @param outputUri 导出文件 URI
+     * @param exportPassword 导出密码（用于加密整个导出）
+     */
+    suspend fun exportEncryptedBitwardenJson(
+        outputUri: Uri,
+        exportPassword: String
+    ): Result<String> {
+        return try {
+            val passwordEntries = passwordRepository.getAllPasswordEntries().first()
+            val secureItems = secureItemRepository.getAllItems().first()
+            val categories = passwordRepository.getAllCategories().first()
+
+            val exporter = BitwardenJsonExporter(securityManager, categories)
+            val plain = exporter.buildPlainExport(passwordEntries, secureItems)
+            val encrypted = exporter.encryptExport(plain, exportPassword)
+            val jsonString = bitwardenExportJson.encodeToString(encrypted)
+
+            writeTextToUri(jsonString, outputUri)
+            Result.success(context.getString(R.string.export_success_bitwarden_encrypted_json))
+        } catch (e: Exception) {
+            android.util.Log.e("DataExport", "导出加密 Bitwarden JSON 失败: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun writeTextToUri(text: String, uri: Uri) {
+        withContext(Dispatchers.IO) {
+            context.contentResolver.openOutputStream(uri)?.use { out ->
+                out.write(text.toByteArray(Charsets.UTF_8))
+            } ?: throw IOException("无法写入导出文件")
         }
     }
 
