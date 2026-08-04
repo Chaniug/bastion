@@ -436,8 +436,7 @@ class DataExportImportViewModel(
                         failedCount = errorCount
                     )
                     Result.success(count)
-            }
-        } catch (e: Exception) {
+            } catch (e: Exception) {
             android.util.Log.e("DataImport", "导入异常: ${e.message}", e)
             Result.failure(e)
         }
