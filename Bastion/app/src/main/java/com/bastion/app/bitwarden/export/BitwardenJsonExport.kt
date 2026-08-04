@@ -417,7 +417,7 @@ class BitwardenJsonExporter(
                 fields += BwField(
                     name = f.label,
                     value = f.value,
-                    type = if (f.isProtected) 1 else 0
+                    type = if (f.isProtected()) 1 else 0
                 )
             }
         }
@@ -494,7 +494,7 @@ class BitwardenJsonExporter(
             fields += BwField(
                 name = f.label,
                 value = f.value,
-                type = if (f.isProtected) 1 else 0
+                type = if (f.isProtected()) 1 else 0
             )
         }
 
