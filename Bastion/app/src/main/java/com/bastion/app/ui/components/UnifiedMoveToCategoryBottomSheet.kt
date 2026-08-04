@@ -503,7 +503,7 @@ fun UnifiedMoveToCategoryBottomSheet(
                         )
                     }
                 } else {
-                    items(activeTargets) { target ->
+                    items(activeTargets, key = { target }) { target ->
                         MoveTargetItem(
                             title = target.title,
                             icon = target.icon,

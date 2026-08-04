@@ -144,7 +144,7 @@ fun SimpleIconPickerBottomSheet(
                         .heightIn(max = 560.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(rows) { rowItems ->
+                    items(rows, key = { rowItems.joinToString(separator = "|") { it.slug } }) { rowItems ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
