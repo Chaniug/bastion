@@ -1361,14 +1361,20 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.titleSmall
                                     )
                                 }
-                                result.releaseNotes?.let { notes ->
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    MarkdownPreviewText(
-                                        markdown = notes,
-                                        imageBitmaps = emptyMap(),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                }
+                                val notes = result.releaseNotes?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.update_whats_new)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = stringResource(R.string.update_content_label),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                MarkdownPreviewText(
+                                    markdown = notes,
+                                    imageBitmaps = emptyMap(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
                             }
                         }
                     }
