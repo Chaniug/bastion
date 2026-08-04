@@ -36,6 +36,11 @@ class ClipboardUtils(private val context: Context) {
     fun cancelAutoClear() = cancelPendingAutoClear()
 
     companion object {
+        // 设计意图（架构升级 C.4.2，保留现状）：剪贴板自动清空是「触发即忘」的延迟任务
+        // （默认 30s 后清空），scope 跟随进程生命周期即可，无需绑定某个 Activity/Fragment。
+        // 评估过用 ProcessLifecycleOwner 作用域替代，但会增加复杂度且无实测收益，
+        // 且 delayed clear 本就在 Main.immediate 上调度，取消由 clearClipboardJob 单独管理，
+        // 不会泄漏。故保留 companion 级全局 scope。
         private val clipboardScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         @Volatile
         private var clearClipboardJob: Job? = null

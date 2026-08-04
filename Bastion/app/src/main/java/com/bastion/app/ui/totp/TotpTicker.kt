@@ -16,6 +16,9 @@ import kotlinx.coroutines.isActive
 private const val SMOOTH_TICK_MS = 50L
 private const val TICK_STOP_TIMEOUT_MS = 5_000L
 
+// 设计意图（架构升级 C.4.4，保留现状）：tickerScope 刻意作为文件级长生命周期 scope。
+// 其下 smoothTicker/secondTicker 均用 SharingStarted.WhileSubscribed(5_000ms) 启动，
+// 无任何订阅时会自动停止发射，因此该 scope 不会在无观察者时空转或泄漏，相对安全，予以保留。
 private val tickerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 private val smoothTicker = tickerFlow(smooth = true).stateIn(
