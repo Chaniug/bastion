@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.room.withTransaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -35,7 +36,7 @@ object OperationLogger {
     private var securityManager: SecurityManager? = null
     @Volatile
     private var lastSnapshotCleanupAt: Long = 0L
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     private val json = Json { 
         prettyPrint = false
