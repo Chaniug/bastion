@@ -605,7 +605,7 @@
     <string name="export_data_button">导出</string>
     <string name="export_data_success">数据导出成功</string>
     <string name="export_data_error">导出失败</string>
-    <string name="export_data_warning">CSV文件未加密，请妥善保管导出文件</string>
+    <string name="export_data_warning">明文 JSON 未被加密，请妥善保管导出文件，避免敏感信息泄露</string>
     
     <!-- 新的导出界面 -->
     <string name="export_select_option">选择导出选项</string>
@@ -625,7 +625,7 @@
     <string name="import_data_button">导入</string>
     <string name="import_data_success">数据导入成功</string>
     <string name="import_data_error">导入失败</string>
-    <string name="import_data_supported_formats">支持应用导出的CSV文件和支付宝交易明细</string>
+    <string name="import_data_supported_formats">支持应用备份、KeePass、Bitwarden（CSV / JSON）、Aegis、Proton Pass、Chrome 等格式</string>
     <string name="import_data_select_type">选择导入类型</string>
     <string name="import_data_type_normal">应用数据</string>
     <string name="import_data_type_alipay">支付宝账单</string>
@@ -1027,7 +1027,7 @@
     <string name="settings_bottom_sheet_title">底部抽屉模式</string>
     <string name="settings_bottom_sheet_description">启用可上拉的抽屉式导航</string>
     <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_description">导出为CSV文件到本地</string>
+    <string name="settings_export_data_description">导出数据到本地文件</string>
     <string name="settings_import_data">导入数据</string>
     <string name="settings_import_data_description">从备份文件恢复</string>
     <string name="settings_version_info">版本信息</string>
@@ -1049,6 +1049,8 @@
     <string name="update_check_no_update_message">当前安装版本已经是最新 Release。</string>
     <string name="update_check_failed_message">无法检查 GitHub Releases：%1$s</string>
     <string name="update_check_failed_unknown">未知错误</string>
+    <string name="update_content_label">更新内容</string>
+    <string name="update_whats_new">- 新增 Bitwarden 兼容 JSON 导出（明文 / 密码保护加密），可被 Bitwarden 官方或 bw2keepass 直接导入\n- 新增 Bitwarden JSON 导入（明文 + 加密），支持登录 / 卡片 / 证件 / 笔记，文件夹自动映射为分类\n- 优化导出与导入文案，移除过时的 CSV 描述，明文 JSON 导出警告改为动态提示\n- 持续修复真机兼容性与界面稳定性问题</string>
     <string name="update_check_current_version">当前版本：%1$s</string>
     <string name="update_check_latest_version">最新版本：%1$s</string>
     <string name="update_check_open_release">打开 Release</string>
@@ -1257,9 +1259,9 @@
     <!-- Data Management in Settings -->
     <string name="data_management">数据管理</string>
     <string name="export_data">导出数据</string>
-    <string name="export_data_description">导出所有数据到CSV文件</string>
+    <string name="export_data_description">导出数据到文件</string>
     <string name="import_data">导入数据</string>
-    <string name="import_data_description">从CSV文件导入数据</string>
+    <string name="import_data_description">从备份、KeePass、Bitwarden 等格式导入数据</string>
     
     <!-- WebDAV Backup -->
     <string name="webdav_backup">WebDAV 备份</string>
@@ -2792,7 +2794,7 @@
     <string name="sync_backup_keepass_tools">KeePass 工具</string>
     <string name="sync_backup_keepass_webdav_title">KeePass WebDAV</string>
     <string name="sync_backup_keepass_webdav_desc">通过 WebDAV 与 KeePass (.kdbx) 同步数据</string>
-    <string name="sync_backup_import_export_low_freq">导入导出（低频）</string>
+    <string name="sync_backup_import_export_low_freq">导入与导出</string>
     <string name="dedup_engine_title">去重引擎</string>
     <string name="dedup_engine_desc">用规则化方式统一扫描 Bastion、KeePass 和 Bitwarden 的重复数据</string>
     <string name="dedup_engine_entry_desc">集中查看完全重复、跨库镜像和类型级冲突，并按建议治理</string>

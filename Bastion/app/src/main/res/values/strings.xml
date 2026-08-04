@@ -1037,7 +1037,7 @@
     <string name="settings_bottom_sheet_title">底部抽屉模式</string>
     <string name="settings_bottom_sheet_description">启用可上拉的抽屉式导航</string>
     <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_description">导出为CSV文件到本地</string>
+    <string name="settings_export_data_description">Export data to a local file</string>
     <string name="settings_import_data">导入数据</string>
     <string name="settings_import_data_description">从备份文件恢复</string>
     <string name="settings_version_info">版本信息</string>
@@ -1059,6 +1059,8 @@
     <string name="update_check_no_update_message">当前安装版本已经是最新 Release。</string>
     <string name="update_check_failed_message">无法检查 GitHub Releases：%1$s</string>
     <string name="update_check_failed_unknown">未知错误</string>
+    <string name="update_content_label">What’s New</string>
+    <string name="update_whats_new">- Added Bitwarden-compatible JSON export (plaintext / password-protected), importable by Bitwarden or bw2keepass\n- Added Bitwarden JSON import (plaintext + encrypted) for logins/cards/identities/notes, with folders auto-mapped to categories\n- Polished export/import copy; removed outdated CSV descriptions; plaintext JSON export warning is now shown dynamically\n- Ongoing fixes for device compatibility and UI stability</string>
     <string name="update_check_current_version">当前版本：%1$s</string>
     <string name="update_check_latest_version">最新版本：%1$s</string>
     <string name="update_check_open_release">打开 Release</string>
