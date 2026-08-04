@@ -272,6 +272,10 @@ class SettingsManager(private val context: Context) {
         private val CATEGORY_MENU_QUICK_FILTERS_EXPANDED_KEY = booleanPreferencesKey("category_menu_quick_filters_expanded")
         private val CATEGORY_MENU_FOLDERS_EXPANDED_KEY = booleanPreferencesKey("category_menu_folders_expanded")
 
+        // 设计意图（架构升级 C.4.3，保留现状）：sharedSettingsScope 刻意作为 companion 级长生命周期 scope，
+        // 用于支撑 eagerly 收集的 SharedFlow<AppSettings>——全局配置需常驻内存、随时可读，
+        // 随进程结束而终止即可。若在此 cancel，会导致进行中的 settingsFlow 订阅被丢弃、
+        // 首次读取回退到默认值，故保留，不纳入协程泄漏治理范围。
         private val sharedSettingsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         private val sharedSettingsFlowLock = Any()
         @Volatile

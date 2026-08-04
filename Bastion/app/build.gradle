@@ -180,6 +180,14 @@ android {
         buildConfig true
     }
 
+    // 架构升级 C.6（第 1 步）：开启 Compose 编译器稳定性/指标报告。
+    // 报告输出到 app/build/compose_compiler/，用于定位被误判为「不稳定」的数据类，
+    // 后续可针对性地添加 @Immutable / @Stable 注解以减少不必要重组。
+    // 仅生成报告，不改变编译行为，不影响产物。
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+    }
+
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             // 目标格式: Bastion-Android-[架构]-[版本号]-yyMMddVV-SS.APK
