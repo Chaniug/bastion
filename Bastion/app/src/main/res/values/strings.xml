@@ -605,7 +605,7 @@
     <string name="export_data_button">导出</string>
     <string name="export_data_success">数据导出成功</string>
     <string name="export_data_error">导出失败</string>
-    <string name="export_data_warning">CSV文件未加密，请妥善保管导出文件</string>
+    <string name="export_data_warning">明文 JSON 未被加密，请妥善保管导出文件，避免敏感信息泄露</string>
     
     <!-- 新的导出界面 -->
     <string name="export_select_option">选择导出选项</string>
@@ -635,7 +635,7 @@
     <string name="import_data_button">导入</string>
     <string name="import_data_success">数据导入成功</string>
     <string name="import_data_error">导入失败</string>
-    <string name="import_data_supported_formats">支持应用导出的CSV文件和支付宝交易明细</string>
+    <string name="import_data_supported_formats">支持应用备份、KeePass、Bitwarden（CSV / JSON）、Aegis、Proton Pass、Chrome 等格式</string>
     <string name="import_data_select_type">选择导入类型</string>
     <string name="import_data_type_normal">应用数据</string>
     <string name="import_data_type_alipay">支付宝账单</string>
@@ -1267,9 +1267,9 @@
     <!-- Data Management in Settings -->
     <string name="data_management">数据管理</string>
     <string name="export_data">导出数据</string>
-    <string name="export_data_description">导出所有数据到CSV文件</string>
+    <string name="export_data_description">导出为备份、KeePass 或 Bitwarden 兼容格式</string>
     <string name="import_data">导入数据</string>
-    <string name="import_data_description">从CSV文件导入数据</string>
+    <string name="import_data_description">从备份、KeePass、Bitwarden 等格式导入数据</string>
     
     <!-- WebDAV Backup -->
     <string name="webdav_backup">WebDAV 备份</string>
