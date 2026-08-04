@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bastion.app.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 应用内附件预览对话框。
@@ -122,12 +125,15 @@ fun AttachmentPreviewDialog(
 @Composable
 private fun ImagePreview(uri: Uri) {
     val context = LocalContext.current
-    val bitmap = remember(uri) {
-        runCatchingObserved {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream)?.asImageBitmap()
-            }
-        }.getOrNull()
+    var bitmap by remember(uri) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(uri) {
+        bitmap = withContext(Dispatchers.IO) {
+            runCatchingObserved {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                }
+            }.getOrNull()
+        }
     }
 
     if (bitmap == null) {
@@ -248,10 +254,13 @@ private fun PdfPreview(uri: Uri) {
 @Composable
 private fun TextPreview(uri: Uri) {
     val context = LocalContext.current
-    val text = remember(uri) {
-        runCatchingObserved {
-            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-        }.getOrNull().orEmpty()
+    var text by remember(uri) { mutableStateOf("") }
+    LaunchedEffect(uri) {
+        text = withContext(Dispatchers.IO) {
+            runCatchingObserved {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            }.getOrNull().orEmpty()
+        }
     }
 
     Box(
