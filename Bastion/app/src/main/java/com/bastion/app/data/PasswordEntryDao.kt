@@ -4,37 +4,6 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 /**
- * C.3 列表投影列：仅包含列表 UI 实际需要的轻量列，刻意排除 password / sshKeyData /
- * wifiMetadata / passkeyBindings / 信用卡加密字段 / Phase7 PII 等大字段。
- * 列名与 [PasswordEntryListItem] 属性一一对应；snake_case 列通过 `AS` 别名映射到 camelCase 属性。
- */
-private const val PASSWORD_LIST_COLUMNS = """
-    id,
-    title,
-    website,
-    username,
-    notes,
-    updatedAt,
-    createdAt,
-    isFavorite,
-    isGroupCover,
-    appPackageName,
-    appName,
-    categoryId,
-    keepassDatabaseId,
-    authenticatorKey,
-    loginType,
-    ssoProvider,
-    customIconType,
-    customIconValue,
-    bitwarden_vault_id AS bitwardenVaultId,
-    bitwarden_local_modified AS bitwardenLocalModified,
-    isDeleted,
-    isArchived,
-    sortOrder
-""".trimIndent()
-
-/**
  * Data Access Object for password entries
  */
 @Dao
@@ -75,37 +44,37 @@ interface PasswordEntryDao {
 
     // =============== C.3 列表投影（ListItem，排除大字段；保留上方 SELECT * 列表方法以渐进迁移） ===============
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getAllPasswordEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND categoryId = :categoryId ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND categoryId = :categoryId ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getPasswordEntriesByCategoryListItem(categoryId: Long): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND categoryId IS NULL ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND categoryId IS NULL ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getUncategorizedPasswordEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId = :databaseId ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId = :databaseId ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getPasswordEntriesByKeePassDatabaseListItem(databaseId: Long): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId = :databaseId AND keepassGroupPath = :groupPath ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId = :databaseId AND keepassGroupPath = :groupPath ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getPasswordEntriesByKeePassGroupListItem(databaseId: Long, groupPath: String): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId IS NULL ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND keepassDatabaseId IS NULL ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getPasswordEntriesWithoutKeePassDatabaseListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND isFavorite = 1 ORDER BY sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND isFavorite = 1 ORDER BY sortOrder ASC, updatedAt DESC")
     fun getFavoritePasswordEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND (title LIKE '%' || :query || '%' OR website LIKE '%' || :query || '%' OR username LIKE '%' || :query || '%' OR appName LIKE '%' || :query || '%' OR appPackageName LIKE '%' || :query || '%') ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 AND (title LIKE '%' || :query || '%' OR website LIKE '%' || :query || '%' OR username LIKE '%' || :query || '%' OR appName LIKE '%' || :query || '%' OR appPackageName LIKE '%' || :query || '%') ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun searchPasswordEntriesListItem(query: String): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 1 ORDER BY deletedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 1 ORDER BY deletedAt DESC")
     fun getDeletedEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 0 ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getActiveEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
-    @Query("SELECT $PASSWORD_LIST_COLUMNS FROM password_entries WHERE isDeleted = 0 AND isArchived = 1 ORDER BY archivedAt DESC, updatedAt DESC")
+    @Query("SELECT id, title, website, username, notes, updatedAt, createdAt, isFavorite, isGroupCover, appPackageName, appName, categoryId, keepassDatabaseId, authenticatorKey, loginType, ssoProvider, customIconType, customIconValue, bitwarden_vault_id AS bitwardenVaultId, bitwarden_local_modified AS bitwardenLocalModified, isDeleted, isArchived, sortOrder FROM password_entries WHERE isDeleted = 0 AND isArchived = 1 ORDER BY archivedAt DESC, updatedAt DESC")
     fun getArchivedEntriesListItem(): Flow<List<PasswordEntryListItem>>
 
         @Query(
