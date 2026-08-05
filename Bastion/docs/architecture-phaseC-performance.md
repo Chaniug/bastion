@@ -520,3 +520,42 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 | 列表项内重计算 | 0 | — | — |
 | R8/minify release | 已启用 | OK | — |
 | Compose 编译器优化 | 缺失 | 低-中 | C.6 |
+
+---
+
+## 八、C.3.3 实施调研与方案分叉（待维护者决策，2026-08-05）
+
+### 8.1 关键发现：主列表流并非"纯展示"，而是依赖完整实体做解密 + 多字段过滤
+
+C.3 原计划假设"列表查询只喂展示，可安全投影掉 password 等大字段"。但实测 `PasswordViewModel` 后，主列表流 `passwordEntriesSource`（约 404–558 行）的实际情况是：
+
+1. **逐行解密/检查 `password`**：对每条目调用 `inspectSecretState(entry)`（委托 `passwordProviderRegistry.inspectSecret(entry)`，读取 `entry.password` 判定"是否有密码"状态），并 `entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())`（约 549–551、577、643 行）。`allPasswordsSource`/`allPasswordsForUiSource` 同理。
+2. **内存过滤依赖多字段**：分类筛选在 ViewModel 内用 `entry.isLocalOnlyEntry()`（需 `bitwardenVaultId`+`keepassDatabaseId`）、`entry.isFavorite`、`entry.categoryId`、`entry.keepassDatabaseId`、`entry.bitwardenVaultId`、`entry.bitwardenFolderId`、`entry.keepassGroupPath` 等做 `filter {...}`（约 477–510 行）。
+
+**结论**：若"纯展示投影"排除 `password`，会破坏列表的"有密码"指示与 KeePass/Bitwarden 分类筛选；若排除 `bitwardenFolderId`/`keepassGroupPath`，会破坏对应分类筛选。即主列表流必须保留 `password` + `bitwardenFolderId` + `keepassGroupPath`，原计划的"排除 password 拿最大收益"对主列表流不成立。
+
+> 注：列表卡片本身（`PasswordEntryCard` + `resolvePasswordCardDisplayLines`）只读展示字段（title/website/username/notes/updatedAt/图标/收藏/来源徽章），并不读 password/sshKeyData 等大字段——瓶颈在 ViewModel 的解密/过滤，不在卡片。
+
+### 8.2 方案分叉
+
+- **方案 A（安全、行为保持、部分收益，推荐先落地）**
+  扩 `PasswordEntryListItem` 使其包含 `password` + `bitwardenFolderId` + `keepassGroupPath`（列表流实际使用的字段），**仅排除** `sshKeyData` / `wifiMetadata` / `passkeyBindings` / 信用卡加密字段 / Phase7 PII（email/phone/地址等）。
+  切换面：`PasswordRepository`（新增 ListItem 方法）+ `PasswordViewModel`（多个 StateFlow 改收 ListItem）+ `PasswordEntryCard` + `resolvePasswordCardDisplayLines`（改收 ListItem）+ 约 24 个 UI 调用点。
+  收益：DB 仍读 `password`（最大单字段），但省下 JSON/blob/PII 等多列；行为完全不变，CI 可验证。
+  风险：中（调用点多，但纯机械替换，旧 SELECT * 方法保留至切换完成）。
+
+- **方案 B（更高收益、更大重构）**
+  重构列表流：**不在列表行解密 `password`**——"是否有密码"改为由轻量标志（如已有 `loginType`/非空判定）推导，详情按需按 id 取完整实体解密。这样 `password` 也能排除，列表查询最轻。
+  收益：主列表 DB 负载大幅下降（排除 password + JSON/blob/PII）。
+  风险：高（改动 ViewModel 解密/状态逻辑，需荣耀 Android 17 真机验证"有密码"指示与复制/自动填充行为不变）。
+
+- **方案 C（暂缓）**
+  C.3 基础（POJO + 11 个投影 DAO 方法）已落地且 CI 通过，列表 UI 切换暂缓，待后续评估 A/B 取舍。原 SELECT * 列表方法继续服役。
+
+### 8.3 建议
+
+- 求稳且要可见收益 → **方案 A**（先落地，行为零变化，CI 护航）。
+- 追求最大列表性能且可接受较大重构与真机验证 → **方案 B**。
+- 两者都保留原 `SELECT *` 列表方法，至新路径全量切换、旧方法无引用后再移除（与 7.2 步骤 4 一致）。
+
+> SecureItem 侧仍按 7.2 暂缓（列表卡片强依赖 `itemData`）。
