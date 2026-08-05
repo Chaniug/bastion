@@ -2,12 +2,8 @@ package com.bastion.app.autofill_ng
 
 import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.security.SecurityManager
-import com.bastion.app.utils.SettingsManager
 
 object AccountFillPolicy {
     fun resolveAccountIdentifier(
@@ -34,12 +30,9 @@ object AccountFillPolicy {
     }
 
     fun shouldFillEmailWithAccount(context: Context): Boolean {
+        // 改读 autofill 进程配置缓存（方案 B），避免填充热路径 runBlocking 读取 DataStore。
         return runCatchingObserved {
-            runBlocking {
-                withTimeout(200) {
-                    SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled
-                }
-            }
+            AutofillConfigCache.separateUsernameAccountEnabled
         }.getOrDefault(false)
     }
 

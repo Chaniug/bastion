@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -146,6 +147,34 @@ class BastionAutofillServiceNg : AutofillService() {
         autofillPreferences = AutofillPreferences(applicationContext)
         settingsManager = SettingsManager(applicationContext)
         diagnostics = AutofillDiagnostics(applicationContext)
+        // 填充配置预加载缓存（方案 B）：冷路径一次性预加载，热路径改读 AutofillConfigCache，
+        // 消除 onFillRequest / AccountFillPolicy / FilledDataBuilderNg 内的 runBlocking 读取。
+        AutofillConfigCache.preload(applicationContext)
+        // 观测设置流，持续刷新缓存字段；collect 立即发射当前值，之后每次变更刷新。
+        scope.launch {
+            runCatchingObserved {
+                settingsManager.settingsFlow.collect { s ->
+                    AutofillConfigCache.autoLockMinutes = s.autoLockMinutes
+                    AutofillConfigCache.separateUsernameAccountEnabled = s.separateUsernameAccountEnabled
+                    AutofillConfigCache.language = s.language.name
+                    AutofillConfigCache.autofillAuthRequired = s.autofillAuthRequired
+                }
+            }.onFailure { AutofillLogger.w("AFCACHE", "settings observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isInlineSuggestionsEnabled.collect { v ->
+                    AutofillConfigCache.isInlineSuggestionsEnabled = v
+                }
+            }.onFailure { AutofillLogger.w("AFCACHE", "inline suggestion observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isAutofillEnabled.collect { v ->
+                    AutofillConfigCache.isAutofillEnabled = v
+                }
+            }.onFailure { AutofillLogger.w("AFCACHE", "autofill-enabled observation failed: ${it.message}") }
+        }
         ContextCompat.registerReceiver(
             this,
             screenOffReceiver,
@@ -665,12 +694,12 @@ class BastionAutofillServiceNg : AutofillService() {
         // 点选后输入法直接 commitText 进输入框，不依赖 autofillId 映射回写，对 Via 100% 可靠。
         // 因此对 WebView 场景，即使用户关着 inline 开关，也获取 inlineRequest 供 builder 使用。
         val isWebViewFill = webDomain != null
-        val inlineRequest = if (autofillPreferences.isInlineSuggestionsEnabled.first() || isWebViewFill) {
+        val inlineRequest = if (AutofillConfigCache.isInlineSuggestionsEnabled || isWebViewFill) {
             getInlineRequest(request)
         } else {
             null
         }
-        val autofillAuthRequired = settingsManager.settingsFlow.first().autofillAuthRequired
+        val autofillAuthRequired = AutofillConfigCache.autofillAuthRequired
         val grantContext = AutofillGrantContext(
             packageName = packageName,
             webDomain = webDomain,

@@ -17,10 +17,7 @@ import com.bastion.app.autofill_ng.AutofillSecretResolver
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.security.SessionManager
-import com.bastion.app.utils.SettingsManager
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import com.bastion.app.autofill_ng.AutofillConfigCache
 
 // 不在此处截断条目数量，让系统键盘自行控制横向滚动显示所有条目。
 private const val MAX_FILLED_PARTITIONS_COUNT = Int.MAX_VALUE
@@ -32,13 +29,9 @@ class FilledDataBuilderNg(
 ) {
 
     private fun resolveAutoLockTimeoutForAutofill(): Int {
+        // 改读 autofill 进程配置缓存（方案 B），避免填充热路径 runBlocking 读取 DataStore。
         return runCatchingObserved {
-            val settingsManager = SettingsManager(context.applicationContext)
-            val autoLockMinutes = runBlocking {
-                withTimeout(200) {
-                    settingsManager.settingsFlow.first().autoLockMinutes
-                }
-            }
+            val autoLockMinutes = AutofillConfigCache.autoLockMinutes
             SessionManager.updateAutoLockTimeout(autoLockMinutes)
             autoLockMinutes
         }.onFailure { error ->

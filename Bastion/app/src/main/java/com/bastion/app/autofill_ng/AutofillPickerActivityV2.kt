@@ -81,9 +81,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
@@ -399,12 +397,9 @@ class AutofillPickerActivityV2 : BaseBastionActivity() {
         // settingsManager 已由 BaseBastionActivity 初始化
         val localSettingsManager = settingsManager
 
+        // 改读 autofill 进程配置缓存（方案 B），避免填充热路径 runBlocking 读取 DataStore。
         runCatchingObserved {
-            val autoLockMinutes = runBlocking {
-                withTimeout(200) {
-                    localSettingsManager.settingsFlow.first().autoLockMinutes
-                }
-            }
+            val autoLockMinutes = AutofillConfigCache.autoLockMinutes
             SessionManager.updateAutoLockTimeout(autoLockMinutes)
         }.onFailure { error ->
             AutofillLogger.w(
