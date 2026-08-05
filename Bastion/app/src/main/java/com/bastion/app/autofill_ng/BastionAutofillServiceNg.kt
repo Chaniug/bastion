@@ -175,6 +175,47 @@ class BastionAutofillServiceNg : AutofillService() {
                 }
             }.onFailure { AutofillLogger.w("AFCACHE", "autofill-enabled observation failed: ${it.message}") }
         }
+        // Phase C onFillRequest 全量缓存化（方案 B 延伸）：8 路配置观测
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isV2RespectAutofillOffEnabled.collect { AutofillConfigCache.isV2RespectAutofillOffEnabled = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "v2-respect-off observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.v2DefaultSourceFilter.collect { AutofillConfigCache.v2DefaultSourceFilter = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "source-filter observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.v2DefaultKeepassDatabaseId.collect { AutofillConfigCache.v2DefaultKeepassDatabaseId = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "keepass-db-id observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.v2DefaultBitwardenVaultId.collect { AutofillConfigCache.v2DefaultBitwardenVaultId = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "bitwarden-vault-id observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isBitwardenStrictModeEnabled.collect { AutofillConfigCache.isBitwardenStrictModeEnabled = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "strict-mode observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isBitwardenSubdomainMatchEnabled.collect { AutofillConfigCache.isBitwardenSubdomainMatchEnabled = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "subdomain-match observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.domainMatchStrategy.collect { AutofillConfigCache.domainMatchStrategy = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "domain-strategy observation failed: ${it.message}") }
+        }
+        scope.launch {
+            runCatchingObserved {
+                autofillPreferences.isPasswordSuggestionEnabled.collect { AutofillConfigCache.isPasswordSuggestionEnabled = it }
+            }.onFailure { AutofillLogger.w("AFCACHE", "password-suggestion observation failed: ${it.message}") }
+        }
         ContextCompat.registerReceiver(
             this,
             screenOffReceiver,
@@ -271,7 +312,7 @@ class BastionAutofillServiceNg : AutofillService() {
             AutofillLogger.w("AF", "Skip fill request: already cancelled", metadata = mapOf("requestId" to requestId))
             return null
         }
-        if (!autofillPreferences.isAutofillEnabled.first()) {
+        if (!AutofillConfigCache.isAutofillEnabled) {
             AutofillLogger.i("AF", "Skip fill request: app autofill disabled", metadata = mapOf("requestId" to requestId))
             return null
         }
@@ -292,7 +333,7 @@ class BastionAutofillServiceNg : AutofillService() {
             return null
         }
 
-        val respectAutofillOff = autofillPreferences.isV2RespectAutofillOffEnabled.first()
+        val respectAutofillOff = AutofillConfigCache.isV2RespectAutofillOffEnabled
         val isManualRequest = request.flags and FillRequest.FLAG_MANUAL_REQUEST != 0
         var parsed = parser.parse(
             structure = structure,
@@ -594,9 +635,9 @@ class BastionAutofillServiceNg : AutofillService() {
         var candidatePasswordCount = 0
         val matchedPasswords = if (hasLoginTargets) {
             val allPasswords = passwordRepository.getAllPasswordEntries().first()
-            val sourceFilter = autofillPreferences.v2DefaultSourceFilter.first()
-            val defaultKeepassDatabaseId = autofillPreferences.v2DefaultKeepassDatabaseId.first()
-            val defaultBitwardenVaultId = autofillPreferences.v2DefaultBitwardenVaultId.first()
+            val sourceFilter = AutofillConfigCache.v2DefaultSourceFilter
+            val defaultKeepassDatabaseId = AutofillConfigCache.v2DefaultKeepassDatabaseId
+            val defaultBitwardenVaultId = AutofillConfigCache.v2DefaultBitwardenVaultId
             val scopedPasswords = applyDefaultSourceFilter(
                 entries = allPasswords,
                 sourceFilter = sourceFilter,
@@ -604,9 +645,9 @@ class BastionAutofillServiceNg : AutofillService() {
                 bitwardenVaultId = defaultBitwardenVaultId,
             )
             candidatePasswordCount = scopedPasswords.size
-            val strictOnly = autofillPreferences.isBitwardenStrictModeEnabled.first()
-            val allowSubdomainToggle = autofillPreferences.isBitwardenSubdomainMatchEnabled.first()
-            val uriStrategy = autofillPreferences.domainMatchStrategy.first()
+            val strictOnly = AutofillConfigCache.isBitwardenStrictModeEnabled
+            val allowSubdomainToggle = AutofillConfigCache.isBitwardenSubdomainMatchEnabled
+            val uriStrategy = AutofillConfigCache.domainMatchStrategy
             val uriConfig = resolveUriStrategyConfig(uriStrategy, allowSubdomainToggle)
             if (uriConfig.disableMatch) {
                 emptyList()
@@ -740,7 +781,7 @@ class BastionAutofillServiceNg : AutofillService() {
             passwords = passwordsForResponse,
             fieldSignatureKey = fieldSignatureKey,
             preferDirectAutoFill = isPasswordOnlyLogin && passwordsForResponse.size == 1,
-            passwordSuggestionEnabled = autofillPreferences.isPasswordSuggestionEnabled.first(),
+            passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled,
             requireAuthentication = effectiveAuthenticationRequired,
         )
 

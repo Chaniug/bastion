@@ -43,6 +43,32 @@ object AutofillConfigCache {
     @Volatile
     var autofillAuthRequired: Boolean = true
 
+    // Phase C onFillRequest 全量缓存化（方案 B 延伸）
+    @Volatile
+    var isV2RespectAutofillOffEnabled: Boolean = false
+
+    @Volatile
+    var v2DefaultSourceFilter: AutofillPreferences.AutofillDefaultSourceFilter =
+        AutofillPreferences.AutofillDefaultSourceFilter.ALL
+
+    @Volatile
+    var v2DefaultKeepassDatabaseId: Long? = null
+
+    @Volatile
+    var v2DefaultBitwardenVaultId: Long? = null
+
+    @Volatile
+    var isBitwardenStrictModeEnabled: Boolean = true
+
+    @Volatile
+    var isBitwardenSubdomainMatchEnabled: Boolean = true
+
+    @Volatile
+    var domainMatchStrategy: DomainMatchStrategy = DomainMatchStrategy.BASE_DOMAIN
+
+    @Volatile
+    var isPasswordSuggestionEnabled: Boolean = true
+
     @Volatile
     private var preloaded: Boolean = false
 
@@ -65,6 +91,14 @@ object AutofillConfigCache {
                     autofillAuthRequired = settings.autofillAuthRequired
                     isInlineSuggestionsEnabled = prefs.isInlineSuggestionsEnabled.first()
                     isAutofillEnabled = prefs.isAutofillEnabled.first()
+                    isV2RespectAutofillOffEnabled = prefs.isV2RespectAutofillOffEnabled.first()
+                    v2DefaultSourceFilter = prefs.v2DefaultSourceFilter.first()
+                    v2DefaultKeepassDatabaseId = prefs.v2DefaultKeepassDatabaseId.first()
+                    v2DefaultBitwardenVaultId = prefs.v2DefaultBitwardenVaultId.first()
+                    isBitwardenStrictModeEnabled = prefs.isBitwardenStrictModeEnabled.first()
+                    isBitwardenSubdomainMatchEnabled = prefs.isBitwardenSubdomainMatchEnabled.first()
+                    domainMatchStrategy = prefs.domainMatchStrategy.first()
+                    isPasswordSuggestionEnabled = prefs.isPasswordSuggestionEnabled.first()
                 }
             }
         }.onFailure {
