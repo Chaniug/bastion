@@ -3,7 +3,7 @@
 > **文档目的**：针对 Bastion App 的运行时性能问题进行系统性优化，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2（Autofill runBlocking）/ C.3（Room SELECT * 投影）为重点改动，实施计划见第七章，待维护者确认后推进**
+> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；C.2 方案 B（AutofillConfigCache 预加载缓存 + 4 处 runBlocking 热路径替换）已实施、合并 main，CI #31045278168(dev)/#31045863696(main) 通过，真机验证通过 ✅；方案 B 延伸（onFillRequest 全量缓存化：8 字段 + 9 处 .first() 切缓存）已实施、合并 main，CI #318(dev)/#319(main) 通过，待真机验证 ✅
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **与 Phase B 的关系**：Phase B 关注代码可维护性，Phase C 关注运行时性能。两者可并行推进，互不依赖。
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
@@ -17,6 +17,8 @@
 | --- | --- | --- | --- | --- |
 | Agent 1（低风险） | C.1 主线程 IO + C.4.1 SupervisorJob + C.5 LazyColumn key | 初推 `e4e3e1f5`/`66c2e2b4`/`d43f2950`；修复 `6bc9d132` | #289 失败 → #290 **Success** ✅ | 已完成并通过 CI |
 | Agent 2（低风险） | C.4.2-4 全局 scope 设计意图注释 + C.6 开启 Compose 编译器稳定性报告 | `ed75ec64` → 合并 main `14d89301` | #300(dev) **Success** → #301(main) **Success** ✅ | 已完成并通过 CI |
+| 方案 B（C.2 autofill 缓存） | AutofillConfigCache 预加载 + 4 处 runBlocking 热路径替换 | `5c0fdbfa` → 合并 main | #31045278168(dev) **Success** → #31045863696(main) **Success** ✅；真机验证通过 | 已完成 ✅ |
+| 方案 B 延伸（onFillRequest 全量缓存化） | AutofillConfigCache 新增 8 字段 + processFillRequest 内 9 处 .first() 切缓存 | `7bb71088` → 合并 main | #318(dev) **Success** → #319(main) **Success** ✅；preview APK build.202608052134 | 已完成，待真机验证 |
 
 ### 关键修正（提交 `6bc9d132`）
 - **C.5 `key` lambda 参数易错点**：`items(...)` 的 `key` lambda 参数是「列表项本身」，应写 `it` 或显式参数名（如 `row ->`），**不能**用内容 lambda 的参数名（如 `warning`/`failure`/`target`/`parsedCard`/`historyItem`/`item`）。初版误用内容 lambda 参数名，导致 8 处 `Unresolved reference '...'`。已全部改为 `it` / 显式 `row ->`。
@@ -25,7 +27,7 @@
 ### 待办（需维护者确认计划后推进）
 - ~~C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）~~ → **已完成（注释落盘，CI #300/#301 通过）**
 - ~~C.6 Compose 编译器优化（报告部分）~~ → **已完成（开启 `composeCompiler.reportsDestination`，CI #300/#301 通过）；`@Immutable` 标注待 C.3 POJO 落地后按稳定性报告实施**
-- **C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）** → 实施计划见第七章
+- ~~**C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）**~~ → 方案 B 已实施并合并 main（CI #31045278168(dev)/#31045863696(main) 通过，真机验证通过）；方案 B 延伸（onFillRequest 全量缓存化：8 字段 + 9 处 .first() 切缓存）已合并 main（CI #318(dev)/#319(main) 通过，待真机验证）✅
 - **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → 实施计划见第七章
 
 ---
