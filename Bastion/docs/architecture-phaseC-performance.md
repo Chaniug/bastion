@@ -3,7 +3,7 @@
 > **文档目的**：针对 Bastion App 的运行时性能问题进行系统性优化，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2.1（AutofillServiceChecker 唯一无超时 runBlocking）已实施、合并 main，CI #302(dev)/#303(main) 通过 ✅；C.3（Room 列表投影）PasswordEntry 侧基础已落地（POJO + 投影 DAO 方法，加性）**；**C.3.3 选项 A 已实施并合并 main：主列表流 `passwordEntriesSource` 切换到投影查询（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId，排除 JSON/blob/支付/PII），`PasswordEntryListItem` 标注 @Immutable（C.6），CI 通过 ✅**；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（见 7.2）
+> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2.1（AutofillServiceChecker 唯一无超时 runBlocking）已实施、合并 main，CI #302(dev)/#303(main) 通过 ✅**；**C.2 关闭**：5 处 `runBlocking` 中唯一无超时点（C.2.1）已修，其余 4 处代码本就带 `withTimeout(200)` 保护，另清理 passkey 两处未用 `runBlocking` import；**C.3（Room 列表投影）PasswordEntry 侧基础已落地（POJO + 13 投影 DAO 方法，KSP 修复）**；**C.3.3 选项 A 已实施并合并 main：主列表流 `passwordEntriesSource` 切换到投影查询（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId，排除 JSON/blob/支付/PII），`PasswordEntryListItem` 标注 @Immutable（C.6），CI 通过 ✅**；**C.3 清理（7.2 步骤 4）已实施**：移除 9 个无引用的旧 `SELECT *` 列表 DAO 方法 + 9 个对应 Repository 包装（含 2 个未引用 Bitwarden 非 ListItem 包装），保留仍被导出/自动填充/回收站等路径使用的 `getAllPasswordEntries`/`getActiveEntries`/`searchPasswordEntries`/`getDeletedEntries`/`getArchivedEntries`；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（见 7.2）
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **与 Phase B 的关系**：Phase B 关注代码可维护性，Phase C 关注运行时性能。两者可并行推进，互不依赖。
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
@@ -19,7 +19,9 @@
 | Agent 2（低风险） | C.4.2-4 全局 scope 设计意图注释 + C.6 开启 Compose 编译器稳定性报告 | `ed75ec64` → 合并 main `14d89301` | #300(dev) **Success** → #301(main) **Success** ✅ | 已完成并通过 CI |
 | Agent（重点项） | C.2.1 AutofillServiceChecker runBlocking 加 200ms 超时 | `7737017a` → 合并 main `4a50236f` | #302(dev) **Success** → #303(main) **Success** ✅ | 已完成并通过 CI |
 | Agent（重点项） | C.3 PasswordEntry 列表投影基础：新增 `PasswordEntryListItem` POJO + 11 个投影 DAO 方法（加性，保留原 SELECT * 方法） | `d0bd79de` → 修复 KSP `7940226f` → 合并 main `ca781168` | #304 失败 → #305(dev) **Success** → #306(main) **Success** ✅ | 已完成并通过 CI |
-| Agent（重点项） | C.3.3 选项 A：主列表流切换到投影查询（`passwordEntriesSource` 切 `ListItem`；`allPasswords*`/`archivedPasswords*` 因通行密钥列表读 `passkeyBindings`、详情副本分组读 `replicaGroupId`/`ssoRefEntryId` 保留全实体）；POJO 纳入 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId 并标注 @Immutable | `8e7c6e28` → 修导入 `889331ed` | #307 失败（缺 map 导入）→ #308(dev) **Success** ✅ | 已完成并通过 CI（待合并 main） |
+| Agent（重点项） | C.3.3 选项 A：主列表流切换到投影查询（`passwordEntriesSource` 切 `ListItem`；`allPasswords*`/`archivedPasswords*` 因通行密钥列表读 `passkeyBindings`、详情副本分组读 `replicaGroupId`/`ssoRefEntryId` 保留全实体）；POJO 纳入 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId 并标注 @Immutable | `8e7c6e28` → 修导入 `889331ed` | #307 失败（缺 map 导入）→ #308(dev) **Success** ✅ → #309(main) **Success** ✅ | 已完成并通过 CI |
+| Agent（重点项） | C.2 关闭：清理 `passkey` 两处未用 `runBlocking` import；文档定稿（C.2.1 已修 + C.2.2/C.2.3 经核对本就带 200ms 超时保护，无需改动） | 待提交 | 待推送验证 | 代码就绪，待 dev CI |
+| Agent（重点项） | C.3 清理（7.2 步骤 4）：移除 9 个无引用的旧 `SELECT *` 列表 DAO 方法 + 9 个对应 Repository 包装（含 2 个未引用 Bitwarden 非 ListItem 包装）；保留 `getAllPasswordEntries`/`getActiveEntries`/`searchPasswordEntries`/`getDeletedEntries`/`getArchivedEntries` | 待提交 | 待推送验证 | 代码就绪，待 dev CI |
 
 ### 关键修正（提交 `6bc9d132`）
 - **C.5 `key` lambda 参数易错点**：`items(...)` 的 `key` lambda 参数是「列表项本身」，应写 `it` 或显式参数名（如 `row ->`），**不能**用内容 lambda 的参数名（如 `warning`/`failure`/`target`/`parsedCard`/`historyItem`/`item`）。初版误用内容 lambda 参数名，导致 8 处 `Unresolved reference '...'`。已全部改为 `it` / 显式 `row ->`。
@@ -28,8 +30,8 @@
 ### 待办（需维护者确认计划后推进）
 - ~~C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）~~ → **已完成（注释落盘，CI #300/#301 通过）**
 - ~~C.6 Compose 编译器优化（报告部分）~~ → **已完成（开启 `composeCompiler.reportsDestination`，CI #300/#301 通过）；`@Immutable` 标注待 C.3 POJO 落地后按稳定性报告实施**
-- ~~**C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）**~~ → **C.2.1 已完成**（唯一无超时点已加 200ms 超时保护，CI #302/#303 通过）；方案 B（Autofill 配置预加载缓存）及 C.2.2/C.2.3 其余 runBlocking 仍待维护者确认
-- **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → PasswordEntry 侧基础已落地（POJO + 11 个投影 DAO 方法，加性）；**C.3.3 选项 A 已实施**：主列表流 `passwordEntriesSource` 切换到 `ListItem` 投影（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId），`PasswordEntryListItem` 标注 `@Immutable`（C.6）；`allPasswords*`/`archivedPasswords*` 因消费者读取 `passkeyBindings`/`replicaGroupId`/`ssoRefEntryId` 仍走全实体；旧 SELECT * 列表方法待无引用后移除（见 7.2 步骤 4）；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（详见 7.2）
+- ~~**C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）**~~ → **已关闭**：C.2.1（唯一无超时点）已加 200ms 超时保护并合并 main（CI #302/#303）；C.2.2/C.2.3 其余 4 处 `runBlocking` 经源码核对**本就带 `withTimeout(200)` 保护**（BaseBastionActivity / AccountFillPolicy / AutofillPickerActivityV2 / FilledDataBuilderNg），无需改动；另清理 `passkey/PasskeyCreateActivity.kt`、`passkey/PasskeyAuthActivity.kt` 两处未使用的 `runBlocking` import。方案 B（Autofill 配置预加载缓存）仍为可选架构项，需维护者确认后另立计划。
+- **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → **PasswordEntry 侧基本完成**：POJO + 13 个投影 DAO 方法（加性）；**C.3.3 选项 A 已实施**：主列表流 `passwordEntriesSource` 切换到 `ListItem` 投影（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId），`PasswordEntryListItem` 标注 `@Immutable`（C.6）；`allPasswords*`/`archivedPasswords*` 因消费者读取 `passkeyBindings`/`replicaGroupId`/`ssoRefEntryId` 仍走全实体；**C.3 清理（7.2 步骤 4）已执行**：9 个无引用旧 `SELECT *` 列表 DAO 方法 + 9 个 Repository 包装已移除（全仓零残留引用）。**SecureItem 侧暂缓**：列表卡片强依赖 `itemData`（需解密），投影需重构卡片解密逻辑，留待后续独立评估（详见 7.2 末尾遗留）。
 
 ---
 
@@ -428,7 +430,9 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 
 ### 7.1 C.2 —— Autofill 路径 runBlocking 治理
 
-**现状核对（2026-08-04）：** 全仓仍有 5 处 `runBlocking` 读取 DataStore 配置，1 处无超时：
+> **实施结果（2026-08-05）：C.2 已关闭。** 全仓 5 处 `runBlocking` 中：C.2.1（`AutofillServiceChecker`）唯一无超时点已在前期加 200ms 超时保护并合并 main（CI #302/#303）；C.2.2（`BaseBastionActivity`）与 C.2.3 其余 3 处（AutofillPickerActivityV2 / AccountFillPolicy / FilledDataBuilderNg）经源码逐行核对**本就带 `withTimeout(200)` 兜底**，无需改动；另清理 `passkey/PasskeyCreateActivity.kt`、`passkey/PasskeyAuthActivity.kt` 两处未实际调用的 `runBlocking` import。方案 B（Autofill 配置预加载缓存）仍为可选架构项，按规范 #5 需维护者确认后另立计划。
+
+**现状核对（2026-08-04）：** 全仓有 5 处 `runBlocking` 读取 DataStore 配置，1 处无超时（C.2.1，已修）：
 
 | 文件:行 | 调用 | 超时保护 | 风险 | 调用上下文 |
 | --- | --- | --- | --- | --- |
@@ -438,7 +442,7 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 | `autofill_ng/AccountFillPolicy.kt:38` | `SettingsManager(context).settingsFlow.first().separateUsernameAccountEnabled` | ✅ 200ms | 中 | 填充策略判定 `shouldFillEmailWithAccount()`，填充热路径 |
 | `autofill_ng/builder/FilledDataBuilderNg.kt:37` | `settingsManager.settingsFlow.first().autoLockMinutes` | ✅ 200ms | 中 | 填充数据构建，填充热路径 |
 
-> 备注：另在 `passkey/PasskeyCreateActivity.kt`、`passkey/PasskeyAuthActivity.kt` 见到 `runBlocking` import，但实际调用处已是 suspend/IO 内（注释明确 "无需 runBlocking"），属未清理的 import，不在本任务范围，可顺手清理。
+> 备注：`passkey/PasskeyCreateActivity.kt`、`passkey/PasskeyAuthActivity.kt` 的 `runBlocking` import 经核实确无实际调用（仅 import + 注释），**已在 C.2 关闭时清理**。
 
 **推荐方案（两档，请二选一）：**
 
@@ -482,6 +486,11 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 2. 为每个列表查询新增 `...ListItem` DAO 方法（保留原方法，避免一次性改动所有调用点导致大范围编译失败）。
 3. ViewModel 适配：`PasswordViewModel` / `TotpViewModel` / `BankCardViewModel` / `DocumentViewModel` 等列表 Flow 改收 `ListItem` POJO；点击进详情时按 `id` 取完整实体（现有 `getById` 已具备）。
 4. 待全部列表路径切换完成、旧 `SELECT *` 列表方法无引用后，再移除旧方法。
+
+> **实施结果（2026-08-05，C.3 清理 / 7.2 步骤 4）：**
+> - **步骤 1-3 已完成**：`PasswordEntryListItem` POJO（含 `@Immutable`）+ 13 个投影 DAO 方法 + 12 个 Repository 包装；`PasswordViewModel.passwordEntriesSource` 主列表流已全量切到 `ListItem` 投影（C.3.3 选项 A，CI #308/#309 通过）。`allPasswords*`/`archivedPasswords*` 因消费者读 `passkeyBindings`/`replicaGroupId`/`ssoRefEntryId` 仍走全实体。
+> - **步骤 4 已执行（PasswordEntry 侧）**：经全仓引用核对，移除 9 个无引用的旧 `SELECT *` 列表 DAO 方法（`getPasswordEntriesByCategory`、`getUncategorizedPasswordEntries`、`getPasswordEntriesByKeePassDatabase`、`getPasswordEntriesByKeePassGroup`、`getPasswordEntriesWithoutKeePassDatabase`、`getFavoritePasswordEntries`、`getActiveEntriesListItem`、`getDeletedEntriesListItem`、`getPasswordEntriesWithoutKeePassDatabaseListItem`）+ 9 个对应 Repository 包装（含 `getPasswordEntriesByBitwardenVault`/`getPasswordEntriesByBitwardenFolder` 两个未引用的非 ListItem 包装）。**保留**仍被导出/自动填充/回收站等路径使用的 `getAllPasswordEntries`、`getActiveEntries`（`Repository.getAllPasswordEntries()` 内部委托于此）、`searchPasswordEntries`、`getDeletedEntries`、`getArchivedEntries`。移除后全仓零残留引用（已 grep 核验）。
+> - **SecureItem 侧暂缓**：列表卡片强依赖 `itemData`，投影需重构卡片解密逻辑，风险较大，留待后续独立评估（见末尾遗留）。
 
 **验证：**
 - 每改一个 DAO 方法推一次 CI（构建闸门 + 单测基线，当前基线 19，性能重构不应引入新失败）。
@@ -577,6 +586,9 @@ C.3 原计划假设"列表查询只喂展示，可安全投影掉 password 等�
 
 **净收益**：首屏主密码列表 `passwordEntries`（大数据量下最热的查询）不再加载 JSON/blob/支付/PII 多列，DB 读取与内存占用下降；主列表去重/过滤/「有密码」指示行为与之前逐字节一致。
 
-**遗留（后续可评估）**：方案 B 仍可选（彻底排除 password，需重构列表解密逻辑 + 荣耀 Android 17 真机验证）；`getActiveEntriesListItem`/`getPasswordEntriesWithoutKeePassDatabaseListItem` 等加性 DAO 方法当前未被 ViewModel 直接引用，待全量切换后随旧 SELECT * 方法一并清理（7.2 步骤 4）。
+**遗留（后续可评估）：**
+- 方案 B（Autofill 配置预加载缓存）仍可选：彻底消除填充热路径 `runBlocking`，但需新增缓存类 + 失效逻辑，改动面大，按规范 #5 需维护者确认后另立计划 + 荣耀 Android 17 真机验证填充延迟。
+- SecureItem 侧列表投影暂缓：列表卡片强依赖 `itemData`（需解密），投影需重构卡片解密逻辑，风险较大，留待后续独立评估（不属于本次 PasswordEntry 侧清理范围）。
+- `getActiveEntriesListItem`/`getDeletedEntriesListItem`/`getPasswordEntriesWithoutKeePassDatabaseListItem` 等加性投影 DAO 方法**已在 C.3 清理（7.2 步骤 4）中随旧 SELECT * 方法一并移除**（全仓零引用）。
 
 > SecureItem 侧仍按 7.2 暂缓（列表卡片强依赖 `itemData`）。
