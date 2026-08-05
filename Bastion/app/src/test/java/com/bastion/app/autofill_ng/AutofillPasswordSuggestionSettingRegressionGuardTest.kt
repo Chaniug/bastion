@@ -30,9 +30,11 @@ class AutofillPasswordSuggestionSettingRegressionGuardTest {
             "app/src/main/java/com/bastion/app/autofill_ng/builder/FillResponseBuilderNg.kt"
         ).readText()
 
+        // Phase C onFillRequest 全量缓存化（方案B延伸）：配置读从 .first() 切到 AutofillConfigCache，
+        // 守卫断言同步更新为缓存读取方式。
         assertTrue(
             service.contains(
-                "passwordSuggestionEnabled = autofillPreferences.isPasswordSuggestionEnabled.first()"
+                "passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled"
             )
         )
         assertTrue(builder.contains("if (passwordSuggestionEnabled)"))
