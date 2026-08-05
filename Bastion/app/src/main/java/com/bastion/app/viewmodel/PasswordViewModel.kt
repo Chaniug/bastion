@@ -411,7 +411,7 @@ class PasswordViewModel(
         .flatMapLatest { (query, filter) ->
             val baseFlow: Flow<List<PasswordEntry>> = if (query.isNotBlank()) {
                 // Extended search: query + custom fields, then apply current category filter in-memory.
-                val searchFlow = repository.searchPasswordEntries(query).map { baseResults ->
+                val searchFlow = repository.searchPasswordEntriesListItem(query).map { baseResults ->
                     val customFieldMatchIds = try {
                         customFieldRepository?.searchEntryIdsByFieldContent(query) ?: emptyList()
                     } catch (e: Exception) {
@@ -440,7 +440,7 @@ class PasswordViewModel(
                 }
 
                 when (filter) {
-                    is CategoryFilter.Archived -> repository.getArchivedEntries().map { archivedEntries ->
+                    is CategoryFilter.Archived -> repository.getArchivedEntriesListItem().map { archivedEntries ->
                         val byText = archivedEntries.filter { matchesSearchQuery(it, query) }
                         val customFieldMatchIds = try {
                             customFieldRepository?.searchEntryIdsByFieldContent(query)?.toSet() ?: emptySet()
@@ -457,7 +457,7 @@ class PasswordViewModel(
                     }
                     is CategoryFilter.LocalOnly -> combine(
                         searchFlow,
-                        repository.getAllPasswordEntries()
+                        repository.getAllPasswordEntriesListItem()
                     ) { searchResults, allEntries ->
                         val localOnlyIds = filterLocalOnlyComparedToBitwarden(allEntries)
                             .asSequence()
@@ -472,41 +472,41 @@ class PasswordViewModel(
             } else {
 
                 when (filter) {
-                    is CategoryFilter.All -> repository.getAllPasswordEntries()
-                    is CategoryFilter.Archived -> repository.getArchivedEntries()
-                    is CategoryFilter.Local -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.All -> repository.getAllPasswordEntriesListItem()
+                    is CategoryFilter.Archived -> repository.getArchivedEntriesListItem()
+                    is CategoryFilter.Local -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.isLocalOnlyEntry() }
                     }
-                    is CategoryFilter.LocalOnly -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.LocalOnly -> repository.getAllPasswordEntriesListItem().map { list ->
                         filterLocalOnlyComparedToBitwarden(list)
                     }
-                    is CategoryFilter.Starred -> repository.getFavoritePasswordEntries()
-                    is CategoryFilter.Uncategorized -> repository.getUncategorizedPasswordEntries()
-                    is CategoryFilter.LocalStarred -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.Starred -> repository.getFavoritePasswordEntriesListItem()
+                    is CategoryFilter.Uncategorized -> repository.getUncategorizedPasswordEntriesListItem()
+                    is CategoryFilter.LocalStarred -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.isLocalOnlyEntry() && it.isFavorite }
                     }
-                    is CategoryFilter.LocalUncategorized -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.LocalUncategorized -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.isLocalOnlyEntry() && it.categoryId == null }
                     }
-                    is CategoryFilter.Custom -> repository.getPasswordEntriesByCategory(filter.categoryId)
+                    is CategoryFilter.Custom -> repository.getPasswordEntriesByCategoryListItem(filter.categoryId)
                         .map { list -> list.filter { it.isLocalOnlyEntry() } }
-                    is CategoryFilter.KeePassDatabase -> repository.getPasswordEntriesByKeePassDatabase(filter.databaseId)
-                    is CategoryFilter.KeePassGroupFilter -> repository.getPasswordEntriesByKeePassGroup(filter.databaseId, filter.groupPath)
-                    is CategoryFilter.KeePassDatabaseStarred -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.KeePassDatabase -> repository.getPasswordEntriesByKeePassDatabaseListItem(filter.databaseId)
+                    is CategoryFilter.KeePassGroupFilter -> repository.getPasswordEntriesByKeePassGroupListItem(filter.databaseId, filter.groupPath)
+                    is CategoryFilter.KeePassDatabaseStarred -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.keepassDatabaseId == filter.databaseId && it.isFavorite }
                     }
-                    is CategoryFilter.KeePassDatabaseUncategorized -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.KeePassDatabaseUncategorized -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.keepassDatabaseId == filter.databaseId && it.keepassGroupPath.isNullOrBlank() }
                     }
-                    is CategoryFilter.BitwardenVault -> repository.getPasswordEntriesByBitwardenVault(filter.vaultId)
-                    is CategoryFilter.BitwardenFolderFilter -> repository.getPasswordEntriesByBitwardenFolder(
+                    is CategoryFilter.BitwardenVault -> repository.getPasswordEntriesByBitwardenVaultListItem(filter.vaultId)
+                    is CategoryFilter.BitwardenFolderFilter -> repository.getPasswordEntriesByBitwardenFolderListItem(
                         filter.vaultId,
                         filter.folderId
                     )
-                    is CategoryFilter.BitwardenVaultStarred -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.BitwardenVaultStarred -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.bitwardenVaultId == filter.vaultId && it.isFavorite }
                     }
-                    is CategoryFilter.BitwardenVaultUncategorized -> repository.getAllPasswordEntries().map { list ->
+                    is CategoryFilter.BitwardenVaultUncategorized -> repository.getAllPasswordEntriesListItem().map { list ->
                         list.filter { it.bitwardenVaultId == filter.vaultId && it.bitwardenFolderId == null }
                     }
                 }

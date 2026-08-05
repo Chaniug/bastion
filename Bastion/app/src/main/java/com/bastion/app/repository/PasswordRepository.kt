@@ -1,6 +1,7 @@
 package com.bastion.app.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import com.bastion.app.data.Category
 import com.bastion.app.data.CategoryDao
 import com.bastion.app.data.PasskeyDao
@@ -8,6 +9,7 @@ import com.bastion.app.data.PasswordArchiveSyncMeta
 import com.bastion.app.data.PasswordArchiveSyncMetaDao
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.PasswordEntryDao
+import com.bastion.app.data.PasswordEntryListItem
 import com.bastion.app.data.PasswordHistoryDao
 import com.bastion.app.data.PasswordHistoryEntry
 import com.bastion.app.data.SecureItemDao
@@ -65,7 +67,52 @@ class PasswordRepository(
     fun getPasswordEntriesByBitwardenFolder(vaultId: Long, folderId: String): Flow<List<PasswordEntry>> {
         return passwordEntryDao.getByBitwardenFolderIdFlow(vaultId, folderId)
     }
-    
+
+    // =============== C.3.3 选项 A：列表专用投影查询 ===============
+    // 仅查询列表/卡片所需轻量列（见 PasswordEntryListItem），避免加载 sshKeyData / wifiMetadata /
+    // passkeyBindings / 支付卡 / Phase7 PII 等大字段。映射回 PasswordEntry 后对外仍是熟悉的
+    // PasswordEntry 类型，列表与卡片 UI 无需改动。注意：这些方法仅用于列表展示路径；导出、自动填充
+    // 填充、主密码重加密、去重合并等需要完整实体的路径仍使用上方 SELECT * 方法。
+
+    fun getAllPasswordEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getAllPasswordEntriesListItem().mapListToEntry()
+
+    fun getActiveEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getActiveEntriesListItem().mapListToEntry()
+
+    fun getPasswordEntriesByCategoryListItem(categoryId: Long): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getPasswordEntriesByCategoryListItem(categoryId).mapListToEntry()
+
+    fun getUncategorizedPasswordEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getUncategorizedPasswordEntriesListItem().mapListToEntry()
+
+    fun getPasswordEntriesByKeePassDatabaseListItem(databaseId: Long): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getPasswordEntriesByKeePassDatabaseListItem(databaseId).mapListToEntry()
+
+    fun getPasswordEntriesByKeePassGroupListItem(databaseId: Long, groupPath: String): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getPasswordEntriesByKeePassGroupListItem(databaseId, groupPath).mapListToEntry()
+
+    fun getFavoritePasswordEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getFavoritePasswordEntriesListItem().mapListToEntry()
+
+    fun searchPasswordEntriesListItem(query: String): Flow<List<PasswordEntry>> =
+        passwordEntryDao.searchPasswordEntriesListItem(query).mapListToEntry()
+
+    fun getDeletedEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getDeletedEntriesListItem().mapListToEntry()
+
+    fun getArchivedEntriesListItem(): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getArchivedEntriesListItem().mapListToEntry()
+
+    fun getPasswordEntriesByBitwardenVaultListItem(vaultId: Long): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getPasswordEntriesByBitwardenVaultListItem(vaultId).mapListToEntry()
+
+    fun getPasswordEntriesByBitwardenFolderListItem(vaultId: Long, folderId: String): Flow<List<PasswordEntry>> =
+        passwordEntryDao.getPasswordEntriesByBitwardenFolderListItem(vaultId, folderId).mapListToEntry()
+
+    private fun Flow<List<PasswordEntryListItem>>.mapListToEntry(): Flow<List<PasswordEntry>> =
+        map { list -> list.map { it.toPasswordEntry() } }
+
     fun getBitwardenFoldersByVaultId(vaultId: Long): Flow<List<BitwardenFolder>> {
         return bitwardenFolderDao?.getFoldersByVaultFlow(vaultId) ?: kotlinx.coroutines.flow.flowOf(emptyList())
     }
@@ -449,3 +496,44 @@ class PasswordRepository(
         )
     }
 }
+
+/**
+ * C.3.3 选项 A：将列表投影 [PasswordEntryListItem] 映射回完整 [PasswordEntry]。
+ *
+ * 列表路径只读取投影字段；未投影的大字段（sshKeyData / wifiMetadata / passkeyBindings /
+ * 支付卡 / Phase7 PII / ssoRefEntryId / replicaGroupId / boundNoteId 等）以实体默认值填充——
+ * 列表展示、卡片、内存过滤、密码解密指示均不依赖这些字段，因此行为保持一致。
+ * （keepassEntryUuid / bitwardenCipherId 已纳入投影，以保证去重键与「仅本地」判定结果不变。）
+ * 需要完整实体的路径（导出、自动填充填充、主密码重加密、去重合并）请勿使用此方法，
+ * 应走 Repository 的 SELECT * 方法重新拉取。
+ */
+private fun PasswordEntryListItem.toPasswordEntry(): PasswordEntry = PasswordEntry(
+    id = id,
+    title = title,
+    website = website,
+    username = username,
+    password = password,
+    notes = notes,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    isFavorite = isFavorite,
+    sortOrder = sortOrder,
+    isGroupCover = isGroupCover,
+    appPackageName = appPackageName,
+    appName = appName,
+    categoryId = categoryId,
+    keepassDatabaseId = keepassDatabaseId,
+    keepassGroupPath = keepassGroupPath,
+    authenticatorKey = authenticatorKey,
+    loginType = loginType,
+    ssoProvider = ssoProvider,
+    customIconType = customIconType,
+    customIconValue = customIconValue,
+    isDeleted = isDeleted,
+    isArchived = isArchived,
+    bitwardenVaultId = bitwardenVaultId,
+    bitwardenLocalModified = bitwardenLocalModified,
+    bitwardenFolderId = bitwardenFolderId,
+    keepassEntryUuid = keepassEntryUuid,
+    bitwardenCipherId = bitwardenCipherId
+)

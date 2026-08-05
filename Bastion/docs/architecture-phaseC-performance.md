@@ -3,7 +3,7 @@
 > **文档目的**：针对 Bastion App 的运行时性能问题进行系统性优化，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-01
-> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2.1（AutofillServiceChecker 唯一无超时 runBlocking）已实施、合并 main，CI #302(dev)/#303(main) 通过 ✅；C.3（Room 列表投影）PasswordEntry 侧基础已落地（POJO + 投影 DAO 方法，加性、尚未切换 UI 列表路径），SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（见 7.2）**
+> **状态**：Agent 1 批次（C.1 + C.4.1 + C.5）已实施并通过 CI ✅；C.4.2-4（全局 scope 设计意图注释）+ C.6（Compose 编译器稳定性报告）已实施、合并 main，CI #300(dev)/#301(main) 通过 ✅；**C.2.1（AutofillServiceChecker 唯一无超时 runBlocking）已实施、合并 main，CI #302(dev)/#303(main) 通过 ✅；C.3（Room 列表投影）PasswordEntry 侧基础已落地（POJO + 投影 DAO 方法，加性）**；**C.3.3 选项 A 已实施并合并 main：主列表流 `passwordEntriesSource` 切换到投影查询（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId，排除 JSON/blob/支付/PII），`PasswordEntryListItem` 标注 @Immutable（C.6），CI 通过 ✅**；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（见 7.2）
 > **前置条件**：Phase A ✅ 已完成并合入 main（`69c9f8b5`）
 > **与 Phase B 的关系**：Phase B 关注代码可维护性，Phase C 关注运行时性能。两者可并行推进，互不依赖。
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
@@ -18,7 +18,8 @@
 | Agent 1（低风险） | C.1 主线程 IO + C.4.1 SupervisorJob + C.5 LazyColumn key | 初推 `e4e3e1f5`/`66c2e2b4`/`d43f2950`；修复 `6bc9d132` | #289 失败 → #290 **Success** ✅ | 已完成并通过 CI |
 | Agent 2（低风险） | C.4.2-4 全局 scope 设计意图注释 + C.6 开启 Compose 编译器稳定性报告 | `ed75ec64` → 合并 main `14d89301` | #300(dev) **Success** → #301(main) **Success** ✅ | 已完成并通过 CI |
 | Agent（重点项） | C.2.1 AutofillServiceChecker runBlocking 加 200ms 超时 | `7737017a` → 合并 main `4a50236f` | #302(dev) **Success** → #303(main) **Success** ✅ | 已完成并通过 CI |
-| Agent（重点项） | C.3 PasswordEntry 列表投影基础：新增 `PasswordEntryListItem` POJO + 11 个投影 DAO 方法（加性，保留原 SELECT * 方法） | 进行中（待推 dev） | — | 待 CI 验证 |
+| Agent（重点项） | C.3 PasswordEntry 列表投影基础：新增 `PasswordEntryListItem` POJO + 11 个投影 DAO 方法（加性，保留原 SELECT * 方法） | `d0bd79de` → 修复 KSP `7940226f` → 合并 main `ca781168` | #304 失败 → #305(dev) **Success** → #306(main) **Success** ✅ | 已完成并通过 CI |
+| Agent（重点项） | C.3.3 选项 A：主列表流切换到投影查询（`passwordEntriesSource` 切 `ListItem`；`allPasswords*`/`archivedPasswords*` 因通行密钥列表读 `passkeyBindings`、详情副本分组读 `replicaGroupId`/`ssoRefEntryId` 保留全实体）；POJO 纳入 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId 并标注 @Immutable | `8e7c6e28` → 修导入 `889331ed` | #307 失败（缺 map 导入）→ #308(dev) **Success** ✅ | 已完成并通过 CI（待合并 main） |
 
 ### 关键修正（提交 `6bc9d132`）
 - **C.5 `key` lambda 参数易错点**：`items(...)` 的 `key` lambda 参数是「列表项本身」，应写 `it` 或显式参数名（如 `row ->`），**不能**用内容 lambda 的参数名（如 `warning`/`failure`/`target`/`parsedCard`/`historyItem`/`item`）。初版误用内容 lambda 参数名，导致 8 处 `Unresolved reference '...'`。已全部改为 `it` / 显式 `row ->`。
@@ -28,7 +29,7 @@
 - ~~C.4.2 / C.4.3 / C.4.4 文档化全局 scope（设计选择）~~ → **已完成（注释落盘，CI #300/#301 通过）**
 - ~~C.6 Compose 编译器优化（报告部分）~~ → **已完成（开启 `composeCompiler.reportsDestination`，CI #300/#301 通过）；`@Immutable` 标注待 C.3 POJO 落地后按稳定性报告实施**
 - ~~**C.2 runBlocking（Autofill 路径，中风险，需荣耀 Android 17 真机验证）**~~ → **C.2.1 已完成**（唯一无超时点已加 200ms 超时保护，CI #302/#303 通过）；方案 B（Autofill 配置预加载缓存）及 C.2.2/C.2.3 其余 runBlocking 仍待维护者确认
-- **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → PasswordEntry 侧基础已落地（POJO + 11 个投影 DAO 方法，加性）；下一步切换 ViewModel/UI 列表路径消费 `ListItem`，旧 SELECT * 列表方法待无引用后移除；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（详见 7.2）
+- **C.3 Room `SELECT *` 投影优化（工作量最大，需逐个 DAO 方法推 CI 验证）** → PasswordEntry 侧基础已落地（POJO + 11 个投影 DAO 方法，加性）；**C.3.3 选项 A 已实施**：主列表流 `passwordEntriesSource` 切换到 `ListItem` 投影（含 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId），`PasswordEntryListItem` 标注 `@Immutable`（C.6）；`allPasswords*`/`archivedPasswords*` 因消费者读取 `passkeyBindings`/`replicaGroupId`/`ssoRefEntryId` 仍走全实体；旧 SELECT * 列表方法待无引用后移除（见 7.2 步骤 4）；SecureItem 侧因列表卡片强依赖 `itemData` 暂缓（详见 7.2）
 
 ---
 
@@ -494,6 +495,7 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 **实施进展（2026-08-05）：**
 - **PasswordEntry 侧基础已落地**：新增 `data/PasswordEntryListItem.kt`（不可变，全 `val`）；`PasswordEntryDao` 新增 11 个投影列表方法（命名 `...ListItem`，返回 `Flow<List<PasswordEntryListItem>>`），保留全部原 `SELECT *` 列表方法以渐进迁移。投影排除 `password`/`sshKeyData`/`wifiMetadata`/`passkeyBindings`/信用卡加密字段/Phase7 PII，仅保留列表卡片实际读取的轻量列。
 - **SecureItem 侧暂缓**：经核查，`BankCardCard`/`DocumentCard`/`TotpCodeCard`/`BillingAddressCard` 等列表卡片均读取 `item.itemData` 解析显示摘要（卡号后四位、TOTP issuer 等），`itemData` 是列表展示必需字段。投影排除它反而破坏卡片，且能排除的仅 `notes`/`imagePaths`，净收益极小、NPE 风险偏高。故 SecureItem 投影暂缓，待后续评估是否改为「列表仅取 id+itemType+title，详情按需解析 itemData」的更大重构。
+- **C.3.3 选项 A 已实施（2026-08-05）**：主列表流 `passwordEntriesSource` 切换到 `ListItem` 投影（POJO 纳入 password/bitwardenFolderId/keepassGroupPath/keepassEntryUuid/bitwardenCipherId，标注 `@Immutable`）；`allPasswords*`/`archivedPasswords*` 因消费者读 `passkeyBindings`/`replicaGroupId`/`ssoRefEntryId` 保留全实体。dev CI #308 通过。详见第 8 章。
 
 ---
 
@@ -520,3 +522,61 @@ Agent 6: C.6（Compose 编译器优化）  ← 需要基于 C.3 的 POJO 做标�
 | 列表项内重计算 | 0 | — | — |
 | R8/minify release | 已启用 | OK | — |
 | Compose 编译器优化 | 缺失 | 低-中 | C.6 |
+
+---
+
+## 八、C.3.3 实施调研与方案分叉（待维护者决策，2026-08-05）
+
+### 8.1 关键发现：主列表流并非"纯展示"，而是依赖完整实体做解密 + 多字段过滤
+
+C.3 原计划假设"列表查询只喂展示，可安全投影掉 password 等大字段"。但实测 `PasswordViewModel` 后，主列表流 `passwordEntriesSource`（约 404–558 行）的实际情况是：
+
+1. **逐行解密/检查 `password`**：对每条目调用 `inspectSecretState(entry)`（委托 `passwordProviderRegistry.inspectSecret(entry)`，读取 `entry.password` 判定"是否有密码"状态），并 `entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())`（约 549–551、577、643 行）。`allPasswordsSource`/`allPasswordsForUiSource` 同理。
+2. **内存过滤依赖多字段**：分类筛选在 ViewModel 内用 `entry.isLocalOnlyEntry()`（需 `bitwardenVaultId`+`keepassDatabaseId`）、`entry.isFavorite`、`entry.categoryId`、`entry.keepassDatabaseId`、`entry.bitwardenVaultId`、`entry.bitwardenFolderId`、`entry.keepassGroupPath` 等做 `filter {...}`（约 477–510 行）。
+
+**结论**：若"纯展示投影"排除 `password`，会破坏列表的"有密码"指示与 KeePass/Bitwarden 分类筛选；若排除 `bitwardenFolderId`/`keepassGroupPath`，会破坏对应分类筛选。即主列表流必须保留 `password` + `bitwardenFolderId` + `keepassGroupPath`，原计划的"排除 password 拿最大收益"对主列表流不成立。
+
+> 注：列表卡片本身（`PasswordEntryCard` + `resolvePasswordCardDisplayLines`）只读展示字段（title/website/username/notes/updatedAt/图标/收藏/来源徽章），并不读 password/sshKeyData 等大字段——瓶颈在 ViewModel 的解密/过滤，不在卡片。
+
+### 8.2 方案分叉
+
+- **方案 A（安全、行为保持、部分收益，推荐先落地）**
+  扩 `PasswordEntryListItem` 使其包含 `password` + `bitwardenFolderId` + `keepassGroupPath`（列表流实际使用的字段），**仅排除** `sshKeyData` / `wifiMetadata` / `passkeyBindings` / 信用卡加密字段 / Phase7 PII（email/phone/地址等）。
+  切换面：`PasswordRepository`（新增 ListItem 方法）+ `PasswordViewModel`（多个 StateFlow 改收 ListItem）+ `PasswordEntryCard` + `resolvePasswordCardDisplayLines`（改收 ListItem）+ 约 24 个 UI 调用点。
+  收益：DB 仍读 `password`（最大单字段），但省下 JSON/blob/PII 等多列；行为完全不变，CI 可验证。
+  风险：中（调用点多，但纯机械替换，旧 SELECT * 方法保留至切换完成）。
+
+- **方案 B（更高收益、更大重构）**
+  重构列表流：**不在列表行解密 `password`**——"是否有密码"改为由轻量标志（如已有 `loginType`/非空判定）推导，详情按需按 id 取完整实体解密。这样 `password` 也能排除，列表查询最轻。
+  收益：主列表 DB 负载大幅下降（排除 password + JSON/blob/PII）。
+  风险：高（改动 ViewModel 解密/状态逻辑，需荣耀 Android 17 真机验证"有密码"指示与复制/自动填充行为不变）。
+
+- **方案 C（暂缓）**
+  C.3 基础（POJO + 11 个投影 DAO 方法）已落地且 CI 通过，列表 UI 切换暂缓，待后续评估 A/B 取舍。原 SELECT * 列表方法继续服役。
+
+### 8.3 建议
+
+- 求稳且要可见收益 → **方案 A**（先落地，行为零变化，CI 护航）。
+- 追求最大列表性能且可接受较大重构与真机验证 → **方案 B**。
+- 两者都保留原 `SELECT *` 列表方法，至新路径全量切换、旧方法无引用后再移除（与 7.2 步骤 4 一致）。
+
+### 8.4 实施结果（方案 A 已采用，2026-08-05）
+
+维护者确认「方案 A」。已落地并经 dev CI #308 通过（#307 因 `PasswordRepository` 漏导 `kotlinx.coroutines.flow.map` 编译失败，补导入后 #308 通过）。
+
+**实际改动（行为零变化，对 UI 调用点零改动）：**
+- `PasswordEntryListItem`：在轻量列基础上**纳入** `password` / `bitwardenFolderId` / `keepassGroupPath` / `keepassEntryUuid` / `bitwardenCipherId`（后两者为短 UUID，主列表去重键 `buildExactDisplayKey`/`buildGhostGroupKey` 与「仅本地」判定依赖，缺失会改变 KeePass/Bitwarden 去重与幽灵条目过滤结果）；标注 `@Immutable`（C.6）。
+- `PasswordEntryDao`：新增 13 个 `...ListItem` 投影方法（28 列），**仅排除** `sshKeyData` / `wifiMetadata` / `passkeyBindings` / 信用卡加密字段 / Phase7 PII / `ssoRefEntryId` / `replicaGroupId` / `boundNoteId`。
+- `PasswordRepository`：新增 12 个列表专用方法，将 `ListItem` 映射回 `PasswordEntry`（未投影字段以实体默认值填充），对外仍是熟悉的 `PasswordEntry` 类型。
+- `PasswordViewModel`：**仅主列表流 `passwordEntriesSource`** 切换到投影方法（含搜索/各分类/收藏/未分类/KeePass/Bitwarden vault/folder/归档等分支）。
+
+**关键边界（为什么不能把 `allPasswords*`/`archivedPasswords*` 也投影）：**
+- `allPasswords`（解密密码的 StateFlow）被 `PasskeyListScreen` 读取 `passkeyBindings`、`PasswordDetailScreen` 按 `ssoRefEntryId` 跨条目查引用；
+- `allPasswordsForUi`/`archivedPasswordsForUi` 被 `PasswordDetailScreen` 按 `replicaGroupId` 做副本分组；
+- 这些消费者需要完整实体，投影默认值会破坏通行密钥列表与详情副本分组。故这 4 条流保留 `SELECT *`（也符合「导出/自动填充填充/主密码重加密/去重合并用全实体」的既有约束）。
+
+**净收益**：首屏主密码列表 `passwordEntries`（大数据量下最热的查询）不再加载 JSON/blob/支付/PII 多列，DB 读取与内存占用下降；主列表去重/过滤/「有密码」指示行为与之前逐字节一致。
+
+**遗留（后续可评估）**：方案 B 仍可选（彻底排除 password，需重构列表解密逻辑 + 荣耀 Android 17 真机验证）；`getActiveEntriesListItem`/`getPasswordEntriesWithoutKeePassDatabaseListItem` 等加性 DAO 方法当前未被 ViewModel 直接引用，待全量切换后随旧 SELECT * 方法一并清理（7.2 步骤 4）。
+
+> SecureItem 侧仍按 7.2 暂缓（列表卡片强依赖 `itemData`）。
