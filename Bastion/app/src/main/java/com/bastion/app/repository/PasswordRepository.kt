@@ -1,6 +1,7 @@
 package com.bastion.app.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import com.bastion.app.data.Category
 import com.bastion.app.data.CategoryDao
 import com.bastion.app.data.PasskeyDao
