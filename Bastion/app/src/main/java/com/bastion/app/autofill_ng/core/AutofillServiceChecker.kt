@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.view.autofill.AutofillManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import com.bastion.app.autofill_ng.AutofillPreferences
 import com.bastion.app.autofill_ng.BastionAutofillServiceNg
 import com.bastion.app.utils.DeviceUtils
@@ -215,8 +216,12 @@ class AutofillServiceChecker(private val context: Context) {
      */
     private fun checkAppEnabled(): Boolean {
         return try {
+            // 架构升级 C.2.1（方案 A）：原 runBlocking 无超时，是 5 处中唯一的高亮点。
+            // 与其余 4 处保持一致，加 200ms 超时保护，避免诊断路径在 DataStore 异常时无限阻塞。
             val isEnabled = runBlocking {
-                AutofillPreferences(context).isAutofillEnabled.first()
+                withTimeout(200) {
+                    AutofillPreferences(context).isAutofillEnabled.first()
+                }
             }
 
             AutofillLogger.d(TAG, "App-level autofill enabled: $isEnabled")
