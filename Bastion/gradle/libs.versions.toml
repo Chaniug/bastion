@@ -20,8 +20,10 @@ room = "2.6.1"
 biometric = "1.2.0-alpha05"
 securityCrypto = "1.1.0-alpha06"
 viewModel = "2.8.7"
-coroutines = "1.7.3"
-datastore = "1.0.0"
+# D.1 协程对齐：1.7.3 → 1.9.0（Kotlin 2.0 时代应配 1.8+/1.9，API 稳定无明显 breaking）
+coroutines = "1.9.0"
+# D.2 DataStore 对齐：1.0.0 → 1.1.7（1.1.x 性能/bug 修复，context.dataStore API 无 breaking）
+datastore = "1.1.7"
 zxing = "3.5.3"
 zxingAndroidEmbedded = "4.3.0"
 camerax = "1.5.3"
