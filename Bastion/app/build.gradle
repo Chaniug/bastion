@@ -250,23 +250,23 @@ kotlin {
 
 configurations.configureEach {
     resolutionStrategy.force(
-        "org.jetbrains.kotlin:kotlin-bom:2.2.0",
-        "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",
-        "org.jetbrains.kotlin:kotlin-stdlib-common:2.2.0",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.0"
+        "org.jetbrains.kotlin:kotlin-bom:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-common:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
+        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.8.1"
     )
 }
 
 dependencies {
     constraints {
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     }
 
     // Core Android libraries
