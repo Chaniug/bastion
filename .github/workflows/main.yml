@@ -92,25 +92,49 @@ jobs:
       - name: Install Android SDK platform 37
         run: |
           SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          export JAVA_HOME="${JAVA_HOME:-$(dirname $(dirname $(readlink -f $(which java))))}"
-          echo "JAVA_HOME=$JAVA_HOME"
+          set -o pipefail
+          # 注意：不要覆盖 JAVA_HOME！setup-java@v5 已正确设置 temurin 17；
+          # 自行推导 JAVA_HOME 可能指向缺少 Google CA 的系统 JDK，导致 sdkmanager
+          # 拉取 dl.google.com 仓库索引时静默失败（仅打印 "Loading package information..."）。
           ok=0
-          for i in $(seq 1 6); do
-            echo "::notice title=sdkmanager attempt $i::accept licenses + install platforms;android-37"
+          for i in $(seq 1 4); do
+            echo "::notice title=sdkmanager attempt $i::install platforms;android-37"
             yes | "$SDKM" --licenses > /dev/null 2>&1 || true
-            if "$SDKM" "platforms;android-37" > /tmp/sdk_install.log 2>&1; then
-              echo "platform 37 install succeeded on attempt $i"
-              ok=1
-              break
+            if "$SDKM" "platforms;android-37" 2>&1 | tee /tmp/sdk_install.log; then
+              ok=1; echo "sdkmanager ok on attempt $i"; break
             fi
-            echo "attempt $i failed, sleeping 20s"; tail -30 /tmp/sdk_install.log
-            sleep 20
+            echo "attempt $i failed, sleeping 15s"; tail -20 /tmp/sdk_install.log; sleep 15
           done
-          # build-tools 35.0.0：runner 通常已自带，尽力安装但不阻塞 job
+          # Fallback：sdkmanager 拉不到时，直接用 curl 下载 platform 压缩包并解压。
+          # 系统 CA 与 sdkmanager 的 JVM truststore 不同，curl 可能绕过 TLS 问题。
+          if [ "$ok" -ne 1 ] || [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
+            echo "::warning title=sdkmanager failed::falling back to direct download"
+            REL=$(curl -sL "https://dl.google.com/android/repository/repository2-3.xml" | python3 -c "
+          import sys,re
+          data=sys.stdin.read()
+          m=re.search(r'platforms;android-37.*?</remotePackage>', data, re.S)
+          if m:
+              u=re.search(r'<url>(platform-37_r\d+\.zip)</url>', m.group(0))
+              if u: print(u.group(1))
+          " || true)
+            if [ -n "$REL" ]; then
+              echo "platform zip: $REL"
+              curl -sL -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
+              mkdir -p "$ANDROID_SDK_ROOT/platforms"
+              unzip -q -o /tmp/platform37.zip -d "$ANDROID_SDK_ROOT/platforms"
+              if [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
+                d=$(ls -d "$ANDROID_SDK_ROOT"/platforms/android-37_r* 2>/dev/null | head -1)
+                [ -n "$d" ] && mv "$d" "$ANDROID_SDK_ROOT/platforms/android-37"
+              fi
+            else
+              echo "::error title=repo xml parse failed::could not find platform-37 archive url"
+            fi
+          fi
+          # build-tools 35.0.0：runner 通常已自带（AGP 9 默认即 35.0.0），尽力安装但不阻塞 job
           yes | "$SDKM" --licenses > /dev/null 2>&1 || true
           "$SDKM" "build-tools;35.0.0" > /tmp/bt_install.log 2>&1 || echo "build-tools install skipped/failed (non-fatal)"
-          if [ "$ok" -ne 1 ] || [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
-            echo "::error title=SDK platform 37 install failed::after retries"
+          if [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
+            echo "::error title=SDK platform 37 install failed::all methods"
             sed -n '1,80p' /tmp/sdk_install.log | while IFS= read -r l; do echo "::error title=sdk_install_log::$l"; done
             exit 1
           fi
