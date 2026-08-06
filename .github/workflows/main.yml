@@ -95,69 +95,54 @@ jobs:
           echo "::notice title=repo.xml head::$(head -c 200 /tmp/repo.xml 2>/dev/null | tr '\n' ' ')"
           echo "::notice title=installed pkgs::$($SDKM --list_installed 2>&1 | head -20 | tr '\n' ' ')"
 
-      # Phase A（API 37 / Android 17）：安装 compileSdk 37 所需 SDK platform 与 build-tools
-      # 注意：CI runner 上 sdkmanager 不在 PATH，必须用 $ANDROID_SDK_ROOT 下的完整路径
+      # Phase A（API 37 / Android 17）：让 compileSdk 37 所需的 platforms/android-37 可用
       #
-      # 关键经验（已验证）：install 命令【不能】用 `yes |` 管道！
-      #   - `yes | sdkmanager --licenses` 接受全部 license（已验证可用）；
-      #   - 但 `yes | sdkmanager "platforms;android-37"` 会导致 sdkmanager 卡在
-      #     "Loading package information..." 后直接失败（疑似管道无限输入干扰下载/锁文件）。
-      #   - 正确模式：先 `yes | --licenses`，再【不带管道】地 `sdkmanager install`。
+      # 诊断结论（run 31091502330 的 Diagnose SDK environment 步骤）：
+      #   - runner 已预装 android-37 平台，但目录名为 android-37.0 / android-37.1
+      #     （该镜像的 sdkmanager 12.0 把平台装成带修订号的目录名）。
+      #   - AGP 的 compileSdk 37 只认 platforms/android-37（不带修订号），故找不到 → 构建失败。
+      #   - 网络可达（curl dl.google.com HTTP=200），但 sdkmanager 12.0 的 JVM 在本环境
+      #     加载包信息即失败（仅打印 "Loading package information..."），不可用。
       #
-      # 其他健壮性措施：
-      #   1) 内置重试循环（最多 6 次，间隔 20s）绕过瞬时网络抖动；
-      #   2) 安装后校验 platforms/android-37 目录是否真实存在；
-      #   3) build-tools;35.0.0 通常 runner 已自带（AGP 9 默认即 35.0.0），尽力安装但【非阻塞】；
-      #   4) 失败时把 sdkmanager 日志回传为 annotation（本仓库 only checks API 可读，
-      #      见下方 Enforce unit test failure baseline 步骤的注释），便于离线排错。
+      # 正解：不再依赖 sdkmanager。优先把 platforms/android-37 符号链接到已装的
+      # android-37.*；若镜像未来不再预装，则回退为 curl 直下 platform 压缩包（网络可用）。
+      # build-tools 37.0.0 镜像已自带，无需处理。
       - name: Install Android SDK platform 37
         run: |
-          SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          PLAT="$ANDROID_SDK_ROOT/platforms"
           set -o pipefail
-          # 注意：不要覆盖 JAVA_HOME！setup-java@v5 已正确设置 temurin 17；
-          # 自行推导 JAVA_HOME 可能指向缺少 Google CA 的系统 JDK，导致 sdkmanager
-          # 拉取 dl.google.com 仓库索引时静默失败（仅打印 "Loading package information..."）。
-          ok=0
-          for i in $(seq 1 4); do
-            echo "::notice title=sdkmanager attempt $i::install platforms;android-37"
-            yes | "$SDKM" --licenses > /dev/null 2>&1 || true
-            if "$SDKM" "platforms;android-37" 2>&1 | tee /tmp/sdk_install.log; then
-              ok=1; echo "sdkmanager ok on attempt $i"; break
-            fi
-            echo "attempt $i failed, sleeping 15s"; tail -20 /tmp/sdk_install.log; sleep 15
-          done
-          # Fallback：sdkmanager 拉不到时，直接用 curl 下载 platform 压缩包并解压。
-          # 系统 CA 与 sdkmanager 的 JVM truststore 不同，curl 可能绕过 TLS 问题。
-          if [ "$ok" -ne 1 ] || [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
-            echo "::warning title=sdkmanager failed::falling back to direct download"
-            curl -sSL -m 60 -o /tmp/repo2.xml -w 'curl_repo HTTP=%{http_code} size=%{size_download} exit=%{exitcode}\n' \
-              "https://dl.google.com/android/repository/repository2-3.xml" > /tmp/curl_repo.txt 2>&1 || true
-            cat /tmp/curl_repo.txt
-            echo "::notice title=curl_repo::$(cat /tmp/curl_repo.txt | tr '\n' ' ')"
-            echo "::notice title=repo2 head::$(head -c 160 /tmp/repo2.xml 2>/dev/null | tr '\n' ' ')"
-            REL=$(grep -oE 'platform-37_r[0-9]+\.zip' /tmp/repo2.xml 2>/dev/null | head -1)
-            if [ -n "$REL" ]; then
-              echo "platform zip: $REL"
-              curl -sSL -m 120 -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
-              mkdir -p "$ANDROID_SDK_ROOT/platforms"
-              unzip -q -o /tmp/platform37.zip -d "$ANDROID_SDK_ROOT/platforms"
-              if [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
-                d=$(ls -d "$ANDROID_SDK_ROOT"/platforms/android-37_r* 2>/dev/null | head -1)
-                [ -n "$d" ] && mv "$d" "$ANDROID_SDK_ROOT/platforms/android-37"
-              fi
+          if [ -d "$PLAT/android-37" ]; then
+            echo "android-37 already present"
+          else
+            # 1) 优先复用镜像预装的 android-37.*（取修订号最大者）
+            src=$(ls -d "$PLAT"/android-37.* 2>/dev/null | sort -V | tail -1)
+            if [ -n "$src" ]; then
+              ln -s "$src" "$PLAT/android-37"
+              echo "symlinked $(basename "$src") -> android-37"
             else
-              echo "::error title=repo xml parse failed::could not find platform-37 archive url"
+              # 2) 镜像未预装时，用 curl 直下 platform 压缩包（解压后目录即 android-37）
+              echo "::warning title=no preinstalled android-37::downloading via curl"
+              curl -sSL -m 60 -o /tmp/repo2.xml "https://dl.google.com/android/repository/repository2-3.xml"
+              REL=$(grep -oE 'platform-37_r[0-9]+\.zip' /tmp/repo2.xml | head -1)
+              echo "platform zip: $REL"
+              curl -sSL -m 180 -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
+              mkdir -p "$PLAT"
+              unzip -q -o /tmp/platform37.zip -d "$PLAT"
             fi
           fi
-          # build-tools 35.0.0：runner 通常已自带（AGP 9 默认即 35.0.0），尽力安装但不阻塞 job
-          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
-          "$SDKM" "build-tools;35.0.0" > /tmp/bt_install.log 2>&1 || echo "build-tools install skipped/failed (non-fatal)"
-          if [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
-            echo "::error title=SDK platform 37 install failed::all methods"
-            sed -n '1,80p' /tmp/sdk_install.log | while IFS= read -r l; do echo "::error title=sdk_install_log::$l"; done
+          # 校验：必须是 ApiLevel=37 的合法平台目录
+          if [ ! -f "$PLAT/android-37/source.properties" ]; then
+            echo "::error title=android-37 invalid::source.properties missing"
+            ls -la "$PLAT" | while IFS= read -r l; do echo "::error title=platforms::$l"; done
             exit 1
           fi
-          echo "android-37 present: $(ls -d $ANDROID_SDK_ROOT/platforms/android-37)"
+          api=$(grep -i 'AndroidVersion.ApiLevel' "$PLAT/android-37/source.properties" | head -1 | cut -d= -f2 | tr -d ' ')
+          echo "android-37 ApiLevel=$api"
+          if [ "$api" != "37" ]; then
+            echo "::error title=android-37 wrong ApiLevel::$api (expected 37)"
+            exit 1
+          fi
+          echo "android-37 present: $(ls -d $PLAT/android-37)"
 
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
