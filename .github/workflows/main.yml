@@ -80,7 +80,7 @@ jobs:
         run: |
           SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses > /dev/null 2>&1 || true
-          "$SDKM" "platforms;android-37" "build-tools;35.0.0"
+          yes | "$SDKM" "platforms;android-37" "build-tools;35.0.0"
 
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
