@@ -100,9 +100,9 @@ android {
     defaultConfig {
         applicationId "com.bastion.app"
         minSdk 26
-        # D.5 技术栈对齐：targetSdk 34 → 35（Android 15 行为变更适配）
-        # 已在 AndroidManifest 合规：前台服务 specialUse + PROPERTY_SPECIAL_USE_FGS_SUBTYPE
-        # + FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE 权限齐全；无 native 库，16KB 页面无影响
+        // D.5 技术栈对齐：targetSdk 34 → 35（Android 15 行为变更适配）
+        // 已在 AndroidManifest 合规：前台服务 specialUse + PROPERTY_SPECIAL_USE_FGS_SUBTYPE
+        // + FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE 权限齐全；无 native 库，16KB 页面无影响
         targetSdk 35
         versionCode appVersionCode
         versionName baseVersionName
