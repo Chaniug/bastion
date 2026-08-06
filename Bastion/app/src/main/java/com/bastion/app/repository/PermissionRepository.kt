@@ -62,6 +62,7 @@ class PermissionRepository(private val context: Context) {
             createCameraPermission(),
             createStoragePermission(),
             createNotificationPermission(),
+            createLocalNetworkPermission(),
             createAutofillPermission(),
             createAccessibilityPermission()
         ).map { permission ->
@@ -86,30 +87,32 @@ class PermissionRepository(private val context: Context) {
             "ACCESSIBILITY" -> checkAccessibilityStatus()
             "NOTIFICATION" -> {
                 if (Build.VERSION.SDK_INT >= 33) {
-                    val result = ContextCompat.checkSelfPermission(
-                        context,
-                        permission.androidPermission
-                    )
-                    if (result == PackageManager.PERMISSION_GRANTED) {
-                        PermissionStatus.GRANTED
-                    } else {
-                        PermissionStatus.DENIED
-                    }
+                    checkStandardPermission(permission.androidPermission)
                 } else {
                     PermissionStatus.GRANTED
                 }
             }
-            else -> {
-                val result = ContextCompat.checkSelfPermission(
-                    context,
-                    permission.androidPermission
-                )
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    PermissionStatus.GRANTED
+            "LOCAL_NETWORK" -> {
+                // ACCESS_LOCAL_NETWORK 属于 NEARBY_DEVICES 权限组
+                // 若用户已授予同组其他权限则自动获得
+                if (Build.VERSION.SDK_INT >= 37) {
+                    checkStandardPermission(permission.androidPermission)
                 } else {
-                    PermissionStatus.DENIED
+                    PermissionStatus.GRANTED
                 }
             }
+            else -> checkStandardPermission(permission.androidPermission)
+        }
+    }
+
+    private fun checkStandardPermission(permission: String): PermissionStatus {
+        if (permission.isEmpty()) return PermissionStatus.GRANTED
+        return if (ContextCompat.checkSelfPermission(context, permission)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            PermissionStatus.GRANTED
+        } else {
+            PermissionStatus.DENIED
         }
     }
 
@@ -268,15 +271,36 @@ class PermissionRepository(private val context: Context) {
 
     private fun createNotificationPermission() = PermissionInfo(
         id = "NOTIFICATION",
+        // POST_NOTIFICATIONS 仅在 API 33+ 存在，低版本返回空字符串表示无需此权限
         androidPermission = if (Build.VERSION.SDK_INT >= 33) {
             "android.permission.POST_NOTIFICATIONS"
         } else {
-            "android.permission.POST_NOTIFICATIONS"
+            ""
         },
         icon = Icons.Default.Notifications,
         nameResId = R.string.permission_notification_name,
         descriptionResId = R.string.permission_notification_description,
         category = PermissionCategory.DEVICE,
+        importance = PermissionImportance.RECOMMENDED
+    )
+
+    /**
+     * Android 17+ 本地网络权限
+     * 用于自托管 WebDAV/Bitwarden/KeePass 等局域网服务连接。
+     * 属于 NEARBY_DEVICES 权限组，若用户已授予同组其他权限则自动获得。
+     * API < 37 时返回空字符串表示无需此权限。
+     */
+    private fun createLocalNetworkPermission() = PermissionInfo(
+        id = "LOCAL_NETWORK",
+        androidPermission = if (Build.VERSION.SDK_INT >= 37) {
+            "android.permission.ACCESS_LOCAL_NETWORK"
+        } else {
+            ""
+        },
+        icon = Icons.Default.Wifi,
+        nameResId = R.string.permission_local_network_name,
+        descriptionResId = R.string.permission_local_network_description,
+        category = PermissionCategory.NETWORK,
         importance = PermissionImportance.RECOMMENDED
     )
 
