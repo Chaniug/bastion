@@ -184,16 +184,15 @@ android {
     }
 
 
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            // 目标格式: Bastion-Android-[架构]-[版本号]-yyMMddVV-SS.APK
-            def apkPrefix = 'Bastion'
-            def archTag = resolveArchTag(output)
-            def versionNameTag = sanitizeTag(project.findProperty('apkVersionName') ?: variant.versionName ?: defaultConfig.versionName, '0.0.0')
-            def namePrefix = "${apkPrefix}-Android-${archTag}-${versionNameTag}-${buildDateTag}${buildVersionTag}"
-            outputFileName = "${namePrefix}-${buildDailySeq}.APK"
-        }
-    }
+    // Phase A（AGP 9）：applicationVariants / libraryVariants / testVariants / unitTestVariants
+    // 等旧 variant 扩展点已被 AGP 9 移除（见 AGP 9.0 发行说明），上面的 APK 输出文件名
+    // 自定义重命名逻辑因此失效。AGP 9 下不能在 onVariants 里直接写 outputFileName
+    // （新 VariantOutput 仅暴露 versionCode/versionName/outputType），官方推荐的「重命名 APK」
+    // 方式是 androidComponents + SingleArtifact.APK 的 listenToArtifacts 机制（自定义 Copy
+    // 任务 + BuiltArtifacts 元数据）。为尽快让构建门进入真正的编译阶段并产出可真机验证的
+    // preview 包，此处先移除失效块，自定义命名（Bastion-Android-*.APK）留作后续用正确方式还原，
+    // 还原方案见仓库 /doc/phaseA-apk-rename-restore.md。CI 的 APK 收集通配符（*.apk/*.APK）
+    // 对默认命名 app-arm64-v8a-debug.apk 同样生效，不影响出包与发布。
 
     sourceSets {
         test {
