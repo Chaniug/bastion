@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#0B2E52" />
   <meta property="og:title" content="Bastion — 本地优先的开源密码管理器" />
   <meta property="og:description" content="本地优先 · 零知识 · 开源。数据永远留在你的设备上。" />
+  <meta property="og:image" content="https://chaniug.github.io/bastion/assets/hero.svg" />
   <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="./assets/shield.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -48,7 +49,7 @@
         <div class="reveal">
           <span class="eyebrow">本地优先 · 零知识 · 开源</span>
           <h1 id="hero-title">把密码锁进<br /><span class="gold">你自己的堡垒</span></h1>
-          <p class="lead">Bastion 是一款本地优先的开源 Android 密码管理器。你的密码、2FA 验证码与私密便签全部加密后只留在设备上——不联网、不上云、开发者也看不到。</p>
+          <p class="lead">Bastion 是一款本地优先的开源 Android 密码管理器。你的密码、2FA 验证码与私密便签全部加密后只留在设备上——不联网、不上云、开发者也看不到。现已全面适配 Android 17。</p>
           <div class="hero-actions">
             <a class="btn btn-gold" href="https://github.com/Chaniug/bastion/releases" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
@@ -60,6 +61,12 @@
             <span class="chip"><span class="dot"></span>AES-256 加密</span>
             <span class="chip"><span class="dot"></span>硬件 Keystore</span>
             <span class="chip"><span class="dot"></span>完全离线</span>
+          </div>
+          <div class="tags-row">
+            <span class="tag-pill">🔄 Bitwarden 兼容</span>
+            <span class="tag-pill">🗝️ KeePass 兼容</span>
+            <span class="tag-pill">🎨 5 套主题</span>
+            <span class="tag-pill">🤖 Android 17</span>
           </div>
         </div>
 
@@ -102,14 +109,24 @@
             <p>通过 WebDAV 在你的私有存储间加密备份与同步，不依赖任何厂商云服务，掌控权始终在你。</p>
           </article>
           <article class="card reveal">
-            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 4 4 0 0 0 0-8 4 4 0 0 1 0-8Z"/></svg></div>
-            <h3>Material You 动态色</h3>
-            <p>遵循 Material Design 3，跟随系统壁纸生成动态配色与深色模式，界面纯净、无广告。</p>
-          </article>
-          <article class="card reveal">
             <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
             <h3>硬件级 Keystore</h3>
             <p>密钥由 Android 系统 Keystore（TEE）保护，提供基于硬件的安全隔离边界，难以被提取。</p>
+          </article>
+          <article class="card reveal">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="m8 12 3 3 5-5"/></svg></div>
+            <h3>Bitwarden 兼容</h3>
+            <p>完整兼容 Bitwarden 同步协议，支持自托管与官方服务器；一键导入 JSON 导出，迁移无压力。</p>
+          </article>
+          <article class="card reveal">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 4 4 0 0 0 0-8 4 4 0 0 1 0-8Z"/></svg></div>
+            <h3>Material You 动态色</h3>
+            <p>遵循 Material Design 3，跟随系统壁纸生成动态配色与深色模式；5 套主题随心切换，界面纯净无广告。</p>
+          </article>
+          <article class="card reveal">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <h3>生物识别解锁</h3>
+            <p>系统级指纹 / 面容快速解锁 Vault；支持 Android 14+ Passkey 凭据提供程序，无密码登录。</p>
           </article>
         </div>
       </div>
@@ -150,6 +167,7 @@
               下载最新 APK
             </a>
             <a class="btn btn-ghost" href="https://github.com/Chaniug/bastion" target="_blank" rel="noopener">查看源代码</a>
+            <a class="btn btn-ghost" href="https://chaniug.github.io/bastion/">📖 项目文档</a>
           </div>
           <p class="note">基于开源项目 <a href="https://github.com/Monica-Pass/Monica" target="_blank" rel="noopener" style="color:var(--blue-300)">Monica-Pass/Monica</a> 二次开发 · 本仓库 <a href="https://github.com/Chaniug/bastion" target="_blank" rel="noopener" style="color:var(--blue-300)">Chaniug/bastion</a> · GPL-3.0 许可</p>
         </div>
@@ -180,6 +198,7 @@
         <ul>
           <li><a href="https://github.com/Chaniug/bastion/releases" target="_blank" rel="noopener">Releases</a></li>
           <li><a href="https://github.com/Chaniug/bastion" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://chaniug.github.io/bastion/" target="_blank" rel="noopener">项目文档</a></li>
           <li><a href="https://github.com/Monica-Pass/Monica" target="_blank" rel="noopener">上游 Monica</a></li>
         </ul>
       </div>
