@@ -139,6 +139,7 @@ Gradle 9.x + AGP 9.x 不再是"小版本升级"，会级联拉动整条工具链
   - 次选：`gh run view --log`（本沙箱曾报 EOF，不稳定）。
   - 兜底：**请你在 GitHub Actions 页面把失败日志贴给我**，或在真机验证时反馈现象。
   - 网络：写权限依赖 `/etc/hosts` 把 `github.com`→`20.205.243.166`、`api.github.com`→`20.205.243.168`（真实直连 IP）；若推送失败，先查 hosts / 代理（规范 #7）。
+  - **2026-08-06 推送网络诊断（已解决）**：`github.com` 默认经 `/etc/hosts` 指向 `20.205.243.168`，但那是 *api.github.com* 的前端，对 `github.com` 的 HTTP 内容一律返回 `400 Bad Request`；`api.github.com` 自身 200，但**不提供 git smart-HTTP 端点**（info/refs → 404），故无法用 api 端点推 git。实测 `github.com` 真实前端 **`140.82.113.4`** 可**直连**（SNI `github.com` → 200，且 `git-receive-pack` 的 info/refs 在 Basic 认证下 200）。**解法：把 `/etc/hosts` 中 `github.com` → `140.82.113.4`**（保留 `api.github.com` → `20.205.243.168`）。PAT 对 git 端点须用 **HTTP Basic** 认证（`x-access-token:<PAT>` 或 `<user>:<PAT>`），Bearer 头会被拒（401）。注意 `/etc/hosts` 为 bind-mount，重启还原，需同步改 `~/.user_hosts` 才能持久。
 
 ---
 
