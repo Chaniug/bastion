@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // Phase A（AGP 9.1.1）：内置 Kotlin 已取代 kotlin-android 插件，
+    // 显式 apply org.jetbrains.kotlin.android 会与内置 Kotlin 的 kotlin extension 冲突
+    // （Cannot add extension with name 'kotlin'）。故移除，Android 模块默认可用 Kotlin。
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -9,7 +11,7 @@ plugins {
 
 android {
     namespace 'com.bastion.app'
-    compileSdk 35
+    compileSdk 37
 
     def previewVersionSuffix = project.findProperty('previewVersionSuffix')?.toString()?.trim()
     // versionCode 取当前 epoch 秒以保证每次构建严格大于上次（覆盖安装必须）
@@ -100,10 +102,11 @@ android {
     defaultConfig {
         applicationId "com.bastion.app"
         minSdk 26
-        // D.5 技术栈对齐：targetSdk 34 → 35（Android 15 行为变更适配）
+        // Phase A 跨代升级：targetSdk 35 → 37（Android 17 行为变更适配）
+        // AGP 9.1.1 + Gradle 9.3.1 + Kotlin 2.2（工具链级联升级，越过原 Phase D 红线）
         // 已在 AndroidManifest 合规：前台服务 specialUse + PROPERTY_SPECIAL_USE_FGS_SUBTYPE
         // + FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE 权限齐全；无 native 库，16KB 页面无影响
-        targetSdk 35
+        targetSdk 37
         versionCode appVersionCode
         versionName baseVersionName
 
@@ -160,7 +163,7 @@ android {
             def disableMinify = project.findProperty('previewMinify')?.toString()?.trim()?.equalsIgnoreCase('false')
             minifyEnabled !disableMinify
             shrinkResources !disableMinify
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             minifyEnabled false
@@ -175,32 +178,21 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
     buildFeatures {
         compose true
         buildConfig true
     }
 
-    // 架构升级 C.6（第 1 步）：开启 Compose 编译器稳定性/指标报告。
-    // 报告输出到 app/build/compose_compiler/，用于定位被误判为「不稳定」的数据类，
-    // 后续可针对性地添加 @Immutable / @Stable 注解以减少不必要重组。
-    // 仅生成报告，不改变编译行为，不影响产物。
-    composeCompiler {
-        reportsDestination = layout.buildDirectory.dir("compose_compiler")
-    }
 
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            // 目标格式: Bastion-Android-[架构]-[版本号]-yyMMddVV-SS.APK
-            def apkPrefix = 'Bastion'
-            def archTag = resolveArchTag(output)
-            def versionNameTag = sanitizeTag(project.findProperty('apkVersionName') ?: variant.versionName ?: defaultConfig.versionName, '0.0.0')
-            def namePrefix = "${apkPrefix}-Android-${archTag}-${versionNameTag}-${buildDateTag}${buildVersionTag}"
-            outputFileName = "${namePrefix}-${buildDailySeq}.APK"
-        }
-    }
+    // Phase A（AGP 9）：applicationVariants / libraryVariants / testVariants / unitTestVariants
+    // 等旧 variant 扩展点已被 AGP 9 移除（见 AGP 9.0 发行说明），上面的 APK 输出文件名
+    // 自定义重命名逻辑因此失效。AGP 9 下不能在 onVariants 里直接写 outputFileName
+    // （新 VariantOutput 仅暴露 versionCode/versionName/outputType），官方推荐的「重命名 APK」
+    // 方式是 androidComponents + SingleArtifact.APK 的 listenToArtifacts 机制（自定义 Copy
+    // 任务 + BuiltArtifacts 元数据）。为尽快让构建门进入真正的编译阶段并产出可真机验证的
+    // preview 包，此处先移除失效块，自定义命名（Bastion-Android-*.APK）留作后续用正确方式还原，
+    // 还原方案见仓库 /doc/phaseA-apk-rename-restore.md。CI 的 APK 收集通配符（*.apk/*.APK）
+    // 对默认命名 app-arm64-v8a-debug.apk 同样生效，不影响出包与发布。
 
     sourceSets {
         test {
@@ -239,25 +231,42 @@ android {
     }
 }
 
+// Phase A（AGP 9 内置 Kotlin）：kotlin extension 由 AGP 9 内置提供，
+// 编译器选项与 Compose 编译器报告在此顶层 kotlin {} 块配置。
+kotlin {
+    compilerOptions {
+        // Kotlin 2.2：compilerOptions.jvmTarget 要求 JvmTarget 枚举，
+        // 不再接受 Gradle 的 JavaVersion（否则报 Cannot convert ... JavaVersion to JvmTarget）
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+    // 架构升级 C.6（第 1 步）：开启 Compose 编译器稳定性/指标报告。
+    // 报告输出到 app/build/compose_compiler/，用于定位被误判为「不稳定」的数据类，
+    // 后续可针对性地添加 @Immutable / @Stable 注解以减少不必要重组。
+    // 仅生成报告，不改变编译行为，不影响产物。
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+    }
+}
+
 configurations.configureEach {
     resolutionStrategy.force(
-        "org.jetbrains.kotlin:kotlin-bom:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-common:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
-        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.0"
+        "org.jetbrains.kotlin:kotlin-bom:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-common:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
+        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.8.1"
     )
 }
 
 dependencies {
     constraints {
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     }
 
     // Core Android libraries

@@ -3,7 +3,7 @@
 > **文档目的**：Phase A（MDBX 移除）、Phase B（代码治理）、Phase C（运行时性能优化）后的第四阶段——技术栈版本对齐与工程化升级，供多 agent 接力开发。
 >
 > **创建时间**：2026-08-06
-> **状态**：🟡 三批次（D.1+D.2+D.4 / D.3 / D.5）已全部通过 CI，但**仅停留在 `dev` 分支，尚未合并 `main`、preview APK 尚未发布**；图标修复与 Android 17 升级见 `doc/targetSdk-android17-plan.md`。
+> **状态**：✅ 三批次（D.1+D.2+D.4 / D.3 / D.5）全部通过 CI；**`dev` 已快进合并至 `main`（→ 95aa030b），`main` CI 通过，预览版 APK 已发布（tag `preview`，build.202608060340）**。图标修复（见 `targetSdk-android17-plan.md`，本次改为区分的 Material 图标）与 Android 17 升级待办。
 > **前置条件**：Phase A ✅（`69c9f8b5`）；Phase B 🟡（B.1/B.2 ✅，B.3 进行中，B.4-B.6 未开始）；Phase C 🟢（C.1/C.2/C.4/C.5 ✅，C.3 待定，C.6 半完成）
 > **仓库**：https://github.com/Chaniug/bastion（dev 分支开发，验证后合并 main）
 > **真机测试**：荣耀 Android 17

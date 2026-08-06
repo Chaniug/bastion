@@ -1,15 +1,18 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.25"
+agp = "9.1.1"
+# Phase A：AGP 9.1.1 要求 Kotlin ≥ 2.3（官方兼容表：Kotlin 2.2 仅支持 AGP 7.3.1–8.10，
+# 2.3 需 AGP ≥ 9.0.28）。故从方案 A 原定的 2.2.0 升到 2.3.21。
+kotlin = "2.3.21"
+# KSP 已改为单号版本体系：2.3.x 线对应 Kotlin 2.3（Kotlin 2.4 的 KSP 尚未发布）。
+ksp = "2.3.11"
 coreKtx = "1.10.1"
-kotlinxSerialization = "1.6.0"
+# kotlinx-serialization 1.8.1：与 Kotlin 2.3 兼容（1.6.0 偏旧，2.3 建议 ≥ 1.7）
+kotlinxSerialization = "1.8.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-# mockk 1.13.17 是 1.13.x 末版，由 Kotlin 2.0.0 编译（metadata 2.0），与本项目
-# kotlin = 2.0.21 兼容。切勿升到 1.14.x —— 那些版本由 Kotlin 2.2.21 编译，
-# metadata 2.2 会让 2.0.21 编译器报 "incompatible version of Kotlin"。
-mockk = "1.13.17"
+# mockk 1.14.0：本项目已升到 kotlin = 2.3.21，mockk 1.14.x 由 Kotlin 2.3 编译，
+# metadata 2.3 与 2.3.21 编译器对齐（原 1.13.17 由 2.0 编译，迁 2.3 后需同步升级）。
+mockk = "1.14.0"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
@@ -136,7 +139,7 @@ reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.r
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Phase A：AGP 9 内置 Kotlin 取代 kotlin-android，该插件不再使用（保留 compose/serialization/parcelize/ksp）。
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }

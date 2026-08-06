@@ -2,7 +2,6 @@ package com.bastion.app.utils
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.fingerprint.FingerprintManager
 import android.os.Build
 import android.util.Log
 import androidx.biometric.BiometricManager
@@ -209,7 +208,9 @@ class BiometricAuthHelper(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return false
         }
-        val fingerprintManager = context.getSystemService(FingerprintManager::class.java) ?: return false
-        return fingerprintManager.isHardwareDetected && fingerprintManager.hasEnrolledFingerprints()
+        // Android 17（API 37）移除了旧版 android.hardware.fingerprint.FingerprintManager，
+        // 改用 androidx.biometric.BiometricManager 判断生物识别硬件与录入状态（语义等价）。
+        val biometricManager = BiometricManager.from(context)
+        return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
     }
 }

@@ -74,6 +74,92 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 诊断：在装 android-37 之前先摸清 runner 的 SDK 环境与对 dl.google.com 的可达性
+      # （本仓库 only checks API 可读，故把关键信息打成 annotation 回传）
+      - name: Diagnose SDK environment
+        if: always()
+        run: |
+          SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version 2>&1 | head -3 | while IFS= read -r l; do echo "::notice title=java::$l"; done
+          echo "::notice title=existing platforms::$(ls $ANDROID_SDK_ROOT/platforms 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=existing build-tools::$(ls $ANDROID_SDK_ROOT/build-tools 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=sdkmanager version::$($SDKM --version 2>&1 | head -3 | tr '\n' ' ')"
+          # 测试到 dl.google.com 的可达性
+          curl -sS -m 25 -o /tmp/repo.xml -w 'HTTP=%{http_code} size=%{size_download} exit=%{exitcode}\n' \
+            "https://dl.google.com/android/repository/repository2-3.xml" \
+            > /tmp/curl_test.txt 2>&1 || true
+          cat /tmp/curl_test.txt
+          echo "::notice title=curl dl.google.com::$(cat /tmp/curl_test.txt | tr '\n' ' ')"
+          echo "::notice title=repo.xml head::$(head -c 200 /tmp/repo.xml 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=installed pkgs::$($SDKM --list_installed 2>&1 | head -20 | tr '\n' ' ')"
+
+      # Phase A（API 37 / Android 17）：让 compileSdk 37 所需的 platforms/android-37 可用
+      #
+      # 诊断结论（run 31091502330 的 Diagnose SDK environment 步骤）：
+      #   - runner 已预装 android-37 平台，但目录名为 android-37.0 / android-37.1
+      #     （该镜像的 sdkmanager 12.0 把平台装成带修订号的目录名）。
+      #   - AGP 的 compileSdk 37 只认 platforms/android-37（不带修订号），故找不到 → 构建失败。
+      #   - 网络可达（curl dl.google.com HTTP=200），但 sdkmanager 12.0 的 JVM 在本环境
+      #     加载包信息即失败（仅打印 "Loading package information..."），不可用。
+      #
+      # 正解：不再依赖 sdkmanager。优先把 platforms/android-37 符号链接到已装的
+      # android-37.*；若镜像未来不再预装，则回退为 curl 直下 platform 压缩包（网络可用）。
+      # build-tools 37.0.0 镜像已自带，无需处理。
+      - name: Install Android SDK platform 37
+        run: |
+          PLAT="$ANDROID_SDK_ROOT/platforms"
+          set -o pipefail
+          if [ -d "$PLAT/android-37" ]; then
+            echo "android-37 already present"
+          else
+            # 镜像预装的 android-37 平台目录名为 android-37.0 / android-37.1（sdkmanager 12.0 命名）。
+            # 逐个检查 source.properties 的 AndroidVersion.ApiLevel，优先选恰好为 37 的，
+            # 否则退而取 37.* 中修订号最大者，符号链接为 AGP 需要的 platforms/android-37。
+            linked=""
+            exact=""
+            fallback_candidate=""
+            for d in $(ls -d "$PLAT"/android-37.* 2>/dev/null | sort -V); do
+              sp="$d/source.properties"
+              [ -f "$sp" ] || continue
+              lvl=$(grep -i 'AndroidVersion.ApiLevel' "$sp" | head -1 | cut -d= -f2 | tr -d ' ')
+              echo "candidate $(basename "$d") ApiLevel=$lvl"
+              case "$lvl" in
+                37) exact="$d";;
+                37*) fallback_candidate="$d";;
+              esac
+            done
+            if [ -n "$exact" ]; then
+              ln -s "$exact" "$PLAT/android-37"; linked="$exact"; echo "symlinked $(basename "$exact") -> android-37 (ApiLevel=37)"
+            elif [ -n "$fallback_candidate" ]; then
+              ln -s "$fallback_candidate" "$PLAT/android-37"; linked="$fallback_candidate"; echo "symlinked $(basename "$fallback_candidate") -> android-37 (ApiLevel 37.x)"
+            fi
+            if [ -z "$linked" ]; then
+              # 镜像未预装时，用 curl 直下 platform 压缩包（解压后目录即 android-37）
+              echo "::warning title=no preinstalled android-37::downloading via curl"
+              curl -sSL -m 60 -o /tmp/repo2.xml "https://dl.google.com/android/repository/repository2-3.xml"
+              REL=$(grep -oE 'platform-37_r[0-9]+\.zip' /tmp/repo2.xml | head -1)
+              echo "platform zip: $REL"
+              curl -sSL -m 180 -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
+              mkdir -p "$PLAT"
+              unzip -q -o /tmp/platform37.zip -d "$PLAT"
+            fi
+          fi
+          # 校验：android-37 必须是含 ApiLevel 37* 的合法平台目录
+          if [ ! -f "$PLAT/android-37/source.properties" ]; then
+            echo "::error title=android-37 invalid::source.properties missing"
+            ls -la "$PLAT" | while IFS= read -r l; do echo "::error title=platforms::$l"; done
+            exit 1
+          fi
+          api=$(grep -i 'AndroidVersion.ApiLevel' "$PLAT/android-37/source.properties" | head -1 | cut -d= -f2 | tr -d ' ')
+          echo "android-37 ApiLevel=$api"
+          case "$api" in
+            37*) echo "android-37 ApiLevel acceptable";;
+            *) echo "::error title=android-37 wrong ApiLevel::$api (expected 37*)"; exit 1;;
+          esac
+          echo "android-37 present: $(ls -d $PLAT/android-37)"
+
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
         if: github.event_name != 'push'
@@ -101,7 +187,7 @@ jobs:
           BUILD_EXIT=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT" -ne 0 ]; then
             echo "::notice title=Build gate diagnostics::build_failed=true"
-            grep -E "^e: |error:|FAILURE|Caused by:" /tmp/build_log.txt | head -40 | while IFS= read -r line; do
+            grep -E "^e: |error:|FAILURE|Caused by:|Could not|What went wrong|BUILD FAILED" /tmp/build_log.txt | head -40 | while IFS= read -r line; do
               echo "::notice title=build_gate::$line"
             done
             exit "$BUILD_EXIT"

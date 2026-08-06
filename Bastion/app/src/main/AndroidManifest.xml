@@ -276,11 +276,11 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="specialUse"
-            tools:targetApi="35">
+            tools:targetApi="37">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Displaying autofill TOTP codes in notification"
-                tools:targetApi="35" />
+                tools:targetApi="37" />
         </service>
 
         <!-- Notification Validator Service -->
@@ -289,12 +289,12 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="specialUse"
-            tools:targetApi="35">
+            tools:targetApi="37">
             <!-- Android 14+ specific attributes -->
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Displaying TOTP codes in notification"
-                tools:targetApi="35" />
+                tools:targetApi="37" />
         </service>
 
         <!-- Accessibility Service -->
