@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace 'com.bastion.app'
-    compileSdk 35
+    compileSdk 37
 
     def previewVersionSuffix = project.findProperty('previewVersionSuffix')?.toString()?.trim()
     // versionCode 取当前 epoch 秒以保证每次构建严格大于上次（覆盖安装必须）
@@ -100,10 +100,11 @@ android {
     defaultConfig {
         applicationId "com.bastion.app"
         minSdk 26
-        // D.5 技术栈对齐：targetSdk 34 → 35（Android 15 行为变更适配）
+        // Phase A 跨代升级：targetSdk 35 → 37（Android 17 行为变更适配）
+        // AGP 9.1.1 + Gradle 9.3.1 + Kotlin 2.2（工具链级联升级，越过原 Phase D 红线）
         // 已在 AndroidManifest 合规：前台服务 specialUse + PROPERTY_SPECIAL_USE_FGS_SUBTYPE
         // + FOREGROUND_SERVICE / FOREGROUND_SERVICE_SPECIAL_USE 权限齐全；无 native 库，16KB 页面无影响
-        targetSdk 35
+        targetSdk 37
         versionCode appVersionCode
         versionName baseVersionName
 
@@ -241,11 +242,11 @@ android {
 
 configurations.configureEach {
     resolutionStrategy.force(
-        "org.jetbrains.kotlin:kotlin-bom:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-common:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.20",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
+        "org.jetbrains.kotlin:kotlin-bom:2.2.0",
+        "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",
+        "org.jetbrains.kotlin:kotlin-stdlib-common:2.2.0",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
         "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.6.0",
         "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
         "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.0",

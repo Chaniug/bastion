@@ -1,15 +1,14 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.25"
+agp = "9.1.1"
+kotlin = "2.2.0"
+ksp = "2.2.0-1.0.27"
 coreKtx = "1.10.1"
 kotlinxSerialization = "1.6.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-# mockk 1.13.17 是 1.13.x 末版，由 Kotlin 2.0.0 编译（metadata 2.0），与本项目
-# kotlin = 2.0.21 兼容。切勿升到 1.14.x —— 那些版本由 Kotlin 2.2.21 编译，
-# metadata 2.2 会让 2.0.21 编译器报 "incompatible version of Kotlin"。
-mockk = "1.13.17"
+# mockk 1.14.0：本项目已升到 kotlin = 2.2.0，mockk 1.14.x 由 Kotlin 2.2 编译，
+# metadata 2.2 与 2.2.0 编译器对齐（原 1.13.17 由 2.0 编译，迁 2.2 后需同步升级）。
+mockk = "1.14.0"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"

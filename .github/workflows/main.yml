@@ -74,6 +74,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # Phase A（API 37 / Android 17）：安装 compileSdk 37 所需 SDK platform 与 build-tools
+      - name: Install Android SDK platform 37
+        run: yes | sdkmanager "platforms;android-37" "build-tools;35.0.0"
+
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
         if: github.event_name != 'push'
