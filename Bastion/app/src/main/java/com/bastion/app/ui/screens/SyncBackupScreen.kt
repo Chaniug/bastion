@@ -11,7 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.rememberVectorPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -112,7 +114,7 @@ fun SyncBackupScreen(
             // 常用同步区块（高频）
             SyncBackupSection(title = stringResource(R.string.sync_backup_common_sync)) {
                 SyncBackupItem(
-                    icon = Icons.Default.Cloud,
+                    icon = rememberVectorPainter(Icons.Default.Cloud),
                     title = stringResource(R.string.webdav_backup),
                     description = stringResource(R.string.webdav_backup_description),
                     onClick = onNavigateToWebDav,
@@ -126,7 +128,7 @@ fun SyncBackupScreen(
                 )
 
                 SyncBackupItem(
-                    icon = Icons.Default.CloudSync,
+                    icon = painterResource(R.drawable.ic_onedrive),
                     title = stringResource(R.string.onedrive_backup_title),
                     description = stringResource(R.string.onedrive_backup_description),
                     onClick = onNavigateToOneDrive,
@@ -140,7 +142,7 @@ fun SyncBackupScreen(
                 )
 
                 SyncBackupItem(
-                    icon = Icons.Default.CloudSync,
+                    icon = painterResource(R.drawable.ic_bitwarden),
                     title = stringResource(R.string.sync_backup_bitwarden_sync_title),
                     description = stringResource(R.string.sync_backup_bitwarden_sync_desc),
                     onClick = onNavigateToBitwarden,
@@ -153,7 +155,7 @@ fun SyncBackupScreen(
 
             SyncBackupSection(title = stringResource(R.string.sync_backup_database_tools)) {
                 SyncBackupItem(
-                    icon = Icons.Default.Storage,
+                    icon = rememberVectorPainter(Icons.Default.Storage),
                     title = stringResource(R.string.dedup_engine_title),
                     description = stringResource(R.string.dedup_engine_entry_desc),
                     onClick = onNavigateToDedupEngine
@@ -165,7 +167,7 @@ fun SyncBackupScreen(
             // KeePass 相关区块（中低频）
             SyncBackupSection(title = stringResource(R.string.sync_backup_keepass_tools)) {
                 SyncBackupItem(
-                    icon = Icons.Default.Key,
+                    icon = rememberVectorPainter(Icons.Default.Key),
                     title = stringResource(R.string.local_keepass_database),
                     description = stringResource(R.string.local_keepass_database_description),
                     onClick = onNavigateToLocalKeePass
@@ -177,7 +179,7 @@ fun SyncBackupScreen(
             // 导入导出区块（低频）
             SyncBackupSection(title = stringResource(R.string.sync_backup_import_export_low_freq)) {
                 SyncBackupItem(
-                    icon = Icons.Default.Download,
+                    icon = rememberVectorPainter(Icons.Default.Download),
                     title = stringResource(R.string.export_data),
                     description = stringResource(R.string.export_data_description),
                     onClick = onNavigateToExportData
@@ -189,7 +191,7 @@ fun SyncBackupScreen(
                 )
 
                 SyncBackupItem(
-                    icon = Icons.Default.Upload,
+                    icon = rememberVectorPainter(Icons.Default.Upload),
                     title = stringResource(R.string.import_data),
                     description = stringResource(R.string.import_data_description),
                     onClick = onNavigateToImportData
@@ -240,7 +242,7 @@ private fun SyncBackupSection(
  */
 @Composable
 private fun SyncBackupItem(
-    icon: ImageVector,
+    icon: Painter,
     title: String,
     description: String,
     onClick: () -> Unit,
@@ -265,7 +267,7 @@ private fun SyncBackupItem(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    icon,
+                    painter = icon,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                     tint = if (enabled)
