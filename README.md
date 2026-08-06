@@ -1,27 +1,54 @@
 # bastion
 
 <p align="center">
-  <img src="image/bastion-hero.svg" alt="Bastion 主视觉 — 玻璃盾牌与金色锁孔" width="100%" />
+  <img src="image/bastion-hero.svg" alt="Bastion — 玻璃盾牌与金色锁孔" width="100%" />
 </p>
 
 <p align="center">
-  <b>本地优先 · 开源 · 安全密码管理</b><br/>
-  基于开源 <a href="https://github.com/Monica-Pass/Monica">Monica</a> 代码库二次开发、并更名为 Bastion 的独立分支，持续优化自动填充、主题与同步体验
+  <b>本地优先 · 开源 · 你的堡垒</b><br/>
+  <sub>Android 密码管理器 | AES-256 加密 | 硬件 Keystore | 零知识架构 | 适配 Android 17</sub>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/v/release/Chaniug/bastion?style=flat-square" alt="Release" /></a>
+  <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/v/release/Chaniug/bastion?style=flat-square&label=stable" alt="Stable Release" /></a>
+  <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/v/release/Chaniug/bastion?include_prereleases&style=flat-square&label=preview" alt="Preview Release" /></a>
   <a href="https://github.com/Chaniug/bastion/releases"><img src="https://img.shields.io/github/downloads/Chaniug/bastion/total?style=flat-square" alt="Downloads" /></a>
   <a href="https://github.com/Chaniug/bastion/commits"><img src="https://img.shields.io/github/last-commit/Chaniug/bastion?style=flat-square" alt="Last Commit" /></a>
-  <img src="https://img.shields.io/badge/platform-Android%208.0%2B-green?style=flat-square" alt="Platform" />
-  <img src="https://img.shields.io/badge/license-GPLv3-blue?style=flat-square" alt="License" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Chaniug/bastion/releases"><b>📥 下载 Development Preview APK</b></a>
+  <img src="https://img.shields.io/badge/platform-Android%208.0%2B-green?style=flat-square" alt="Android 8.0+" />
+  <img src="https://img.shields.io/badge/API-37%20(Android%2017)-blue?style=flat-square" alt="API 37" />
+  <img src="https://img.shields.io/badge/license-GPLv3-blue?style=flat-square" alt="GPLv3" />
+  <img src="https://img.shields.io/badge/Kotlin-2.3-7F52FF?style=flat-square" alt="Kotlin 2.3" />
 </p>
 
-> **bastion 是什么？** 一个把"你的密码只属于你"落到实处的 Android 密码管理器：数据默认完全离线、密钥由硬件 Keystore 守护、源码全程开源可审计。
+<p align="center">
+  <a href="https://github.com/Chaniug/bastion/releases"><b>📥 下载最新 APK</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://chaniug.github.io/bastion/"><b>🌐 项目官网</b></a>
+</p>
+
+---
+
+## 📖 目录
+
+- [🌟 为什么选择 bastion](#-为什么选择-bastion)
+- [🚀 核心功能](#-核心功能)
+- [🖼️ 界面预览](#️-界面预览)
+- [⚡ 相比上游的优化与改进](#-相比上游的优化与改进)
+- [🏗️ 架构与数据流向](#️-架构与数据流向)
+- [📦 快速安装](#-快速安装)
+- [🔐 安全模型](#-安全模型)
+- [🔄 与上游的主要差异](#-与上游的主要差异)
+- [🗺️ 路线图](#️-路线图)
+- [🛠️ 构建与部署](#️-构建与部署)
+- [❓ FAQ](#-faq)
+- [📂 项目结构](#-项目结构)
+- [📄 许可](#-许可)
+- [🙏 致谢](#-致谢)
+
+---
 
 ## 🌟 为什么选择 bastion
 
@@ -29,60 +56,24 @@
 | :--- | :--- | :--- |
 | 凭据本地加密，无云依赖；服务端零知识，无法找回也无法重置 | 兼容 Bitwarden 同步与 KeePass（`.kdbx`）读写，既有数据一键迁移无压力 | GPLv3 全量开源，CI 构建与发布流程透明，欢迎审阅与共建 |
 
----
-
-## ✨ 关于 bastion
-
-**bastion**（本仓库 [Chaniug/bastion](https://github.com/Chaniug/bastion)）是在开源 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维护、并更名而来的本地优先密码管理器分支。我们在保持上游核心能力的同时，针对**性能、内存、无障碍、自动填充与构建发布**做了大量工程级优化——这不是小幅修补，而是一次偏底层的"大改"。
-
-本分支的开发原则：
-
-- **与上游改动保持大体一致**，不做无意义的重复造轮子
-- **在细节部分进一步开发与优化**，修复实际使用中遇到的问题
-- **独立维护**，不依赖上游的发布节奏
+> **bastion 是什么？** 一个把"你的密码只属于你"落到实处的 Android 密码管理器：数据默认完全离线、密钥由硬件 Keystore 守护、源码全程开源可审计。源自 [Monica](https://github.com/Monica-Pass/Monica) 并独立演进。
 
 ---
 
-## ⚡ 本分支的优化与改进
+## 🚀 核心功能
 
-相比上游原项目，bastion 在以下方向做了实质性工程投入：
-
-### 🚀 性能与流畅度
-- **结构化并发收口**：将散落的 `GlobalScope` 协程统一改为 `ProcessLifecycleOwner.get().lifecycleScope`，绑定进程生命周期、结构化取消，消除后台协程泄漏。
-- **密钥操作移出主线程**：`SecurityManager` 改为进程级单例 + `prewarm`，Keystore 重操作从主线程卸载；冷启动时 `MainActivity` 命中缓存近乎零开销。
-- **即时查看 Bitwarden 密钥**：去掉 1.5s 预热延迟、改为内存预热，打开即见、无卡顿。
-
-### 🧠 内存与安全
-- **有界离线密钥缓存**：Bitwarden 离线密钥缓存改为**有界内存缓存**，并在锁仓（vault lock）时主动清空，降低常驻内存与泄露面。
-
-### ♿ 无障碍体验
-- **浏览器 URL 扫描移出主线程**：收敛无障碍浏览器的 URL 扫描触发事件，节点遍历移到后台线程，降低主线程阻塞与电量消耗。
-- **进程级初始化守卫**：`Application.onCreate` 按进程守卫，常驻的 `:accessibility` 进程跳过主进程专属的重初始化，降低后台负载。
-
-### 🔎 自动填充
-- **修复"只填密码、不填用户名"**：回调重新解析 `AssistStructure` 时不再覆盖构建期烘焙的 `autofillIds`（含合成用户名），改为优先信任 `callbackArgs`。
-- **增强兼容性**：修复普通输入框误弹密码的问题，提升对电影猎手等小众 App 的填充适配。
-
-### 🛠️ 构建与发布
-- **CI 内置签名 + 自动发布**：推送即产出可安装的 Preview / Release 包，无需自行配置签名密钥。
-- **epoch 秒版本号**：`versionCode` 改用 epoch 秒自增，每次构建支持干净覆盖安装（侧载 / OTA 不冲突）。
-- **CI 提速**：开启 Gradle 构建缓存与并行、`dev` 跳过 `lint`、合并 test+assemble 为单次调用——冷缓存首跑约 **5.5 分钟**（较早期 ~14.5 分钟提速约 2.5–3 倍）。
-
-### 🧱 工程可维护性（Phase B.3 重构）
-- **`PasswordViewModel` 瘦身 690 行**（4162 → 3472）：按职责簇拆分为 8 个协调器/工具类——
-  `CategoryFilterCodec` / `PasswordEntryMatching` / `BitwardenOfflineSecretCacheFacade` /
-  `PasswordDeleteOrchestrator` / `PasswordArchiveOrchestrator` / `PasswordMoveExecutor` /
-  `PasswordHistoryRecorder` / `MasterPasswordOps`，另 3 个无依赖协作者改为构造参数注入。
-- **行为测试网从零到 583**：引入 mockk 为删除/归档/迁移/主密码/历史等**此前零覆盖**的编排路径
-  补齐行为测试（`total=583 failed=0`），守卫不再只靠源码文本断言；顺带补全
-  `saveSecurityQuestions` 的 TODO（密保问题真正落库）。
-- **主页面滚动卡顿修复**：滚动中 TOTP 验证码从 50ms 平滑刷新降为秒级刷新（`derivedStateOf`
-  感知滚动 + 三处降频入口），Bitwarden 库长列表滚动跟手、不掉帧。
-- 重构全程守住硬约束：**密码条目 / OTP·TOTP 验证码零回归**（真机验证通过）。
-
-### 🎨 视觉与品牌
-- **通透图标重设计**：全新玻璃质感、背景透明（跟随壁纸）的盾牌 + 金色锁孔启动图标，提升品牌辨识度。
-- **多主题体系**：自然 / Material You 动态取色（Monet）/ 暗色 / 纯黑 / RG 护眼。
+| 功能 | 说明 |
+| :--- | :--- |
+| 🔐 **本地 Vault** | 所有凭据本地 AES-256-GCM 加密存储，数据不托付给任何第三方云 |
+| 🔄 **双生态聚合** | 兼容 Bitwarden 同步与 KeePass（`.kdbx`）读写，数据迁移无障碍 |
+| 👆 **生物识别解锁** | 系统级指纹 / 面容，兼顾安全与便捷 |
+| ⏱️ **TOTP 验证器** | 统一存储并生成 30 秒动态验证码，临近过期高亮提醒 |
+| 📲 **Android Autofill** | 系统自动填充服务，覆盖应用与浏览器账号密码 |
+| 🔑 **Passkey 支持** | Android 14+ 凭据提供程序，无密码登录 |
+| ☁️ **WebDAV 同步** | 通过自有 WebDAV 基础设施实现跨设备加密同步 |
+| 📥 **导入支持** | 一键迁移 KeePass、Bitwarden 等既有数据 |
+| 🎨 **5 套主题** | 自然 / Material You (Monet) / 暗色 / 纯黑 / RG 护眼 |
+| 🤖 **Android 17 适配** | targetSdk 37，全面适配最新 Android 行为变更 |
 
 ---
 
@@ -103,18 +94,40 @@
 
 ---
 
-## 🚀 核心功能
+## ⚡ 相比上游的优化与改进
 
-| 功能 | 说明 |
-| :--- | :--- |
-| 🔐 **本地 Vault** | 所有凭据本地加密存储，数据不托付给任何第三方云 |
-| 🔄 **双生态聚合** | 兼容 Bitwarden 同步能力与 KeePass（`.kdbx`）读写 |
-| 🔎 **智能检索** | 按标题、域名、标签毫秒级定位凭据 |
-| 👆 **生物识别解锁** | 系统级指纹 / 面容，兼顾安全与便捷 |
-| ⏱️ **TOTP 管理** | 统一存储并生成 30 秒动态验证码，临近过期高亮 |
-| 📲 **Android Autofill** | 系统自动填充服务，覆盖应用与浏览器账号密码 |
-| ☁️ **WebDAV 同步** | 通过自有 WebDAV 基础设施实现跨设备数据流转 |
-| 📥 **导入支持** | 一键迁移 KeePass、Bitwarden 等既有数据 |
+bastion 在 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维护，针对**性能、内存、无障碍、自动填充、工程可维护性与 Android 17 适配**做了大量工程级优化。
+
+### 🚀 性能与流畅度
+- **结构化并发收口**：散落的 `GlobalScope` 协程统一改为 `ProcessLifecycleOwner.get().lifecycleScope`，消除后台协程泄漏。
+- **密钥操作移出主线程**：`SecurityManager` 改为进程级单例 + `prewarm`，Keystore 重操作从主线程卸载。
+- **即时查看 Bitwarden 密钥**：去掉 1.5s 预热延迟、改为内存预热，打开即见。
+
+### 🧠 内存与安全
+- **有界离线密钥缓存**：Bitwarden 离线密钥缓存改为有界内存缓存，锁仓时主动清空，降低泄露面。
+
+### ♿ 无障碍体验
+- **URL 扫描移出主线程**：收敛无障碍浏览器的 URL 扫描事件，节点遍历移到后台线程。
+- **进程级初始化守卫**：`:accessibility` 进程跳过主进程专属的重初始化，降低后台负载。
+
+### 🔎 自动填充
+- **修复"只填密码、不填用户名"**：优先信任 `callbackArgs`，不再覆盖合成用户名。
+- **Passkey 凭据提供程序**：Android 14+ 原生无密码登录支持。
+- **增强兼容性**：修复普通输入框误弹密码，提升小众 App 填充适配。
+
+### 🧱 工程可维护性
+- **PasswordViewModel 瘦身 690 行**（4162 → 3472）：拆分为 8 个协调器/工具类。
+- **行为测试网 583 条零失败**：mockk 补齐删除/归档/迁移/主密码/历史等此前零覆盖的路径。
+- **主页面滚动流畅性**：TOTP 验证码从 50ms 平滑刷新降为秒级刷新。
+
+### 🛠️ 构建与工具链
+- **Android 17 适配**：targetSdk 37 + AGP 9.1.1 + Gradle 9.3.1 + Kotlin 2.3.21。
+- **CI 内置签名 + 自动发布**：推送即产出可安装的 Preview / Stable 包。
+- **epoch 秒版本号**：`versionCode` 自增，干净覆盖安装无冲突。
+
+### 🎨 视觉与品牌
+- **通透图标重设计**：玻璃盾牌 + 金色锁孔启动图标，背景透明跟随壁纸。
+- **多主题体系**：自然 / Monet / 暗色 / 纯黑 / RG 护眼。
 
 ---
 
@@ -127,6 +140,7 @@ flowchart TB
     K -->|派生密钥| DB[("本地加密 Vault\nAES-256-GCM")]
     DB --> AF["Android Autofill 服务"]
     DB --> TOTP["TOTP 验证器"]
+    DB --> Passkey["Passkey 凭据"]
     DB --> Search["智能检索"]
     DB --> Import["导入 · KeePass / Bitwarden"]
     DB --> Sync["WebDAV 同步"]
@@ -138,13 +152,13 @@ flowchart TB
     class Cloud store;
 ```
 
-**技术栈一览**
+**技术栈**
 
 ```mermaid
 mindmap
   root((bastion))
     Android App
-      Kotlin
+      Kotlin 2.3
       Jetpack Compose
       Room
     Crypto
@@ -155,9 +169,11 @@ mindmap
       Bitwarden API
     Import
       KeePass kdbx
+      Bitwarden JSON
     Auth
       TOTP
       Biometric
+      Passkey
 ```
 
 ---
@@ -166,9 +182,12 @@ mindmap
 
 ### Android
 
-1. 从 [Releases](https://github.com/Chaniug/bastion/releases) 下载最新 APK（含 Development Preview）
+1. 从 [Releases](https://github.com/Chaniug/bastion/releases) 下载最新 APK
+   - **Stable**：混淆压缩、适合日常使用
+   - **Preview**：最新功能尝鲜、可能不够稳定
 2. 在 Android 8.0+ 设备安装并初始化主密码
-3. （可选）在系统设置中启用 **bastion 自动填充服务**
+3. （推荐）在系统设置中启用 **bastion 自动填充服务**
+4. （可选）配置 WebDAV 同步或导入 KeePass / Bitwarden 数据
 
 ### 浏览器扩展
 
@@ -182,10 +201,11 @@ mindmap
 - 数据库采用 **AES-256-GCM** 加密，密钥由 Android Keystore（TEE）保护
 - 主密码本地参与密钥派生，**服务端零知识**，无法找回、无法重置
 - WebDAV 同步全程加密，仅你与自有服务器可见明文
+- 锁仓时主动清空内存中的密钥缓存，降低泄露面
 
 ---
 
-## 🔄 与上游的主要差异（速览）
+## 🔄 与上游的主要差异
 
 | 方面 | 上游 (Monica-Pass/Monica) | bastion（本分支） |
 |------|---------------------------|---------------------|
@@ -196,32 +216,36 @@ mindmap
 | 无障碍 URL 扫描 | 主线程遍历 | 事件收敛 + 后台线程遍历 |
 | 进程初始化 | 全进程重初始化 | 按进程守卫，`:accessibility` 跳过重初始化 |
 | 自动填充 | 原始实现 | 修复"只填密码不填用户名"、增强小众 App 兼容 |
+| Passkey 支持 | 无 | Android 14+ 凭据提供程序 |
 | 版本号策略 | 固定 `versionCode` | epoch 秒自增，干净覆盖安装 |
-| 构建与发布 | 需自行配置签名密钥 | CI 内置签名 + Preview / Release 自动发布 |
-| CI 构建耗时 | 基线 ~14.5 min | 缓存 + 并行 + 跳过 lint，冷缓存 ~5.5 min |
+| 构建与发布 | 需自行配置签名密钥 | CI 内置签名 + Preview / Stable 自动发布 |
+| Android 17 | targetSdk 35 | targetSdk 37（AGP 9.1.1 + Kotlin 2.3.21） |
 | 启动图标 | 原品牌图标 | 通透玻璃盾牌 + 金色锁孔（背景透明） |
 | 主题体系 | 基础主题 | 自然 / Monet / 暗色 / 纯黑 / RG 护眼 |
+| 工程测试 | 少量测试 | 583 条行为测试零失败 + CI 回归基线闸门 |
 
 ---
 
 ## 🗺️ 路线图
 
-- [x] 自动填充兼容性增强（小众 App / 普通输入框误弹 / 用户名回填修复）
+- [x] 自动填充兼容性增强（小众 App / 用户名回填修复）
 - [x] 多主题体系（自然 / Monet / 暗色 / 纯黑 / RG）
-- [x] CI 内置签名与 Preview Release 自动发布 + 构建提速（~14.5min → ~5.5min）
-- [x] 性能与内存工程（结构化并发、Keystore 移出主线程、有界离线密钥缓存）
+- [x] CI 内置签名与 Preview / Stable 自动发布 + 构建提速
+- [x] 性能与内存工程（结构化并发、Keystore 移出主线程、有界缓存）
 - [x] 无障碍优化（URL 扫描移出主线程、进程级初始化守卫）
 - [x] 通透玻璃图标重设计
-- [x] 主页面滚动流畅性（滚动中 TOTP 降频）
-- [x] PasswordViewModel 拆分重构（4162 → 3472 行，8 个协调器 + 构造注入）
-- [x] 行为测试网（mockk，删除/归档/迁移/主密码/历史路径，`total=583 failed=0`）
-- [ ] 更多导入格式支持
+- [x] 主页面滚动流畅性（TOTP 降频）
+- [x] PasswordViewModel 拆分重构（4162 → 3472 行，8 个协调器）
+- [x] 行为测试网（583 条零失败 + CI 基线闸门）
+- [x] Android 17 适配（targetSdk 37 + 行为变更适配 + 网络安全配置）
+- [x] Passkey 凭据提供程序（Android 14+ 无密码登录）
+- [ ] 更多导入格式支持（Aegis、1Password 等）
 - [ ] 跨平台桌面端探索
 - [ ] 端到端加密同步方案升级
 
 ---
 
-## 🛠️ 构建
+## 🛠️ 构建与部署
 
 ```bash
 # 克隆
@@ -230,26 +254,56 @@ git clone https://github.com/Chaniug/bastion.git
 # 进入 Android 目录
 cd bastion/Bastion
 
-# 构建
+# Debug 构建（快速验证）
+./gradlew :app:assembleDebug
+
+# Release 构建（混淆压缩）
 ./gradlew :app:assembleRelease
 ```
 
-GitHub Actions 在每次推送 `main` 分支时自动构建并发布 Development Preview，可在 [Releases](https://github.com/Chaniug/bastion/releases) 页面下载。
+**CI/CD**：每次推送 `dev`/`main` 自动构建 debug APK 并发布到 [Preview Release](https://github.com/Chaniug/bastion/releases/tag/preview)。Stable Release 通过手动触发或推送 `v*` 标签构建混淆压缩包。
 
-### 静态官网（项目 Pages）
+### 项目官网
 
-项目主页 `chaniug.github.io/bastion/` 的源码位于 `pages/`，是一套零构建的静态站点（HTML + CSS + 内联 SVG，与 App 图标同源：玻璃盾牌 + 金色锁孔）。
+项目官网 [chaniug.github.io/bastion](https://chaniug.github.io/bastion/) 源码位于 `pages/`，是一套零构建静态站点。
 
 ```bash
-# 本地预览（需 Python）
+# 本地预览
 cd pages && python3 -m http.server 4173
 ```
 
-部署通过 GitHub Actions 自动完成：仅当 `pages/` 目录内容变动时触发 `.github/workflows/deploy-pages.yml`，将 `pages/` 发布到 Pages（普通 app 推送不再重部署官网）。也可在 Actions 页手动 `Run workflow` 触发一次性部署。
+部署由 `.github/workflows/deploy-pages.yml` 自动完成：`pages/` 目录变动时自动发布到 GitHub Pages。
 
-> ⚠️ 首次生效需在仓库 **Settings → Pages → Source** 选择 **"GitHub Actions"**（旧的手工分支部署已失效）。
+> ⚠️ 首次生效需在仓库 **Settings → Pages → Source** 选择 **"GitHub Actions"**。
 
-> 旧的历史 Vite 文档站 `documentation/website`（带 Monica 旧品牌）已从仓库移除，相关截图已迁至 `image/screenshots/`。
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>bastion 和 Monica 是什么关系？</b></summary>
+bastion 是在开源 <a href="https://github.com/Monica-Pass/Monica">Monica</a> 基础上独立维护、更名的分支。我们在保持核心能力的同时，对性能、内存、无障碍、自动填充、Android 17 适配等方面做了大量工程级优化。本分支独立演进，不依赖上游发布节奏。
+</details>
+
+<details>
+<summary><b>我的数据安全吗？开发者能看到吗？</b></summary>
+看不到。bastion 默认完全离线运行，所有数据以 AES-256-GCM 加密后仅存储在你的设备上，密钥由硬件 Keystore（TEE）保护。我们不运营任何服务器来接收或中转你的凭据。
+</details>
+
+<details>
+<summary><b>忘记主密码怎么办？</b></summary>
+无法找回。这是零知识架构的核心特性——连我们都无法访问你的数据。请务必妥善保管主密码，建议启用密保问题作为备用恢复方式。
+</details>
+
+<details>
+<summary><b>如何从其他密码管理器迁移？</b></summary>
+支持导入 KeePass（.kdbx）文件和 Bitwarden JSON 导出。也支持通过 Bitwarden API 直接同步自托管或官方 Bitwarden 服务器。
+</details>
+
+<details>
+<summary><b>如何参与贡献？</b></summary>
+欢迎提交 Issue 和 PR。开发分支为 <code>dev</code>，请在 <code>dev</code> 上开发，验证通过后合并到 <code>main</code>。重大改动建议先开 Issue 讨论。
+</details>
 
 ---
 
@@ -257,12 +311,16 @@ cd pages && python3 -m http.server 4173
 
 ```
 bastion/
-├── Bastion/   # Android 客户端（Kotlin / Compose）
-├── pages/     # 项目 Pages 静态站点（GitHub Pages 源）
-│   ├── index.html
-│   ├── privacy.html / terms.html
-│   └── assets/   # style.css / main.js / shield.svg / lock.svg
-├── image/                # README 配图与图标（含 screenshots/）
+├── Bastion/              # Android 客户端（Kotlin / Compose / Room）
+├── BastionDocs/          # VitePress 多语言文档站
+├── pages/                # GitHub Pages 静态站点
+│   ├── index.html        # 官网首页
+│   ├── privacy.html      # 隐私政策
+│   ├── terms.html        # 服务条款
+│   └── assets/           # style.css / main.js / SVG 图标
+├── doc/                  # 技术文档（升级计划、架构分析等）
+├── image/                # README 配图与截图
+│   └── screenshots/      # 应用界面截图
 └── LICENSE
 ```
 

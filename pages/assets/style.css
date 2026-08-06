@@ -146,6 +146,16 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-500); box-shadow: 0 0 10px var(--gold-500); }
 
+/* feature tag pills */
+.tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.tag-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.82rem; font-weight: 600; color: var(--blue-300);
+  padding: 5px 12px; border-radius: 999px;
+  border: 1px solid rgba(159, 212, 255, 0.30);
+  background: rgba(159, 212, 255, 0.06);
+}
+
 /* shield hero visual */
 .shield-stage {
   position: relative; display: grid; place-items: center; min-height: 440px;
@@ -255,7 +265,7 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .shield-stage { order: -1; min-height: 320px; }
+  .shield-stage { order: -1; min-height: 280px; }
   .split { grid-template-columns: 1fr; }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -272,10 +282,26 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
   .nav.open .nav-links a { min-height: 48px; }
   .cards { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; gap: 22px; }
+  .shield-stage { min-height: 220px; }
+}
+@media (max-width: 480px) {
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { width: 100%; justify-content: center; }
+  .cta-actions { flex-direction: column; }
+  .cta-actions .btn { width: 100%; justify-content: center; }
+  .chips { gap: 6px; }
+  .tags-row { gap: 6px; }
 }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* touch devices: disable hover-only transforms */
+@media (hover: none) {
+  .card:hover { transform: none; border-color: var(--glass-brd); background: var(--glass-bg); }
+  .btn-gold:hover { transform: none; }
+  .btn-ghost:hover { transform: none; border-color: var(--glass-brd-strong); background: var(--glass-bg); }
 }
