@@ -76,31 +76,42 @@ jobs:
 
       # Phase A（API 37 / Android 17）：安装 compileSdk 37 所需 SDK platform 与 build-tools
       # 注意：CI runner 上 sdkmanager 不在 PATH，必须用 $ANDROID_SDK_ROOT 下的完整路径
-      # 该步骤历史上偶发 exit 1（license 接受 / 下载抖动），故：
-      #   1) 内置重试循环（最多 5 次，间隔 15s）绕过瞬时网络抖动；
+      #
+      # 关键经验（已验证）：install 命令【不能】用 `yes |` 管道！
+      #   - `yes | sdkmanager --licenses` 接受全部 license（已验证可用）；
+      #   - 但 `yes | sdkmanager "platforms;android-37"` 会导致 sdkmanager 卡在
+      #     "Loading package information..." 后直接失败（疑似管道无限输入干扰下载/锁文件）。
+      #   - 正确模式：先 `yes | --licenses`，再【不带管道】地 `sdkmanager install`。
+      #
+      # 其他健壮性措施：
+      #   1) 内置重试循环（最多 6 次，间隔 20s）绕过瞬时网络抖动；
       #   2) 安装后校验 platforms/android-37 目录是否真实存在；
-      #   3) 失败时把 sdkmanager 日志回传为 annotation（本仓库 only checks API 可读，
+      #   3) build-tools;35.0.0 通常 runner 已自带（AGP 9 默认即 35.0.0），尽力安装但【非阻塞】；
+      #   4) 失败时把 sdkmanager 日志回传为 annotation（本仓库 only checks API 可读，
       #      见下方 Enforce unit test failure baseline 步骤的注释），便于离线排错。
       - name: Install Android SDK platform 37
         run: |
           SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
           export JAVA_HOME="${JAVA_HOME:-$(dirname $(dirname $(readlink -f $(which java))))}"
           echo "JAVA_HOME=$JAVA_HOME"
-          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
           ok=0
-          for i in $(seq 1 5); do
-            echo "::notice title=sdkmanager attempt $i::installing platforms;android-37 build-tools;35.0.0"
-            if yes | "$SDKM" "platforms;android-37" "build-tools;35.0.0" > /tmp/sdk_install.log 2>&1; then
-              echo "install succeeded on attempt $i"
+          for i in $(seq 1 6); do
+            echo "::notice title=sdkmanager attempt $i::accept licenses + install platforms;android-37"
+            yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+            if "$SDKM" "platforms;android-37" > /tmp/sdk_install.log 2>&1; then
+              echo "platform 37 install succeeded on attempt $i"
               ok=1
               break
             fi
-            echo "attempt $i failed, sleeping 15s"; tail -25 /tmp/sdk_install.log
-            sleep 15
+            echo "attempt $i failed, sleeping 20s"; tail -30 /tmp/sdk_install.log
+            sleep 20
           done
+          # build-tools 35.0.0：runner 通常已自带，尽力安装但不阻塞 job
+          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+          "$SDKM" "build-tools;35.0.0" > /tmp/bt_install.log 2>&1 || echo "build-tools install skipped/failed (non-fatal)"
           if [ "$ok" -ne 1 ] || [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
             echo "::error title=SDK platform 37 install failed::after retries"
-            sed -n '1,60p' /tmp/sdk_install.log | while IFS= read -r l; do echo "::error title=sdk_install_log::$l"; done
+            sed -n '1,80p' /tmp/sdk_install.log | while IFS= read -r l; do echo "::error title=sdk_install_log::$l"; done
             exit 1
           fi
           echo "android-37 present: $(ls -d $ANDROID_SDK_ROOT/platforms/android-37)"
