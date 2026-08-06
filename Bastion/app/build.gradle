@@ -163,7 +163,7 @@ android {
             def disableMinify = project.findProperty('previewMinify')?.toString()?.trim()?.equalsIgnoreCase('false')
             minifyEnabled !disableMinify
             shrinkResources !disableMinify
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             minifyEnabled false
