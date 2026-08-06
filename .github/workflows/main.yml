@@ -114,13 +114,29 @@ jobs:
           if [ -d "$PLAT/android-37" ]; then
             echo "android-37 already present"
           else
-            # 1) 优先复用镜像预装的 android-37.*（取修订号最大者）
-            src=$(ls -d "$PLAT"/android-37.* 2>/dev/null | sort -V | tail -1)
-            if [ -n "$src" ]; then
-              ln -s "$src" "$PLAT/android-37"
-              echo "symlinked $(basename "$src") -> android-37"
-            else
-              # 2) 镜像未预装时，用 curl 直下 platform 压缩包（解压后目录即 android-37）
+            # 镜像预装的 android-37 平台目录名为 android-37.0 / android-37.1（sdkmanager 12.0 命名）。
+            # 逐个检查 source.properties 的 AndroidVersion.ApiLevel，优先选恰好为 37 的，
+            # 否则退而取 37.* 中修订号最大者，符号链接为 AGP 需要的 platforms/android-37。
+            linked=""
+            exact=""
+            fallback_candidate=""
+            for d in $(ls -d "$PLAT"/android-37.* 2>/dev/null | sort -V); do
+              sp="$d/source.properties"
+              [ -f "$sp" ] || continue
+              lvl=$(grep -i 'AndroidVersion.ApiLevel' "$sp" | head -1 | cut -d= -f2 | tr -d ' ')
+              echo "candidate $(basename "$d") ApiLevel=$lvl"
+              case "$lvl" in
+                37) exact="$d";;
+                37*) fallback_candidate="$d";;
+              esac
+            done
+            if [ -n "$exact" ]; then
+              ln -s "$exact" "$PLAT/android-37"; linked="$exact"; echo "symlinked $(basename "$exact") -> android-37 (ApiLevel=37)"
+            elif [ -n "$fallback_candidate" ]; then
+              ln -s "$fallback_candidate" "$PLAT/android-37"; linked="$fallback_candidate"; echo "symlinked $(basename "$fallback_candidate") -> android-37 (ApiLevel 37.x)"
+            fi
+            if [ -z "$linked" ]; then
+              # 镜像未预装时，用 curl 直下 platform 压缩包（解压后目录即 android-37）
               echo "::warning title=no preinstalled android-37::downloading via curl"
               curl -sSL -m 60 -o /tmp/repo2.xml "https://dl.google.com/android/repository/repository2-3.xml"
               REL=$(grep -oE 'platform-37_r[0-9]+\.zip' /tmp/repo2.xml | head -1)
@@ -130,7 +146,7 @@ jobs:
               unzip -q -o /tmp/platform37.zip -d "$PLAT"
             fi
           fi
-          # 校验：必须是 ApiLevel=37 的合法平台目录
+          # 校验：android-37 必须是含 ApiLevel 37* 的合法平台目录
           if [ ! -f "$PLAT/android-37/source.properties" ]; then
             echo "::error title=android-37 invalid::source.properties missing"
             ls -la "$PLAT" | while IFS= read -r l; do echo "::error title=platforms::$l"; done
@@ -138,10 +154,10 @@ jobs:
           fi
           api=$(grep -i 'AndroidVersion.ApiLevel' "$PLAT/android-37/source.properties" | head -1 | cut -d= -f2 | tr -d ' ')
           echo "android-37 ApiLevel=$api"
-          if [ "$api" != "37" ]; then
-            echo "::error title=android-37 wrong ApiLevel::$api (expected 37)"
-            exit 1
-          fi
+          case "$api" in
+            37*) echo "android-37 ApiLevel acceptable";;
+            *) echo "::error title=android-37 wrong ApiLevel::$api (expected 37*)"; exit 1;;
+          esac
           echo "android-37 present: $(ls -d $PLAT/android-37)"
 
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
