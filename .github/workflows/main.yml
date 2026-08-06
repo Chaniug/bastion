@@ -74,6 +74,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 诊断：在装 android-37 之前先摸清 runner 的 SDK 环境与对 dl.google.com 的可达性
+      # （本仓库 only checks API 可读，故把关键信息打成 annotation 回传）
+      - name: Diagnose SDK environment
+        if: always()
+        run: |
+          SDKM="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version 2>&1 | head -3 | while IFS= read -r l; do echo "::notice title=java::$l"; done
+          echo "::notice title=existing platforms::$(ls $ANDROID_SDK_ROOT/platforms 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=existing build-tools::$(ls $ANDROID_SDK_ROOT/build-tools 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=sdkmanager version::$($SDKM --version 2>&1 | head -3 | tr '\n' ' ')"
+          # 测试到 dl.google.com 的可达性
+          curl -sS -m 25 -o /tmp/repo.xml -w 'HTTP=%{http_code} size=%{size_download} exit=%{exitcode}\n' \
+            "https://dl.google.com/android/repository/repository2-3.xml" \
+            > /tmp/curl_test.txt 2>&1 || true
+          cat /tmp/curl_test.txt
+          echo "::notice title=curl dl.google.com::$(cat /tmp/curl_test.txt | tr '\n' ' ')"
+          echo "::notice title=repo.xml head::$(head -c 200 /tmp/repo.xml 2>/dev/null | tr '\n' ' ')"
+          echo "::notice title=installed pkgs::$($SDKM --list_installed 2>&1 | head -20 | tr '\n' ' ')"
+
       # Phase A（API 37 / Android 17）：安装 compileSdk 37 所需 SDK platform 与 build-tools
       # 注意：CI runner 上 sdkmanager 不在 PATH，必须用 $ANDROID_SDK_ROOT 下的完整路径
       #
@@ -109,17 +130,15 @@ jobs:
           # 系统 CA 与 sdkmanager 的 JVM truststore 不同，curl 可能绕过 TLS 问题。
           if [ "$ok" -ne 1 ] || [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
             echo "::warning title=sdkmanager failed::falling back to direct download"
-            REL=$(curl -sL "https://dl.google.com/android/repository/repository2-3.xml" | python3 -c "
-          import sys,re
-          data=sys.stdin.read()
-          m=re.search(r'platforms;android-37.*?</remotePackage>', data, re.S)
-          if m:
-              u=re.search(r'<url>(platform-37_r\d+\.zip)</url>', m.group(0))
-              if u: print(u.group(1))
-          " || true)
+            curl -sSL -m 60 -o /tmp/repo2.xml -w 'curl_repo HTTP=%{http_code} size=%{size_download} exit=%{exitcode}\n' \
+              "https://dl.google.com/android/repository/repository2-3.xml" > /tmp/curl_repo.txt 2>&1 || true
+            cat /tmp/curl_repo.txt
+            echo "::notice title=curl_repo::$(cat /tmp/curl_repo.txt | tr '\n' ' ')"
+            echo "::notice title=repo2 head::$(head -c 160 /tmp/repo2.xml 2>/dev/null | tr '\n' ' ')"
+            REL=$(grep -oE 'platform-37_r[0-9]+\.zip' /tmp/repo2.xml 2>/dev/null | head -1)
             if [ -n "$REL" ]; then
               echo "platform zip: $REL"
-              curl -sL -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
+              curl -sSL -m 120 -o /tmp/platform37.zip "https://dl.google.com/android/repository/$REL"
               mkdir -p "$ANDROID_SDK_ROOT/platforms"
               unzip -q -o /tmp/platform37.zip -d "$ANDROID_SDK_ROOT/platforms"
               if [ ! -d "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
