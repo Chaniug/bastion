@@ -237,7 +237,7 @@ kotlin {
     compilerOptions {
         // Kotlin 2.2：compilerOptions.jvmTarget 要求 JvmTarget 枚举，
         // 不再接受 Gradle 的 JavaVersion（否则报 Cannot convert ... JavaVersion to JvmTarget）
-        jvmTarget = JvmTarget.JVM_17
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
     // 架构升级 C.6（第 1 步）：开启 Compose 编译器稳定性/指标报告。
     // 报告输出到 app/build/compose_compiler/，用于定位被误判为「不稳定」的数据类，
