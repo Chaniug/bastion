@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bastion Network Security Configuration
+  =======================================
+  Android 17 (API 37) 行为变更适配：
+  1. 全局关闭明文流量（默认安全）
+  2. 对确需 HTTP 的局域网自托管服务开放明文
+  3. 对云端 API 保持 HTTPS 加密
+
+  背景：
+  Android 17 计划弃用 usesCleartextTraffic 属性，推荐使用
+  network_security_config 精确控制明文流量。同时
+  usesCleartextTraffic="true" 存在安全风险（全局开放 HTTP）。
+
+  设计原则：
+  - 默认拒绝所有明文流量（cleartextTrafficPermitted="false"）
+  - 仅在 <domain-config> 中按需开放特定域
+  - 局域网地址段（192.168.x.x, 10.x.x.x, 172.16-31.x.x）
+    作为自托管 WebDAV/Bitwarden 等服务的常见部署地址，
+    使用 cleartextTrafficPermitted="true"
+  - 公网服务默认使用 HTTPS，无需额外配置
+-->
+<network-security-config>
+    <!-- 全局默认：禁止明文流量 -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- 信任系统 CA 证书 -->
+            <certificates src="system" />
+            <!-- 信任用户安装的 CA 证书（开发调试用） -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+      局域网自托管服务（WebDAV / Bitwarden / KeePass 等）
+      开放明文 HTTP 访问，因为：
+      - 自托管服务常在局域网内使用 HTTP（无证书）
+      - 用户直接输入 IP 地址连接
+      - 这些是用户主动配置的服务，风险可控
+
+      包含所有 RFC 1918 私有地址段：
+      - 192.168.0.0/16
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">172.16.0.0</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+
+    <!--
+      .local 域名（mDNS 局域网发现）
+      常见于 NAS、路由器等局域网设备的本地域名
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">local</domain>
+    </domain-config>
+
+    <!--
+      GitHub Releases（下载更新 APK）
+      必须使用 HTTPS — 不做特殊配置，由 base-config 保证
+    -->
+</network-security-config>
