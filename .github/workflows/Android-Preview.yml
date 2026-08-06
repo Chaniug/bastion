@@ -177,7 +177,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: preview-apk
-          path: Bastion/app/build/outputs/apk/release/*.APK
+          path: Bastion/app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
 
       - name: Self-test changelog generator
@@ -267,6 +267,7 @@ jobs:
             > *   **Commit SHA**: `${{ github.sha }}`
             > *   **Ref**: `${{ github.ref }}`
           files: |
+            Bastion/app/build/outputs/apk/release/*.apk
             Bastion/app/build/outputs/apk/release/*.APK
           draft: false
           prerelease: true
