@@ -135,7 +135,7 @@ reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.r
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Phase A：AGP 9 内置 Kotlin 取代 kotlin-android，该插件不再使用（保留 compose/serialization/parcelize/ksp）。
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
