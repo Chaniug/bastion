@@ -75,8 +75,9 @@ jobs:
         run: chmod +x gradlew
 
       # Phase A（API 37 / Android 17）：安装 compileSdk 37 所需 SDK platform 与 build-tools
+      # 注意：CI runner 上 sdkmanager 不在 PATH，必须用 $ANDROID_SDK_ROOT 下的完整路径
       - name: Install Android SDK platform 37
-        run: yes | sdkmanager "platforms;android-37" "build-tools;35.0.0"
+        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;35.0.0"
 
       # Lint 较重，仅在 PR / 手动触发时运行作为质量门；push 到 dev/main 时跳过以加快反馈
       - name: Run lint
