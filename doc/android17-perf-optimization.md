@@ -2,7 +2,7 @@
 
 > 目标：针对 Android 17 (API 37) 做专项优化，提升稳定性与流畅性，降低运行功耗与内存占用。
 > 分支策略：dev 开发验证 → 合并 main。所有改动以 release 包行为为准评估收益。
-> 状态：阶段一已上线（dev→main，CI 全绿）；阶段二低风险项 #6/#9 已实施，#5/#7/#8 待计划确认。
+> 状态：阶段一已上线（dev→main，CI 全绿）；阶段二 #6 resConfigs 已上线；#9 LeakCanary 因 Android 17 启动崩溃已回退；#5/#7/#8 待计划确认。
 
 ## 现状调研摘要（关键痛点）
 
@@ -52,7 +52,7 @@
 6. ✅ `app/build.gradle` 加 `resConfigs "en","zh"`，仅保留默认英文 + 中文，移除 80+ 冗余语言资源常驻（包体/内存）。
 7. Room 投影：高频列表查询 `SELECT *` 收敛为投影列（183 处，需逐条核对，属重点改动 → 暂缓，单独提计划）。
 8. 清理 `BaseBastionActivity` 主线程 `runBlocking`（涉初始化时序，属重点改动 → 暂缓，单独提计划）。
-9. ✅ debug 引入 `leakcanary-android:2.14`，真机 preview 调试捕获内存泄漏，release 不打包。
+9. ⚠️ 已回退：`leakcanary-android:2.14` 在 Android 17(API 37) 进程启动期(ContentProvider 自启)崩溃，导致预览 debug 版无法启动（桌面无图标/点不开）。已回退该依赖。待 LeakCanary 3.0 兼容性确认后，作为重点改动单独提计划重做。
 
 ## 阶段三 · 进一步打磨（待做 ⬜）
 
