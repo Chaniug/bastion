@@ -114,6 +114,9 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        // 阶段二·流畅性与构建：仅保留应用实际支持的语言（默认 values=英文 + values-zh=中文），
+        // 砍掉 AAPT 默认打入的其余 80+ 冗余语言资源，降低包体与常驻资源内存。
+        resConfigs "en", "zh"
         // 单测中 android.util.Log 等未 mock 框架方法返回默认值而非抛异常，
         // 避免历史单测因 "Method ... not mocked" 失败导致 CI 假绿（exit code 1 误导标注）。
         testOptions {
@@ -277,6 +280,9 @@ dependencies {
     implementation libs.androidx.activity.compose
     // Pin profileinstaller to the latest stable patch and avoid older transitive copies.
     implementation "androidx.profileinstaller:profileinstaller:1.4.1"
+    // 阶段二·稳定性：debug 构建引入 LeakCanary，捕获内存泄漏（release 不打包，零线上开销）。
+    // 真机 preview 调试（如荣耀 Android 17）可借其发现 Activity/Fragment/ViewModel 泄漏。
+    debugImplementation "com.squareup.leakcanary:leakcanary-android:2.14"
     
     // Compose
     implementation platform(libs.androidx.compose.bom)
