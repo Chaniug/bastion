@@ -280,9 +280,9 @@ dependencies {
     implementation libs.androidx.activity.compose
     // Pin profileinstaller to the latest stable patch and avoid older transitive copies.
     implementation "androidx.profileinstaller:profileinstaller:1.4.1"
-    // 阶段二·稳定性：debug 构建引入 LeakCanary，捕获内存泄漏（release 不打包，零线上开销）。
-    // 真机 preview 调试（如荣耀 Android 17）可借其发现 Activity/Fragment/ViewModel 泄漏。
-    debugImplementation "com.squareup.leakcanary:leakcanary-android:2.14"
+    // 阶段二·稳定性：原计划在 debug 引入 LeakCanary 捕获内存泄漏，但 2.14 在 Android 17(API 37)
+    // 进程启动期(ContentProvider 自启)崩溃导致预览版无法启动，已回退。待确认 LeakCanary 3.0 兼容性后重做。
+    // debugImplementation "com.squareup.leakcanary:leakcanary-android:2.14"
     
     // Compose
     implementation platform(libs.androidx.compose.bom)
