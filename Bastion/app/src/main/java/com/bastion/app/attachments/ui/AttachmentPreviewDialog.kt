@@ -129,8 +129,20 @@ private fun ImagePreview(uri: Uri) {
     LaunchedEffect(uri) {
         bitmap = withContext(Dispatchers.IO) {
             runCatchingObserved {
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                // 先探测尺寸，按目标边长(2048)计算 inSampleSize，避免超大附件全尺寸解码导致 OOM
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use { s -> BitmapFactory.decodeStream(s, null, bounds) }
+                var sampleSize = 1
+                var bw = bounds.outWidth
+                var bh = bounds.outHeight
+                while (bw > 2048 || bh > 2048) {
+                    sampleSize *= 2
+                    bw /= 2
+                    bh /= 2
+                }
+                val options = BitmapFactory.Options().apply { inSampleSize = sampleSize.coerceAtLeast(1) }
+                context.contentResolver.openInputStream(uri)?.use { s2 ->
+                    BitmapFactory.decodeStream(s2, null, options)?.asImageBitmap()
                 }
             }.getOrNull()
         }

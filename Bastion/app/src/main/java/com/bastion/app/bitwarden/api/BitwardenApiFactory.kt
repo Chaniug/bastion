@@ -14,6 +14,8 @@ import java.security.KeyStore
 import java.security.SecureRandom
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.util.Collections
+import java.util.LinkedHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.KeyManager
 import javax.net.ssl.KeyManagerFactory
@@ -379,10 +381,11 @@ object BitwardenApiFactory {
  */
 class BitwardenApiManager {
 
-    // 缓存 API 客户端实例
-    private val okHttpClientCache = mutableMapOf<String, OkHttpClient>()
-    private val identityApiCache = mutableMapOf<String, BitwardenIdentityApi>()
-    private val vaultApiCache = mutableMapOf<String, BitwardenVaultApi>()
+    // 缓存 API 客户端实例。带容量上限的 LRU，避免 OkHttpClient / Retrofit 实例
+    // （各自持有连接池与线程池）长期累积导致内存增长（Android 17 内存治理）。
+    private val okHttpClientCache = boundedLruMap<String, OkHttpClient>(8)
+    private val identityApiCache = boundedLruMap<String, BitwardenIdentityApi>(16)
+    private val vaultApiCache = boundedLruMap<String, BitwardenVaultApi>(16)
 
     /**
      * 获取 Identity API 客户端
@@ -465,6 +468,22 @@ class BitwardenApiManager {
         okHttpClientCache.clear()
         identityApiCache.clear()
         vaultApiCache.clear()
+    }
+
+    private companion object {
+        /**
+         * 创建带容量上限、按访问顺序(access-order)淘汰的线程安全 LRU Map。
+         * 条目数超过 [maxEntries] 时自动移除最久未访问的条目，
+         * 确保 OkHttpClient / Retrofit 实例（含连接池、线程池）可被驱逐，防止内存无限增长。
+         */
+        private inline fun <K, V> boundedLruMap(maxEntries: Int): MutableMap<K, V> {
+            val backing = object : LinkedHashMap<K, V>(maxEntries, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean {
+                    return size > maxEntries
+                }
+            }
+            return Collections.synchronizedMap(backing)
+        }
     }
 
     private fun getOrCreateOkHttpClient(

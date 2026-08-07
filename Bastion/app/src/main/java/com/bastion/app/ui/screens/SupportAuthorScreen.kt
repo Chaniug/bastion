@@ -97,11 +97,22 @@ fun SupportAuthorScreen(
     LaunchedEffect(Unit) {
         hasStoragePermission = ContextCompat.checkSelfPermission(context, storagePermission) == PackageManager.PERMISSION_GRANTED
         try {
-            val inputStream = context.assets.open("support_author.webp")
-            val bitmap = BitmapFactory.decodeStream(inputStream)
+            // 先探测尺寸并按目标边长(1024)采样，避免超大资源图全尺寸驻留内存
+            val assetPath = "support_author.webp"
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.assets.open(assetPath).use { BitmapFactory.decodeStream(it, null, bounds) }
+            var sampleSize = 1
+            var bw = bounds.outWidth
+            var bh = bounds.outHeight
+            while (bw > 1024 || bh > 1024) {
+                sampleSize *= 2
+                bw /= 2
+                bh /= 2
+            }
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSize.coerceAtLeast(1) }
+            val bitmap = context.assets.open(assetPath).use { BitmapFactory.decodeStream(it, null, options) }
             originalBitmap = bitmap
             imageBitmap = bitmap.asImageBitmap()
-            inputStream.close()
         } catch (e: IOException) {
             // 图片加载失败
         }

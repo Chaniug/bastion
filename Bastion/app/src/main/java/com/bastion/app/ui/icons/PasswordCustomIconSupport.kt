@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
@@ -533,7 +534,13 @@ private object SimpleIconCache {
     private const val TAG = "SimpleIconCache"
     private const val DISK_DIR = "stratum_icons"
     private const val CACHE_VERSION = "stratum_v1_4_0"
-    private val memory = LruCache<String, ImageBitmap>(80)
+    private const val MAX_ICON_CACHE_BYTES_KB = 4 * 1024 // ~4MB，以 KB 计
+
+    private val memory = object : LruCache<String, ImageBitmap>(MAX_ICON_CACHE_BYTES_KB) {
+        override fun sizeOf(key: String, value: ImageBitmap): Int {
+            return (value.asAndroidBitmap().allocationByteCount / 1024).coerceAtLeast(1)
+        }
+    }
 
     suspend fun getIcon(context: Context, slug: String, darkTheme: Boolean): ImageBitmap? {
         val normalizedSlug = normalizeSimpleIconSlug(slug)
@@ -546,13 +553,13 @@ private object SimpleIconCache {
         val diskFile = File(diskDir, "$key.png")
 
         return withContext(Dispatchers.IO) {
-            if (diskFile.exists()) {
-                BitmapFactory.decodeFile(diskFile.absolutePath)?.let { bitmap ->
-                    val image = bitmap.asImageBitmap()
-                    memory.put(key, image)
-                    return@withContext image
-                }
+        if (diskFile.exists()) {
+            decodeSampledIcon(diskFile, MAX_STRATUM_DIM)?.let { bitmap ->
+                val image = bitmap.asImageBitmap()
+                memory.put(key, image)
+                return@withContext image
             }
+        }
 
             runCatchingObserved {
                 val bitmap = fetchSimpleIconBitmap(context, normalizedSlug, darkTheme) ?: return@runCatchingObserved null
@@ -567,6 +574,18 @@ private object SimpleIconCache {
                 Log.w(TAG, "Failed to load stratum icon: slug=$slug", error)
             }.getOrNull()
         }
+    }
+
+    private fun decodeSampledIcon(file: File, maxDim: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            return BitmapFactory.decodeFile(file.absolutePath)
+        }
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = iconSampleSize(bounds.outWidth, bounds.outHeight, maxDim)
+        }
+        return BitmapFactory.decodeFile(file.absolutePath, opts)
     }
 
     private fun fetchSimpleIconBitmap(context: Context, normalizedSlug: String, darkTheme: Boolean): Bitmap? {
@@ -586,7 +605,13 @@ private object SimpleIconCache {
                     val assetPath = "$dir/$slugVariant.$ext"
                     val bitmap = runCatchingObserved {
                         context.assets.open(assetPath).use { stream ->
-                            BitmapFactory.decodeStream(stream)
+                            val bytes = stream.readBytes()
+                            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                            val opts = BitmapFactory.Options().apply {
+                                inSampleSize = iconSampleSize(bounds.outWidth, bounds.outHeight, MAX_STRATUM_DIM)
+                            }
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
                         }
                     }.getOrNull()
                     if (bitmap != null) {
@@ -597,6 +622,21 @@ private object SimpleIconCache {
         }
         return null
     }
+}
+
+private const val MAX_STRATUM_DIM = 256
+private const val MAX_UPLOAD_ICON_DIM = 512
+
+private fun iconSampleSize(width: Int, height: Int, maxDim: Int): Int {
+    var sample = 1
+    var w = width
+    var h = height
+    while (w > maxDim || h > maxDim) {
+        sample *= 2
+        w /= 2
+        h /= 2
+    }
+    return sample.coerceAtLeast(1)
 }
 
 fun normalizeSimpleIconSlug(input: String): String {
@@ -614,7 +654,12 @@ fun rememberUploadedPasswordIcon(value: String?): ImageBitmap? {
         }
         icon = withContext(Dispatchers.IO) {
             val file = PasswordCustomIconStore.resolveIconFile(context, value) ?: return@withContext null
-            BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            val opts = BitmapFactory.Options().apply {
+                inSampleSize = iconSampleSize(bounds.outWidth, bounds.outHeight, MAX_UPLOAD_ICON_DIM)
+            }
+            BitmapFactory.decodeFile(file.absolutePath, opts)?.asImageBitmap()
         }
     }
     return icon
