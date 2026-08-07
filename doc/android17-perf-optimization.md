@@ -2,7 +2,7 @@
 
 > 目标：针对 Android 17 (API 37) 做专项优化，提升稳定性与流畅性，降低运行功耗与内存占用。
 > 分支策略：dev 开发验证 → 合并 main。所有改动以 release 包行为为准评估收益。
-> 状态：阶段一已实施，等待 CI 验证。
+> 状态：阶段一已上线（dev→main，CI 全绿）；阶段二低风险项 #6/#9 已实施，#5/#7/#8 待计划确认。
 
 ## 现状调研摘要（关键痛点）
 
@@ -46,13 +46,13 @@
 - 改动：`LruCache` 由按条数改为 `sizeOf()` 返回 `asAndroidBitmap().allocationByteCount / 1024`（KB），`maxSize` 同步改为约 4MB（KB 计）。
 - 预期收益：大图标/大 favicon 能正确被 LRU 淘汰，防止内存膨胀。
 
-## 阶段二 · 流畅性与构建（待做 ⬜）
+## 阶段二 · 流畅性与构建（部分已实施）
 
-5. 接入 Baseline Profile（`baseline-prof.txt` + `ProfileInstaller`），冷启动/滚动帧率提升。
-6. `app/build.gradle` 加 `resConfigs`（仅保留支持的语言），移除冗余资源常驻。
-7. Room 投影：高频列表查询 `SELECT *` 收敛为投影列。
-8. 清理 `BaseBastionActivity` 主线程 `runBlocking`。
-9. debug 引入 LeakCanary。
+5. 接入 Baseline Profile（`baseline-prof.txt` + `ProfileInstaller`）：`profileinstaller:1.4.1` 早已在 `implementation` 依赖中，但尚无 `baseline-prof.txt`。**真正生成需在真机/模拟器跑 `generateBaselineProfile`**，沙箱无设备，且属重点改动 → 暂缓，单独提计划确认后再做。
+6. ✅ `app/build.gradle` 加 `resConfigs "en","zh"`，仅保留默认英文 + 中文，移除 80+ 冗余语言资源常驻（包体/内存）。
+7. Room 投影：高频列表查询 `SELECT *` 收敛为投影列（183 处，需逐条核对，属重点改动 → 暂缓，单独提计划）。
+8. 清理 `BaseBastionActivity` 主线程 `runBlocking`（涉初始化时序，属重点改动 → 暂缓，单独提计划）。
+9. ✅ debug 引入 `leakcanary-android:2.14`，真机 preview 调试捕获内存泄漏，release 不打包。
 
 ## 阶段三 · 进一步打磨（待做 ⬜）
 
