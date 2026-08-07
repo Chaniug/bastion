@@ -68,7 +68,8 @@ class BastionApplication : Application() {
         }
 
         SyncTaskRunner.installNetworkGate(AndroidSyncNetworkGate(this))
-        MainThreadStallMonitor.start()
+        // 主线程卡顿监控：release 包默认不启动，debug 包前台运行时生效、后台自动暂停，降低待机功耗
+        MainThreadStallMonitor.start(this)
         syncLauncherEntryPointsWithSettings()
         WebDavBackoffState.attachPersistence(this)
         scheduleKeePassRemoteUploadRecovery()

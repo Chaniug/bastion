@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.drawable.toBitmap
@@ -17,14 +18,18 @@ import kotlinx.coroutines.withContext
 
 /**
  * 应用图标LRU缓存
- * 
- * 使用LRU策略缓存应用图标,避免重复加载
- * 缓存大小限制为50个图标
+ *
+ * 使用LRU策略缓存应用图标,避免重复加载。
+ * 以实际内存占用(KB)计量而非条数，使大图标能被正确淘汰，避免内存膨胀。
  */
 object AppIconCache {
-    private const val MAX_CACHE_SIZE = 50
-    
-    private val cache = LruCache<String, ImageBitmap>(MAX_CACHE_SIZE)
+    private const val MAX_CACHE_BYTES_KB = 4 * 1024 // 约 4MB，以 KB 计
+
+    private val cache = object : LruCache<String, ImageBitmap>(MAX_CACHE_BYTES_KB) {
+        override fun sizeOf(key: String, value: ImageBitmap): Int {
+            return (value.asAndroidBitmap().allocationByteCount / 1024).coerceAtLeast(1)
+        }
+    }
     private val missingIcons = mutableSetOf<String>()
     
     /**

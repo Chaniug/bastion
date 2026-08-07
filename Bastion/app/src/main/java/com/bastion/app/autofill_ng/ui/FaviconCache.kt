@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.CancellationException
@@ -34,9 +35,13 @@ import javax.net.ssl.SSLException
 object FaviconCache {
     private const val TAG = "FaviconCache"
     private const val CACHE_DIR_NAME = "favicons"
-    private const val MAX_MEMORY_CACHE_SIZE = 50 // Keep up to 50 icons in memory
+    private const val MAX_MEMORY_CACHE_BYTES_KB = 4 * 1024 // ~4MB，以 KB 计
 
-    private val memoryCache = LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_SIZE)
+    private val memoryCache = object : LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_BYTES_KB) {
+        override fun sizeOf(key: String, value: ImageBitmap): Int {
+            return (value.asAndroidBitmap().allocationByteCount / 1024).coerceAtLeast(1)
+        }
+    }
 
     /**
      * Get icon for domain.
@@ -62,7 +67,7 @@ object FaviconCache {
         val cacheFile = File(cacheDir, "$cacheKey.png")
         if (cacheFile.exists()) {
             try {
-                val bitmap = BitmapFactory.decodeFile(cacheFile.absolutePath)
+                val bitmap = decodeFaviconSampled(cacheFile, MAX_FAVICON_DIM)
                 if (bitmap != null) {
                     val imageBitmap = bitmap.asImageBitmap()
                     memoryCache.put(cacheKey, imageBitmap)
@@ -112,6 +117,43 @@ object FaviconCache {
     /**
      * 从单个 URL 拉取 favicon 位图；任何网络异常都返回 null，由调用方尝试下一个源。
      */
+    private const val MAX_FAVICON_DIM = 128
+
+    private fun calculateInSampleSize(width: Int, height: Int, maxDim: Int): Int {
+        var sample = 1
+        var w = width
+        var h = height
+        while (w > maxDim || h > maxDim) {
+            sample *= 2
+            w /= 2
+            h /= 2
+        }
+        return sample.coerceAtLeast(1)
+    }
+
+    private fun decodeFaviconSampled(file: File, maxDim: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            return BitmapFactory.decodeFile(file.absolutePath)
+        }
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, maxDim)
+        }
+        return BitmapFactory.decodeFile(file.absolutePath, opts)
+    }
+
+    private fun decodeFaviconStreamSampled(stream: java.io.InputStream, maxDim: Int): Bitmap? {
+        val bytes = stream.readBytes()
+        if (bytes.isEmpty()) return null
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, maxDim)
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+    }
+
     private fun fetchFaviconFromUrl(
         faviconUrl: String,
         connectTimeoutMs: Int,
@@ -124,7 +166,7 @@ object FaviconCache {
             try {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     connection.inputStream.use { stream ->
-                        BitmapFactory.decodeStream(stream)
+                        decodeFaviconStreamSampled(stream, MAX_FAVICON_DIM)
                     }
                 } else {
                     null
