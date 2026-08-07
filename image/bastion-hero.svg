@@ -1,84 +1,270 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bastion — 本地优先 · 零知识 · 开源的 Android 密码管理器">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1336"/><stop offset="0.55" stop-color="#070C22"/><stop offset="1" stop-color="#04060F"/></linearGradient>
-    <radialGradient id="halo" cx="72%" cy="46%" r="60%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.18"/><stop offset="45%" stop-color="#2E7CC8" stop-opacity="0.16"/><stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/></radialGradient>
-    <radialGradient id="glowGold" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/><stop offset="100%" stop-color="#F5B942" stop-opacity="0"/></radialGradient>
-    <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#57C7E8" stop-opacity="0.45"/><stop offset="100%" stop-color="#57C7E8" stop-opacity="0"/></radialGradient>
-    <linearGradient id="magGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5B942" stop-opacity="0.15"/><stop offset="0.5" stop-color="#FFD874"/><stop offset="1" stop-color="#F5B942" stop-opacity="0.15"/></linearGradient>
-    <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#9FD4FF" fill-opacity="0.06"/></pattern>
-    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="15"/></filter>
-    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
-        <linearGradient id="gt_loc" gradientUnits="userSpaceOnUse" x1="946.0" y1="150.0" x2="946.0" y2="226.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#CFF6FF" stop-opacity="0.35"/><stop offset="1" stop-color="#7FE7FF" stop-opacity="0.20"/></linearGradient>
-    <linearGradient id="gl_loc" gradientUnits="userSpaceOnUse" x1="880.2" y1="188.0" x2="946.0" y2="302.0"><stop offset="0" stop-color="#7FE7FF" stop-opacity="0.30"/><stop offset="1" stop-color="#2E9BC2" stop-opacity="0.16"/></linearGradient>
-    <linearGradient id="gr_loc" gradientUnits="userSpaceOnUse" x1="1011.8" y1="188.0" x2="946.0" y2="302.0"><stop offset="0" stop-color="#7FE7FF" stop-opacity="0.22"/><stop offset="1" stop-color="#2E9BC2" stop-opacity="0.28"/></linearGradient>
-    <linearGradient id="gt_key" gradientUnits="userSpaceOnUse" x1="848.0" y1="308.0" x2="848.0" y2="384.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#D6E9FF" stop-opacity="0.35"/><stop offset="1" stop-color="#8FC4FF" stop-opacity="0.20"/></linearGradient>
-    <linearGradient id="gl_key" gradientUnits="userSpaceOnUse" x1="782.2" y1="346.0" x2="848.0" y2="460.0"><stop offset="0" stop-color="#8FC4FF" stop-opacity="0.30"/><stop offset="1" stop-color="#2E6FC8" stop-opacity="0.16"/></linearGradient>
-    <linearGradient id="gr_key" gradientUnits="userSpaceOnUse" x1="913.8" y1="346.0" x2="848.0" y2="460.0"><stop offset="0" stop-color="#8FC4FF" stop-opacity="0.22"/><stop offset="1" stop-color="#2E6FC8" stop-opacity="0.28"/></linearGradient>
-    <linearGradient id="gt_web" gradientUnits="userSpaceOnUse" x1="1044.0" y1="308.0" x2="1044.0" y2="384.0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="0.5" stop-color="#E0E3FF" stop-opacity="0.35"/><stop offset="1" stop-color="#A6AEFF" stop-opacity="0.20"/></linearGradient>
-    <linearGradient id="gl_web" gradientUnits="userSpaceOnUse" x1="978.2" y1="346.0" x2="1044.0" y2="460.0"><stop offset="0" stop-color="#A6AEFF" stop-opacity="0.30"/><stop offset="1" stop-color="#4A57D8" stop-opacity="0.16"/></linearGradient>
-    <linearGradient id="gr_web" gradientUnits="userSpaceOnUse" x1="1109.8" y1="346.0" x2="1044.0" y2="460.0"><stop offset="0" stop-color="#A6AEFF" stop-opacity="0.22"/><stop offset="1" stop-color="#4A57D8" stop-opacity="0.28"/></linearGradient>
+    <!-- 背景渐变：深空蓝紫 -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0A0E27"/>
+      <stop offset="35%" stop-color="#0D1137"/>
+      <stop offset="65%" stop-color="#0F1A3A"/>
+      <stop offset="100%" stop-color="#0B122E"/>
+    </linearGradient>
+
+    <!-- 弥散光晕 — 右上金色 -->
+    <radialGradient id="haloGold" cx="75%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#F5B942" stop-opacity="0.22"/>
+      <stop offset="30%" stop-color="#F5B942" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 弥散光晕 — 右下蓝色 -->
+    <radialGradient id="haloBlue" cx="60%" cy="75%" r="55%">
+      <stop offset="0%" stop-color="#5FB0F2" stop-opacity="0.20"/>
+      <stop offset="40%" stop-color="#2E7CC8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 弥散光晕 — 左侧紫色 -->
+    <radialGradient id="haloPurple" cx="15%" cy="55%" r="45%">
+      <stop offset="0%" stop-color="#7C4DFF" stop-opacity="0.14"/>
+      <stop offset="50%" stop-color="#7C4DFF" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#7C4DFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 盾牌主体渐变 -->
+    <linearGradient id="shieldBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A2A5E"/>
+      <stop offset="50%" stop-color="#152250"/>
+      <stop offset="100%" stop-color="#0E1838"/>
+    </linearGradient>
+
+    <!-- 盾牌高光 -->
+    <linearGradient id="shieldHighlight" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="40%" stop-color="#9FD4FF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#5FB0F2" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- 锁孔金色渐变 -->
+    <linearGradient id="keyholeGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFE6A8"/>
+      <stop offset="30%" stop-color="#F5B942"/>
+      <stop offset="70%" stop-color="#E5A820"/>
+      <stop offset="100%" stop-color="#C8860A"/>
+    </linearGradient>
+
+    <!-- 锁孔发光 -->
+    <radialGradient id="keyholeGlow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#FFE6A8" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#F5B942" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 网格图案 -->
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#9FD4FF" stroke-opacity="0.04" stroke-width="0.8"/>
+    </pattern>
+
+    <!-- 噪点纹理 -->
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.03"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="multiply"/>
+    </filter>
+
+    <!-- 高斯模糊 -->
+    <filter id="blurLg">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <filter id="blurMd">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="blurSm">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <!-- 盾牌投影 -->
+    <filter id="shieldShadow">
+      <feDropShadow dx="0" dy="12" stdDeviation="28" flood-color="#0A0E27" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- 锁孔发光滤镜 -->
+    <filter id="glowFilter">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- 数据流粒子渐变 -->
+    <linearGradient id="particleBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9FD4FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#5FB0F2" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- 品牌文字渐变 -->
+    <linearGradient id="textGold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F5B942"/>
+      <stop offset="50%" stop-color="#FFD874"/>
+      <stop offset="100%" stop-color="#F5B942"/>
+    </linearGradient>
+
+    <!-- 裁剪路径 -->
+    <clipPath id="shieldClip">
+      <path d="M170 220 L170 340 C170 370 190 400 250 430 L330 460 L410 430 C470 400 490 370 490 340 L490 220 L330 170 Z"/>
+    </clipPath>
   </defs>
-  <rect width="1280" height="640" fill="url(#bg)"/>
-  <rect width="1280" height="640" fill="url(#halo)"/>
-  <rect width="1280" height="640" fill="url(#dots)"/>
-  <!-- 立方体背后的彩色光晕，透过玻璃可见，增强通透感 -->
-  <ellipse cx="946" cy="250" rx="220" ry="200" fill="url(#glowCyan)" filter="url(#soft)"/>
-  <ellipse cx="960" cy="430" rx="320" ry="280" fill="url(#glowGold)" filter="url(#soft)"/>
 
-  <!-- 悬浮阴影 -->
-  <ellipse cx="946.0" cy="320.0" rx="59.2" ry="12" fill="#2E9BC2" fill-opacity="0.28" filter="url(#soft)"/>
-  <ellipse cx="848.0" cy="478.0" rx="59.2" ry="12" fill="#2E6FC8" fill-opacity="0.28" filter="url(#soft)"/>
-  <ellipse cx="1044.0" cy="478.0" rx="59.2" ry="12" fill="#4A57D8" fill-opacity="0.28" filter="url(#soft)"/>
+  <!-- 背景 -->
+  <rect width="1280" height="640" fill="url(#bgGrad)"/>
 
-  <!-- 磁力吸附特效线条（品字三连）-->
-  <path d="M 880.2 264.0 Q 883.0 305.0 913.8 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="883.0" cy="305.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="883.0" cy="305.0" r="1.8" fill="#FFFDF6"/>
-  <path d="M 1011.8 264.0 Q 1009.0 305.0 978.2 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="1009.0" cy="305.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="1009.0" cy="305.0" r="1.8" fill="#FFFDF6"/>
-  <path d="M 913.8 346.0 Q 946.0 346.0 978.2 346.0" fill="none" stroke="url(#magGrad)" stroke-width="2.2" opacity="0.7" filter="url(#soft2)"/>
-  <circle cx="946.0" cy="346.0" r="4" fill="#FFF3D2" filter="url(#soft2)"/>
-  <circle cx="946.0" cy="346.0" r="1.8" fill="#FFFDF6"/>
+  <!-- 弥散光晕 -->
+  <rect width="1280" height="640" fill="url(#haloGold)"/>
+  <rect width="1280" height="640" fill="url(#haloBlue)"/>
+  <rect width="1280" height="640" fill="url(#haloPurple)"/>
 
-  <!-- 三个透明玻璃立方体（品字形：Keystore 左下 / WebDAV 右下 / Local 顶）-->
-  <g>
-    <polygon points="782.2,346.0 848.0,384.0 848.0,460.0 782.2,422.0" fill="url(#gl_key)" stroke="#D6E9FF" stroke-opacity="0.5" stroke-width="1.1"/>
-    <polygon points="913.8,346.0 848.0,384.0 848.0,460.0 913.8,422.0" fill="url(#gr_key)" stroke="#D6E9FF" stroke-opacity="0.45" stroke-width="1.1"/>
-    <polygon points="848.0,308.0 913.8,346.0 848.0,384.0 782.2,346.0" fill="url(#gt_key)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
-    <polygon points="854.6,311.8 879.6,326.2 879.6,365.8 854.6,380.2" fill="#FFFFFF" fill-opacity="0.28"/>
-    <polygon points="844.1,310.3 828.3,319.4 828.3,372.6 844.1,381.7" fill="#FFFFFF" fill-opacity="0.14"/>
-    <polyline points="782.2,346.0 848.0,308.0 913.8,346.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="848.0" y1="384.0" x2="848.0" y2="460.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
-    <polyline points="782.2,422.0 848.0,460.0 913.8,422.0" fill="none" stroke="#D6E9FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
-    <text x="848.0" y="429.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#2E6FC8" stroke-width="2.6" stroke-opacity="0.55">Keystore</text>
+  <!-- 网格 -->
+  <rect width="1280" height="640" fill="url(#grid)"/>
+
+  <!-- ==================== 右侧视觉区：盾牌 + 锁孔 ==================== -->
+  <g transform="translate(780, 80)">
+    <!-- 大光晕 -->
+    <ellipse cx="230" cy="260" rx="200" ry="200" fill="url(#keyholeGlow)" filter="url(#blurLg)" opacity="0.5"/>
+    <ellipse cx="230" cy="260" rx="120" ry="120" fill="url(#keyholeGlow)" filter="url(#blurMd)" opacity="0.4"/>
+
+    <!-- 环绕轨道线（装饰） -->
+    <g opacity="0.15" stroke="#9FD4FF" stroke-width="0.8" fill="none">
+      <ellipse cx="230" cy="260" rx="170" ry="170" stroke-dasharray="8 12" transform="rotate(-15,230,260)"/>
+      <ellipse cx="230" cy="260" rx="190" ry="130" stroke-dasharray="5 16" transform="rotate(25,230,260)"/>
+    </g>
+
+    <!-- 数据粒子点 -->
+    <g>
+      <circle cx="60" cy="260" r="2.5" fill="#9FD4FF" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="400" cy="180" r="2" fill="#FFE6A8" opacity="0.6">
+        <animate attributeName="opacity" values="0.6;0.15;0.6" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="380" cy="340" r="2.5" fill="#5FB0F2" opacity="0.7">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="70" cy="350" r="1.8" fill="#7C4DFF" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="420" cy="260" r="1.5" fill="#FFE6A8" opacity="0.5">
+        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="4.5s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- ====== 盾牌 ====== -->
+    <g filter="url(#shieldShadow)">
+      <!-- 盾牌主体 -->
+      <path d="M120 200 L120 370 C120 410 145 450 230 490 L340 530 L450 490 C535 450 560 410 560 370 L560 200 L340 140 Z"
+            fill="url(#shieldBody)" stroke="#2E5CA8" stroke-opacity="0.4" stroke-width="1.5"/>
+
+      <!-- 盾牌内发光边 -->
+      <path d="M132 210 L132 365 C132 400 154 435 230 472 L340 510 L450 472 C526 435 548 400 548 365 L548 210 L340 152 Z"
+            fill="none" stroke="#5FB0F2" stroke-opacity="0.12" stroke-width="1"/>
+
+      <!-- 盾牌高光层 -->
+      <path d="M120 200 L120 370 C120 410 145 450 230 490 L340 530 L450 490 C535 450 560 410 560 370 L560 200 L340 140 Z"
+            fill="url(#shieldHighlight)"/>
+
+      <!-- 盾牌顶部截面高光 -->
+      <path d="M120 200 L340 140 L560 200" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="1.2"/>
+
+      <!-- 玻璃反光条（左） -->
+      <path d="M145 220 L145 350 C145 380 165 410 220 440 L280 468" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- ====== 锁孔 ====== -->
+    <g>
+      <!-- 锁孔外发光 -->
+      <circle cx="340" cy="370" r="28" fill="url(#keyholeGlow)" filter="url(#glowFilter)" opacity="0.8"/>
+
+      <!-- 锁孔圆环 -->
+      <circle cx="340" cy="370" r="22" fill="none" stroke="url(#keyholeGold)" stroke-width="4" opacity="0.9"/>
+
+      <!-- 锁孔圆形填充 -->
+      <circle cx="340" cy="370" r="18" fill="#0E1838"/>
+
+      <!-- 锁孔内部高光 -->
+      <circle cx="340" cy="370" r="14" fill="url(#keyholeGlow)" opacity="0.5"/>
+
+      <!-- 锁孔方形延伸 -->
+      <path d="M326 378 L354 378 L354 412 L326 412 Z" fill="#0E1838" rx="2"/>
+      <path d="M326 378 L354 378 L354 412 L326 412 Z" fill="none" stroke="url(#keyholeGold)" stroke-width="3" opacity="0.85"/>
+      <rect x="331" y="382" width="18" height="26" rx="1" fill="url(#keyholeGlow)" opacity="0.35"/>
+
+      <!-- 锁孔底部圆角 -->
+      <path d="M329 410 A7 7 0 0 0 343 410 L351 410 A7 7 0 0 0 337 410" fill="none" stroke="url(#keyholeGold)" stroke-width="2.5" opacity="0.7"/>
+    </g>
+
+    <!-- ====== 加密数据流线 ====== -->
+    <g opacity="0.25">
+      <path d="M200 300 Q270 290 340 350" fill="none" stroke="#5FB0F2" stroke-width="0.8" stroke-dasharray="4 8">
+        <animate attributeName="stroke-dashoffset" values="0;-24" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <path d="M440 290 Q390 320 360 370" fill="none" stroke="#FFE6A8" stroke-width="0.8" stroke-dasharray="4 8">
+        <animate attributeName="stroke-dashoffset" values="0;-24" dur="2.5s" repeatCount="indefinite"/>
+      </path>
+      <path d="M300 470 Q330 430 340 395" fill="none" stroke="#7C4DFF" stroke-width="0.8" stroke-dasharray="3 9">
+        <animate attributeName="stroke-dashoffset" values="0;-24" dur="3s" repeatCount="indefinite"/>
+      </path>
+    </g>
   </g>
-  <g>
-    <polygon points="978.2,346.0 1044.0,384.0 1044.0,460.0 978.2,422.0" fill="url(#gl_web)" stroke="#E0E3FF" stroke-opacity="0.5" stroke-width="1.1"/>
-    <polygon points="1109.8,346.0 1044.0,384.0 1044.0,460.0 1109.8,422.0" fill="url(#gr_web)" stroke="#E0E3FF" stroke-opacity="0.45" stroke-width="1.1"/>
-    <polygon points="1044.0,308.0 1109.8,346.0 1044.0,384.0 978.2,346.0" fill="url(#gt_web)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
-    <polygon points="1050.6,311.8 1075.6,326.2 1075.6,365.8 1050.6,380.2" fill="#FFFFFF" fill-opacity="0.28"/>
-    <polygon points="1040.1,310.3 1024.3,319.4 1024.3,372.6 1040.1,381.7" fill="#FFFFFF" fill-opacity="0.14"/>
-    <polyline points="978.2,346.0 1044.0,308.0 1109.8,346.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="1044.0" y1="384.0" x2="1044.0" y2="460.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
-    <polyline points="978.2,422.0 1044.0,460.0 1109.8,422.0" fill="none" stroke="#E0E3FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
-    <text x="1044.0" y="429.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#4A57D8" stroke-width="2.6" stroke-opacity="0.55">WebDAV</text>
-  </g>
-  <g>
-    <polygon points="880.2,188.0 946.0,226.0 946.0,302.0 880.2,264.0" fill="url(#gl_loc)" stroke="#CFF6FF" stroke-opacity="0.5" stroke-width="1.1"/>
-    <polygon points="1011.8,188.0 946.0,226.0 946.0,302.0 1011.8,264.0" fill="url(#gr_loc)" stroke="#CFF6FF" stroke-opacity="0.45" stroke-width="1.1"/>
-    <polygon points="946.0,150.0 1011.8,188.0 946.0,226.0 880.2,188.0" fill="url(#gt_loc)" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="1.2"/>
-    <polygon points="952.6,153.8 977.6,168.2 977.6,207.8 952.6,222.2" fill="#FFFFFF" fill-opacity="0.28"/>
-    <polygon points="942.1,152.3 926.3,161.4 926.3,214.6 942.1,223.7" fill="#FFFFFF" fill-opacity="0.14"/>
-    <polyline points="880.2,188.0 946.0,150.0 1011.8,188.0" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="946.0" y1="226.0" x2="946.0" y2="302.0" stroke="#FFFFFF" stroke-opacity="0.4" stroke-width="1.2"/>
-    <polyline points="880.2,264.0 946.0,302.0 1011.8,264.0" fill="none" stroke="#CFF6FF" stroke-opacity="0.4" stroke-width="1" stroke-linejoin="round"/>
-    <text x="946.0" y="271.6" text-anchor="middle" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="16" font-weight="700" letter-spacing="0.6" fill="#FFFFFF" style="paint-order:stroke" stroke="#2E9BC2" stroke-width="2.6" stroke-opacity="0.55">Local</text>
+
+  <!-- ==================== 左侧文字区 ==================== -->
+  <g transform="translate(72, 0)">
+    <!-- 小标签 pill -->
+    <rect x="0" y="185" width="170" height="32" rx="16" fill="#FFFFFF" fill-opacity="0.06" stroke="#9FD4FF" stroke-opacity="0.18" stroke-width="1"/>
+    <circle cx="20" cy="201" r="4" fill="#5FB0F2"/>
+    <text x="36" y="206" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="13" font-weight="600" fill="#9FD4FF" letter-spacing="2">本地优先 · 零知识 · 开源</text>
+
+    <!-- 主标题 — 品牌名 -->
+    <text x="0" y="272" font-family="'Sora','Segoe UI Semibold','PingFang SC','Microsoft YaHei',sans-serif" font-size="88" font-weight="800" letter-spacing="1.5">
+      <tspan fill="#FFFFFF">bas</tspan><tspan fill="url(#textGold)">tion</tspan>
+    </text>
+
+    <!-- 下划线装饰 -->
+    <rect x="0" y="292" width="120" height="4.5" rx="2.25" fill="url(#textGold)" opacity="0.85"/>
+
+    <!-- 副标题 -->
+    <text x="0" y="348" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="22" font-weight="400" fill="#8899B5" letter-spacing="1.5">把密码锁进你自己的堡垒</text>
+
+    <!-- 三行特性 -->
+    <g transform="translate(0, 398)">
+      <rect x="0" y="0" width="300" height="36" rx="10" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFFFFF" stroke-opacity="0.06"/>
+      <circle cx="18" cy="18" r="3.5" fill="#5FB0F2"/>
+      <text x="32" y="24" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="500" fill="#A9BBD0">AES-256-GCM 端到端加密</text>
+    </g>
+    <g transform="translate(0, 442)">
+      <rect x="0" y="0" width="300" height="36" rx="10" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFFFFF" stroke-opacity="0.06"/>
+      <circle cx="18" cy="18" r="3.5" fill="#F5B942"/>
+      <text x="32" y="24" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="500" fill="#A9BBD0">硬件 Keystore（TEE）安全隔离</text>
+    </g>
+    <g transform="translate(0, 486)">
+      <rect x="0" y="0" width="300" height="36" rx="10" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFFFFF" stroke-opacity="0.06"/>
+      <circle cx="18" cy="18" r="3.5" fill="#7C4DFF"/>
+      <text x="32" y="24" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="500" fill="#A9BBD0">完全离线 · 无需网络权限</text>
+    </g>
+
+    <!-- 底部标签 -->
+    <g transform="translate(0, 548)">
+      <rect x="0" y="0" width="112" height="28" rx="14" fill="#5FB0F2" fill-opacity="0.1" stroke="#5FB0F2" stroke-opacity="0.25"/>
+      <text x="14" y="19" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" font-weight="600" fill="#9FD4FF">Android 17</text>
+
+      <rect x="122" y="0" width="136" height="28" rx="14" fill="#F5B942" fill-opacity="0.1" stroke="#F5B942" stroke-opacity="0.25"/>
+      <text x="136" y="19" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" font-weight="600" fill="#FFE6A8">Bitwarden 兼容</text>
+
+      <rect x="268" y="0" width="130" height="28" rx="14" fill="#7C4DFF" fill-opacity="0.1" stroke="#7C4DFF" stroke-opacity="0.25"/>
+      <text x="282" y="19" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" font-weight="600" fill="#B39DDB">KeePass 兼容</text>
+    </g>
   </g>
 
-  <text x="92" y="300" font-family="'Segoe UI Semibold','Segoe UI',system-ui,'PingFang SC','Microsoft YaHei',sans-serif" font-size="96" font-weight="800" letter-spacing="1"><tspan fill="#FFFFFF">bas</tspan><tspan fill="#F5B942">tion</tspan></text>
-  <rect x="96" y="324" width="132" height="5" rx="2.5" fill="#F5B942"/>
-  <text x="94" y="372" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="23" font-weight="500" fill="#8899B5" letter-spacing="2">本地优先 · 零知识 · 开源的 Android 密码管理器</text>
-  <text x="94" y="430" font-family="'Segoe UI Semibold','Segoe UI',system-ui,sans-serif" font-size="32" font-weight="700" fill="#EAF2FB">你的密码，只属于你。</text>
-  <text x="94" y="470" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="18" font-weight="400" fill="#8FA6C0" letter-spacing="1">AES-256-GCM · 硬件 Keystore · 完全离线运行</text>
+  <!-- 噪点纹理覆盖（极淡） -->
+  <rect width="1280" height="640" fill="#0A0E27" opacity="0.03" style="mix-blend-mode: overlay"/>
 </svg>
