@@ -112,7 +112,7 @@ fun SupportAuthorScreen(
             val options = BitmapFactory.Options().apply { inSampleSize = sampleSize.coerceAtLeast(1) }
             val bitmap = context.assets.open(assetPath).use { BitmapFactory.decodeStream(it, null, options) }
             originalBitmap = bitmap
-            imageBitmap = bitmap.asImageBitmap()
+            imageBitmap = bitmap?.asImageBitmap()
         } catch (e: IOException) {
             // 图片加载失败
         }
