@@ -9,52 +9,60 @@
     </linearGradient>
 
     <!-- 弥散光晕 — 右上金色 -->
-    <radialGradient id="haloGold" cx="75%" cy="30%" r="50%">
-      <stop offset="0%" stop-color="#F5B942" stop-opacity="0.22"/>
-      <stop offset="30%" stop-color="#F5B942" stop-opacity="0.08"/>
+    <radialGradient id="haloGold" cx="78%" cy="28%" r="48%">
+      <stop offset="0%" stop-color="#F5B942" stop-opacity="0.20"/>
+      <stop offset="35%" stop-color="#F5B942" stop-opacity="0.07"/>
       <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
 
     <!-- 弥散光晕 — 右下蓝色 -->
-    <radialGradient id="haloBlue" cx="60%" cy="75%" r="55%">
-      <stop offset="0%" stop-color="#5FB0F2" stop-opacity="0.20"/>
-      <stop offset="40%" stop-color="#2E7CC8" stop-opacity="0.08"/>
+    <radialGradient id="haloBlue" cx="62%" cy="72%" r="52%">
+      <stop offset="0%" stop-color="#5FB0F2" stop-opacity="0.18"/>
+      <stop offset="40%" stop-color="#2E7CC8" stop-opacity="0.07"/>
       <stop offset="100%" stop-color="#2E7CC8" stop-opacity="0"/>
     </radialGradient>
 
     <!-- 弥散光晕 — 左侧紫色 -->
-    <radialGradient id="haloPurple" cx="15%" cy="55%" r="45%">
-      <stop offset="0%" stop-color="#7C4DFF" stop-opacity="0.14"/>
-      <stop offset="50%" stop-color="#7C4DFF" stop-opacity="0.04"/>
+    <radialGradient id="haloPurple" cx="12%" cy="55%" r="42%">
+      <stop offset="0%" stop-color="#7C4DFF" stop-opacity="0.12"/>
+      <stop offset="50%" stop-color="#7C4DFF" stop-opacity="0.03"/>
       <stop offset="100%" stop-color="#7C4DFF" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- 盾牌主体渐变 -->
-    <linearGradient id="shieldBody" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1A2A5E"/>
-      <stop offset="50%" stop-color="#152250"/>
-      <stop offset="100%" stop-color="#0E1838"/>
+    <!-- 盾牌玻璃主体渐变（半透明，轻盈） -->
+    <linearGradient id="shieldBody" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#2A3F7A" stop-opacity="0.92"/>
+      <stop offset="45%" stop-color="#16244E" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#0C1530" stop-opacity="0.92"/>
     </linearGradient>
 
-    <!-- 盾牌高光 -->
-    <linearGradient id="shieldHighlight" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
-      <stop offset="40%" stop-color="#9FD4FF" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#5FB0F2" stop-opacity="0.02"/>
+    <!-- 盾牌竖向高光（玻璃反光） -->
+    <linearGradient id="shieldGlass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="22%" stop-color="#9FD4FF" stop-opacity="0.05"/>
+      <stop offset="55%" stop-color="#5FB0F2" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.08"/>
     </linearGradient>
 
     <!-- 锁孔金色渐变 -->
     <linearGradient id="keyholeGold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFE6A8"/>
-      <stop offset="30%" stop-color="#F5B942"/>
+      <stop offset="35%" stop-color="#F5B942"/>
       <stop offset="70%" stop-color="#E5A820"/>
       <stop offset="100%" stop-color="#C8860A"/>
     </linearGradient>
 
+    <!-- 品牌文字金色渐变 -->
+    <linearGradient id="textGold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F5B942"/>
+      <stop offset="50%" stop-color="#FFD874"/>
+      <stop offset="100%" stop-color="#F5B942"/>
+    </linearGradient>
+
     <!-- 锁孔发光 -->
     <radialGradient id="keyholeGlow" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#FFE6A8" stop-opacity="0.7"/>
-      <stop offset="60%" stop-color="#F5B942" stop-opacity="0.3"/>
+      <stop offset="0%" stop-color="#FFE6A8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#F5B942" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
 
@@ -63,58 +71,23 @@
       <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#9FD4FF" stroke-opacity="0.04" stroke-width="0.8"/>
     </pattern>
 
-    <!-- 噪点纹理 -->
-    <filter id="noise">
-      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/>
-      <feColorMatrix type="saturate" values="0"/>
-      <feComponentTransfer>
-        <feFuncA type="linear" slope="0.03"/>
-      </feComponentTransfer>
-      <feBlend in="SourceGraphic" mode="multiply"/>
-    </filter>
-
     <!-- 高斯模糊 -->
-    <filter id="blurLg">
-      <feGaussianBlur stdDeviation="40"/>
-    </filter>
-    <filter id="blurMd">
-      <feGaussianBlur stdDeviation="16"/>
-    </filter>
-    <filter id="blurSm">
-      <feGaussianBlur stdDeviation="6"/>
-    </filter>
+    <filter id="blurLg"><feGaussianBlur stdDeviation="42"/></filter>
+    <filter id="blurMd"><feGaussianBlur stdDeviation="16"/></filter>
 
-    <!-- 盾牌投影 -->
-    <filter id="shieldShadow">
-      <feDropShadow dx="0" dy="12" stdDeviation="28" flood-color="#0A0E27" flood-opacity="0.6"/>
+    <!-- 盾牌柔和投影 -->
+    <filter id="shieldShadow" x="-40%" y="-20%" width="180%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="22" flood-color="#05070F" flood-opacity="0.55"/>
     </filter>
 
     <!-- 锁孔发光滤镜 -->
-    <filter id="glowFilter">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
+    <filter id="glowFilter" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- 数据流粒子渐变 -->
-    <linearGradient id="particleBlue" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#9FD4FF" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#5FB0F2" stop-opacity="0.3"/>
-    </linearGradient>
-
-    <!-- 品牌文字渐变 -->
-    <linearGradient id="textGold" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#F5B942"/>
-      <stop offset="50%" stop-color="#FFD874"/>
-      <stop offset="100%" stop-color="#F5B942"/>
-    </linearGradient>
-
-    <!-- 裁剪路径 -->
-    <clipPath id="shieldClip">
-      <path d="M170 220 L170 340 C170 370 190 400 250 430 L330 460 L410 430 C470 400 490 370 490 340 L490 220 L330 170 Z"/>
-    </clipPath>
   </defs>
 
   <!-- 背景 -->
@@ -128,90 +101,102 @@
   <!-- 网格 -->
   <rect width="1280" height="640" fill="url(#grid)"/>
 
-  <!-- ==================== 右侧视觉区：盾牌 + 锁孔 ==================== -->
-  <g transform="translate(780, 80)">
-    <!-- 大光晕 -->
-    <ellipse cx="230" cy="260" rx="200" ry="200" fill="url(#keyholeGlow)" filter="url(#blurLg)" opacity="0.5"/>
-    <ellipse cx="230" cy="260" rx="120" ry="120" fill="url(#keyholeGlow)" filter="url(#blurMd)" opacity="0.4"/>
+  <!-- ==================== 右侧视觉区：修长玻璃盾牌 ==================== -->
+  <g transform="translate(720, 56)">
+    <!-- 背后柔光 -->
+    <ellipse cx="340" cy="320" rx="190" ry="240" fill="url(#keyholeGlow)" filter="url(#blurLg)" opacity="0.45"/>
+    <ellipse cx="340" cy="320" rx="120" ry="150" fill="url(#keyholeGlow)" filter="url(#blurMd)" opacity="0.35"/>
 
-    <!-- 环绕轨道线（装饰） -->
-    <g opacity="0.15" stroke="#9FD4FF" stroke-width="0.8" fill="none">
-      <ellipse cx="230" cy="260" rx="170" ry="170" stroke-dasharray="8 12" transform="rotate(-15,230,260)"/>
-      <ellipse cx="230" cy="260" rx="190" ry="130" stroke-dasharray="5 16" transform="rotate(25,230,260)"/>
+    <!-- 环绕细轨道线（轻装饰） -->
+    <g opacity="0.12" stroke="#9FD4FF" stroke-width="0.8" fill="none">
+      <ellipse cx="340" cy="320" rx="180" ry="220" stroke-dasharray="6 14" transform="rotate(-12,340,320)"/>
+      <ellipse cx="340" cy="320" rx="205" ry="165" stroke-dasharray="4 18" transform="rotate(22,340,320)"/>
     </g>
 
     <!-- 数据粒子点 -->
     <g>
-      <circle cx="60" cy="260" r="2.5" fill="#9FD4FF" opacity="0.7">
+      <circle cx="120" cy="180" r="2.2" fill="#9FD4FF" opacity="0.7">
         <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="400" cy="180" r="2" fill="#FFE6A8" opacity="0.6">
+      <circle cx="560" cy="240" r="2" fill="#FFE6A8" opacity="0.6">
         <animate attributeName="opacity" values="0.6;0.15;0.6" dur="4s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="380" cy="340" r="2.5" fill="#5FB0F2" opacity="0.7">
+      <circle cx="540" cy="420" r="2.4" fill="#5FB0F2" opacity="0.7">
         <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3.5s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="70" cy="350" r="1.8" fill="#7C4DFF" opacity="0.5">
+      <circle cx="130" cy="460" r="1.8" fill="#7C4DFF" opacity="0.5">
         <animate attributeName="opacity" values="0.5;0.1;0.5" dur="5s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="420" cy="260" r="1.5" fill="#FFE6A8" opacity="0.5">
-        <animate attributeName="opacity" values="0.5;0.1;0.5" dur="4.5s" repeatCount="indefinite"/>
-      </circle>
     </g>
 
-    <!-- ====== 盾牌 ====== -->
+    <!-- ====== 修长玻璃盾牌 ====== -->
     <g filter="url(#shieldShadow)">
-      <!-- 盾牌主体 -->
-      <path d="M120 200 L120 370 C120 410 145 450 230 490 L340 530 L450 490 C535 450 560 410 560 370 L560 200 L340 140 Z"
-            fill="url(#shieldBody)" stroke="#2E5CA8" stroke-opacity="0.4" stroke-width="1.5"/>
+      <!-- 主体（高宽比约 1.42，轻盈半透明） -->
+      <path d="M236 158
+               C236 158 286 138 340 138
+               C394 138 444 158 444 158
+               L444 330
+               C444 420 392 492 340 548
+               C288 492 236 420 236 330
+               Z"
+            fill="url(#shieldBody)" stroke="#3E6FC0" stroke-opacity="0.55" stroke-width="1.6"/>
 
-      <!-- 盾牌内发光边 -->
-      <path d="M132 210 L132 365 C132 400 154 435 230 472 L340 510 L450 472 C526 435 548 400 548 365 L548 210 L340 152 Z"
-            fill="none" stroke="#5FB0F2" stroke-opacity="0.12" stroke-width="1"/>
+      <!-- 玻璃竖向反光层 -->
+      <path d="M236 158 C236 158 286 138 340 138 C394 138 444 158 444 158
+               L444 330 C444 420 392 492 340 548 C288 492 236 420 236 330 Z"
+            fill="url(#shieldGlass)"/>
 
-      <!-- 盾牌高光层 -->
-      <path d="M120 200 L120 370 C120 410 145 450 230 490 L340 530 L450 490 C535 450 560 410 560 370 L560 200 L340 140 Z"
-            fill="url(#shieldHighlight)"/>
+      <!-- 内描边（细，精致） -->
+      <path d="M250 170 C250 170 294 152 340 152 C386 152 430 170 430 170
+               L430 328 C430 410 382 476 340 530 C298 476 250 410 250 328 Z"
+            fill="none" stroke="#7FC4FF" stroke-opacity="0.18" stroke-width="1"/>
 
-      <!-- 盾牌顶部截面高光 -->
-      <path d="M120 200 L340 140 L560 200" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="1.2"/>
+      <!-- 顶部高光弧 -->
+      <path d="M236 158 C236 158 286 138 340 138 C394 138 444 158 444 158"
+            fill="none" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.4"/>
 
-      <!-- 玻璃反光条（左） -->
-      <path d="M145 220 L145 350 C145 380 165 410 220 440 L280 468" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="8" stroke-linecap="round"/>
+      <!-- 左侧竖向反光条（玻璃质感） -->
+      <path d="M266 178 L266 330 C266 396 296 452 326 496"
+            fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="6" stroke-linecap="round"/>
+
+      <!-- 内部细密横纹（数据/加密纹理） -->
+      <g stroke="#7FC4FF" stroke-opacity="0.06" stroke-width="0.8">
+        <path d="M252 250 L428 250" fill="none"/>
+        <path d="M258 290 L422 290" fill="none"/>
+        <path d="M266 330 L414 330" fill="none"/>
+        <path d="M276 370 L404 370" fill="none"/>
+      </g>
     </g>
 
-    <!-- ====== 锁孔 ====== -->
+    <!-- ====== 锁孔（精致居中） ====== -->
     <g>
-      <!-- 锁孔外发光 -->
-      <circle cx="340" cy="370" r="28" fill="url(#keyholeGlow)" filter="url(#glowFilter)" opacity="0.8"/>
+      <circle cx="340" cy="300" r="26" fill="url(#keyholeGlow)" filter="url(#glowFilter)" opacity="0.85"/>
 
-      <!-- 锁孔圆环 -->
-      <circle cx="340" cy="370" r="22" fill="none" stroke="url(#keyholeGold)" stroke-width="4" opacity="0.9"/>
+      <!-- 外环 -->
+      <circle cx="340" cy="300" r="20" fill="none" stroke="url(#keyholeGold)" stroke-width="3.5" opacity="0.95"/>
 
-      <!-- 锁孔圆形填充 -->
-      <circle cx="340" cy="370" r="18" fill="#0E1838"/>
+      <!-- 内核 -->
+      <circle cx="340" cy="300" r="15" fill="#0C1530"/>
+      <circle cx="340" cy="300" r="11" fill="url(#keyholeGlow)" opacity="0.55"/>
 
-      <!-- 锁孔内部高光 -->
-      <circle cx="340" cy="370" r="14" fill="url(#keyholeGlow)" opacity="0.5"/>
+      <!-- 下方钥匙杆 -->
+      <rect x="333" y="306" width="14" height="34" rx="3" fill="#0C1530"/>
+      <rect x="333" y="306" width="14" height="34" rx="3" fill="none" stroke="url(#keyholeGold)" stroke-width="2.6" opacity="0.9"/>
+      <rect x="337" y="312" width="6" height="22" rx="2" fill="url(#keyholeGlow)" opacity="0.4"/>
 
-      <!-- 锁孔方形延伸 -->
-      <path d="M326 378 L354 378 L354 412 L326 412 Z" fill="#0E1838" rx="2"/>
-      <path d="M326 378 L354 378 L354 412 L326 412 Z" fill="none" stroke="url(#keyholeGold)" stroke-width="3" opacity="0.85"/>
-      <rect x="331" y="382" width="18" height="26" rx="1" fill="url(#keyholeGlow)" opacity="0.35"/>
-
-      <!-- 锁孔底部圆角 -->
-      <path d="M329 410 A7 7 0 0 0 343 410 L351 410 A7 7 0 0 0 337 410" fill="none" stroke="url(#keyholeGold)" stroke-width="2.5" opacity="0.7"/>
+      <!-- 底部小圆角收尾 -->
+      <path d="M336 338 A6 6 0 0 0 344 338" fill="none" stroke="url(#keyholeGold)" stroke-width="2.4" opacity="0.75"/>
     </g>
 
-    <!-- ====== 加密数据流线 ====== -->
-    <g opacity="0.25">
-      <path d="M200 300 Q270 290 340 350" fill="none" stroke="#5FB0F2" stroke-width="0.8" stroke-dasharray="4 8">
+    <!-- 加密数据流线 -->
+    <g opacity="0.22">
+      <path d="M260 250 Q310 250 340 290" fill="none" stroke="#5FB0F2" stroke-width="0.8" stroke-dasharray="4 8">
         <animate attributeName="stroke-dashoffset" values="0;-24" dur="2s" repeatCount="indefinite"/>
       </path>
-      <path d="M440 290 Q390 320 360 370" fill="none" stroke="#FFE6A8" stroke-width="0.8" stroke-dasharray="4 8">
+      <path d="M420 250 Q380 270 360 295" fill="none" stroke="#FFE6A8" stroke-width="0.8" stroke-dasharray="4 8">
         <animate attributeName="stroke-dashoffset" values="0;-24" dur="2.5s" repeatCount="indefinite"/>
       </path>
-      <path d="M300 470 Q330 430 340 395" fill="none" stroke="#7C4DFF" stroke-width="0.8" stroke-dasharray="3 9">
+      <path d="M340 430 Q340 400 340 345" fill="none" stroke="#7C4DFF" stroke-width="0.8" stroke-dasharray="3 9">
         <animate attributeName="stroke-dashoffset" values="0;-24" dur="3s" repeatCount="indefinite"/>
       </path>
     </g>
@@ -265,6 +250,6 @@
     </g>
   </g>
 
-  <!-- 噪点纹理覆盖（极淡） -->
+  <!-- 极淡噪点覆盖 -->
   <rect width="1280" height="640" fill="#0A0E27" opacity="0.03" style="mix-blend-mode: overlay"/>
 </svg>
