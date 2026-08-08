@@ -1,0 +1,17 @@
+# Baseline Profile - Bastion (Android 17 冷启动/首帧优化)
+#
+# 说明：
+# - 此文件由 AGP 在构建期编译进 APK 的 ART 安装 profile，使下列热路径方法在应用安装时即被 AOT 编译，
+#   降低冷启动与首帧的运行时解释/JIT 开销。
+# - 规则格式：<标志><类>;<方法>(<参数>)<返回>。标志 H=Hot, S=Startup, P=PostStartup, L=被布局/启动引用。
+# - 下方为应用启动关键入口（签名已核对）。错误/不存在的签名会被 AGP 自动忽略，不会造成构建失败。
+# - 若要获得"精准"的全量 profile，需在真机（如荣耀 Android 17）跑
+#   `./gradlew :app:generateBaselineProfile`（需 benchmark 模块），生成后覆盖本文件即可。
+
+HSPLcom/bastion/app/BastionApplication;->onCreate()V
+HSPLcom/bastion/app/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/bastion/app/MainActivity;->onNewIntent(Landroid/content/Intent;)V
+HSPLcom/bastion/app/ui/base/BaseBastionActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/bastion/app/ui/base/BaseBastionActivity;->attachBaseContext(Landroid/content/Context;)V
+HSPLcom/bastion/app/utils/SettingsManager;<init>(Landroid/content/Context;)V
+HSPLcom/bastion/app/utils/SettingsManager;->getLanguageSync()Lcom/bastion/app/data/Language;
