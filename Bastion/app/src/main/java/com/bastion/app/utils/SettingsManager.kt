@@ -3,12 +3,13 @@ package com.bastion.app.utils
 import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.blockingFirst
 import androidx.datastore.preferences.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -138,6 +139,7 @@ data class PageAdjustmentSettingsSnapshot(
 class SettingsManager(private val context: Context) {
     
     private val dataStore: DataStore<Preferences> = context.dataStore
+    private val langPrefs by lazy { context.getSharedPreferences(LANG_CACHE_PREFS, Context.MODE_PRIVATE) }
 
     init {
         sharedSettingsScope.launch {
@@ -146,7 +148,10 @@ class SettingsManager(private val context: Context) {
     }
     
     companion object {
-        // 进程内语言缓存：供 attachBaseContext 等不能挂起的场景同步读取，避免主线程 runBlocking。
+        // 语言同步镜像：供 attachBaseContext 等不能挂起的场景同步读取，避免主线程 runBlocking。
+        // 进程内缓存 + SharedPreferences 磁盘镜像，冷启动（新进程）也能同步读取，无需 DataStore 阻塞 API。
+        private const val LANG_CACHE_PREFS = "bastion_lang_cache"
+        private const val LANG_CACHE_KEY = "language"
         @Volatile
         private var cachedLanguageName: String? = null
 
@@ -725,18 +730,25 @@ class SettingsManager(private val context: Context) {
             preferences[LANGUAGE_KEY] = language.name
         }
         cachedLanguageName = language.name
+        langPrefs.edit().putString(LANG_CACHE_KEY, language.name).apply()
     }
 
     /**
      * 同步读取当前语言（不挂起），用于 attachBaseContext 等无法使用协程的场景。
-     * 首次读取走 DataStore 阻塞读取（settings 文件很小，耗时极低），之后命中进程内缓存，
-     * 避免主线程 runBlocking + 200ms 超时的启动期卡顿。
+     * 优先命中进程内缓存 / SharedPreferences 镜像（瞬时），避免主线程 runBlocking + 200ms 超时。
+     * 镜像为空时（如升级后首启）一次性从 DataStore 迁移并写回镜像，仅触发一次，非每个 Activity。
      */
     fun getLanguageSync(): Language {
         cachedLanguageName?.let { return Language.valueOf(it) }
+        val mirror = langPrefs.getString(LANG_CACHE_KEY, null)
+        if (mirror != null) {
+            cachedLanguageName = mirror
+            return Language.valueOf(mirror)
+        }
         return try {
-            val name = dataStore.blockingFirst()[LANGUAGE_KEY] ?: Language.SYSTEM.name
+            val name = runBlocking { withTimeout(500) { dataStore.data.first()[LANGUAGE_KEY] ?: Language.SYSTEM.name } }
             cachedLanguageName = name
+            langPrefs.edit().putString(LANG_CACHE_KEY, name).apply()
             Language.valueOf(name)
         } catch (e: Exception) {
             Language.SYSTEM
