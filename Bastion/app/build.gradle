@@ -281,7 +281,9 @@ dependencies {
     // Pin profileinstaller to the latest stable patch and avoid older transitive copies.
     implementation "androidx.profileinstaller:profileinstaller:1.4.1"
     // 阶段二·稳定性：原计划在 debug 引入 LeakCanary 捕获内存泄漏，但 2.14 在 Android 17(API 37)
-    // 进程启动期(ContentProvider 自启)崩溃导致预览版无法启动，已回退。待确认 LeakCanary 3.0 兼容性后重做。
+    // 进程启动期(ContentProvider 自启)崩溃导致预览版无法启动，已回退。
+    // 经核查官方仓库：LeakCanary 无稳定版 3.0，最新仅为 v3.0-alpha-9（alpha）。要支持 Android 17
+    // 只能上 alpha 版，属重点决定，待用户确认后再接入（见 doc/android17-perf-optimization.md #9）。
     // debugImplementation "com.squareup.leakcanary:leakcanary-android:2.14"
     
     // Compose
