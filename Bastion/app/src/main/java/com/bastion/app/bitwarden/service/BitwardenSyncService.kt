@@ -339,7 +339,24 @@ class BitwardenSyncService(
                     when (result) {
                         is CipherSyncResult.Added -> ciphersAdded++
                         is CipherSyncResult.Updated -> ciphersUpdated++
-                        is CipherSyncResult.Conflict -> conflictsDetected++
+                        is CipherSyncResult.Conflict -> {
+                            conflictsDetected++
+                            // BUG-4 修复：让真正的并发冲突落盘备份，避免服务器侧编辑在下次整体上传时被静默覆盖丢失。
+                            runCatchingObserved {
+                                val localEntry = passwordEntryDao.getByBitwardenCipherIdInVault(
+                                    vaultId = vault.id,
+                                    cipherId = cipherApi.id
+                                )
+                                if (localEntry != null) {
+                                    createConflictBackup(
+                                        vault = vault,
+                                        entry = localEntry,
+                                        serverCipher = cipherApi,
+                                        conflictType = BitwardenConflictBackup.TYPE_CONCURRENT_EDIT
+                                    )
+                                }
+                            }
+                        }
                         is CipherSyncResult.Skipped -> {
                             if (result.reason == "Local changes pending upload") {
                                 skippedDueToLocalDirty++
@@ -1185,7 +1202,8 @@ class BitwardenSyncService(
         val updateRequest = passwordEntryToCipherUpdateRequest(
             entry = entry,
             symmetricKey = symmetricKey,
-            mergedFields = mergedFields
+            mergedFields = mergedFields,
+            baselineCipher = baselineCipher
         )
         val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
 
@@ -1258,11 +1276,15 @@ class BitwardenSyncService(
                 success = true
             )
 
-            // 更新本地条目
-            val updatedEntry = entry.copy(
+            // BUG-1 修复：上传回写前重新读取最新行，避免用“网络往返前的快照”整行覆盖，
+            // 从而静默丢弃往返期间发生的并发本地编辑。若期间确有新的本地编辑（updatedAt 变化），
+            // 保留 dirty 标记，下一轮同步会重新上传新内容，绝不丢数据。
+            val latestEntry = passwordEntryDao.getPasswordEntryById(entry.id) ?: entry
+            val concurrentLocalEdit = latestEntry.updatedAt.time != entry.updatedAt.time
+            val updatedEntry = latestEntry.copy(
                 bitwardenRevisionDate = updatedCipher.revisionDate,
-                bitwardenLocalModified = false,
-                updatedAt = Date()
+                bitwardenLocalModified = concurrentLocalEdit,
+                updatedAt = if (concurrentLocalEdit) latestEntry.updatedAt else Date()
             )
             passwordEntryDao.update(updatedEntry)
 
@@ -1695,7 +1717,8 @@ class BitwardenSyncService(
     private fun passwordEntryToCipherUpdateRequest(
         entry: PasswordEntry,
         symmetricKey: SymmetricCryptoKey,
-        mergedFields: List<CipherFieldApiData>? = null
+        mergedFields: List<CipherFieldApiData>? = null,
+        baselineCipher: CipherApiResponse? = null
     ): CipherUpdateRequest {
         val crypto = com.bastion.app.bitwarden.crypto.BitwardenCrypto
         if (entry.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true)) {
@@ -1710,7 +1733,9 @@ class BitwardenSyncService(
                 folderId = entry.bitwardenFolderId,
                 name = encryptedName,
                 notes = encryptedNotes,
-                login = CipherLoginApiData(
+                // BUG-3 修复：SSH 更新时保留服务器侧已存在的 login（含 fido2/uris 等），
+                // 避免整体 PUT 把服务器侧字段清空。
+                login = baselineCipher?.login ?: CipherLoginApiData(
                     uris = emptyList(),
                     fido2Credentials = emptyList()
                 ),
@@ -1741,9 +1766,11 @@ class BitwardenSyncService(
                 crypto.encryptString(resolveBitwardenTotpPayload(entry), symmetricKey)
             } else null,
             uris = buildEncryptedLoginUris(entry, symmetricKey) ?: emptyList(),
-            fido2Credentials = emptyList()
+            // BUG-2 修复：整体 PUT 会替换整个 login，硬编码空列表会清空服务器侧已存在的 Passkey。
+            // 改用 baselineCipher 中已有的 fido2Credentials 原样回传，保护服务器 Passkey 不被抹除。
+            fido2Credentials = baselineCipher?.login?.fido2Credentials ?: emptyList()
         )
-        
+
         return CipherUpdateRequest(
             type = 1,
             folderId = entry.bitwardenFolderId,

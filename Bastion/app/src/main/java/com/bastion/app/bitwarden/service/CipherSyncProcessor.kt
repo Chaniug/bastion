@@ -377,6 +377,11 @@ class CipherSyncProcessor(
             passwordEntryDao.insert(newEntry)
             return CipherSyncResult.Added
         } else {
+            // BUG-5 修复：本地存在未上传改动、且服务器软删除（非本地删除待决）时，视为并发冲突，
+            // 保留本地编辑并交给冲突流程处理，避免服务器删除静默丢弃本地未上传数据。
+            if (existing.bitwardenLocalModified && isServerDeleted && !hasPendingDelete) {
+                return CipherSyncResult.Conflict
+            }
             if (isServerDeleted) {
                 passwordEntryDao.update(
                     existing.copy(

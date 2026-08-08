@@ -514,6 +514,7 @@ interface PasswordEntryDao {
         WHERE bitwarden_vault_id = :vaultId
           AND bitwarden_cipher_id IS NOT NULL
           AND isDeleted = 0
+          AND bitwarden_local_modified = 0
           AND bitwarden_cipher_id NOT IN (:keepIds)
           AND NOT EXISTS (
               SELECT 1
