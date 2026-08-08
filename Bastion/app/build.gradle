@@ -194,7 +194,7 @@ android {
     // 方式是 androidComponents + SingleArtifact.APK 的 listenToArtifacts 机制（自定义 Copy
     // 任务 + BuiltArtifacts 元数据）。为尽快让构建门进入真正的编译阶段并产出可真机验证的
     // preview 包，此处先移除失效块，自定义命名（Bastion-Android-*.APK）留作后续用正确方式还原，
-    // 还原方案见仓库 /doc/phaseA-apk-rename-restore.md。CI 的 APK 收集通配符（*.apk/*.APK）
+    // 还原方案见仓库 /docs/phaseA-apk-rename-restore.md。CI 的 APK 收集通配符（*.apk/*.APK）
     // 对默认命名 app-arm64-v8a-debug.apk 同样生效，不影响出包与发布。
 
     sourceSets {
@@ -283,7 +283,7 @@ dependencies {
     // 阶段二·稳定性：原计划在 debug 引入 LeakCanary 捕获内存泄漏，但 2.14 在 Android 17(API 37)
     // 进程启动期(ContentProvider 自启)崩溃导致预览版无法启动，已回退。
     // 经核查官方仓库：LeakCanary 无稳定版 3.0，最新仅为 v3.0-alpha-9（alpha）。要支持 Android 17
-    // 只能上 alpha 版，属重点决定，待用户确认后再接入（见 doc/android17-perf-optimization.md #9）。
+    // 只能上 alpha 版，属重点决定，待用户确认后再接入（见 docs/android17-perf-optimization.md #9）。
     // debugImplementation "com.squareup.leakcanary:leakcanary-android:2.14"
     
     // Compose
