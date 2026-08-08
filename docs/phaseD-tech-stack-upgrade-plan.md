@@ -278,7 +278,7 @@ targetSdk 35  // 从 34 升级
 | Compose BOM 追新 | 已很新（2026.03），且 Material3 Expressive 在 alpha 通道，贸然追新引入不稳定 |
 | Gradle 8.9 → 9.x | Gradle 9 有 breaking change（API 移除），缓 |
 
-> **⚠️ 上述"不做"可能被 Android 17 升级推翻**：若维护者确认"拉到安卓17（API 37）"，则按官方兼容矩阵必须 **AGP 9.1.1 + Gradle 9.3.1 + 很可能 Kotlin 2.2 + mockk 1.14**，即上述四项"不做"全部需要重做。此为 D 计划制定时未预见的新需求，以 `doc/targetSdk-android17-plan.md` 的决策为准。
+> **⚠️ 上述"不做"可能被 Android 17 升级推翻**：若维护者确认"拉到安卓17（API 37）"，则按官方兼容矩阵必须 **AGP 9.1.1 + Gradle 9.3.1 + 很可能 Kotlin 2.2 + mockk 1.14**，即上述四项"不做"全部需要重做。此为 D 计划制定时未预见的新需求，以 `docs/targetSdk-android17-plan.md` 的决策为准。
 
 ---
 

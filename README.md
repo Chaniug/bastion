@@ -318,7 +318,7 @@ bastion/
 │   ├── privacy.html      # 隐私政策
 │   ├── terms.html        # 服务条款
 │   └── assets/           # style.css / main.js / SVG 图标
-├── doc/                  # 技术文档（升级计划、架构分析等）
+├── docs/                # 技术文档（升级计划、架构分析、开发笔记等）
 ├── image/                # README 配图与截图
 │   └── screenshots/      # 应用界面截图
 └── LICENSE
