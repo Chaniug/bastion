@@ -13,10 +13,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import com.bastion.app.data.AppSettings
 import com.bastion.app.data.Language
 import com.bastion.app.security.SessionManager
@@ -46,20 +43,11 @@ abstract class BaseBastionActivity : FragmentActivity() {
     
     override fun attachBaseContext(newBase: Context?) {
         if (newBase != null) {
-            val tempSettingsManager = SettingsManager(newBase)
-            // 使用超时保护，防止 ANR
+            // 阶段二·#8：用同步读取（带进程内缓存）替换主线程 runBlocking + 200ms 超时，
+            // 消除启动期主线程卡顿；异常时回退中文以保持原行为。
             val language = try {
-                runBlocking {
-                    withTimeout(200) {
-                        try {
-                            tempSettingsManager.settingsFlow.first().language
-                        } catch (e: Exception) {
-    Language.CHINESE
-                        }
-                    }
-                }
+                SettingsManager(newBase).getLanguageSync()
             } catch (e: Exception) {
-                // 超时或出错，回退到默认
                 Language.CHINESE
             }
             super.attachBaseContext(LocaleHelper.setLocale(newBase, language))

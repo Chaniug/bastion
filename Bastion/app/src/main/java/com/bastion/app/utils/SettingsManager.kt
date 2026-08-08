@@ -3,6 +3,7 @@ package com.bastion.app.utils
 import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.blockingFirst
 import androidx.datastore.preferences.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -145,6 +146,10 @@ class SettingsManager(private val context: Context) {
     }
     
     companion object {
+        // 进程内语言缓存：供 attachBaseContext 等不能挂起的场景同步读取，避免主线程 runBlocking。
+        @Volatile
+        private var cachedLanguageName: String? = null
+
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
         private val OLED_PURE_BLACK_ENABLED_KEY = booleanPreferencesKey("oled_pure_black_enabled")
         private val COLOR_SCHEME_KEY = stringPreferencesKey("color_scheme")
@@ -718,6 +723,23 @@ class SettingsManager(private val context: Context) {
     suspend fun updateLanguage(language: Language) {
         dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = language.name
+        }
+        cachedLanguageName = language.name
+    }
+
+    /**
+     * 同步读取当前语言（不挂起），用于 attachBaseContext 等无法使用协程的场景。
+     * 首次读取走 DataStore 阻塞读取（settings 文件很小，耗时极低），之后命中进程内缓存，
+     * 避免主线程 runBlocking + 200ms 超时的启动期卡顿。
+     */
+    fun getLanguageSync(): Language {
+        cachedLanguageName?.let { return Language.valueOf(it) }
+        return try {
+            val name = dataStore.blockingFirst()[LANGUAGE_KEY] ?: Language.SYSTEM.name
+            cachedLanguageName = name
+            Language.valueOf(name)
+        } catch (e: Exception) {
+            Language.SYSTEM
         }
     }
 
