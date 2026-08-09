@@ -4,7 +4,7 @@
         <!-- 系统 Splash 根据夜间资源绘制 -->
         <item name="android:windowBackground">@color/bastion_startup_background</item>
         <item name="android:windowSplashScreenBackground">@color/bastion_startup_background</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@color/bastion_startup_background</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@color/bastion_startup_background</item>
         <item name="android:navigationBarColor">@color/bastion_startup_background</item>
         <item name="android:windowLightStatusBar">false</item>
