@@ -126,7 +126,7 @@ bastion 在 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维�
 - **epoch 秒版本号**：`versionCode` 自增，干净覆盖安装无冲突。
 
 ### 🎨 视觉与品牌
-- **深色玻璃卡启动图标重设计**：玻璃盾牌 + 金色锁孔启动图标，背景采用 MagicOS 桌面"深灰半透明玻璃卡"风格（对齐 QQ/微信 桌面图标观感：60% 深灰半透明 + 顶部高光渐变）。深灰作为中性底，让前景蓝盾金锁成为视觉焦点；半透明 + 顶部高光消除 SplashScreen 黑色圆环。
+- **透明背景启动图标重设计**：玻璃盾牌 + 金色锁孔启动图标，背景完全透明 —— 前景直接浮在桌面壁纸与 SplashScreen 整体背景上，不绘制任何底色。为避免在 Honor 等 OEM 上出现 SplashScreen "黑色圆环"，主题中 `android:windowSplashScreenIconBackgroundColor` 已显式设为 `@android:color/transparent`，让图标圆区透出 splash 背景而非兜底深色。
 - **多主题体系**：自然 / Monet / 暗色 / 纯黑 / RG 护眼。
 
 ---
@@ -220,7 +220,7 @@ mindmap
 | 版本号策略 | 固定 `versionCode` | epoch 秒自增，干净覆盖安装 |
 | 构建与发布 | 需自行配置签名密钥 | CI 内置签名 + Preview / Stable 自动发布 |
 | Android 17 | targetSdk 35 | targetSdk 37（AGP 9.1.1 + Kotlin 2.3.21） |
-| 启动图标 | 原品牌图标 | 玻璃盾牌 + 金色锁孔（深色玻璃卡：60% 深灰半透明 + 顶部高光，对齐 QQ/微信 桌面观感） |
+| 启动图标 | 原品牌图标 | 玻璃盾牌 + 金色锁孔（背景完全透明，前景浮于桌面/启动背景） |
 | 主题体系 | 基础主题 | 自然 / Monet / 暗色 / 纯黑 / RG 护眼 |
 | 工程测试 | 少量测试 | 583 条行为测试零失败 + CI 回归基线闸门 |
 
@@ -233,7 +233,7 @@ mindmap
 - [x] CI 内置签名与 Preview / Stable 自动发布 + 构建提速
 - [x] 性能与内存工程（结构化并发、Keystore 移出主线程、有界缓存）
 - [x] 无障碍优化（URL 扫描移出主线程、进程级初始化守卫）
-- [x] 深色玻璃卡启动图标重设计（60% 深灰半透明 + 顶部高光，对齐 QQ/微信 桌面观感；修复 SplashScreen 黑色圆环）
+- [x] 透明背景启动图标重设计（背景完全透明，前景浮于桌面/SplashScreen；显式透明图标圆区避免 OEM 黑色圆环）
 - [x] 主页面滚动流畅性（TOTP 降频）
 - [x] PasswordViewModel 拆分重构（4162 → 3472 行，8 个协调器）
 - [x] 行为测试网（583 条零失败 + CI 基线闸门）
