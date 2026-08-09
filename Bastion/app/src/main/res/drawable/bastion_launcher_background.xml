@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 图标背景：MagicOS 10 风格的"玻璃通透"图标底板。
-     半透明白底色 + 顶部高光渐变，让 adaptive-icon 在 SplashScreen 圆形舞台
-     和桌面 launcher 圆角矩形容器中，都呈现"一片玻璃浮在背景上"的通透感——
-     而不是纯透明（被 OEM 兜底成黑色圆环）或纯白实底（变成白贴纸）。
+<!-- 图标背景：MagicOS 桌面"深色玻璃卡"风格（对齐 QQ/微信 桌面图标观感）。
+     QQ/微信 在 MagicOS 桌面上的图标卡都是"深灰半透明玻璃"——能透出后面壁纸
+     的模糊色彩，顶部一抹亮营造玻璃反光，整体像"一片深色玻璃浮在桌面上"。
 
-     设计语言：
-     - 底色：20% 半透明白（#33FFFFFF），让 splash / 壁纸底色自然透出
-     - 顶部高光：53% 白 → 透明 的垂直渐变，营造"玻璃反光"
-     - 形状：22dp 圆角矩形，适配标准圆形 mask 与 MagicOS 大圆角矩形 mask
+     选深灰而非深蓝的原因：
+     - 蓝盾本身就是蓝色，背景再蓝会"蓝撞蓝"压垮前景；
+     - 深灰作为中性背景，让蓝盾金锁成为视觉焦点（与 QQ 企鹅在灰卡上
+       一样醒目）。
 
-     日间/夜间统一：白色玻璃在浅背景上呈现淡雅磨砂感，在深背景上呈现明显玻璃片，
-     与 MagicOS 10 桌面图标的视觉语言一致。 -->
+     与之前"半透明白玻璃"的区别：白色玻璃在浅背景上像白贴纸，达不到
+     QQ/微信 那种"沉着的卡片感"；深灰玻璃在任意背景下都呈现一致的
+     深色卡片观感，且能透出桌面/壁纸的色彩细节。 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 底层：半透明白玻璃板 -->
+    <!-- 底层：60% 深灰半透明玻璃板 -->
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="22dp" />
-            <solid android:color="#33FFFFFF" />
+            <solid android:color="#992F2F2F" />
         </shape>
     </item>
 
-    <!-- 顶层：顶部高光渐变（vertical，上亮下透） -->
+    <!-- 顶层：顶部高光渐变（vertical，上亮下透），营造玻璃反光 -->
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="22dp" />
