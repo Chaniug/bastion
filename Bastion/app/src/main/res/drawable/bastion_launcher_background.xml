@@ -1,10 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 图标背景：与启动屏背景同色融合。
-     Android 12+ 的 SplashScreen 会把图标前景裁进一个圆形舞台，若 adaptive-icon
-     背景为纯透明，部分 OEM（含荣耀 Android 17）的渲染管线会回退到默认深色，
-     在启动屏上呈现一圈黑色圆环。这里改用与 windowSplashScreenBackground 一致的
-     不透明底色，使图标圆形舞台"光学消隐"进启动背景，既消除了黑色圆环，又让
-     启动器桌面图标与启动屏三处视觉统一。颜色随日间/夜间资源自动切换。 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/bastion_startup_background" />
-</shape>
+<!-- 图标背景：MagicOS 10 风格的"玻璃通透"图标底板。
+     半透明白底色 + 顶部高光渐变，让 adaptive-icon 在 SplashScreen 圆形舞台
+     和桌面 launcher 圆角矩形容器中，都呈现"一片玻璃浮在背景上"的通透感——
+     而不是纯透明（被 OEM 兜底成黑色圆环）或纯白实底（变成白贴纸）。
+
+     设计语言：
+     - 底色：20% 半透明白（#33FFFFFF），让 splash / 壁纸底色自然透出
+     - 顶部高光：53% 白 → 透明 的垂直渐变，营造"玻璃反光"
+     - 形状：22dp 圆角矩形，适配标准圆形 mask 与 MagicOS 大圆角矩形 mask
+
+     日间/夜间统一：白色玻璃在浅背景上呈现淡雅磨砂感，在深背景上呈现明显玻璃片，
+     与 MagicOS 10 桌面图标的视觉语言一致。 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 底层：半透明白玻璃板 -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="22dp" />
+            <solid android:color="#33FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- 顶层：顶部高光渐变（vertical，上亮下透） -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="22dp" />
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#88FFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+
+</layer-list>
