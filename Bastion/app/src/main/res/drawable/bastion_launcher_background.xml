@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 透明底板：不绘制任何内容，让启动器背景/壁纸直接透出。
-     盾牌与金色锁孔作为前景层浮在其上，靠自身的轮廓光与投影撑起立体感，
-     更接近 Android 原生的"液态玻璃"观感（Android 无实时壁纸模糊，
-     实心白盘会被渲染成明显白贴纸，故改为全透明）。 -->
-<color xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="@android:color/transparent" />
+<!-- 图标背景：与启动屏背景同色融合。
+     Android 12+ 的 SplashScreen 会把图标前景裁进一个圆形舞台，若 adaptive-icon
+     背景为纯透明，部分 OEM（含荣耀 Android 17）的渲染管线会回退到默认深色，
+     在启动屏上呈现一圈黑色圆环。这里改用与 windowSplashScreenBackground 一致的
+     不透明底色，使图标圆形舞台"光学消隐"进启动背景，既消除了黑色圆环，又让
+     启动器桌面图标与启动屏三处视觉统一。颜色随日间/夜间资源自动切换。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/bastion_startup_background" />
+</shape>
