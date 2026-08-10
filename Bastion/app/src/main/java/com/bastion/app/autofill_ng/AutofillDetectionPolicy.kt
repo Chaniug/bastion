@@ -46,6 +46,31 @@ internal object AutofillDetectionPolicy {
         return credentialHint && accuracy.score >= Accuracy.MEDIUM.score
     }
 
+    /**
+     * 服务层守卫（京东搜索栏误弹修复）：当屏幕上无密码框、且所有登录类字段均为
+     * 弱信号（精度 < HIGH，即非系统标准 autofill hint）时，判定应抑制密码建议弹出。
+     *
+     * 这覆盖了弱解析兜底产生的误报：京东搜索栏被解析器以 LOWEST/MEDIUM 精度兜底为
+     * USERNAME，无密码框配对，再经 allowPackageMatching 按包名匹配出京东密码条目。
+     * 真实登录页有密码框（hasPasswordField=true），带标准系统 hint 的账号框精度为
+     * HIGH，两者均不受影响。手动请求（用户主动长按）也不受此守卫限制。
+     *
+     * @param hasPasswordField fillableTargets 中是否存在密码类字段
+     * @param loginFieldAccuracies fillableTargets 中所有登录类字段的精度列表
+     * @param manualRequest 是否为手动请求（FLAG_MANUAL_REQUEST）
+     * @return true 表示应跳过密码建议（不弹密码条目）
+     */
+    fun shouldSuppressWeakLoginSuggestion(
+        hasPasswordField: Boolean,
+        loginFieldAccuracies: List<Accuracy>,
+        manualRequest: Boolean,
+    ): Boolean {
+        if (manualRequest) return false
+        if (hasPasswordField) return false
+        if (loginFieldAccuracies.isEmpty()) return false
+        return loginFieldAccuracies.none { it.score >= Accuracy.HIGH.score }
+    }
+
     fun matchesUsernameLabel(value: String): Boolean {
         val normalized = value.lowercase(Locale.ENGLISH).trim()
         if (normalized.isBlank()) return false
