@@ -171,6 +171,7 @@ class CipherSyncProcessor(
     private val secureItemDao = database.secureItemDao()
     private val passkeyDao = database.passkeyDao()
     private val pendingOpDao = database.bitwardenPendingOperationDao()
+    private val customFieldDao = database.customFieldDao()
     private val securityManager = SecurityManager(context)
     private val json = Json {
         ignoreUnknownKeys = true
@@ -305,6 +306,9 @@ class CipherSyncProcessor(
         if (customFields.isNotEmpty()) {
             android.util.Log.i(TAG, "syncPasswordCipher has ${customFields.size} custom fields")
         }
+        // 提取用户自由自定义字段（排除 bastion 保留名），写入 custom_fields 表，
+        // 修复 Bitwarden 登录型条目自定义字段下载后不可见的问题。
+        val userCustomFields = buildLocalCustomFields(cipher.fields, symmetricKey)
         val remoteAppPackage = customFields["bastion_app_package"]
             ?: customFields["appPackageName"]
             ?: parsedUris.appPackageName
@@ -374,7 +378,11 @@ class CipherSyncProcessor(
                 isArchived = serverArchivedAt != null,
                 archivedAt = serverArchivedAt
             )
-            passwordEntryDao.insert(newEntry)
+            passwordEntryDao.insert(newEntry).also { newId ->
+                if (userCustomFields.isNotEmpty()) {
+                    customFieldDao.replaceFieldsForEntry(newId, userCustomFields)
+                }
+            }
             return CipherSyncResult.Added
         } else {
             // BUG-5 修复：本地存在未上传改动、且服务器软删除（非本地删除待决）时，视为并发冲突，
@@ -473,6 +481,11 @@ class CipherSyncProcessor(
                 bitwardenLocalModified = serverLostSshData
             )
             passwordEntryDao.update(updated)
+            // 远端有自定义字段时，以远端为准整体替换本地 custom_fields（本地未上传改动已被上方
+            // bitwardenLocalModified 分支拦截，不会误覆盖）；远端无自定义字段则保留本地。
+            if (userCustomFields.isNotEmpty()) {
+                customFieldDao.replaceFieldsForEntry(existing.id, userCustomFields)
+            }
             if (serverLostSshData) {
                 android.util.Log.i(TAG, "SSH key ${cipher.id} lost on server, marking for re-upload as Type 1 + fields")
             }
@@ -1739,6 +1752,43 @@ class CipherSyncProcessor(
         key: SymmetricCryptoKey
     ): Map<String, String> {
         return decryptCustomFields(fields, key).associate { it.name to it.value }
+    }
+
+    /**
+     * Bitwarden 登录型 cipher 中，以下字段名会被 bastion 映射到 [PasswordEntry] 的
+     * 专用列（appPackageName/email/phone/地址/ssh 等），不属于「用户自由自定义字段」。
+     * 这些字段不应再写入 custom_fields 表，否则会与专用列产生重复。
+     * 注意：所有 bastion 内部字段统一以 `bastion_` 前缀命名，故前缀命中即视为保留。
+     */
+    private val LOGIN_RESERVED_CUSTOM_FIELD_NAMES = setOf(
+        "apppackagename", "appname", "email", "phone",
+        "addressline", "address", "city", "state", "zipcode", "country"
+    )
+
+    private fun isLoginReservedCustomFieldName(name: String): Boolean {
+        val n = name.trim()
+        if (n.startsWith("bastion_", ignoreCase = true)) return true
+        return n.lowercase() in LOGIN_RESERVED_CUSTOM_FIELD_NAMES
+    }
+
+    /**
+     * 从解密后的 Bitwarden 字段中，提取「用户自由自定义字段」（排除 bastion 保留名），
+     * 转换为本地 [CustomField] 列表，供写入 custom_fields 表。
+     * 修复与 Monica e348623f3f 同类的「Bitwarden 自定义字段下载后不可见」问题。
+     */
+    private fun buildLocalCustomFields(fields: List<CipherFieldApiData>?, key: SymmetricCryptoKey): List<CustomField> {
+        return decryptCustomFields(fields, key)
+            .filter { !isLoginReservedCustomFieldName(it.name) }
+            .mapIndexed { index, f ->
+                CustomField(
+                    id = 0,
+                    entryId = 0,
+                    title = f.name,
+                    value = f.value,
+                    isProtected = f.type == 1, // Bitwarden 字段类型: 0=Text, 1=Hidden, 2=Boolean
+                    sortOrder = index
+                )
+            }
     }
 
     private fun parseLoginUris(
