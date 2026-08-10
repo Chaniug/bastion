@@ -24,7 +24,8 @@ import com.bastion.app.data.SecureItem
 
 /**
  * 功能拓展页面 - 聚合各种扩展功能的设置
- * 包含：显示分组、验证器震动提醒等
+ * 包含：显示分组、剪贴板自动清理、通知栏验证器等
+ * 验证器相关（震动 / 即将过期复制）见「验证器卡片调整」页，避免重复。
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -32,10 +33,6 @@ fun ExtensionsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToBastionPlus: () -> Unit = {},
     onNavigateToQuickSetup: () -> Unit = {},
-    validatorVibrationEnabled: Boolean = false,
-    onValidatorVibrationChange: (Boolean) -> Unit = {},
-    copyNextCodeWhenExpiring: Boolean = false,
-    onCopyNextCodeWhenExpiringChange: (Boolean) -> Unit = {},
     smartDeduplicationEnabled: Boolean = false,
     onSmartDeduplicationEnabledChange: (Boolean) -> Unit = {},
     clipboardAutoClearSeconds: Int = 0,
@@ -217,26 +214,6 @@ fun ExtensionsScreen(
             }
 
              
-            // 验证器设置（全部免费开放）
-            Spacer(modifier = Modifier.height(8.dp))
-            ExtensionSection(title = stringResource(R.string.extensions_totp_settings)) {
-                ExtensionSwitchItem(
-                    icon = Icons.Default.Vibration,
-                    title = stringResource(R.string.validator_vibration),
-                    description = stringResource(R.string.validator_vibration_description),
-                    checked = validatorVibrationEnabled,
-                    onCheckedChange = onValidatorVibrationChange
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                ExtensionSwitchItem(
-                    icon = Icons.Default.Update,
-                    title = stringResource(R.string.copy_next_code_when_expiring),
-                    description = stringResource(R.string.copy_next_code_when_expiring_description),
-                    checked = copyNextCodeWhenExpiring,
-                    onCheckedChange = onCopyNextCodeWhenExpiringChange
-                )
-            }
-            
             // 更多功能即将推出提示
             Card(
                 modifier = Modifier
