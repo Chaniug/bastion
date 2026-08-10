@@ -4,6 +4,11 @@
 > 对比时间：2026-08-10
 > 结论：**Bitwarden 的准确性确实更好，但原因不是算法更聪明，而是架构哲学不同。**
 
+> **改造进度**（2026-08-11 更新）
+> - ✅ **P0 已完成并合并**：dev `a97d7013` / main `16a8fbd5`，CI 双绿；预览版真机回归（京东/Via/电影猎手/淘宝/微信/支付宝）无回归
+> - 🔄 **P1 实施中**：拆掉 `weakLoginContext` 与服务层守卫（见「阶段二」）
+> - ⏳ P2 / P3 待后续评估
+
 ---
 
 ## 一、结论先行
@@ -167,7 +172,10 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 
 设计目标：**把判定从「决策层层层设卡」搬回「识别层一次判准」**，向 Bitwarden 的架构收敛，同时保留 Bastion 在 hint 覆盖面上的优势。
 
-### 阶段一（P0）：引入 UNKNOWN 语义，切断「未知 → 弱 USERNAME」
+### 阶段一（P0）：引入 UNKNOWN 语义，切断「未知 → 弱 USERNAME」 ✅ 已完成
+
+> 2026-08-11 落地：dev `a97d7013` / main `16a8fbd5`（CI 双绿），预览版真机回归通过。
+> 改动：`WEB_EDIT_TEXT` 兜底改判 `InternalHint.UNKNOWN`；新增 `AutofillFieldPromotionPolicy`（纯 JVM 单测 9 例）+ `promoteUsernameNeighborCandidates` 接入解析管道；诊断日志扩展；同步更新 `AutofillDetectionIntegrationGuardTest`。
 
 **改动**
 1. `EnhancedAutofillStructureParserV2.kt:1607` —— `WEB_EDIT_TEXT` 不再兜底为 `USERNAME:LOWEST`，改为产出 `InternalHint.UNKNOWN`（复活这个从未被使用的枚举值）。
@@ -190,12 +198,26 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 
 ### 阶段二（P1）：拆掉 `weakLoginContext` 与服务层守卫
 
-阶段一落地后，`weakLoginContext`（第 637 行）的全量放行和 v1.0.301 的服务层守卫都成了冗余补丁——前者要放行的场景已由邻居提升精准覆盖，后者要拦截的场景已在识别层消失。
+阶段一落地后，`weakLoginContext` 的全量放行和 v1.0.301 的服务层守卫都成了冗余补丁——前者要放行的场景已由「有密码框 → 全量放行」与邻居提升精准覆盖，后者要拦截的场景已在识别层消失（京东搜索栏已判为 UNKNOWN，不再产出 Login 字段）。
 
-**改动**：删除 `weakLoginContext` 分支，删除 `AutofillDetectionPolicy.shouldSuppressWeakLoginSuggestion()` 及其调用点，保留单测改为验证识别层行为。
+**改动清单**
+1. `EnhancedAutofillStructureParserV2.kt:647` —— 删除 `weakLoginContext` 变量及其 `when` 分支，
+   `loginFilteredItems` 简化为 `if (hasPasswordInItems) effectiveItems else filterNot { 账号类 && accuracy < MEDIUM }`；
+   同步删除仅被它消费的 `hasLoginTypeField`（死代码）与日志字段；
+2. `AutofillDetectionPolicy.shouldSuppressWeakLoginSuggestion()` 及其在 `BastionAutofillServiceNg` 的调用点整体删除；
+3. 测试：`WeakLoginGuardTest` 重写为**识别层行为验证**（无密码框的弱账号字段不再进入 login 目标）；
+   `AutofillDetectionIntegrationGuardTest` 中 `weakLoginContext`/`hasLoginTypeField` 断言改为 `assertFalse`。
+
+**行为变化（预期）**
+- 京东搜索栏：UNKNOWN → 识别层即消失，守卫不再被需要 ✅
+- 电影猎手等原生登录页：有密码框 → `hasPasswordInItems` 分支全量放行，不受影响 ✅
+- 无密码框 + 仅弱账号字段（`USERNAME:LOWEST`，如 `idType="text"`）：不再被弱模式全量放行，
+  自动/手动请求均不弹——与 Bitwarden「未识别字段 = Unused → 不弹」一致 ✅
+- 无密码框 + `MEDIUM` 账号字段（native `id="username"` 术语）：仍弹——对齐 Bitwarden
+  「识别为 Login.Username → Fillable」（原守卫以 HIGH 为门槛属过度收紧）⚠️ 需真机回归关注
 
 **收益**：判定链路从 4 层降到 2 层，后续 agent 接手时可推理性大幅提升。
-**风险**：低（阶段一已覆盖），但**必须在阶段一真机验证通过后再做**。
+**风险**：低（阶段一已覆盖），**但必须在阶段一真机验证通过后再做**——已满足。
 
 ### 阶段三（P2）：填充阶段补 website 双向校验
 
