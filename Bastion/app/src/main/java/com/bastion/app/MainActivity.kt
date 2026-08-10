@@ -3136,14 +3136,6 @@ fun BastionContent(
                 onNavigateToQuickSetup = {
                     navController.navigate(Screen.QuickSetup.route)
                 },
-                validatorVibrationEnabled = settings.validatorVibrationEnabled,
-                onValidatorVibrationChange = { enabled ->
-                    settingsViewModel.updateValidatorVibrationEnabled(enabled)
-                },
-                copyNextCodeWhenExpiring = settings.copyNextCodeWhenExpiring,
-                onCopyNextCodeWhenExpiringChange = { enabled ->
-                    settingsViewModel.updateCopyNextCodeWhenExpiring(enabled)
-                },
                 smartDeduplicationEnabled = settings.smartDeduplicationEnabled,
                 onSmartDeduplicationEnabledChange = { enabled ->
                     settingsViewModel.updateSmartDeduplicationEnabled(enabled)

@@ -441,7 +441,6 @@ fun SettingsScreen(
         R.string.display_mode_title_only,
         R.string.smart_deduplication,
         R.string.smart_deduplication_desc,
-        R.string.extensions_totp_settings,
         R.string.validator_vibration,
         R.string.validator_vibration_description,
         R.string.copy_next_code_when_expiring,
