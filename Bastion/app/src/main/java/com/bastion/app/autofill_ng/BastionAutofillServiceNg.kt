@@ -33,6 +33,7 @@ import com.bastion.app.autofill_ng.AutofillPreferences
 import com.bastion.app.autofill_ng.AutofillSaveTransparentActivity
 import com.bastion.app.autofill_ng.DomainMatchStrategy
 import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2
+import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.Accuracy
 import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.FieldHint
 import com.bastion.app.autofill_ng.EnhancedAutofillStructureParserV2.ParsedItem
 import com.bastion.app.autofill_ng.processor.AutofillProcessorNg
@@ -558,6 +559,39 @@ class BastionAutofillServiceNg : AutofillService() {
                     "dominantCount" to structuredDecision.dominantCount,
                     "keyHintCount" to structuredDecision.keyHintCount,
                     "confidentCount" to structuredDecision.confidentCount,
+                ),
+            )
+            return null
+        }
+        // 服务层守卫（京东搜索栏误弹修复）：无密码框时，若所有登录类字段均为弱信号
+        //（精度 < HIGH，即非系统标准 autofill hint），说明这些字段来自弱解析兜底
+        //（如 WebView WEB_EDIT_TEXT 兜底 USERNAME:LOWEST 或 native id 术语 MEDIUM），
+        // 而非真正的登录页。此时不触发密码库匹配，避免按包名匹配弹出无关密码条目。
+        // 真实登录页（有密码框，hasPasswordTarget 保护）与带标准系统 hint 的账号框
+        //（HIGH 精度）不受影响。手动请求（用户主动长按）也不受此守卫限制。
+        val hasPasswordInFillable = fillableTargets.any {
+            it.hint == FieldHint.PASSWORD || it.hint == FieldHint.NEW_PASSWORD
+        }
+        val loginFieldAccuracies = fillableTargets
+            .filter { isLoginHint(it.hint) }
+            .map { it.accuracy }
+        if (AutofillDetectionPolicy.shouldSuppressWeakLoginSuggestion(
+                hasPasswordField = hasPasswordInFillable,
+                loginFieldAccuracies = loginFieldAccuracies,
+                manualRequest = isManualRequest,
+            )
+        ) {
+            AutofillLogger.i(
+                "AF",
+                "Skip weak login autofill: no password field and all login fields below HIGH accuracy",
+                metadata = mapOf(
+                    "requestId" to requestId,
+                    "packageName" to packageName,
+                    "webDomain" to (webDomain ?: "none"),
+                    "loginTargetCount" to loginTargetCount,
+                    "loginAccuracies" to loginFieldAccuracies.joinToString { it.name },
+                    "packageMatchAllowed" to allowPackageMatch,
+                    "usedWeakReparse" to usedWeakReparse,
                 ),
             )
             return null
