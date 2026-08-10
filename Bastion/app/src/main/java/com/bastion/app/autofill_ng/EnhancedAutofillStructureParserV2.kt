@@ -619,7 +619,17 @@ class EnhancedAutofillStructureParserV2 {
         // 导致密码框被 loginFilteredItems 以 accuracy<MEDIUM 丢弃，最终密码输入框无法填充。
         // Bitwarden 的缺失密码字段恢复本就是无条件执行的，这里对齐该行为——仅提升「含密码术语」
         // 的候选为 PASSWORD，不会误伤搜索框（搜索字段不含密码术语）。
-        val effectiveItems = promotePasswordTermCandidates(confidenceFilteredItems)
+        // 两级结构化提升，顺序不可颠倒：
+        //   1. promotePasswordTermCandidates —— 按 password 术语找回密码框
+        //      （对齐 bitwarden updateForMissingPasswordFields）
+        //   2. promoteUsernameNeighborCandidates —— 密码框就位后，把它上方最近的
+        //      UNKNOWN 认定为账号框（对齐 bitwarden updateForMissingUsernameFields）
+        // 这两步取代了原先「WEB_EDIT_TEXT 一律兜底成 USERNAME:LOWEST」的做法：召回同样
+        // 覆盖 WebView 登录页，但判据从「精度阈值」换成了「与密码框的结构关系」，
+        // 孤立搜索栏因此不再被误判为账号框。
+        val effectiveItems = promoteUsernameNeighborCandidates(
+            promotePasswordTermCandidates(confidenceFilteredItems),
+        )
         val hasPasswordInItems = effectiveItems.any {
             it.hint == InternalHint.PASSWORD || it.hint == InternalHint.NEW_PASSWORD
         }
@@ -999,14 +1009,19 @@ class EnhancedAutofillStructureParserV2 {
             if (node.visibility == View.VISIBLE || shouldIncludeHiddenCredentialNode(outBuilders)) {
                 val nodeHasPasswordTerm = nodeHasPasswordTermMatch(node)
                 val nodeHasLoginTerm = nodeHasLoginTermMatch(node)
-                // 诊断：当节点被识别为 LOWEST 精度的 USERNAME（纯 text fallback 路径）时，
-                // 记录其原始信号，用于排查电影猎手等 App 的账号框为何被弱推断、
+                // 诊断：当节点走到弱信号兜底路径（LOWEST 精度的 USERNAME，或 WEB_EDIT_TEXT
+                // 兜底产出的 UNKNOWN）时记录原始信号，用于排查账号框为何被弱推断、
                 // 以及 bitwarden 等为何能识别（对比 autofillHints/idEntry/hint/inputType）。
-                if (outBuilders.any { it.hint == InternalHint.USERNAME &&
-                    it.accuracy == Accuracy.LOWEST }) {
+                // UNKNOWN 需一并记录：它是邻居提升（promoteUsernameNeighborCandidates）的
+                // 候选来源，排查 WebView 登录页漏弹时需要知道哪些节点落到了这一档。
+                if (outBuilders.any {
+                        (it.hint == InternalHint.USERNAME && it.accuracy == Accuracy.LOWEST) ||
+                            it.hint == InternalHint.UNKNOWN
+                    }
+                ) {
                     AutofillLogger.d(
                         "PARSING",
-                        "LOWEST username node signals",
+                        "Weak-signal node signals (LOWEST username / UNKNOWN fallback)",
                         metadata = mapOf(
                             "className" to (node.className ?: "none"),
                             "inputType" to node.inputType.toString(),
@@ -1602,12 +1617,22 @@ class EnhancedAutofillStructureParserV2 {
                         // 仅当 idEntry / idType 含 username 术语时才产出 USERNAME（由
                         // extractOfId/extractOfType 按术语定 MEDIUM 精度），避免把
                         // 搜索框/备注等纯文本框误判为登录账号（QQ 搜索框误弹修复）。
-                        // WEB_EDIT_TEXT 变体（WebView 内可编辑文本）保留 LOWEST fallback，
-                        // 因 WebView 登录框常用该变体且无标准 hint。
+                        //
+                        // WEB_EDIT_TEXT 变体（WebView 内可编辑文本）产出 UNKNOWN 而非
+                        // USERNAME:LOWEST——对齐 bitwarden 的 AutofillView.Unused 语义：
+                        // 「这是个输入框，但我不知道它是什么」是明确的否定，而不是
+                        // 「置信度低的账号框」这种弱肯定。弱肯定会被下游任何放宽分支
+                        //（allowWeakTargets / weakLoginContext）当成真账号框放行，
+                        // 正是京东搜索栏误弹密码条目的根因。
+                        //
+                        // WebView 真登录页的召回由 promoteUsernameNeighborCandidates 补回：
+                        // 存在密码框且无账号框时，把密码框上方最近的 UNKNOWN 提升为 USERNAME，
+                        // 对齐 bitwarden updateForMissingUsernameFields。搜索栏因孤立无密码框
+                        // 而不会被提升，两个场景由「结构」而非「精度阈值」区分开。
                         if (inputIsVariationType(inputType, InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT)) {
                             out += ParsedItemBuilder(
                                 accuracy = Accuracy.LOWEST,
-                                hint = InternalHint.USERNAME,
+                                hint = InternalHint.UNKNOWN,
                             )
                         }
                         extractOfType(node.idType.orEmpty()).let(out::addAll)
@@ -1896,6 +1921,61 @@ class EnhancedAutofillStructureParserV2 {
                 item.hint != InternalHint.NEW_PASSWORD
             ) {
                 item.copy(hint = InternalHint.PASSWORD, accuracy = Accuracy.LOW)
+            } else {
+                item
+            }
+        }
+    }
+
+    /**
+     * 账号字段邻居提升（对齐 bitwarden `updateForMissingUsernameFields`）：
+     * 当候选中已存在密码框、但没有任何账号类字段时，把「位于首个密码框之前、且离它最近」的
+     * UNKNOWN 候选提升为 USERNAME:LOW。
+     *
+     * 这是 WEB_EDIT_TEXT 兜底改判 UNKNOWN 之后的召回补偿。Via 等轻量 WebView 浏览器会把
+     * 登录页的账号框和密码框都报成 TYPE_TEXT_VARIATION_WEB_EDIT_TEXT：密码框靠
+     * promotePasswordTermCandidates 按 password 术语提升，账号框则没有任何术语可依，
+     * 只能靠「它就在密码框上面」这个结构特征来认定——这正是 bitwarden 的做法。
+     *
+     * 与旧的 USERNAME:LOWEST 全量兜底相比，这里多了三重约束：
+     *   1. 必须存在密码框（孤立搜索栏不满足，京东搜索栏误弹在此被切断）；
+     *   2. 必须尚无账号框（已识别出账号框时不画蛇添足）；
+     *   3. 只提升紧邻密码框上方的那一个（不会波及页面上其它无关文本框）。
+     *
+     * 调用时机必须在 [promotePasswordTermCandidates] 之后——密码框先就位，才谈得上找它的邻居。
+     */
+    private fun promoteUsernameNeighborCandidates(
+        items: List<RawParsedItem>,
+    ): List<RawParsedItem> {
+        val promotionIndex = AutofillFieldPromotionPolicy.selectUsernameNeighborIndex(
+            items.map { item ->
+                AutofillFieldPromotionPolicy.Candidate(
+                    isPassword = item.hint == InternalHint.PASSWORD ||
+                        item.hint == InternalHint.NEW_PASSWORD,
+                    isAccount = item.hint == InternalHint.USERNAME ||
+                        item.hint == InternalHint.EMAIL_ADDRESS ||
+                        item.hint == InternalHint.PHONE_NUMBER,
+                    isUnknown = item.hint == InternalHint.UNKNOWN,
+                    isVisible = item.isVisible,
+                    traversalIndex = item.traversalIndex,
+                )
+            },
+        )
+        if (promotionIndex == AutofillFieldPromotionPolicy.NO_PROMOTION) return items
+
+        val neighbor = items[promotionIndex]
+        AutofillLogger.d(
+            "PARSING",
+            "Promoted UNKNOWN neighbor above password field to USERNAME",
+            metadata = mapOf(
+                "neighborTraversalIndex" to neighbor.traversalIndex,
+                "unknownCandidateCount" to items.count { it.hint == InternalHint.UNKNOWN },
+            ),
+        )
+
+        return items.mapIndexed { index, item ->
+            if (index == promotionIndex) {
+                item.copy(hint = InternalHint.USERNAME, accuracy = Accuracy.LOW)
             } else {
                 item
             }
