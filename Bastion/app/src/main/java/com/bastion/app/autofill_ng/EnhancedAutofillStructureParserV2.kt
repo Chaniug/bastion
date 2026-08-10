@@ -602,57 +602,48 @@ class EnhancedAutofillStructureParserV2 {
             }
         }
 
-        // 弱目标模式（allowWeakTargets=true，对齐 bitwarden「有 Login 字段就 Fillable」门槛）：
-        // 1. 先用 promotePasswordTermCandidates 尝试从候选里按 password 术语提升出密码字段；
-        //    提升成功则 hasPasswordInItems=true，低精度账号字段自然保留并弹窗。
-        // 2. 提升后仍无密码框时，若候选中存在任意已被识别为 Login 类型的字段
-        //    （USERNAME/EMAIL/PHONE，不论精度），放行低精度账号字段，弹账号面板。
-        //    这对齐 bitwarden 的「有 Login.Username 就 Fillable」逻辑——bitwarden 不在
-        //    弹窗决策层做「无密码框时过滤低精度账号」的二次保险，而是靠前置的字段识别
-        //    阶段把搜索框等判为 Unused。Bastion 的 TYPE_TEXT_VARIATION_NORMAL fallback
-        //    比 bitwarden 宽松（会把纯 text 判为 USERNAME:LOWEST），但电影猎手等真登录
-        //    场景的确定 bug优先于假设性的搜索框误弹（后者可用黑名单兜底）。
-        // 密码术语提升（借鉴 bitwarden updateForMissingPasswordFields）无条件执行，不依赖
-        // allowWeakTargets：Via 等轻量 WebView 浏览器常把密码框报成
-        // TYPE_TEXT_VARIATION_WEB_EDIT_TEXT（被兜底判为 USERNAME:LOWEST），仅靠弱目标二次解析
-        // 会在「首轮已识别到账号框」时被跳过（firstPassTargets 非空不触发弱解析），
-        // 导致密码框被 loginFilteredItems 以 accuracy<MEDIUM 丢弃，最终密码输入框无法填充。
-        // Bitwarden 的缺失密码字段恢复本就是无条件执行的，这里对齐该行为——仅提升「含密码术语」
-        // 的候选为 PASSWORD，不会误伤搜索框（搜索字段不含密码术语）。
-        // 两级结构化提升，顺序不可颠倒：
+        // 登录字段过滤（P1 起不再有 weakLoginContext「无密码框 + 有 Login 类型字段即
+        // 全量放行」分支——那正是京东搜索栏误弹的温床，已被 P0 的 UNKNOWN 语义与
+        // 结构提升取代）：
+        // - 有密码框 → 全量放行（电影猎手等原生登录页的保护来自这里，而非弱模式放行）；
+        // - 无密码框 → 仅保留 MEDIUM+ 精度的账号字段（真实信号：标准 autofill hint、
+        //   id/name 术语等），LOWEST 弱账号字段（如 idType="text" 兜底）直接丢弃。
+        //   对齐 bitwarden「识别为 Login.Username 才 Fillable」——弱信号字段等价于其
+        //   Unused，不参与弹出决策，孤立文本框（搜索栏/昵称等）不会误弹。
+        // 两级结构化提升（顺序不可颠倒）先行执行，为上面的「有密码框」分支提供依据：
         //   1. promotePasswordTermCandidates —— 按 password 术语找回密码框
         //      （对齐 bitwarden updateForMissingPasswordFields）
         //   2. promoteUsernameNeighborCandidates —— 密码框就位后，把它上方最近的
         //      UNKNOWN 认定为账号框（对齐 bitwarden updateForMissingUsernameFields）
-        // 这两步取代了原先「WEB_EDIT_TEXT 一律兜底成 USERNAME:LOWEST」的做法：召回同样
-        // 覆盖 WebView 登录页，但判据从「精度阈值」换成了「与密码框的结构关系」，
-        // 孤立搜索栏因此不再被误判为账号框。
+        // 密码术语提升无条件执行，不依赖 allowWeakTargets：Via 等轻量 WebView 浏览器
+        // 常把密码框报成 TYPE_TEXT_VARIATION_WEB_EDIT_TEXT（P0 起兜底为 UNKNOWN），
+        // 仅靠弱目标二次解析会在「首轮已识别到账号框」时被跳过（firstPassTargets 非空
+        // 不触发弱解析），导致密码框被 accuracy<MEDIUM 丢弃、密码无法填充。Bitwarden 的
+        // 缺失密码字段恢复本就是无条件执行的，这里对齐——仅提升「含密码术语」的候选为
+        // PASSWORD，不会误伤搜索框（搜索字段不含密码术语）。
+        // 这两步取代了原先「WEB_EDIT_TEXT 一律兜底成 USERNAME:LOWEST + weakLoginContext
+        // 无密码框全量放行」的做法：召回同样覆盖 WebView 登录页，但判据从「精度阈值 +
+        // 页面整体弱上下文」换成了「与密码框的结构关系」，孤立搜索栏因此不再被误判。
         val effectiveItems = promoteUsernameNeighborCandidates(
             promotePasswordTermCandidates(confidenceFilteredItems),
         )
         val hasPasswordInItems = effectiveItems.any {
             it.hint == InternalHint.PASSWORD || it.hint == InternalHint.NEW_PASSWORD
         }
-        val hasLoginTypeField = effectiveItems.any {
-            it.hint == InternalHint.USERNAME ||
-                it.hint == InternalHint.EMAIL_ADDRESS ||
-                it.hint == InternalHint.PHONE_NUMBER
-        } || confidenceFilteredItems.any {
-            // promotePasswordTermCandidates 可能将 USERNAME 提升为 PASSWORD，
-            // 但原始候选中存在 Login 类型字段本身说明当前是登录场景，应放行。
-            it.hint == InternalHint.USERNAME ||
-                it.hint == InternalHint.EMAIL_ADDRESS ||
-                it.hint == InternalHint.PHONE_NUMBER
-        }
-        val weakLoginContext = allowWeakTargets && !hasPasswordInItems && hasLoginTypeField
-        val loginFilteredItems = when {
-            hasPasswordInItems -> effectiveItems
-            weakLoginContext -> effectiveItems
-            else -> effectiveItems.filterNot {
-                (it.hint == InternalHint.USERNAME ||
-                    it.hint == InternalHint.EMAIL_ADDRESS ||
-                    it.hint == InternalHint.PHONE_NUMBER) &&
-                    it.accuracy.score < Accuracy.MEDIUM.score
+        val loginFilteredItems = if (hasPasswordInItems) {
+            effectiveItems
+        } else {
+            // 识别层保留规则下沉到 AutofillDetectionPolicy.shouldKeepLoginField（P1）：
+            // 无密码框时仅保留 MEDIUM+ 精度的账号字段，弱账号字段（如 idType="text"
+            // 兜底 USERNAME:LOWEST）直接丢弃，对齐 bitwarden「识别为 Login.Username
+            // 才 Fillable」。非账号类 hint（含 UNKNOWN/OFF）原样保留，由下游处理。
+            effectiveItems.filter { item ->
+                val fieldHint = mapHint(item.hint)
+                fieldHint == null || AutofillDetectionPolicy.shouldKeepLoginField(
+                    hint = fieldHint,
+                    accuracy = item.accuracy,
+                    hasPasswordInItems = false,
+                )
             }
         }
 
@@ -668,8 +659,6 @@ class EnhancedAutofillStructureParserV2 {
                 "allowWeakTargets" to allowWeakTargets,
                 "promotedPasswordCount" to (effectiveItems.size - confidenceFilteredItems.size).coerceAtLeast(0),
                 "hasPasswordInItems" to hasPasswordInItems,
-                "hasLoginTypeField" to hasLoginTypeField,
-                "weakLoginContext" to weakLoginContext,
             )
         )
         loginFilteredItems
@@ -1621,8 +1610,8 @@ class EnhancedAutofillStructureParserV2 {
                         // WEB_EDIT_TEXT 变体（WebView 内可编辑文本）产出 UNKNOWN 而非
                         // USERNAME:LOWEST——对齐 bitwarden 的 AutofillView.Unused 语义：
                         // 「这是个输入框，但我不知道它是什么」是明确的否定，而不是
-                        // 「置信度低的账号框」这种弱肯定。弱肯定会被下游任何放宽分支
-                        //（allowWeakTargets / weakLoginContext）当成真账号框放行，
+                        // 「置信度低的账号框」这种弱肯定。弱肯定会被下游放宽分支
+                        //（P0 前有 weakLoginContext 全量放行）当成真账号框放行，
                         // 正是京东搜索栏误弹密码条目的根因。
                         //
                         // WebView 真登录页的召回由 promoteUsernameNeighborCandidates 补回：

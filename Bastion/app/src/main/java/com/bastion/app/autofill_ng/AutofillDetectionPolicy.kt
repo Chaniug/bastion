@@ -33,6 +33,28 @@ internal object AutofillDetectionPolicy {
         return accuracy.score >= Accuracy.MEDIUM.score || hasPasswordTarget
     }
 
+    /**
+     * 识别层登录字段保留规则（P1，替代 weakLoginContext 全量放行分支）。
+     *
+     * 对齐 bitwarden「识别为 Login.Username 才 Fillable」：无密码框时，账号类字段仅当其
+     * 精度达到 MEDIUM（真实信号：标准 autofill hint / id·name 术语）才保留；LOWEST 等弱
+     * 信号字段等价于 bitwarden 的 Unused，直接丢弃、不参与弹出决策——孤立文本框
+     * （搜索栏/昵称等）因此不会误弹。有密码框时全量放行（电影猎手等原生登录页的
+     * 保护来源，与 hasPasswordInItems 分支一致）。
+     *
+     * 注意与 [shouldKeepTarget] 的区别：本函数不感知 manualRequest，识别层一律按
+     * 「MEDIUM+ 或 有密码框」保留账号字段；手动请求的宽松由服务层 selectFillableTargets
+     * 的 manualRequest 分支体现。
+     */
+    fun shouldKeepLoginField(
+        hint: FieldHint,
+        accuracy: Accuracy,
+        hasPasswordInItems: Boolean,
+    ): Boolean {
+        if (!isAccountHint(hint)) return true
+        return hasPasswordInItems || accuracy.score >= Accuracy.MEDIUM.score
+    }
+
     fun shouldIncludeHiddenCredential(
         hint: FieldHint,
         accuracy: Accuracy,
@@ -47,29 +69,12 @@ internal object AutofillDetectionPolicy {
     }
 
     /**
-     * 服务层守卫（京东搜索栏误弹修复）：当屏幕上无密码框、且所有登录类字段均为
-     * 弱信号（精度 < HIGH，即非系统标准 autofill hint）时，判定应抑制密码建议弹出。
-     *
-     * 这覆盖了弱解析兜底产生的误报：京东搜索栏被解析器以 LOWEST/MEDIUM 精度兜底为
-     * USERNAME，无密码框配对，再经 allowPackageMatching 按包名匹配出京东密码条目。
-     * 真实登录页有密码框（hasPasswordField=true），带标准系统 hint 的账号框精度为
-     * HIGH，两者均不受影响。手动请求（用户主动长按）也不受此守卫限制。
-     *
-     * @param hasPasswordField fillableTargets 中是否存在密码类字段
-     * @param loginFieldAccuracies fillableTargets 中所有登录类字段的精度列表
-     * @param manualRequest 是否为手动请求（FLAG_MANUAL_REQUEST）
-     * @return true 表示应跳过密码建议（不弹密码条目）
+     * 服务层守卫已随 P1 移除（2026-08-11）：
+     * - 京东搜索栏误弹的根因（WEB_EDIT_TEXT 兜底 USERNAME:LOWEST + weakLoginContext 全量放行）
+     *   已由 P0 的 UNKNOWN 语义 + P1 移除 weakLoginContext 在识别层解决，守卫失去存在意义；
+     * - 其以 HIGH 为门槛拦截「MEDIUM 账号字段无密码框」页面（如 native id="username"）属于
+     *   过度收紧，与 bitwarden「识别为 Login.Username 即 Fillable」不一致，一并移除。
      */
-    fun shouldSuppressWeakLoginSuggestion(
-        hasPasswordField: Boolean,
-        loginFieldAccuracies: List<Accuracy>,
-        manualRequest: Boolean,
-    ): Boolean {
-        if (manualRequest) return false
-        if (hasPasswordField) return false
-        if (loginFieldAccuracies.isEmpty()) return false
-        return loginFieldAccuracies.none { it.score >= Accuracy.HIGH.score }
-    }
 
     fun matchesUsernameLabel(value: String): Boolean {
         val normalized = value.lowercase(Locale.ENGLISH).trim()
