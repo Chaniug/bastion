@@ -21,12 +21,12 @@
 - bastion 现状：`BitwardenSyncOrchestrator` 的 `requestSync(vaultId: Long, …)` 天然按 `vaultId` 隔离，每个 vault 有独立 `VaultRuntime`，全部状态以 `runtimes: MutableMap<Long, VaultRuntime>` 分桶。调用方 `BitwardenViewModel.requestAutoSyncForUnlockedVaults` / `maybeTriggerSilentAutoSync` 明确传入具体 `vaultId`。
 - 结论：**架构上已规避**，无需改动。（bastion 设计为启动时同步所有已解锁 vault，属有意行为，非 bug。）
 
-### 2. 多账号同步卡顿（`047e1efdda`）—— bastion 存在同类隐患 ⚠️
+### 2. 多账号同步卡顿（`047e1efdda`）—— bastion 存在同类隐患（已修复 ✅）
 
 - Monica 修法：新增 `passiveAutoSyncMutex` 全局串行所有被动同步（PAGE_ENTER / APP_RESUME / PERIODIC），并引入 `MULTI_VAULT_AUTO_SYNC_STAGGER_MS = 5_000L` 错峰，避免冷启动多 vault 并发同步造成 UI 卡顿。
-- bastion 现状：`BitwardenSyncOrchestrator.requestSync` 为 `scope.launch { processRequest(...) }`，每个 vault 独立协程；`processRequest` 在执行 `executeSync` 时**无跨 vault 的全局串行锁**（仅 per-vault 的 `mutex` 保护自身状态）。`loadVaults` 中 `requestAutoSyncForUnlockedVaults` 遍历所有已解锁 vault 逐个 `requestSyncWithStartupGrace` → 多个 vault 会在冷启动并发同步。
-- 影响：**多 vault 用户冷启动/切后台回来时可能卡顿**，属性能/体验问题，非数据错误。
-- 是否修：建议性优化，优先级低于自定义字段 bug。
+- bastion 现状（已修复）：原 `requestSync` 为每个 vault 独立协程、执行 `executeSync` 时无跨 vault 串行锁，多 vault 冷启动会并发同步。现新增全局 `passiveAutoSyncMutex`，仅对**被动同步**（`PAGE_ENTER`/`APP_RESUME`/`PERIODIC`）在 `executeSync` 外包锁串行化；主动同步（`MANUAL`/`LOCAL_MUTATION`/`RETRY`）不受限，不拖慢用户操作与重试。新增 `SyncManagerConfig.multiVaultAutoSyncStaggerMs = 5000L`，前一个被动同步完成后间隔错峰再放下一个。原有的 per-vault `mutex` 与 throttle 保持不变。
+- 影响：多 vault 冷启动/切后台的并发同步已收敛为串行 + 错峰，缓解 UI 卡顿；属性能/体验改进，非数据错误。
+- 是否修：✅ 已修复（dev）：`BitwardenSyncOrchestrator.kt` 加 `passiveAutoSyncMutex` + `maybeStaggerPassiveAutoSync()`，新增单测 `passiveAutoSyncAcrossVaultsIsSerialized` 验证跨 vault 串行。
 
 ### 3. 自定义字段同步（`e348623f3f`）—— bastion 存在同类 bug（下载侧数据丢失）🔴
 
@@ -53,12 +53,12 @@
 | 优先级 | 问题 | 状态 |
 |---|---|---|
 | 🔴 P0 | 自定义字段下载丢失（`e348623f3f` 同类） | ✅ 已修复（dev）：复用现有 `custom_fields` 表，无需 DB 迁移 |
-| ⚠️ P2 | 多账号被动同步未串行化（`047e1efdda` 同类） | 未做：建议加 `passiveAutoSyncMutex` + 错峰；性能优化，可后续做 |
+| ✅ P2 | 多账号被动同步未串行化（`047e1efdda` 同类） | 已修复（dev）：加 `passiveAutoSyncMutex` 串行被动同步 + `multiVaultAutoSyncStaggerMs=5000L` 错峰 |
 | ✅ 已规避 | 自动同步范围（`5595324d78`） | 无需改动 |
 | ⚪ 不适用 | 外部导入加固（`afaf23d01f`） | 不在本范围 |
 
 ## 四、待办 / 待确认
 
 - **P0 已落地 dev**，需经 CI（debug + 真机预览）验证：带自定义字段的 Bitwarden 登录项同步后，在 bastion 详情页可见；回传 Bitwarden 不丢。
-- **P2 多账号串行化**仍为建议项，如需做可单独出计划。
+- **P2 多账号串行化**已落地 dev（全局 `passiveAutoSyncMutex` + 错峰），待 CI 验证后随 stable 发布。
 - 重点改动计划同步落到 `docs/` 以便 agent 接力（遵循规范 #6）。
