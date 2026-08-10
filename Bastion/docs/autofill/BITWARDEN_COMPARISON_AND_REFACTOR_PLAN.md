@@ -6,8 +6,9 @@
 
 > **改造进度**（2026-08-11 更新）
 > - ✅ **P0 已完成并合并**：dev `a97d7013` / main `16a8fbd5`，CI 双绿；预览版真机回归（京东/Via/电影猎手/淘宝/微信/支付宝）无回归
-> - 🔄 **P1 实施中**：拆掉 `weakLoginContext` 与服务层守卫（见「阶段二」）
-> - ⏳ P2 / P3 待后续评估
+> - ✅ **P1 已完成并合并**：dev `229bffe3` / main `5c0cf18b`，CI 双绿；判定链路从 4 层降到 2 层
+> - 🔄 **P2 实施中**：条目级 website 双向一致性校验（「仅拒绝明确矛盾」版，见「阶段三」）
+> - ⏳ P3 待后续评估
 
 ---
 
@@ -196,7 +197,13 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 
 **风险**：中。动到解析核心。缓解：邻居提升覆盖了绝大多数 WebView 登录页；上线前用现有 autofill 测试套件 + 真机回归（京东搜索 / 京东登录 / Via / 电影猎手 / 淘宝 / 微信）。
 
-### 阶段二（P1）：拆掉 `weakLoginContext` 与服务层守卫
+### 阶段二（P1）：拆掉 `weakLoginContext` 与服务层守卫 ✅ 已完成
+
+> 2026-08-11 落地：dev `229bffe3` / main `5c0cf18b`（CI 双绿）。
+> 改动：删除 `weakLoginContext` 分支与 `hasLoginTypeField`（死代码）；新增
+> `AutofillDetectionPolicy.shouldKeepLoginField`（识别层保留规则单一来源）；删除
+> `shouldSuppressWeakLoginSuggestion` 及其调用点；`WeakLoginGuardTest` 重写为
+> `LoginFieldRecognitionTest`（纯 JVM 13 例验证识别层行为）。
 
 阶段一落地后，`weakLoginContext` 的全量放行和 v1.0.301 的服务层守卫都成了冗余补丁——前者要放行的场景已由「有密码框 → 全量放行」与邻居提升精准覆盖，后者要拦截的场景已在识别层消失（京东搜索栏已判为 UNKNOWN，不再产出 Login 字段）。
 
@@ -221,10 +228,25 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 
 ### 阶段三（P2）：填充阶段补 website 双向校验
 
-对齐 `FilledDataBuilderImpl.fillLoginPartition`：在构建 dataset 时逐字段校验条目 website 与字段 website/包名 URI 的一致性，并丢弃无可填项的条目。
+对齐 `FilledDataBuilderImpl.fillLoginPartition`：构建 dataset 前对**条目**做 website 一致性校验，丢弃「明确绑定其它站点/其它 App」的条目。
 
-**收益**：即使识别层偶有误判，也会因为「匹配不到任何可填字段」而不弹出空条目。这是 Bitwarden 的**第二道防线**，Bastion 目前缺失。
-**风险**：低。
+**落地设计（2026-08-11，用户确认「仅拒绝明确矛盾」版）**
+
+Bitwarden 是「严格相等」（`data.website == cipher.website` 或 `androidapp://pkg == cipher.website`），
+照搬会让大量未填 website/appPackageName 的 KeePass 裸条目漏填。因此采用宽松判定：
+
+| 页面类型 | 判定轴 | 规则 |
+|---|---|---|
+| web（pageWebDomain 非空） | 注册域 | 条目含 web 域名时，任一域名注册域与页面一致即放行（支持子域名/www/端口/多 URI/大小写）；全部不一致 → 拒绝；无 web 域名 → 放行（页面包名是浏览器包名，无判定意义） |
+| 原生（pageWebDomain 为空） | 包名 | 条目 appPackageName 或 androidapp:// 包名任一等于当前包名即放行；全部不一致 → 拒绝；无包名 → 放行（Keepass 约定：原生登录也存服务官网域名） |
+| 无 website 且无包名 | — | 放行（KeePass 裸条目 / WiFi 条目） |
+
+**落地位置**：`BastionAutofillServiceNg` matcher 结果之后、`stabilizeMatchedPasswords` 之前（唯一插入点，
+覆盖 Picker V2/legacy/直填/密码优先全部路径）；策略抽为 `AutofillWebsiteConsistencyPolicy`（纯 JVM 单测）。
+
+**收益**：即使识别层偶有误判（非严格模式启发式匹配 / native 包名 token 匹配），明确矛盾的条目也不会被填充。
+这是 Bitwarden 的**第二道防线**。
+**风险**：低（仅拒绝明确矛盾，无 URI 条目不受影响）；需真机回归关注淘宝/微信/支付宝等 native 登录。
 
 ### 阶段四（P3，长期）：本地 per-package/per-host 规则表
 
