@@ -705,6 +705,42 @@ class BastionAutofillServiceNg : AutofillService() {
             emptyList()
         }
 
+        // P2 第二道防线（对齐 bitwarden fillLoginPartition）：条目级 website 双向一致性校验。
+        // matcher 按域名/包名/标题打分，非严格模式的启发式匹配与 native 包名 token 匹配可能把
+        // 「明确绑定其它站点/其它 App」的条目带进来；此处按「仅拒绝明确矛盾」原则过滤：
+        // web 页面比对注册域，原生页面比对包名；无 website 且无包名的条目（KeePass 裸条目、
+        // WiFi 条目）无信息可判，一律放行。
+        val consistentPasswords = if (webDomain != null || packageName.isNotBlank()) {
+            matchedPasswords.filter { entry ->
+                AutofillWebsiteConsistencyPolicy.isConsistent(
+                    entryWebsite = entry.website,
+                    entryAppPackage = entry.appPackageName,
+                    pageWebDomain = webDomain,
+                    pagePackageName = packageName,
+                )
+            }.also { filtered ->
+                if (filtered.size != matchedPasswords.size) {
+                    val removed = matchedPasswords.filter { m ->
+                        filtered.none { it.id == m.id }
+                    }
+                    AutofillLogger.i(
+                        "AF",
+                        "P2 website-consistency filtered entries",
+                        metadata = mapOf(
+                            "requestId" to requestId,
+                            "packageName" to packageName,
+                            "webDomain" to (webDomain ?: "none"),
+                            "rawMatches" to matchedPasswords.size,
+                            "consistentMatches" to filtered.size,
+                            "removedTitles" to removed.joinToString { it.title },
+                        ),
+                    )
+                }
+            }
+        } else {
+            matchedPasswords
+        }
+
         val responseStabilityKey = buildResponseStabilityKey(
             packageName = packageName,
             webDomain = webDomain,
@@ -713,7 +749,7 @@ class BastionAutofillServiceNg : AutofillService() {
         )
         val passwordsForResponse = stabilizeMatchedPasswords(
             key = responseStabilityKey,
-            matchedPasswords = matchedPasswords,
+            matchedPasswords = consistentPasswords,
             requestId = requestId,
             targetCount = fillableTargets.size,
         )
