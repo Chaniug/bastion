@@ -134,4 +134,70 @@ class BitwardenSyncOrchestratorTest {
             job.cancel()
         }
     }
+
+    @Test
+    fun passiveAutoSyncAcrossVaultsIsSerialized() = runBlocking {
+        val job = Job()
+        val activeCount = AtomicInteger(0)
+        val maxConcurrent = AtomicInteger(0)
+        val startedCount = AtomicInteger(0)
+        val firstEntered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        var nowMs = 100_000L
+
+        val orchestrator = BitwardenSyncOrchestrator(
+            scope = CoroutineScope(coroutineContext + job),
+            config = SyncManagerConfig(
+                pageEnterThrottleMs = 0L,
+                appResumeThrottleMs = 0L,
+                multiVaultAutoSyncStaggerMs = 0L
+            ),
+            isAutoSyncEnabled = { true },
+            checkNetwork = { NetworkGateResult.ALLOWED },
+            isVaultUnlocked = { true },
+            executeSync = { _, _ ->
+                val current = activeCount.incrementAndGet()
+                maxConcurrent.updateAndGet { maxOf(it, current) }
+                if (!firstEntered.isCompleted) firstEntered.complete(Unit)
+                startedCount.incrementAndGet()
+                release.await()
+                activeCount.decrementAndGet()
+                SyncExecutionOutcome.Success(
+                    appliedChangeCount = 0,
+                    availableOfflineCount = 0,
+                    conflictCount = 0,
+                    uploadFailedCount = 0,
+                    skippedDueToLocalDirtyCount = 0
+                )
+            },
+            nowProvider = { nowMs }
+        )
+
+        try {
+            orchestrator.requestSync(vaultId = 1L, reason = SyncTriggerReason.PAGE_ENTER)
+            orchestrator.requestSync(vaultId = 2L, reason = SyncTriggerReason.PAGE_ENTER)
+
+            withTimeout(1_000L) { firstEntered.await() }
+            delay(100L)
+
+            assertEquals(
+                "Passive auto sync across vaults must be serialized, never concurrent.",
+                1,
+                maxConcurrent.get()
+            )
+
+            release.complete(Unit)
+            withTimeout(1_000L) { while (startedCount.get() < 2) yield() }
+
+            assertEquals(
+                "Both vaults' passive auto sync must still complete.",
+                2,
+                startedCount.get()
+            )
+            assertEquals(0, activeCount.get())
+        } finally {
+            release.complete(Unit)
+            job.cancel()
+        }
+    }
 }

@@ -57,7 +57,8 @@ data class SyncManagerConfig(
     val localMutationDebounceMs: Long = 700L,
     val retryBaseDelayMs: Long = 5_000L,
     val retryMaxDelayMs: Long = 15 * 60 * 1000L,
-    val retryMaxAttempts: Int = 5
+    val retryMaxAttempts: Int = 5,
+    val multiVaultAutoSyncStaggerMs: Long = 5_000L
 )
 
 data class VaultSyncStatus(
@@ -93,7 +94,9 @@ class BitwardenSyncOrchestrator(
     private val nowProvider: () -> Long = { System.currentTimeMillis() }
 ) {
     private val mutex = Mutex()
+    private val passiveAutoSyncMutex = Mutex()
     private val runtimes = mutableMapOf<Long, VaultRuntime>()
+    private var lastPassiveAutoSyncDoneAt = 0L
     private val _statusByVault = MutableStateFlow<Map<Long, VaultSyncStatus>>(emptyMap())
     val statusByVault: StateFlow<Map<Long, VaultSyncStatus>> = _statusByVault.asStateFlow()
 
@@ -242,7 +245,16 @@ class BitwardenSyncOrchestrator(
 
         val outcome = try {
             withContext(Dispatchers.IO) {
-                executeSync(vaultId, silent)
+                if (isPassiveAutoSyncReason(reason)) {
+                    passiveAutoSyncMutex.withLock {
+                        maybeStaggerPassiveAutoSync()
+                        executeSync(vaultId, silent).also {
+                            lastPassiveAutoSyncDoneAt = nowProvider()
+                        }
+                    }
+                } else {
+                    executeSync(vaultId, silent)
+                }
             }
         } catch (error: CancellationException) {
             SyncExecutionOutcome.RetryableError(error.message ?: "同步被取消")
@@ -447,6 +459,22 @@ class BitwardenSyncOrchestrator(
 
     private fun isPassiveAutoReason(reason: SyncTriggerReason): Boolean {
         return reason == SyncTriggerReason.PAGE_ENTER || reason == SyncTriggerReason.APP_RESUME
+    }
+
+    private fun isPassiveAutoSyncReason(reason: SyncTriggerReason): Boolean {
+        return reason == SyncTriggerReason.PAGE_ENTER
+            || reason == SyncTriggerReason.APP_RESUME
+            || reason == SyncTriggerReason.PERIODIC
+    }
+
+    private suspend fun maybeStaggerPassiveAutoSync() {
+        val staggerMs = config.multiVaultAutoSyncStaggerMs
+        if (staggerMs <= 0L) return
+        val now = nowProvider()
+        val elapsedSinceLast = now - lastPassiveAutoSyncDoneAt
+        if (lastPassiveAutoSyncDoneAt > 0L && elapsedSinceLast < staggerMs) {
+            delay(staggerMs - elapsedSinceLast)
+        }
     }
 
     private fun passiveAutoQuietWindowMs(reason: SyncTriggerReason): Long {
