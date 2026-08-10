@@ -64,6 +64,7 @@ class BitwardenSyncService(
     private val passwordEntryDao = database.passwordEntryDao()
     private val secureItemDao = database.secureItemDao()
     private val passkeyDao = database.passkeyDao()
+    private val customFieldDao = database.customFieldDao()
     private val securityManager = SecurityManager(context)
     
     // 多类型 Cipher 同步处理器
@@ -1646,7 +1647,7 @@ class BitwardenSyncService(
      * 降级为 Type 1 并丢弃 sshKey 数据，导致同步回来后 SSH 密钥丢失。
      * 使用 Type 1 + 自定义字段可确保数据在服务端完整保留并正确往返。
      */
-    private fun passwordEntryToCipherRequest(
+    private suspend fun passwordEntryToCipherRequest(
         entry: PasswordEntry,
         symmetricKey: SymmetricCryptoKey
     ): CipherCreateRequest {
@@ -1714,7 +1715,7 @@ class BitwardenSyncService(
     /**
      * 将 PasswordEntry 转换为加密的 CipherUpdateRequest
      */
-    private fun passwordEntryToCipherUpdateRequest(
+    private suspend fun passwordEntryToCipherUpdateRequest(
         entry: PasswordEntry,
         symmetricKey: SymmetricCryptoKey,
         mergedFields: List<CipherFieldApiData>? = null,
@@ -2026,7 +2027,23 @@ class BitwardenSyncService(
         BitwardenDiagLogger.append(summary)
     }
 
-    private fun buildEncryptedPasswordCustomFields(
+    /**
+     * 登录型字段名中，bastion 会映射到专用列（appPackageName/email/ssh 等）的部分。
+     * 这些字段由上方 addField 显式写入，custom_fields 表中的同名用户字段不应重复上报，
+     * 否则会在 Bitwarden 服务端产生重复字段。
+     */
+    private val RESERVED_BITWARDEN_FIELD_NAMES = setOf(
+        "apppackagename", "appname", "email", "phone",
+        "addressline", "address", "city", "state", "zipcode", "country"
+    )
+
+    private fun isReservedBitwardenFieldName(name: String): Boolean {
+        val n = name.trim()
+        if (n.startsWith("bastion_", ignoreCase = true)) return true
+        return n.lowercase() in RESERVED_BITWARDEN_FIELD_NAMES
+    }
+
+    private suspend fun buildEncryptedPasswordCustomFields(
         entry: PasswordEntry,
         symmetricKey: SymmetricCryptoKey
     ): List<CipherFieldApiData>? {
@@ -2066,7 +2083,22 @@ class BitwardenSyncService(
             .joinToString(", ")
         addField("address", legacyAddress)
 
-        if (fields.isEmpty()) return null
+        // 读取本地 custom_fields 表（用户自由自定义字段 + 本地新增字段），随条目回传 Bitwarden，
+        // 与下载侧修复配套，确保「下载 → 上传」往返不丢字段。
+        val localCustomFields = runCatchingObserved {
+            customFieldDao.getFieldsByEntryIdSync(entry.id)
+        }.getOrElse { emptyList() }
+        val customCipherFields = localCustomFields
+            .filter { it.title.isNotBlank() && !isReservedBitwardenFieldName(it.title) }
+            .map { cf ->
+                CipherFieldApiData(
+                    name = crypto.encryptString(cf.title, symmetricKey),
+                    value = crypto.encryptString(cf.value, symmetricKey),
+                    type = if (cf.isProtected) 1 else 0
+                )
+            }
+
+        if (fields.isEmpty() && customCipherFields.isEmpty()) return null
 
         return fields.map { (name, value) ->
             CipherFieldApiData(
@@ -2074,7 +2106,7 @@ class BitwardenSyncService(
                 value = crypto.encryptString(value, symmetricKey),
                 type = 0
             )
-        }
+        } + customCipherFields
     }
 
     /**
