@@ -24,8 +24,12 @@ class AutofillDetectionIntegrationGuardTest {
         assertTrue(parser.contains("promotePasswordTermCandidates"))
         assertTrue(parser.contains("nodeHasPasswordTermMatch"))
         assertTrue(parser.contains("nodeHasLoginTermMatch"))
-        assertTrue(parser.contains("weakLoginContext"))
-        assertTrue(parser.contains("hasLoginTypeField"))
+        // P1：weakLoginContext 变量与 hasLoginTypeField 已拆除（注释中的历史说明不参与判定），
+        // 识别层保留规则下沉到策略对象
+        assertFalse(parser.contains("val weakLoginContext"))
+        assertFalse(parser.contains("hasLoginTypeField"))
+        assertTrue(parser.contains("AutofillDetectionPolicy.shouldKeepLoginField("))
+        assertFalse(service.contains("shouldSuppressWeakLoginSuggestion"))
         assertTrue(parser.contains("Weak-signal node signals (LOWEST username / UNKNOWN fallback)"))
         assertTrue(parser.contains("AutofillFieldPromotionPolicy.selectUsernameNeighborIndex"))
         assertTrue(parser.contains("autofillLabelLoginTranslations"))
