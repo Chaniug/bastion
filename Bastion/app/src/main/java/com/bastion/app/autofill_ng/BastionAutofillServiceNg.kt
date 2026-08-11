@@ -710,12 +710,19 @@ class BastionAutofillServiceNg : AutofillService() {
         // 「明确绑定其它站点/其它 App」的条目带进来；此处按「仅拒绝明确矛盾」原则过滤：
         // web 页面比对注册域，原生页面比对包名；无 website 且无包名的条目（KeePass 裸条目、
         // WiFi 条目）无信息可判，一律放行。
-        val consistentPasswords = if (webDomain != null || packageName.isNotBlank()) {
+        //
+        // 页面域名只用 parsedWebDomain（AssistStructure 的权威信号），不用 webDomain
+        //（= parsedWebDomain ?: 无障碍回退域名）。回退域名是启发式（无障碍服务对 WebView/
+        // 浏览器最近 60s 的跟踪），在原生 App（如电影猎手）里可能残留无关域名；若用它做
+        // 「拒绝」判定，会把本应放行的 native 条目误杀（P2 回归即由此引起）。真实浏览器页面
+        // 都会上报 webDomain，web 轴保护不受影响；结构未上报域名的 WebView 登录则回退到
+        // 包名轴，与 P1 行为一致。
+        val consistentPasswords = if (parsedWebDomain != null || packageName.isNotBlank()) {
             matchedPasswords.filter { entry ->
                 AutofillWebsiteConsistencyPolicy.isConsistent(
                     entryWebsite = entry.website,
                     entryAppPackage = entry.appPackageName,
-                    pageWebDomain = webDomain,
+                    pageWebDomain = parsedWebDomain,
                     pagePackageName = packageName,
                 )
             }.also { filtered ->
@@ -729,7 +736,13 @@ class BastionAutofillServiceNg : AutofillService() {
                         metadata = mapOf(
                             "requestId" to requestId,
                             "packageName" to packageName,
-                            "webDomain" to (webDomain ?: "none"),
+                            "pageWebDomain" to (parsedWebDomain ?: "none"),
+                            "webDomainWithFallback" to (webDomain ?: "none"),
+                            "webDomainSource" to when {
+                                parsedWebDomain != null -> "structure"
+                                webDomain != null -> "accessibility_fallback"
+                                else -> "none"
+                            },
                             "rawMatches" to matchedPasswords.size,
                             "consistentMatches" to filtered.size,
                             "removedTitles" to removed.joinToString { it.title },
