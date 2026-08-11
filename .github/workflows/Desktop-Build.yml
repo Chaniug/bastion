@@ -61,20 +61,40 @@ jobs:
       - name: Compile shared module
         run: ./gradlew :shared:compileKotlinJvm --stacktrace
 
-      - name: Package Windows app
-        run: ./gradlew :desktop:packageMsi --stacktrace
+      - name: Package Windows app (MSI + EXE)
+        run: |
+          ./gradlew :desktop:packageMsi :desktop:packageExe --stacktrace
 
       - name: Stop Gradle Daemon
         if: always()
         shell: bash
         run: ./gradlew --stop || true
 
-      - name: Upload MSI artifact
+      - name: Collect packaging metadata
+        id: meta_files
+        shell: bash
+        run: |
+          echo "=== Generated binaries ==="
+          find desktop/desktop/build/compose/binaries/main -type f | sort
+          {
+            echo "msi_files<<EOF"
+            find desktop/desktop/build/compose/binaries/main/msi -name '*.msi' | sed 's/^/> *   `/' 
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "exe_files<<EOF"
+            find desktop/desktop/build/compose/binaries/main/exe -name '*.exe' | sed 's/^/> *   `/'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload installers artifact
         if: github.event_name != 'workflow_dispatch'
         uses: actions/upload-artifact@v7
         with:
-          name: bastion-desktop-msi
-          path: desktop/desktop/build/compose/binaries/main/msi/**/*.msi
+          name: bastion-desktop-installers
+          path: |
+            desktop/desktop/build/compose/binaries/main/msi/**/*.msi
+            desktop/desktop/build/compose/binaries/main/exe/**/*.exe
           if-no-files-found: warn
 
       - name: Resolve release version & tag
@@ -143,12 +163,16 @@ jobs:
             > * **Version**: `${{ steps.meta.outputs.version }}`
             > * **Commit**: `${{ github.sha }}`
             >
-            > **下载安装：** 下方 `BastionDesktop-${{ steps.meta.outputs.version }}.msi` 双击安装。
+            > **下载安装（任选一种）：**
+            > * **EXE 安装版**：双击安装，自动写入开始菜单
+            > * **MSI 安装版**：双击安装，支持企业部署/组策略
+            > * 说明：EXE 比 MSI 略小（约 5%），两者都内置运行时，无需预装 Java。
             >
             > ## 更新内容 (What's Changed)
             > ${{ steps.changelog.outputs.notes }}
           files: |
             desktop/desktop/build/compose/binaries/main/msi/**/*.msi
+            desktop/desktop/build/compose/binaries/main/exe/**/*.exe
           draft: false
           prerelease: true
           make_latest: true
