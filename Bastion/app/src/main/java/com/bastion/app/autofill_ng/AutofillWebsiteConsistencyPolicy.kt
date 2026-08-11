@@ -15,9 +15,12 @@ package com.bastion.app.autofill_ng
  *      全部不一致 → 明确矛盾，拒绝；
  *    - 条目无任何 web 域名（如仅 androidapp:// 或空白）→ 无矛盾可判，放行
  *      （页面包名是浏览器包名，对 web 登录无判定意义）。
- * 2. **原生页面**（pageWebDomain 为空）——包名是唯一判定轴：
+ * 2. **原生页面**（pageWebDomain 为空）——包名是判定主轴，标题为「包名过期」兜底：
  *    - 条目 appPackageName 或 website 中的 androidapp:// 包名存在时，只要**任一**等于当前
- *      包名即放行；全部不一致 → 明确矛盾，拒绝；
+ *      包名即放行；
+ *    - 包名全部不一致时，若条目标题/App 名与当前应用显示名归一化后互相包含（如
+ *      「电影猎手」↔「电影_猎手」）→ 视为「包名过期」而非矛盾，放行（混淆/加固包名 App
+ *      重打包会换包名，条目里的旧包名属常见情况）；无标题证据 → 明确矛盾，拒绝；
  *    - 条目无任何包名（如仅存服务官网域名）→ 放行（KeePass 常见约定：原生 App 登录也存
  *      服务官网域名）；
  * 3. **条目无 website 且无包名** → 放行（KeePass 裸条目 / WiFi 条目）。
@@ -32,14 +35,20 @@ internal object AutofillWebsiteConsistencyPolicy {
      *
      * @param entryWebsite 条目的 website 字段（可为空 / URL / androidapp://pkg / 多 URI 换行分隔）
      * @param entryAppPackage 条目的 appPackageName 字段（可为空）
+     * @param entryTitle 条目标题（供「包名过期」场景的标题证据判定）
+     * @param entryAppName 条目关联应用名（同上）
      * @param pageWebDomain 当前页面的 web 域名（null 表示原生 App 上下文）
      * @param pagePackageName 当前页面的包名（可能为空）
+     * @param pageAppDisplayName 当前应用显示名（供标题证据判定，可为空）
      */
     fun isConsistent(
         entryWebsite: String?,
         entryAppPackage: String?,
+        entryTitle: String?,
+        entryAppName: String?,
         pageWebDomain: String?,
         pagePackageName: String?,
+        pageAppDisplayName: String?,
     ): Boolean {
         val entryHosts = extractWebHosts(entryWebsite)
         val entryPackages = (extractPackages(entryWebsite) + normalizePackage(entryAppPackage))
@@ -54,11 +63,40 @@ internal object AutofillWebsiteConsistencyPolicy {
             return entryHosts.any { registrableKey(it) == pageKey }
         }
 
-        // 原生页面：包名是唯一判定轴
+        // 原生页面：包名是判定主轴，标题为「包名过期」场景的强证据兜底。
         val pagePkg = normalizePackage(pagePackageName)
         if (entryPackages.isEmpty()) return true // 无包名信息 → 无矛盾可判
         if (pagePkg == null) return true // 页面包名未知 → 无法判定矛盾
-        return entryPackages.any { it == pagePkg }
+        if (entryPackages.any { it == pagePkg }) return true // 包名一致 → 放行
+
+        // 包名全部与当前包不一致：混淆/加固包名 App 每次重打包包名都可能变化，条目里存的
+        // appPackageName（或 androidapp:// URI）过期属常见情况——若条目标题/App 名与当前
+        // 应用显示名一致（如「电影猎手」↔「电影_猎手」），视为「包名过期」而非「明确绑定
+        // 其它 App」的矛盾，放行；无标题证据的包名矛盾仍然拒绝（P2 防误填保留）。
+        return hasTitleEvidence(entryTitle, entryAppName, pageAppDisplayName)
+    }
+
+    /**
+     * 标题级强证据：条目标题或 App 名与页面应用显示名在归一化后互相包含。
+     * 归一化：小写 + 去掉下划线/连字符/空格/点（「电影_猎手」→「电影猎手」）。
+     */
+    private fun hasTitleEvidence(
+        entryTitle: String?,
+        entryAppName: String?,
+        pageAppDisplayName: String?,
+    ): Boolean {
+        if (pageAppDisplayName.isNullOrBlank()) return false
+        val pageKey = normalizeTitle(pageAppDisplayName) ?: return false
+        if (pageKey.length < 2) return false
+        val entryKeys = listOfNotNull(entryTitle?.let(::normalizeTitle), entryAppName?.let(::normalizeTitle))
+        return entryKeys.any { key ->
+            key.length >= 2 && (key.contains(pageKey) || pageKey.contains(key))
+        }
+    }
+
+    private fun normalizeTitle(value: String): String? {
+        val normalized = value.lowercase().replace(TITLE_SEPARATORS, "").trim()
+        return normalized.takeIf { it.isNotBlank() }
     }
 
     // --- 归一化与解析 ---
@@ -122,4 +160,5 @@ internal object AutofillWebsiteConsistencyPolicy {
     }
 
     private val WHITESPACE = Regex("\\s+")
+    private val TITLE_SEPARATORS = Regex("[_\\-\\s.]+")
 }

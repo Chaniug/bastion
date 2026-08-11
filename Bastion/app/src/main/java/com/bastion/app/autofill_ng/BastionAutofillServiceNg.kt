@@ -708,22 +708,25 @@ class BastionAutofillServiceNg : AutofillService() {
         // P2 第二道防线（对齐 bitwarden fillLoginPartition）：条目级 website 双向一致性校验。
         // matcher 按域名/包名/标题打分，非严格模式的启发式匹配与 native 包名 token 匹配可能把
         // 「明确绑定其它站点/其它 App」的条目带进来；此处按「仅拒绝明确矛盾」原则过滤：
-        // web 页面比对注册域，原生页面比对包名；无 website 且无包名的条目（KeePass 裸条目、
+        // web 页面比对注册域，原生页面比对包名（包名不一致但有标题级强证据时视为「包名过期」
+        // 放行，兼容混淆包名 App 重打包换包名）；无 website 且无包名的条目（KeePass 裸条目、
         // WiFi 条目）无信息可判，一律放行。
         //
         // 页面域名只用 parsedWebDomain（AssistStructure 的权威信号），不用 webDomain
         //（= parsedWebDomain ?: 无障碍回退域名）。回退域名是启发式（无障碍服务对 WebView/
         // 浏览器最近 60s 的跟踪），在原生 App（如电影猎手）里可能残留无关域名；若用它做
-        // 「拒绝」判定，会把本应放行的 native 条目误杀（P2 回归即由此引起）。真实浏览器页面
-        // 都会上报 webDomain，web 轴保护不受影响；结构未上报域名的 WebView 登录则回退到
-        // 包名轴，与 P1 行为一致。
+        // 「拒绝」判定，会把本应放行的 native 条目误杀。真实浏览器页面都会上报 webDomain，
+        // web 轴保护不受影响；结构未上报域名的 WebView 登录则回退到包名轴，与 P1 行为一致。
         val consistentPasswords = if (parsedWebDomain != null || packageName.isNotBlank()) {
             matchedPasswords.filter { entry ->
                 AutofillWebsiteConsistencyPolicy.isConsistent(
                     entryWebsite = entry.website,
                     entryAppPackage = entry.appPackageName,
+                    entryTitle = entry.title,
+                    entryAppName = entry.appName,
                     pageWebDomain = parsedWebDomain,
                     pagePackageName = packageName,
+                    pageAppDisplayName = appDisplayName,
                 )
             }.also { filtered ->
                 if (filtered.size != matchedPasswords.size) {

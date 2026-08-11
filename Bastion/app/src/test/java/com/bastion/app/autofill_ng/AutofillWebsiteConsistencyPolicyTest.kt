@@ -195,6 +195,64 @@ class AutofillWebsiteConsistencyPolicyTest {
         )
     }
 
+    // ================= 包名过期 + 标题证据（混淆包名 App 回归修复）=================
+
+    @Test
+    fun nativePage_packageMismatch_butTitleEvidence_isConsistent() {
+        // 电影猎手场景：条目存旧包名（混淆包名 App 重打包换包名），但条目标题与
+        // 应用显示名归一化后一致（「电影猎手」↔「电影_猎手」）→ 视为包名过期，放行
+        assertTrue(
+            consistent(
+                entryAppPackage = "com.dianying.old",
+                entryTitle = "电影猎手",
+                pageWebDomain = null,
+                pagePackageName = "qingcore677.mingcore8lc.guanglane1dnx",
+                pageAppDisplayName = "电影_猎手",
+            )
+        )
+    }
+
+    @Test
+    fun nativePage_packageMismatch_withEnglishTitleVariant_isConsistent() {
+        // 英文标题变体：下划线/大小写差异归一化后一致
+        assertTrue(
+            consistent(
+                entryAppPackage = "com.old.pkg",
+                entryTitle = "MovieHunter",
+                entryAppName = "movie_hunter",
+                pageWebDomain = null,
+                pagePackageName = "com.new.random.pkg",
+                pageAppDisplayName = "moviehunter",
+            )
+        )
+    }
+
+    @Test
+    fun nativePage_packageMismatch_withUnrelatedTitle_isRejected() {
+        // 包名矛盾 + 标题无关（如京东条目出现在电影猎手页面）→ 仍拒绝（P2 防误填保留）
+        assertFalse(
+            consistent(
+                entryAppPackage = "com.other.app",
+                entryTitle = "京东商城",
+                pageWebDomain = null,
+                pagePackageName = "com.example.shop",
+                pageAppDisplayName = "电影猎手",
+            )
+        )
+    }
+
+    @Test
+    fun nativePage_packageMismatch_blankTitle_isRejected() {
+        // 包名矛盾 + 无标题证据 → 拒绝（保持原行为）
+        assertFalse(
+            consistent(
+                entryAppPackage = "com.other.app",
+                pageWebDomain = null,
+                pagePackageName = "com.example.shop",
+            )
+        )
+    }
+
     // ================= 注册域边界 =================
 
     @Test
@@ -205,12 +263,18 @@ class AutofillWebsiteConsistencyPolicyTest {
     private fun consistent(
         entryWebsite: String? = null,
         entryAppPackage: String? = null,
+        entryTitle: String? = null,
+        entryAppName: String? = null,
         pageWebDomain: String? = null,
         pagePackageName: String? = null,
+        pageAppDisplayName: String? = null,
     ) = AutofillWebsiteConsistencyPolicy.isConsistent(
         entryWebsite = entryWebsite,
         entryAppPackage = entryAppPackage,
+        entryTitle = entryTitle,
+        entryAppName = entryAppName,
         pageWebDomain = pageWebDomain,
         pagePackageName = pagePackageName,
+        pageAppDisplayName = pageAppDisplayName,
     )
 }
