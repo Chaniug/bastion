@@ -30,8 +30,10 @@ class AutofillDetectionIntegrationGuardTest {
         assertFalse(parser.contains("hasLoginTypeField"))
         assertTrue(parser.contains("AutofillDetectionPolicy.shouldKeepLoginField("))
         assertFalse(service.contains("shouldSuppressWeakLoginSuggestion"))
-        // P2：条目级 website 双向一致性校验已接入匹配结果之后（stabilize 之前）
+        // P2：条目级 website 双向一致性校验已接入匹配结果之后（stabilize 之前）；
+        // 页面域名只用 AssistStructure 权威信号 parsedWebDomain，避免无障碍回退域名误杀 native 条目
         assertTrue(service.contains("AutofillWebsiteConsistencyPolicy.isConsistent("))
+        assertTrue(service.contains("pageWebDomain = parsedWebDomain"))
         assertTrue(service.contains("matchedPasswords = consistentPasswords"))
         assertTrue(parser.contains("Weak-signal node signals (LOWEST username / UNKNOWN fallback)"))
         assertTrue(parser.contains("AutofillFieldPromotionPolicy.selectUsernameNeighborIndex"))
