@@ -234,6 +234,19 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 > Picker V2/legacy/直填/密码优先全部路径）；过滤时输出 `P2 website-consistency filtered entries`
 > 诊断日志。
 
+**回归修复记录（2026-08-11，电影猎手真机回归发现并修复两处误杀）**
+1. dev `a47f1335` / main `fbcf6b28`：过滤误用「无障碍回退域名」做 web 轴判定——原生 App
+   在结构未上报 webDomain 时，回退域名可能是无关残留（SSO/中转页），把 native 条目误杀。
+   改为只用 `parsedWebDomain`（AssistStructure 权威信号）；真实浏览器页面不受影响。
+2. dev `1cfe15ad` / main `5bd6de45`：包名轴一票否决误杀**混淆包名 App**（如电影猎手，
+   页面包名 `qingcore677.mingcore8lc.guanglane1dnx` 重打包即变，条目存的旧包名≠当前包名，
+   而 matcher 靠标题 EXACT_APP_TITLE 匹配上）。修复：包名全不一致时，若条目标题/App 名与
+   页面应用显示名归一化后互相包含（「电影猎手」↔「电影_猎手」），视为「包名过期」放行；
+   无标题证据的包名矛盾仍拒绝。
+
+**教训**：「仅拒绝明确矛盾」必须定义清楚"矛盾"的证据强度——包名不一致 ≠ 矛盾，
+旧包名/混淆包名是常态；标题强证据应优先于包名过期信号。
+
 对齐 `FilledDataBuilderImpl.fillLoginPartition`：构建 dataset 前对**条目**做 website 一致性校验，丢弃「明确绑定其它站点/其它 App」的条目。
 
 **落地设计（2026-08-11，用户确认「仅拒绝明确矛盾」版）**
