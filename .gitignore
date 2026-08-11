@@ -101,6 +101,8 @@ Android-浏览器插件功能差异排查报告.md
 bitwarden/
 !Bastion/app/src/main/java/com/bastion/app/bitwarden/
 !Bastion/app/src/main/java/com/bastion/app/bitwarden/**
+# 桌面端共享了 bitwarden 目录名，需显式豁免（含 com/bastion/app/bitwarden 与 data/bitwarden 等所有层级）
+!desktop/**/bitwarden/
 fdroiddata/
 CLI-WeChat-Bridge-main/
 

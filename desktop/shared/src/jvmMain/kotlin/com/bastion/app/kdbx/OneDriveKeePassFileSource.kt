@@ -2,10 +2,12 @@ package com.bastion.app.kdbx
 
 import com.bastion.app.platform.Logger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -13,7 +15,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.time.Instant
-import java.util.Locale
 
 /**
  * OneDrive 上的 KDBX 文件源（桌面版，Graph REST）。
@@ -33,13 +34,19 @@ class OneDriveKeePassFileSource(
 ) : KeePassFileSource {
 
     private val tag = "OneDriveKeePassFileSource"
-    private val json = Json { ignoreUnknownKeys = true }
+    // encodeDefaults=true：保证值等于默认值的属性也参与序列化。
+    // 否则 UploadSessionRequestDto() 会退化为 "{}"，createUploadSession 的
+    // conflictBehavior=replace 发不出去，Graph 按默认 rename 处理，>4MB 重复上传
+    // 会生成 "file 1.kdbx" 副本而非覆盖。勿改回默认值（有回归测试守护）。
+    internal val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     companion object {
         private const val GRAPH_BASE = "https://graph.microsoft.com/v1.0"
         private const val JSON_MEDIA = "application/json; charset=utf-8"
         private const val OCTET_MEDIA = "application/octet-stream"
         private const val CHUNK_SIZE = 4 * 1024 * 1024L // 4MB 分片
+        private const val MAX_CHUNK_RETRIES = 3
+        private const val RETRY_DELAY_MS = 500L
     }
 
     // ==================== DTO ====================
@@ -74,12 +81,12 @@ class OneDriveKeePassFileSource(
     )
 
     @Serializable
-    private data class UploadSessionRequestDto(
+    internal data class UploadSessionRequestDto(
         val item: UploadSessionItemDto = UploadSessionItemDto()
     )
 
     @Serializable
-    private data class UploadSessionItemDto(
+    internal data class UploadSessionItemDto(
         @SerialName("@microsoft.graph.conflictBehavior") val conflictBehavior: String = "replace"
     )
 
@@ -150,6 +157,11 @@ class OneDriveKeePassFileSource(
 
                 okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
+                        if (response.code == 412) {
+                            throw conflictWithRemoteVersion(
+                                "远端文件已被修改（412 Precondition Failed），本地 expectedVersion 过期"
+                            )
+                        }
                         throw IOException("OneDrive write failed: ${response.code} ${response.body?.string().orEmpty()}")
                     }
                     val dto = parseItemOrNull(response.body?.string())
@@ -252,51 +264,111 @@ class OneDriveKeePassFileSource(
     }
 
     private suspend fun uploadViaSession(url: String, token: String, bytes: ByteArray): FileSourceWriteResult {
-        // 1. 创建上传会话
+        // 1. 创建上传会话（conflictBehavior=replace：同名文件覆盖而非改名副本）
         val sessionRequest = Request.Builder()
             .url("$url/createUploadSession")
             .addHeader("Authorization", "Bearer $token")
             .addHeader("Content-Type", JSON_MEDIA)
-            .post("{}".toRequestBody(JSON_MEDIA.toMediaType()))
+            .post(json.encodeToString(UploadSessionRequestDto()).toRequestBody(JSON_MEDIA.toMediaType()))
             .build()
 
         val uploadUrl = okHttpClient.newCall(sessionRequest).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("Create upload session failed: ${response.code}")
+                if (response.code == 412) {
+                    throw conflictWithRemoteVersion(
+                        "远端文件已被修改（412 Precondition Failed），无法创建覆盖上传会话"
+                    )
+                }
+                throw IOException("Create upload session failed: ${response.code} ${response.body?.string().orEmpty()}")
             }
             json.decodeFromString<UploadSessionResponseDto>(response.body?.string().orEmpty()).uploadUrl
         }
 
-        // 2. 分片上传
+        // 2. 分片上传（严格失败检查：任一非 2xx 即抛，offset 仅在成功后前进）
         var offset = 0L
         var finalResponse: String? = null
-        while (offset < bytes.size) {
-            val chunkLen = minOf(CHUNK_SIZE, bytes.size - offset)
-            val chunk = bytes.copyOfRange(offset.toInt(), (offset + chunkLen).toInt())
-            val last = offset + chunkLen >= bytes.size
-            val contentRange = "bytes ${offset}-${offset + chunkLen - 1}/${bytes.size}"
+        try {
+            while (offset < bytes.size) {
+                val chunkLen = minOf(CHUNK_SIZE, bytes.size - offset)
+                val chunk = bytes.copyOfRange(offset.toInt(), (offset + chunkLen).toInt())
+                val last = offset + chunkLen >= bytes.size
+                val contentRange = "bytes ${offset}-${offset + chunkLen - 1}/${bytes.size}"
 
-            val putRequest = Request.Builder()
-                .url(uploadUrl)
-                .addHeader("Content-Length", chunk.size.toString())
-                .addHeader("Content-Range", contentRange)
-                .put(chunk.toRequestBody(OCTET_MEDIA.toMediaType()))
-                .build()
+                val putRequest = Request.Builder()
+                    .url(uploadUrl)
+                    .addHeader("Content-Length", chunk.size.toString())
+                    .addHeader("Content-Range", contentRange)
+                    .put(chunk.toRequestBody(OCTET_MEDIA.toMediaType()))
+                    .build()
 
-            val result = okHttpClient.newCall(putRequest).execute().use { response ->
-                if (last) response.body?.string() else null
+                val result = putChunkWithRetry(putRequest, contentRange, last)
+                if (last) finalResponse = result
+                offset += chunkLen
             }
-            if (last) finalResponse = result
-            offset += chunkLen
+        } catch (e: Exception) {
+            // 取消上传会话（尽力而为），然后原样抛出
+            runCatching { cancelUploadSession(uploadUrl, token) }
+            throw e
         }
 
-        val dto = finalResponse?.let { parseItemOrNull(it) }
+        // 3. 最后分片成功后，响应体必须包含最终 DriveItem
+        val body = finalResponse?.trim().orEmpty()
+        if (body.isEmpty()) {
+            throw IOException("Upload completed but final response body was empty")
+        }
+        val dto = parseItemOrNull(body)
+            ?: throw IOException("Upload completed but final response could not be parsed")
+
         return FileSourceWriteResult(
-            etag = dto?.eTag,
-            lastModified = dto?.lastModifiedDateTime?.let(::parseMs),
-            remoteId = dto?.id,
-            driveId = dto?.parentReference?.driveId
+            etag = dto.eTag,
+            lastModified = dto.lastModifiedDateTime?.let(::parseMs),
+            remoteId = dto.id,
+            driveId = dto.parentReference?.driveId
         )
+    }
+
+    /**
+     * 上传单个分片；网络/5xx 对同一 range 重试，412 冲突直接抛出，其余失败抛 IOException。
+     */
+    private suspend fun putChunkWithRetry(
+        putRequest: Request,
+        contentRange: String,
+        last: Boolean
+    ): String? {
+        var attempt = 0
+        while (true) {
+            attempt++
+            val response = okHttpClient.newCall(putRequest).execute()
+            response.use { r ->
+                if (r.isSuccessful) {
+                    return if (last) r.body?.string() else null
+                }
+                if (r.code == 412) {
+                    throw conflictWithRemoteVersion(
+                        "远端文件已被修改（412 Precondition Failed）@ range $contentRange"
+                    )
+                }
+                if (attempt >= MAX_CHUNK_RETRIES) {
+                    throw IOException(
+                        "Chunk upload failed after $attempt attempts @ range $contentRange: " +
+                            "${r.code} ${r.body?.string().orEmpty()}"
+                    )
+                }
+            }
+            delay(RETRY_DELAY_MS)
+        }
+    }
+
+    /** 取消上传会话（DELETE uploadUrl），尽力而为。 */
+    private suspend fun cancelUploadSession(uploadUrl: String, token: String) {
+        runCatching {
+            val request = Request.Builder()
+                .url(uploadUrl)
+                .addHeader("Authorization", "Bearer $token")
+                .delete()
+                .build()
+            okHttpClient.newCall(request).execute().close()
+        }
     }
 
     private fun parseItemOrNull(body: String?): DriveItemDto? {
@@ -329,4 +401,27 @@ class OneDriveKeePassFileSource(
             }
         }
     }
+
+    /**
+     * 构造冲突异常并尽力附带远端当前版本标识（etag/cTag）。
+     * stat() 失败时 [OneDriveConflictException.remoteVersion] 为 null，不影响冲突上报。
+     */
+    private suspend fun conflictWithRemoteVersion(message: String): OneDriveConflictException {
+        val remoteStat = try { stat() } catch (_: Exception) { null }
+        val remote = remoteStat?.etag ?: remoteStat?.versionToken
+        return OneDriveConflictException(message, remoteVersion = remote)
+    }
 }
+
+/**
+ * OneDrive 写入冲突异常：远端文件已被修改（412 Precondition Failed），
+ * 本地持有的 expectedVersion 已过期。由同步引擎捕获后映射为 [OneDriveSyncResult.Conflict]。
+ *
+ * @param remoteVersion 冲突时远端当前的版本标识（etag/cTag），best-effort 获取；
+ *                      获取失败时为 null。供同步引擎填充 [OneDriveSyncResult.Conflict.remoteVersion]。
+ */
+class OneDriveConflictException(
+    message: String,
+    val remoteVersion: String? = null,
+    cause: Throwable? = null
+) : IOException(message, cause)
