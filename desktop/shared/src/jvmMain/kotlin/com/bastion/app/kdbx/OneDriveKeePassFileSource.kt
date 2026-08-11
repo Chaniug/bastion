@@ -125,7 +125,7 @@ class OneDriveKeePassFileSource(
 
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("OneDrive read failed: ${response.code()}")
+                throw IOException("OneDrive read failed: ${response.code}")
             }
             response.body?.bytes() ?: ByteArray(0)
         }
@@ -150,7 +150,7 @@ class OneDriveKeePassFileSource(
 
                 okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        throw IOException("OneDrive write failed: ${response.code()} ${response.body?.string().orEmpty()}")
+                        throw IOException("OneDrive write failed: ${response.code} ${response.body?.string().orEmpty()}")
                     }
                     val dto = parseItemOrNull(response.body?.string())
                     FileSourceWriteResult(
@@ -175,7 +175,7 @@ class OneDriveKeePassFileSource(
 
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("OneDrive listChildren failed: ${response.code()}")
+                throw IOException("OneDrive listChildren failed: ${response.code}")
             }
             val body = response.body?.string().orEmpty()
             val parsed = json.decodeFromString<ChildrenResponseDto>(body)
@@ -206,7 +206,7 @@ class OneDriveKeePassFileSource(
 
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("OneDrive createFile failed: ${response.code()}")
+                throw IOException("OneDrive createFile failed: ${response.code}")
             }
             val dto = parseItemOrNull(response.body?.string())
             FileSourceEntry(
@@ -230,7 +230,7 @@ class OneDriveKeePassFileSource(
             .build()
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("OneDrive connection test failed: ${response.code()}")
+                throw IOException("OneDrive connection test failed: ${response.code}")
             }
         }
     }
@@ -244,7 +244,7 @@ class OneDriveKeePassFileSource(
             .build()
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                Logger.w(tag, "GET $url failed: ${response.code()}")
+                Logger.w(tag, "GET $url failed: ${response.code}")
                 return null
             }
             return json.decodeFromString<DriveItemDto>(response.body?.string().orEmpty())
@@ -262,7 +262,7 @@ class OneDriveKeePassFileSource(
 
         val uploadUrl = okHttpClient.newCall(sessionRequest).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("Create upload session failed: ${response.code()}")
+                throw IOException("Create upload session failed: ${response.code}")
             }
             json.decodeFromString<UploadSessionResponseDto>(response.body?.string().orEmpty()).uploadUrl
         }

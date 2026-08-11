@@ -138,7 +138,8 @@ fun SettingsTab(repository: BitwardenRepository) {
                         Text(if (oneDriveBusy) "等待浏览器授权…" else "登录 OneDrive")
                     }
                 } else {
-                    Text(oneDriveEmail, style = MaterialTheme.typography.bodyLarge)
+                    val email = oneDriveEmail ?: ""
+                    Text(email, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "用于把本地 KDBX 库同步到 OneDrive（需在 Azure 注册桌面应用，见 README）",

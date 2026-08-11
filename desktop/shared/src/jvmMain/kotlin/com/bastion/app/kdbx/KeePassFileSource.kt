@@ -1,4 +1,4 @@
-package com.bastion.app.utils
+package com.bastion.app.kdbx
 
 const val KEEPASS_KDBX_MIME_TYPE = "application/x-keepass2"
 

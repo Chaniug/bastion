@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.parseToJsonElement
 import java.awt.Desktop
 import java.net.ServerSocket
 import java.net.URI
@@ -106,7 +105,7 @@ class OneDriveBrowserAuth(
         okHttp.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw OneDriveAuthException("Token refresh failed: ${response.code()} - $body")
+                throw OneDriveAuthException("Token refresh failed: ${response.code} - $body")
             }
             val parsed = json.decodeFromString<TokenResponse>(body)
             return sessionFromToken(parsed)
@@ -184,7 +183,7 @@ class OneDriveBrowserAuth(
 
             respond(socket, "登录成功！您可以关闭此窗口并返回 Bastion Desktop。")
             socket.close()
-            code
+            return code
         } finally {
             server.close()
         }
@@ -223,10 +222,10 @@ class OneDriveBrowserAuth(
         okHttp.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw OneDriveAuthException("Token exchange failed: ${response.code()} - $body")
+                throw OneDriveAuthException("Token exchange failed: ${response.code} - $body")
             }
             val parsed = json.decodeFromString<TokenResponse>(body)
-            sessionFromToken(parsed)
+            return sessionFromToken(parsed)
         }
     }
 
