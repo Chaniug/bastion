@@ -77,15 +77,15 @@ jobs:
         shell: bash
         run: |
           echo "=== Generated binaries ==="
-          find desktop/desktop/build/compose/binaries/main -type f | sort
+          find desktop/build/compose/binaries/main -type f | sort
           {
             echo "msi_files<<EOF"
-            find desktop/desktop/build/compose/binaries/main/msi -name '*.msi' | sed 's/^/> *   `/' 
+            find desktop/build/compose/binaries/main/msi -name '*.msi' | sed 's/^/> *   `/' 
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
           {
             echo "exe_files<<EOF"
-            find desktop/desktop/build/compose/binaries/main/exe -name '*.exe' | sed 's/^/> *   `/'
+            find desktop/build/compose/binaries/main/exe -name '*.exe' | sed 's/^/> *   `/'
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
