@@ -183,11 +183,6 @@ class KeePassKdbxService {
         }
     }
 
-    /**
-     * 将数据库重新编码为 KDBX 字节流（用于上传/导出，与保存使用相同的 cipherProviders）。
-     */
-    fun exportBytes(db: KeePassDatabase): ByteArray = encodeDatabase(db)
-
     private fun encodeDatabase(db: KeePassDatabase): ByteArray {
         return ByteArrayOutputStream().use { output ->
             db.encode(output, cipherProviders = cipherProviders)

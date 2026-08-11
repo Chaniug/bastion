@@ -26,24 +26,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bastion.app.kdbx.KdbxOneDriveSyncEngine
 import com.bastion.app.kdbx.KeePassEntryData
 import com.bastion.app.kdbx.KeePassGroupInfo
 import com.bastion.app.kdbx.KeePassKdbxService
-import com.bastion.app.kdbx.OneDriveDownloadResult
-import com.bastion.app.kdbx.OneDriveKeePassFileSource
-import com.bastion.app.kdbx.OneDriveSyncResult
 import com.bastion.app.kdbx.OpenedDatabase
 import com.bastion.app.security.DesktopCryptoManager
-import com.bastion.desktop.di.AppContainer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -68,45 +59,6 @@ fun KdbxTab(cryptoManager: DesktopCryptoManager) {
     var entries by remember { mutableStateOf<List<KeePassEntryData>>(emptyList()) }
     var showNewGroupDialog by remember { mutableStateOf(false) }
     var newGroupName by remember { mutableStateOf("") }
-
-    // OneDrive 同步状态
-    val scope = rememberCoroutineScope()
-    val syncEngine = remember { KdbxOneDriveSyncEngine(service) }
-    val oneDriveManager = AppContainer.oneDriveSessionManager
-    var oneDriveEmail by remember { mutableStateOf(oneDriveManager.currentUserEmail()) }
-    var oneDriveBusy by remember { mutableStateOf(false) }
-    var syncStatus by remember { mutableStateOf<String?>(null) }
-    var pendingUploadVersion by remember { mutableStateOf<String?>(null) }
-    var showConflictDialog by remember { mutableStateOf(false) }
-
-    /** 强制覆盖上传（expectedVersion = null），供冲突对话框与卡片共用。 */
-    fun forceUpload(db: OpenedDatabase) {
-        showConflictDialog = false
-        oneDriveBusy = true
-        syncStatus = null
-        scope.launch {
-            try {
-                val source = OneDriveKeePassFileSource(
-                    authTokenProvider = { oneDriveManager.tokenProvider() },
-                    remotePath = "/bastion/${db.file.name}"
-                )
-                when (val result = syncEngine.upload(db, source, expectedVersion = null)) {
-                    is OneDriveSyncResult.Success -> {
-                        pendingUploadVersion = result.remoteEtag
-                        syncStatus = "强制覆盖成功：${result.bytesWritten} 字节"
-                    }
-                    is OneDriveSyncResult.Error -> {
-                        syncStatus = "强制覆盖失败：${result.message}"
-                    }
-                    else -> syncStatus = "强制覆盖未完成"
-                }
-            } catch (e: Exception) {
-                syncStatus = "强制覆盖失败：${e.message}"
-            } finally {
-                oneDriveBusy = false
-            }
-        }
-    }
 
     fun refresh(db: OpenedDatabase) {
         groups = service.listGroups(db.database)
@@ -271,108 +223,6 @@ fun KdbxTab(cryptoManager: DesktopCryptoManager) {
 
         // 右侧条目表
         Column(Modifier.weight(1f).fillMaxSize().padding(8.dp)) {
-            // === OneDrive 同步卡片 ===
-            OneDriveSyncCard(
-                isLoggedIn = !oneDriveEmail.isNullOrBlank(),
-                email = oneDriveEmail,
-                busy = oneDriveBusy,
-                status = syncStatus,
-                onLogin = {
-                    oneDriveBusy = true
-                    syncStatus = null
-                    scope.launch {
-                        try {
-                            val session = withContext(Dispatchers.IO) {
-                                AppContainer.oneDriveAuth.login()
-                            }
-                            oneDriveManager.saveSession(session)
-                            oneDriveEmail = session.userEmail.ifBlank { "OneDrive 账号" }
-                            syncStatus = "OneDrive 登录成功"
-                        } catch (e: Exception) {
-                            syncStatus = "OneDrive 登录失败：${e.message}"
-                        } finally {
-                            oneDriveBusy = false
-                        }
-                    }
-                },
-                onUpload = {
-                    oneDriveBusy = true
-                    syncStatus = null
-                    scope.launch {
-                        try {
-                            val source = OneDriveKeePassFileSource(
-                                authTokenProvider = { oneDriveManager.tokenProvider() },
-                                remotePath = "/bastion/${db.file.name}"
-                            )
-                            when (val result = syncEngine.upload(db, source, expectedVersion = pendingUploadVersion)) {
-                                is OneDriveSyncResult.Success -> {
-                                    pendingUploadVersion = result.remoteEtag
-                                    syncStatus = "上传成功：${result.bytesWritten} 字节"
-                                }
-                                is OneDriveSyncResult.Conflict -> {
-                                    showConflictDialog = true
-                                    pendingUploadVersion = null
-                                    syncStatus = "同步冲突：远端文件已被修改"
-                                }
-                                is OneDriveSyncResult.Error -> {
-                                    syncStatus = "上传失败：${result.message}"
-                                }
-                                OneDriveSyncResult.RemoteMissing -> {
-                                    syncStatus = "远端文件不存在，请先确认 /bastion 文件夹存在"
-                                }
-                            }
-                        } catch (e: Exception) {
-                            syncStatus = "上传失败：${e.message}"
-                        } finally {
-                            oneDriveBusy = false
-                        }
-                    }
-                },
-                onDownload = {
-                    oneDriveBusy = true
-                    syncStatus = null
-                    scope.launch {
-                        try {
-                            val source = OneDriveKeePassFileSource(
-                                authTokenProvider = { oneDriveManager.tokenProvider() },
-                                remotePath = "/bastion/${db.file.name}"
-                            )
-                            when (val result = syncEngine.download(
-                                source = source,
-                                localFile = db.file,
-                                password = db.password,
-                                keyFileBytes = db.keyFileBytes
-                            )) {
-                                is OneDriveDownloadResult.Success -> {
-                                    opened = result.opened
-                                    pendingUploadVersion = result.remoteEtag
-                                    selectedGroupPath = "Root"
-                                    refresh(result.opened)
-                                    syncStatus = "下载成功：${result.bytesDownloaded} 字节"
-                                }
-                                is OneDriveDownloadResult.Error -> {
-                                    syncStatus = "下载失败：${result.message}"
-                                }
-                                OneDriveDownloadResult.RemoteMissing -> {
-                                    syncStatus = "远端文件不存在"
-                                }
-                            }
-                        } catch (e: Exception) {
-                            syncStatus = "下载失败：${e.message}"
-                        } finally {
-                            oneDriveBusy = false
-                        }
-                    }
-                },
-                onLogout = {
-                    oneDriveManager.clearSession()
-                    oneDriveEmail = null
-                    pendingUploadVersion = null
-                    syncStatus = "已登出 OneDrive"
-                }
-            )
-            Spacer(Modifier.height(8.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
                     Text(db.file.name, style = MaterialTheme.typography.titleMedium)
@@ -476,75 +326,6 @@ fun KdbxTab(cryptoManager: DesktopCryptoManager) {
                 TextButton(onClick = { showNewGroupDialog = false }) { Text("取消") }
             }
         )
-    }
-
-    // OneDrive 同步冲突对话框
-    if (showConflictDialog) {
-        AlertDialog(
-            onDismissRequest = { showConflictDialog = false },
-            title = { Text("OneDrive 同步冲突") },
-            text = {
-                Text("远端文件已被其他设备修改。强制覆盖会丢弃远端的更改，确定继续吗？")
-            },
-            confirmButton = {
-                Button(onClick = { forceUpload(db) }) {
-                    Text("强制覆盖")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConflictDialog = false }) { Text("取消") }
-            }
-        )
-    }
-}
-
-/**
- * OneDrive 同步卡片：登录 / 上传 / 下载 / 登出。
- */
-@Composable
-private fun OneDriveSyncCard(
-    isLoggedIn: Boolean,
-    email: String?,
-    busy: Boolean,
-    status: String?,
-    onLogin: () -> Unit,
-    onUpload: () -> Unit,
-    onDownload: () -> Unit,
-    onLogout: () -> Unit
-) {
-    Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
-        Column(Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.weight(1f)) {
-                    Text("OneDrive 云同步", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        if (isLoggedIn) "已连接：${email ?: "OneDrive 账号"}"
-                        else "未连接 OneDrive",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (!isLoggedIn) {
-                    Button(onClick = onLogin, enabled = !busy) {
-                        Text(if (busy) "等待授权…" else "登录 OneDrive")
-                    }
-                } else {
-                    Button(onClick = onUpload, enabled = !busy) {
-                        Text("上传到 OneDrive")
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Button(onClick = onDownload, enabled = !busy) {
-                        Text("从 OneDrive 下载")
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onLogout) { Text("登出") }
-                }
-            }
-            status?.let {
-                Spacer(Modifier.height(6.dp))
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-            }
-        }
     }
 }
 
