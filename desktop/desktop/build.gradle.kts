@@ -37,7 +37,7 @@ compose.desktop {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "BastionDesktop"
             packageVersion = "0.1.0"
-            description = "Bastion 密码管理器 Windows 桌面客户端（Bitwarden 同步 / KDBX 编辑 / OneDrive 同步）"
+            description = "Bastion Password Manager - Bitwarden sync, KDBX editor, OneDrive sync"
         }
     }
 }
