@@ -7,7 +7,7 @@
 > **改造进度**（2026-08-11 更新）
 > - ✅ **P0 已完成并合并**：dev `a97d7013` / main `16a8fbd5`，CI 双绿；预览版真机回归（京东/Via/电影猎手/淘宝/微信/支付宝）无回归
 > - ✅ **P1 已完成并合并**：dev `229bffe3` / main `5c0cf18b`，CI 双绿；判定链路从 4 层降到 2 层
-> - 🔄 **P2 实施中**：条目级 website 双向一致性校验（「仅拒绝明确矛盾」版，见「阶段三」）
+> - ✅ **P2 已完成并合并**：dev `01b4027c` / main `322ca2a9`，CI 双绿（单测 21 例）；预览包 `build.202608110000` 已发布
 > - ⏳ P3 待后续评估
 
 ---
@@ -226,7 +226,13 @@ native 包直接放行按包名匹配，缺少 Bitwarden 那层「字段维度�
 **收益**：判定链路从 4 层降到 2 层，后续 agent 接手时可推理性大幅提升。
 **风险**：低（阶段一已覆盖），**但必须在阶段一真机验证通过后再做**——已满足。
 
-### 阶段三（P2）：填充阶段补 website 双向校验
+### 阶段三（P2）：填充阶段补 website 双向校验 ✅ 已完成
+
+> 2026-08-11 落地：dev `01b4027c` / main `322ca2a9`（CI 双绿）。
+> 改动：新增 `AutofillWebsiteConsistencyPolicy`（纯 JVM 单测 21 例）；`BastionAutofillServiceNg`
+> 在 matcher 结果之后、`stabilizeMatchedPasswords` 之前加入一致性过滤（唯一插入点，覆盖
+> Picker V2/legacy/直填/密码优先全部路径）；过滤时输出 `P2 website-consistency filtered entries`
+> 诊断日志。
 
 对齐 `FilledDataBuilderImpl.fillLoginPartition`：构建 dataset 前对**条目**做 website 一致性校验，丢弃「明确绑定其它站点/其它 App」的条目。
 
