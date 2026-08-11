@@ -158,7 +158,7 @@ class OneDriveKeePassFileSource(
                 okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         if (response.code == 412) {
-                            throw OneDriveConflictException(
+                            throw conflictWithRemoteVersion(
                                 "远端文件已被修改（412 Precondition Failed），本地 expectedVersion 过期"
                             )
                         }
@@ -275,7 +275,7 @@ class OneDriveKeePassFileSource(
         val uploadUrl = okHttpClient.newCall(sessionRequest).execute().use { response ->
             if (!response.isSuccessful) {
                 if (response.code == 412) {
-                    throw OneDriveConflictException(
+                    throw conflictWithRemoteVersion(
                         "远端文件已被修改（412 Precondition Failed），无法创建覆盖上传会话"
                     )
                 }
@@ -344,7 +344,7 @@ class OneDriveKeePassFileSource(
                     return if (last) r.body?.string() else null
                 }
                 if (r.code == 412) {
-                    throw OneDriveConflictException(
+                    throw conflictWithRemoteVersion(
                         "远端文件已被修改（412 Precondition Failed）@ range $contentRange"
                     )
                 }
@@ -401,10 +401,27 @@ class OneDriveKeePassFileSource(
             }
         }
     }
+
+    /**
+     * 构造冲突异常并尽力附带远端当前版本标识（etag/cTag）。
+     * stat() 失败时 [OneDriveConflictException.remoteVersion] 为 null，不影响冲突上报。
+     */
+    private suspend fun conflictWithRemoteVersion(message: String): OneDriveConflictException {
+        val remoteStat = try { stat() } catch (_: Exception) { null }
+        val remote = remoteStat?.etag ?: remoteStat?.versionToken
+        return OneDriveConflictException(message, remoteVersion = remote)
+    }
 }
 
 /**
  * OneDrive 写入冲突异常：远端文件已被修改（412 Precondition Failed），
  * 本地持有的 expectedVersion 已过期。由同步引擎捕获后映射为 [OneDriveSyncResult.Conflict]。
+ *
+ * @param remoteVersion 冲突时远端当前的版本标识（etag/cTag），best-effort 获取；
+ *                      获取失败时为 null。供同步引擎填充 [OneDriveSyncResult.Conflict.remoteVersion]。
  */
-class OneDriveConflictException(message: String, cause: Throwable? = null) : IOException(message, cause)
+class OneDriveConflictException(
+    message: String,
+    val remoteVersion: String? = null,
+    cause: Throwable? = null
+) : IOException(message, cause)
