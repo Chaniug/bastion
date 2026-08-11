@@ -13,7 +13,6 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
-    implementation(compose.materialIconsExtended)
     implementation(compose.runtime)
     implementation(compose.foundation)
     implementation(compose.ui)
@@ -21,6 +20,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.javafx)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    // KDBX 解析（shared jvmMain 中 KeePassKdbxService 的 public API 暴露了 kotpass 类型）
+    implementation(libs.kotpass)
 }
 
 kotlin {

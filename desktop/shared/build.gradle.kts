@@ -22,7 +22,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
 
-            implementation(libs.kotpass)
             implementation(libs.bouncycastle)
 
             implementation(libs.retrofit)
@@ -36,6 +35,8 @@ kotlin {
             implementation(libs.sqldelight.jvm.driver)
             implementation(libs.jna)
             implementation(libs.jna.platform)
+            // kotpass 仅有 JVM 变体（无 KMP metadata），KDBX 核心逻辑放 jvmMain
+            implementation(libs.kotpass)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
