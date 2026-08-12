@@ -1,0 +1,29 @@
+-- Phase 3 一并建表（业务接线留 Phase 5）：本地 KDBX 数据库登记。
+
+CREATE TABLE local_keepass_databases (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL DEFAULT '',
+    path TEXT NOT NULL DEFAULT '',
+    encrypted_master_password TEXT,
+    last_opened_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0,
+    sync_enabled INTEGER NOT NULL DEFAULT 0
+);
+
+insert:
+INSERT INTO local_keepass_databases (id, name, path, encrypted_master_password, last_opened_at, created_at, updated_at, sync_enabled)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM local_keepass_databases ORDER BY id ASC;
+
+selectById:
+SELECT * FROM local_keepass_databases WHERE id = ?;
+
+update:
+UPDATE local_keepass_databases SET name = ?, path = ?, encrypted_master_password = ?, last_opened_at = ?, updated_at = ?, sync_enabled = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM local_keepass_databases WHERE id = ?;
