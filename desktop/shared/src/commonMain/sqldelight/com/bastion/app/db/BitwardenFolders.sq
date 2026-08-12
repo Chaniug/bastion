@@ -1,0 +1,33 @@
+CREATE TABLE bitwarden_folders (
+    id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    bitwarden_folder_id TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    encrypted_name TEXT,
+    revision_date TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+);
+
+insert:
+INSERT INTO bitwarden_folders (id, vault_id, bitwarden_folder_id, name, encrypted_name, revision_date, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM bitwarden_folders ORDER BY id ASC;
+
+selectById:
+SELECT * FROM bitwarden_folders WHERE id = ?;
+
+selectByVault:
+SELECT * FROM bitwarden_folders WHERE vault_id = ?;
+
+selectByBitwardenId:
+SELECT * FROM bitwarden_folders WHERE vault_id = ? AND bitwarden_folder_id = ?;
+
+update:
+UPDATE bitwarden_folders SET vault_id = ?, bitwarden_folder_id = ?, name = ?, encrypted_name = ?, revision_date = ?, updated_at = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM bitwarden_folders WHERE id = ?;

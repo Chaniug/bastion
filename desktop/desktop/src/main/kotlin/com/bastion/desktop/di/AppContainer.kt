@@ -2,14 +2,19 @@ package com.bastion.desktop.di
 
 import com.bastion.app.bitwarden.repository.BitwardenRepository
 import com.bastion.app.bitwarden.repository.BitwardenRepositoryStore
-import com.bastion.app.bitwarden.repository.InMemoryBitwardenRepositoryStore
+import com.bastion.app.bitwarden.repository.SqlDelightBitwardenRepositoryStore
+import com.bastion.app.db.BastionDatabase
+import com.bastion.app.db.BastionDatabaseBundle
+import com.bastion.app.db.BastionDatabaseFactory
+import com.bastion.app.platform.PathProvider
 import com.bastion.app.security.DesktopCryptoManager
 import com.bastion.desktop.platform.OneDriveBrowserAuth
 import com.bastion.desktop.platform.OneDriveSessionManager
 
 /**
  * 手动依赖装配（不引入 DI 框架）。
- * 后续 Phase 3 将 InMemory store 换成 SQLDelight 实现。
+ * Phase 3 起仓储存储层使用 SQLDelight 持久化实现（[SqlDelightBitwardenRepositoryStore]），
+ * 替换原先的 [com.bastion.app.bitwarden.repository.InMemoryBitwardenRepositoryStore]。
  */
 object AppContainer {
 
@@ -19,8 +24,14 @@ object AppContainer {
         }
     }
 
+    private val dbBundle: BastionDatabaseBundle by lazy {
+        BastionDatabaseFactory.create(PathProvider.resolve("bastion.db"))
+    }
+
+    val database: BastionDatabase by lazy { dbBundle.database }
+
     val repositoryStore: BitwardenRepositoryStore by lazy {
-        InMemoryBitwardenRepositoryStore()
+        SqlDelightBitwardenRepositoryStore(dbBundle.database, dbBundle.driver, cryptoManager)
     }
 
     val bitwardenRepository: BitwardenRepository by lazy {

@@ -1,0 +1,23 @@
+-- 键值偏好表，支撑 BitwardenRepositoryStore 的 load/saveBoolean、load/saveLong、以及 activeVaultId。
+
+CREATE TABLE preferences (
+    key TEXT NOT NULL PRIMARY KEY,
+    bool_value INTEGER,
+    long_value INTEGER,
+    string_value TEXT
+);
+
+upsertBoolean:
+INSERT OR REPLACE INTO preferences (key, bool_value, long_value, string_value) VALUES (?, ?, NULL, NULL);
+
+upsertLong:
+INSERT OR REPLACE INTO preferences (key, bool_value, long_value, string_value) VALUES (?, NULL, ?, NULL);
+
+upsertString:
+INSERT OR REPLACE INTO preferences (key, bool_value, long_value, string_value) VALUES (?, NULL, NULL, ?);
+
+selectByKey:
+SELECT * FROM preferences WHERE key = ?;
+
+deleteByKey:
+DELETE FROM preferences WHERE key = ?;

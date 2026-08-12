@@ -1,0 +1,32 @@
+-- Phase 3 一并建表（业务接线留 Phase 5）：KDBX 远端同步状态（etag/时间戳/方向）。
+
+CREATE TABLE keepass_remote_sync_states (
+    id INTEGER NOT NULL PRIMARY KEY,
+    database_id INTEGER NOT NULL,
+    source_id INTEGER NOT NULL,
+    last_local_etag TEXT,
+    last_remote_etag TEXT,
+    last_sync_at INTEGER,
+    sync_direction TEXT,
+    status TEXT
+);
+
+insert:
+INSERT INTO keepass_remote_sync_states (id, database_id, source_id, last_local_etag, last_remote_etag, last_sync_at, sync_direction, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM keepass_remote_sync_states ORDER BY id ASC;
+
+selectById:
+SELECT * FROM keepass_remote_sync_states WHERE id = ?;
+
+selectByDatabase:
+SELECT * FROM keepass_remote_sync_states WHERE database_id = ?;
+
+update:
+UPDATE keepass_remote_sync_states SET database_id = ?, source_id = ?, last_local_etag = ?, last_remote_etag = ?, last_sync_at = ?, sync_direction = ?, status = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM keepass_remote_sync_states WHERE id = ?;

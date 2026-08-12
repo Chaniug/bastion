@@ -1,0 +1,38 @@
+CREATE TABLE bitwarden_pending_operations (
+    id INTEGER NOT NULL PRIMARY KEY,
+    vault_id INTEGER NOT NULL,
+    cipher_id TEXT NOT NULL,
+    operation_type TEXT NOT NULL DEFAULT 'UPDATE',
+    payload_json TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    error_count INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+);
+
+insert:
+INSERT INTO bitwarden_pending_operations (id, vault_id, cipher_id, operation_type, payload_json, status, error_count, last_error, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM bitwarden_pending_operations ORDER BY id ASC;
+
+selectById:
+SELECT * FROM bitwarden_pending_operations WHERE id = ?;
+
+selectRunnableByVault:
+SELECT * FROM bitwarden_pending_operations WHERE vault_id = ? AND status = 'PENDING';
+
+selectByVault:
+SELECT * FROM bitwarden_pending_operations WHERE vault_id = ?;
+
+update:
+UPDATE bitwarden_pending_operations SET vault_id = ?, cipher_id = ?, operation_type = ?, payload_json = ?, status = ?, error_count = ?, last_error = ?, updated_at = ?
+WHERE id = ?;
+
+updateStatus:
+UPDATE bitwarden_pending_operations SET status = ?, updated_at = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM bitwarden_pending_operations WHERE id = ?;

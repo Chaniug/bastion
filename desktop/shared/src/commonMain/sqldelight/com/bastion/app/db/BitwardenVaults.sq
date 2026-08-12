@@ -1,0 +1,85 @@
+CREATE TABLE bitwarden_vaults (
+    id INTEGER NOT NULL PRIMARY KEY,
+    email TEXT NOT NULL,
+    canonical_email TEXT NOT NULL DEFAULT '',
+    user_id TEXT,
+    account_key TEXT NOT NULL DEFAULT '',
+    display_name TEXT,
+    server_url TEXT NOT NULL DEFAULT 'https://vault.bitwarden.com',
+    identity_url TEXT NOT NULL DEFAULT 'https://identity.bitwarden.com',
+    api_url TEXT NOT NULL DEFAULT 'https://api.bitwarden.com',
+    events_url TEXT,
+    tls_certificate_alias TEXT,
+    tls_ca_certificate_pem TEXT,
+    tls_mtls_enabled INTEGER NOT NULL DEFAULT 0,
+    tls_client_cert_pkcs12_base64 TEXT,
+    tls_encrypted_client_cert_password TEXT,
+    encrypted_access_token TEXT,
+    encrypted_refresh_token TEXT,
+    access_token_expires_at INTEGER,
+    encrypted_master_key TEXT,
+    encrypted_enc_key TEXT,
+    encrypted_mac_key TEXT,
+    kdf_type INTEGER NOT NULL DEFAULT 0,
+    kdf_iterations INTEGER NOT NULL DEFAULT 600000,
+    kdf_memory INTEGER,
+    kdf_parallelism INTEGER,
+    last_sync_at INTEGER,
+    last_full_sync_at INTEGER,
+    revision_date TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    is_locked INTEGER NOT NULL DEFAULT 1,
+    is_connected INTEGER NOT NULL DEFAULT 0,
+    sync_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+);
+
+insert:
+INSERT INTO bitwarden_vaults (
+    id, email, canonical_email, user_id, account_key, display_name,
+    server_url, identity_url, api_url, events_url,
+    tls_certificate_alias, tls_ca_certificate_pem, tls_mtls_enabled,
+    tls_client_cert_pkcs12_base64, tls_encrypted_client_cert_password,
+    encrypted_access_token, encrypted_refresh_token, access_token_expires_at,
+    encrypted_master_key, encrypted_enc_key, encrypted_mac_key,
+    kdf_type, kdf_iterations, kdf_memory, kdf_parallelism,
+    last_sync_at, last_full_sync_at, revision_date,
+    is_default, is_locked, is_connected, sync_enabled,
+    created_at, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM bitwarden_vaults ORDER BY id ASC;
+
+selectById:
+SELECT * FROM bitwarden_vaults WHERE id = ?;
+
+selectByEmail:
+SELECT * FROM bitwarden_vaults WHERE lower(email) = lower(?);
+
+update:
+UPDATE bitwarden_vaults SET
+    email = ?, canonical_email = ?, user_id = ?, account_key = ?, display_name = ?,
+    server_url = ?, identity_url = ?, api_url = ?, events_url = ?,
+    tls_certificate_alias = ?, tls_ca_certificate_pem = ?, tls_mtls_enabled = ?,
+    tls_client_cert_pkcs12_base64 = ?, tls_encrypted_client_cert_password = ?,
+    encrypted_access_token = ?, encrypted_refresh_token = ?, access_token_expires_at = ?,
+    encrypted_master_key = ?, encrypted_enc_key = ?, encrypted_mac_key = ?,
+    kdf_type = ?, kdf_iterations = ?, kdf_memory = ?, kdf_parallelism = ?,
+    last_sync_at = ?, last_full_sync_at = ?, revision_date = ?,
+    is_default = ?, is_locked = ?, is_connected = ?, sync_enabled = ?,
+    created_at = ?, updated_at = ?
+WHERE id = ?;
+
+setLocked:
+UPDATE bitwarden_vaults SET is_locked = ?, updated_at = ? WHERE id = ?;
+
+markSynced:
+UPDATE bitwarden_vaults SET last_sync_at = ?, last_full_sync_at = ?, updated_at = ? WHERE id = ?;
+
+setAllLocked:
+UPDATE bitwarden_vaults SET is_locked = 1, updated_at = ?;
+
+deleteById:
+DELETE FROM bitwarden_vaults WHERE id = ?;
