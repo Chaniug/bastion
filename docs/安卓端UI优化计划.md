@@ -9,7 +9,7 @@
 ## 0. 结论先行
 
 - **需要优化**，但没有「必须立刻修的严重 UI bug」。主要是**代码债 + 性能 + 一致性 + 体验**的优化空间，证据充分（见 §1）。
-- 最痛的三个点：① lint 基础设施退化（Compose 检查被跳过）；② 13 个 2000+ 行 God File；③ 约 81 处 `mutableStateOf` 未与 `remember` 同行（含部分合法，需逐处判定）。
+- 最痛的三个点：① lint 基础设施退化（Compose 检查被跳过）；② 13 个 2000+ 行 God File；③ ~~未 remember 的 state~~（已判定 0 真实 bug，见 §2.1）。
 
 ---
 
@@ -20,7 +20,7 @@
 | `@Composable` 函数数 | 912（ui/ + autofill_ng/ + passkey/） | 体量很大 |
 | `ui/` 代码量 | 261 个 .kt，12.7 万行 | — |
 | God File（>2000 行） | **13 个**，最大 `AddEditPasswordScreen.kt` 4881 行 | 维护/协作/复用难 |
-| 未与 `remember` 同行的 `mutableStateOf` | **81 处**候选（含状态持有类/多行 remember 的合法项） | 见 §2.1 清单 |
+| 未与 `remember` 同行的 `mutableStateOf` | ~~81 处候选~~ → **判定后 0 真实 bug**（15 状态持有类 + 66 多行 remember/rememberSaveable） | 见 §2.1 |
 | lint 基线 | `lint-baseline.xml` 2.6 万行 / 1.2MB | 债量可观 |
 | lint 债细分 | UnusedResources **586** / TypographyEllipsis **91** / PluralsCandidate **89** / ObsoleteSdkInt **43** / TypographyDashes 25 / Overdraw 4 / RtlSymmetry 4 | 见 §2.3 |
 | lint 基础设施 | **Compose lint 检查整体被跳过**（`ObsoleteLintCustomCheck`：Kotlin analysis API 不匹配）+ 10 项检查被全局 `disable` + lint 仅 PR 触发 | 见 §2.0 |
@@ -74,6 +74,8 @@ LazyColumn key 补齐（Phase C.5）、Compose 编译器稳定性报告已开（
 
 ### 2.1 P1 — 未 `remember` 的 `mutableStateOf` 审计（正确性，优先）
 
+> ✅ **判定完成（2026-08-14）**：81 处候选经脚本三分类 + 逐条读上下文确认，实际**全部合法**——15 处状态持有类（`CategoryManagementState`/`PasswordFieldActionMenu`/`VaultV2PaneState`）、66 处多行 `remember`/`rememberSaveable { }` 写法。**0 个真实 bug，本项可关闭，无需修复**。初版 grep 因不识别多行 `remember` 造成"81 处"误报。
+
 **判定规则（三步，逐处执行）：**
 
 1. 若在**非 `@Composable` 的类体**里（状态持有类）→ **合法，跳过**。已知合法类：`ui/category/CategoryManagementState.kt`、`ui/components/PasswordFieldActionMenu.kt`、`ui/vaultv2/VaultV2PaneState.kt`。
@@ -117,7 +119,7 @@ ui/vaultv2/VaultV2PaneState.kt:56,60,63,66,69,75,78,80,82   ← 状态持有类�
 autofill_ng/AutofillPickerActivityV2.kt:1567
 ```
 
-> 注：清单由 `grep -rEn 'mutableStateOf\(' ui/ autofill_ng/ | grep -v remember` 生成，属「候选」，需按上面三步过滤。估计真实需修的是「第 3 类」数十处。
+> 注：清单由 `grep -rEn 'mutableStateOf\(' ui/ autofill_ng/ | grep -v remember` 生成，属「候选」，需按上面三步过滤。**经逐条核实：0 个真实 bug**，本清单仅供存档，无需逐条修复。
 
 **验收**：逐文件改后推 dev → Android CI debug 绿；真机（荣耀 Android 17）重点验证：设置页开关来回切不丢状态、TOTP 卡片显隐、列表筛选/折叠状态不闪回。
 
