@@ -22,7 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 /**
  * 手动依赖装配（不引入 DI 框架）。
  * Phase 3 起仓储存储层使用 SQLDelight 持久化实现（[SqlDelightBitwardenRepositoryStore]），
- * 替换原先的 [com.bastion.app.bitwarden.repository.InMemoryBitwardenRepositoryStore]。
+ * 替换原先的内存版 InMemoryBitwardenRepositoryStore（已删除）。
  */
 object AppContainer {
 

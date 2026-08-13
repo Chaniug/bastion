@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Phase 3 SQLDelight 实现的 Bitwarden 仓储存储层，替换 [InMemoryBitwardenRepositoryStore]。
+ * Phase 3 SQLDelight 实现的 Bitwarden 仓储存储层，替换早期的内存版实现（已删除）。
  *
  * - 所有持久化数据落在 [BastionDatabase]（9 张表）。
  * - Vault 的 active 标记通过 preferences 表（key=active_vault_id）持久化。
