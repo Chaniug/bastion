@@ -176,9 +176,7 @@ fun SettingsScreen(
             return@download
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            !context.packageManager.canRequestPackageInstalls()
-        ) {
+        if (!context.packageManager.canRequestPackageInstalls()) {
             Toast.makeText(
                 context,
                 context.getString(R.string.update_install_permission_required),

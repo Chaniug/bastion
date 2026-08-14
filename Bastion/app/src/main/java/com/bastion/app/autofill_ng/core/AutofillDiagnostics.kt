@@ -549,14 +549,10 @@ class AutofillDiagnostics(private val context: Context) {
      * 检查系统是否启用了自动填充服务
      */
     private fun checkSystemEnabled(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                val autofillManager = context.getSystemService(android.view.autofill.AutofillManager::class.java)
-                autofillManager?.hasEnabledAutofillServices() == true
-            } catch (e: Exception) {
-                false
-            }
-        } else {
+        return try {
+            val autofillManager = context.getSystemService(android.view.autofill.AutofillManager::class.java)
+            autofillManager?.hasEnabledAutofillServices() == true
+        } catch (e: Exception) {
             false
         }
     }

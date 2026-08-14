@@ -421,12 +421,7 @@ fun SendScreen(
 
                                             if (oldOffset < triggerDistance && newOffset >= triggerDistance && !hasVibrated) {
                                                 hasVibrated = true
-                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                                    vibrator?.vibrate(android.os.VibrationEffect.createWaveform(VibrationPatterns.TICK, -1))
-                                                } else {
-                                                    @Suppress("DEPRECATION")
-                                                    vibrator?.vibrate(20)
-                                                }
+                                                vibrator?.vibrate(android.os.VibrationEffect.createWaveform(VibrationPatterns.TICK, -1))
                                             } else if (newOffset < triggerDistance) {
                                                 hasVibrated = false
                                             }

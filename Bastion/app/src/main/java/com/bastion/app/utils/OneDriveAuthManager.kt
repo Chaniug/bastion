@@ -91,7 +91,6 @@ class OneDriveAuthManager(context: Context) {
     }
 
     private fun throwIfSilentRefreshBlockedByPowerState() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
         val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
         val isIdle = powerManager.isDeviceIdleMode
         val isOptimized = !powerManager.isIgnoringBatteryOptimizations(appContext.packageName)

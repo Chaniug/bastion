@@ -178,3 +178,24 @@ P0（lint 基础设施修复）→ P1（state 审计，正确性）→ P3（机�
 2. 真机（荣耀 Android 17）：对应屏幕冒烟（状态保持、列表滑动、返回手势、输入）。
 3. lint 报告对比：`./gradlew :app:lintDebug` 输出计数，确认目标 issue 下降。
 4. 回滚：逐 commit `git revert`。
+
+---
+
+## 6. 执行进度
+
+### 2026-08-14 批次一：纯文本 + 死代码清理（低风险，已推 dev）
+
+| 任务 | 计划量 | 实际 | 状态 | 说明 |
+|------|--------|------|------|------|
+| P3-a TypographyEllipsis | 91（baseline 行号已过期） | 62 处 `"..."`→`"…"` | ✅ 完成 | 两份 strings.xml 各 31 处；baseline 行号过期，按真实 grep 定位更彻底 |
+| P3-c ObsoleteSdkInt | 43 | 42 处死分支 | ✅ 完成 | minSdk=26，删除 `SDK_INT` 对 M(23)/N(24)/O(26) 的恒真/恒假分支；覆盖 28 个 kt 文件 |
+| P3-b TypographyDashes | 25 | 0 | ⏭️ 跳过 | 真实问题是数字范围 `-`（`0-9`/`1-30`/`100-0000` 日本邮编）；含误报、纯装饰，价值低，待确认 |
+
+**改动文件**：30 个（28 个 kt + 2 个 strings.xml），净删 ~151 行。
+**验证**：推 dev 后由 `Android CI debug` 编译 Debug APK + 单测基线兜底；通过后合 main，preview Release 产出 APK。
+
+### 待办（需用户确认或更高风险）
+- P3-d PluralsCandidate（89 处）：需为数量字符串补 `<plurals>` 资源并改 `getString` 调用点，涉及资源结构改动 → 先出细化方案再动。
+- P3-e 少量一致性项（RtlSymmetry/Overdraw/UseAppTint/DefaultLocale/StaticFieldLeak）：逐条按建议修，价值中等。
+- P3-f UnusedResources（586）：需警惕 `getIdentifier` 反射引用，仅删高置信未用项；风险较高 → 先出细化方案再动。
+- lint-baseline.xml 中已修复的 TypographyEllipsis(91)/ObsoleteSdkInt(43) 条目已失效，待 lint 跑过后重新生成 baseline。

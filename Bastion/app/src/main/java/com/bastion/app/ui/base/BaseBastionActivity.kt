@@ -146,8 +146,6 @@ abstract class BaseBastionActivity : FragmentActivity() {
     }
 
     private fun disableSystemAutofillForBastionUi() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-
         window?.decorView?.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         findViewById<View?>(android.R.id.content)?.importantForAutofill =
             View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS

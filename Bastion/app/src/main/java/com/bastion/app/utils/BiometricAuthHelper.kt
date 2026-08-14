@@ -205,9 +205,6 @@ class BiometricAuthHelper(
 
     @Suppress("DEPRECATION")
     private fun hasEnrolledFingerprint(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return false
-        }
         // Android 17（API 37）移除了旧版 android.hardware.fingerprint.FingerprintManager，
         // 改用 androidx.biometric.BiometricManager 判断生物识别硬件与录入状态（语义等价）。
         val biometricManager = BiometricManager.from(context)

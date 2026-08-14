@@ -205,19 +205,12 @@ class HapticFeedbackHelper(
      * 震动模式：渐强震动
      */
     fun performBiometricSuccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK)
-            } else {
-                VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)
-            }
-            vibrator?.vibrate(effect)
+        val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK)
         } else {
-            performCustomVibration(
-                pattern = longArrayOf(0, 20, 20, 40),
-                amplitudes = intArrayOf(0, 80, 0, 255)
-            )
+            VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)
         }
+        vibrator?.vibrate(effect)
     }
     
     /**
@@ -281,13 +274,8 @@ class HapticFeedbackHelper(
         if (!isAvailable) return
         
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val effect = VibrationEffect.createOneShot(duration, amplitude)
-                vibrator?.vibrate(effect)
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(duration)
-            }
+            val effect = VibrationEffect.createOneShot(duration, amplitude)
+            vibrator?.vibrate(effect)
         } catch (e: Exception) {
             android.util.Log.e("HapticFeedback", "Vibration failed", e)
         }
@@ -306,13 +294,8 @@ class HapticFeedbackHelper(
         if (!isAvailable) return
         
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
-                vibrator?.vibrate(effect)
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(pattern, -1)
-            }
+            val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
+            vibrator?.vibrate(effect)
         } catch (e: Exception) {
             android.util.Log.e("HapticFeedback", "Pattern vibration failed", e)
         }

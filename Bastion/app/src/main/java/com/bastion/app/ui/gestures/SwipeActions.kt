@@ -287,20 +287,10 @@ fun SwipeActions(
                                     val dynamicThreshold = cardWidth * 0.2f
                                     if (allowSwipeRight && dragOffset > dynamicThreshold && !hasVibratedRight) {
                                         hasVibratedRight = true
-                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                            vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
-                                        } else {
-                                            @Suppress("DEPRECATION")
-                                            vibrator?.vibrate(20)
-                                        }
+                                        vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
                                     } else if (allowSwipeLeft && dragOffset < -dynamicThreshold && !hasVibratedLeft) {
                                         hasVibratedLeft = true
-                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                            vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
-                                        } else {
-                                            @Suppress("DEPRECATION")
-                                            vibrator?.vibrate(20)
-                                        }
+                                        vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
                                     } else if (abs(dragOffset) < dynamicThreshold) {
                                         hasVibratedRight = false
                                         hasVibratedLeft = false

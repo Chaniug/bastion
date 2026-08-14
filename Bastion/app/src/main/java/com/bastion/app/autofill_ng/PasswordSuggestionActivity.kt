@@ -128,7 +128,7 @@ class PasswordSuggestionActivity : ComponentActivity() {
                 )
                 AutofillLogger.i("SUGGESTION", "✅ Password saved to history")
                 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && passwordFieldIds != null && passwordFieldIds!!.isNotEmpty()) {
+                if (passwordFieldIds != null && passwordFieldIds!!.isNotEmpty()) {
                     // 🔐 构建包含建议密码的 Dataset
                     val datasetBuilder = android.service.autofill.Dataset.Builder()
                     
