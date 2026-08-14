@@ -140,7 +140,7 @@ fun MasterPasswordLockingSettingsScreen(
                     text = stringResource(R.string.master_password_and_locking_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
                 )
             }
 

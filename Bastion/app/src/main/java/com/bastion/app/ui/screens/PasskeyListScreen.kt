@@ -1733,7 +1733,7 @@ private fun VersionWarningBanner(
                 Text(
                     text = stringResource(R.string.passkey_version_warning_title),
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.error
                 )
                 Text(
@@ -1783,7 +1783,7 @@ private fun PasskeyGroupHeader(
                 Text(
                     text = rpName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -1811,7 +1811,7 @@ private fun PasskeyGroupHeader(
                     text = count.toString(),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -2047,7 +2047,7 @@ private fun PasskeyListItem(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = passkey.displayTitle(),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -2310,7 +2310,7 @@ private fun PasskeySelectionActionBar(
             ) {
                 Text(
                     text = selectedCount.toString(),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }

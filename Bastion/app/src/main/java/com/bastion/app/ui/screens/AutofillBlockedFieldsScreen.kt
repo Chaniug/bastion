@@ -153,7 +153,7 @@ fun AutofillBlockedFieldsScreen(
                 horizontal = 16.dp,
                 vertical = 12.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 Card(
@@ -164,7 +164,7 @@ fun AutofillBlockedFieldsScreen(
                     ),
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Row(
@@ -218,7 +218,7 @@ fun AutofillBlockedFieldsScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.autofill_blocked_fields_empty),
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 20.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -285,8 +285,8 @@ private fun BlockedFieldSignatureCard(
         ),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -397,7 +397,7 @@ private fun BlockedFieldSourceCard(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -408,7 +408,7 @@ private fun BlockedFieldSourceCard(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.padding(9.dp),
+                    modifier = Modifier.padding(8.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

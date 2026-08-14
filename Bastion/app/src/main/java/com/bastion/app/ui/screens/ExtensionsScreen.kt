@@ -156,7 +156,7 @@ fun ExtensionsScreen(
                         Text(
                             stringResource(R.string.extensions_title),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
@@ -274,7 +274,7 @@ private fun ExtensionSection(
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = 12.dp)
         )

@@ -1004,7 +1004,7 @@ internal fun VaultV2FabMenu(
                         shadowElevation = 3.dp
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {

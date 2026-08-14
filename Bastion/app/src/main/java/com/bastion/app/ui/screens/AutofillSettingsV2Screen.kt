@@ -231,7 +231,7 @@ fun AutofillSettingsV2Screen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             val statusEnabled = serviceStatus?.let { status ->
                 status.isSystemEnabled && status.isAppEnabled
@@ -266,7 +266,7 @@ fun AutofillSettingsV2Screen(
                 ),
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(

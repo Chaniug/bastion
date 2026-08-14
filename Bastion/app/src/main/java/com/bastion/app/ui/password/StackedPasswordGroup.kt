@@ -405,7 +405,7 @@ fun StackedPasswordGroup(
                                                     Text(
                                                         text = "${passwords.size}",
                                                         style = MaterialTheme.typography.labelLarge,
-                                                        fontWeight = FontWeight.Bold,
+                                                        fontWeight = FontWeight.SemiBold,
                                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                                     )
                                                 }

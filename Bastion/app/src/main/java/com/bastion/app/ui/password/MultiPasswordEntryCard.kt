@@ -181,7 +181,7 @@ fun MultiPasswordEntryCard(
                     style = if (isInExpandedGroup) {
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                     } else {
-                        MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                     },
                     modifier = Modifier.weight(1f),
                     maxLines = 1,

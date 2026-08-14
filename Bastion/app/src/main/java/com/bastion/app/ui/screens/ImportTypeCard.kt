@@ -69,7 +69,7 @@ fun ImportTypeCard(
                 Text(
                     info.title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                     color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
                     else MaterialTheme.colorScheme.onSurface
                 )

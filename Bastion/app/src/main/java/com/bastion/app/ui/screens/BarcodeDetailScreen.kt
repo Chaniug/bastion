@@ -196,7 +196,7 @@ fun BarcodeDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp),
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (generatedBitmap != null) {

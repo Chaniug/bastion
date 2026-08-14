@@ -468,7 +468,7 @@ fun TotpCodeCard(
                         Text(
                             text = item.title,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                         infoLines.forEach { line ->
                             Text(
@@ -697,7 +697,7 @@ fun TotpCodeCard(
                         Text(
                             text = "Next",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = if (hasImmersiveBackground) {
                                 immersiveAccentColor
                             } else {

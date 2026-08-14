@@ -62,7 +62,7 @@ fun CustomFieldSectionHeader(
                 text = stringResource(R.string.custom_field_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
         FilledTonalIconButton(
@@ -148,7 +148,7 @@ fun CustomFieldEditCard(
         if (isEditing) {
             // ========== 编辑模式 ==========
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 顶部：字段名称和收起按钮
@@ -255,7 +255,7 @@ fun CustomFieldEditCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {

@@ -505,7 +505,7 @@ private fun AnnotatedString.Builder.appendStyledTextWithoutMarkers(
                 val current = text[index].toString()
                 val style = baseStyle.merge(
                     SpanStyle(
-                        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
                         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
                         textDecoration = buildTextDecoration(strike || completedTask, underline),
                         background = if (highlight) Color(0x33E6E45B) else Color.Unspecified,

@@ -62,7 +62,7 @@ fun TrashSettingsSheet(
                     text = stringResource(R.string.trash_settings),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             

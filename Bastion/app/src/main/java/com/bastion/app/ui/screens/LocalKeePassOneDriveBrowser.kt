@@ -157,7 +157,7 @@ fun KeepassOneDriveBrowserBottomSheet(
             Text(
                 stringResource(R.string.keepass_onedrive_attach_title),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(

@@ -76,7 +76,7 @@ internal fun PasskeyOverviewPane(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -85,7 +85,7 @@ internal fun PasskeyOverviewPane(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(14.dp)
+                            .padding(16.dp)
                             .size(28.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -98,7 +98,7 @@ internal fun PasskeyOverviewPane(
                 Text(
                     text = stringResource(R.string.passkey_title),
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = stringResource(R.string.passkey_empty_subtitle),
@@ -273,7 +273,7 @@ internal fun PasskeyDetailPane(
                     Text(
                         text = stringResource(R.string.delete),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -338,13 +338,13 @@ private fun PasskeyHeroCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Box(modifier = Modifier.size(52.dp), contentAlignment = Alignment.Center) {
                     when {
@@ -376,7 +376,7 @@ private fun PasskeyHeroCard(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = passkey.userDisplayName.ifBlank { passkey.userName },
@@ -430,7 +430,7 @@ private fun PasskeyBindingCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -445,7 +445,7 @@ private fun PasskeyBindingCard(
                     Text(
                         text = stringResource(R.string.bind_password),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = stringResource(R.string.passkey_binding_description),
@@ -532,7 +532,7 @@ private fun PasskeySectionCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }

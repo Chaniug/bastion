@@ -82,7 +82,7 @@ fun PaymentScreen(
                     Text(
                         text = stringResource(R.string.plus_activation_title),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -100,7 +100,7 @@ fun PaymentScreen(
             Text(
                 text = stringResource(R.string.plus_thank_you),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
             
@@ -119,7 +119,7 @@ fun PaymentScreen(
                     Text(
                         text = stringResource(R.string.plus_payment_links_title),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     

@@ -457,28 +457,28 @@ private fun ScannerFrame(
         ScannerCorner(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(14.dp),
+                .padding(16.dp),
             color = cornerColor,
             position = ScannerCornerPosition.TopStart
         )
         ScannerCorner(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(14.dp),
+                .padding(16.dp),
             color = cornerColor,
             position = ScannerCornerPosition.TopEnd
         )
         ScannerCorner(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(14.dp),
+                .padding(16.dp),
             color = cornerColor,
             position = ScannerCornerPosition.BottomStart
         )
         ScannerCorner(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(14.dp),
+                .padding(16.dp),
             color = cornerColor,
             position = ScannerCornerPosition.BottomEnd
         )

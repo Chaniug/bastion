@@ -337,7 +337,7 @@ fun AddButtonCustomizationScreen(
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -459,7 +459,7 @@ fun AddButtonCustomizationScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(14.dp),
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(action.toIcon(), contentDescription = null)
@@ -2609,7 +2609,7 @@ private fun SwitchSettingsCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -2653,7 +2653,7 @@ private fun ExpandableSettingsCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = expansionEnabled) { onExpandedChange(!expanded) }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {

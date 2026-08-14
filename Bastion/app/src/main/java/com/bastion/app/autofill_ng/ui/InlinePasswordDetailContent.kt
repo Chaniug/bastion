@@ -117,7 +117,7 @@ fun InlinePasswordDetailContent(
                     Text(
                         text = password.title.ifEmpty { decryptedUsername },
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

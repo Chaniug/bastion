@@ -2850,7 +2850,7 @@ private fun AutofillStructuredItemCard(
         onClick = onClick
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
@@ -3113,7 +3113,7 @@ private fun StructuredCopyActionButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Icon(
             imageVector = Icons.Default.ContentCopy,
@@ -3269,7 +3269,7 @@ private fun GeneratedPasswordBottomSheet(
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -3319,7 +3319,7 @@ private fun GeneratedPasswordBottomSheet(
                 SelectionContainer {
                     Text(
                         text = password,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 2,
@@ -3337,7 +3337,7 @@ private fun GeneratedPasswordBottomSheet(
                     onClick = onSaveAsNew,
                     modifier = Modifier.height(44.dp),
                     shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Save,
@@ -3365,7 +3365,7 @@ private fun GeneratedPasswordBottomSheet(
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
@@ -3598,7 +3598,7 @@ private fun AutofillFabMenu(
                         shadowElevation = 3.dp
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -3874,7 +3874,7 @@ private fun AutofillFilterTrigger(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -3952,7 +3952,7 @@ private fun AutofillFilterTrigger(
                                     text = chip,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                                 )
                             }
                         }
@@ -3965,7 +3965,7 @@ private fun AutofillFilterTrigger(
                                     text = "+${chips.size - visibleChips.size}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                                 )
                             }
                         }

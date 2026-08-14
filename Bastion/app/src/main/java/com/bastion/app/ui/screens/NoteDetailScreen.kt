@@ -199,7 +199,7 @@ fun NoteDetailScreen(
                 Text(
                     text = stringResource(R.string.note_detail_not_found_title),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -226,7 +226,7 @@ fun NoteDetailScreen(
                     showSearchHighlight = showSearchHighlight
                 ),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )

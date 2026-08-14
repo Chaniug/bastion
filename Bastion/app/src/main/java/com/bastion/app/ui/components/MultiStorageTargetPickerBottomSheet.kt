@@ -405,7 +405,7 @@ fun MultiStorageTargetPickerBottomSheet(
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = stringResource(R.string.vault_select_storage),

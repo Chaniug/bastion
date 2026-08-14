@@ -368,7 +368,7 @@ fun ImportDataScreen(
             Text(
                 stringResource(R.string.import_data_select_type),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
             
             // 导入类型卡片列表 - 垂直排列，适配各种屏幕尺寸
@@ -428,7 +428,7 @@ fun ImportDataScreen(
             Text(
                 stringResource(R.string.import_data_select_file),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
 
             // 选择文件卡片

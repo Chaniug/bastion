@@ -169,7 +169,7 @@ fun SupportAuthorScreen(
                     Text(
                         text = stringResource(R.string.support_author_title),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }

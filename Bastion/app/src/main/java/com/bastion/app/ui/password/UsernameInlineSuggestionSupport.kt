@@ -151,7 +151,7 @@ fun UsernameSuggestionPanel(
                     text = stringResource(R.string.username_suggestions_no_match, state.query),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 )
             }
         }

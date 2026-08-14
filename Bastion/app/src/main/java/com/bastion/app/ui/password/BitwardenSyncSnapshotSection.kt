@@ -77,12 +77,12 @@ fun BitwardenSyncSnapshotSection(
             modifier = Modifier
                 .padding(16.dp)
                 .animateContentSize(),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = stringResource(R.string.bitwarden_sync_raw_history_title),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
@@ -198,7 +198,7 @@ private fun SnapshotExpandableCard(
         tonalElevation = 2.dp
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
@@ -337,7 +337,7 @@ private fun SnapshotPreviewContent(
         color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
@@ -517,7 +517,7 @@ private fun SnapshotStatusMessage(text: String) {
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

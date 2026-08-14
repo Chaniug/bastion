@@ -123,7 +123,7 @@ fun BankCardCard(
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = contentColor
                     )
                     if (resolvedCardData.bankName.isNotBlank()) {
@@ -267,7 +267,7 @@ fun BankCardCard(
                 text = maskCardNumber(resolvedCardData.cardNumber),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = 2.sp,
                 color = contentColor
             )
@@ -302,7 +302,7 @@ fun BankCardCard(
                         Text(
                             text = "${resolvedCardData.expiryMonth}/${resolvedCardData.expiryYear}",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = contentColor
                         )
                     }

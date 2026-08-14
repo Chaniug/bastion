@@ -1423,7 +1423,7 @@ private fun PasskeyCreateScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -1436,7 +1436,7 @@ private fun PasskeyCreateScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1456,7 +1456,7 @@ private fun PasskeyCreateScreen(
                     Text(
                         text = stringResource(R.string.passkey_create_title),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
 
@@ -1474,7 +1474,7 @@ private fun PasskeyCreateScreen(
                 shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     PasskeyInfoRow(
@@ -1504,7 +1504,7 @@ private fun PasskeyCreateScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 16.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(

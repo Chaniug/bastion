@@ -101,7 +101,7 @@ fun PasswordStrengthIndicator(
                 Text(
                     text = levelText,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     ),
                     color = color
                 )
@@ -246,7 +246,7 @@ fun PasswordSuggestionsList(
         Text(
             text = context.getString(com.bastion.app.R.string.improvement_suggestions),
             style = MaterialTheme.typography.bodySmall.copy(
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

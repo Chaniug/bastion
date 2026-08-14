@@ -149,7 +149,7 @@ fun KeepassWebDavBrowserBottomSheet(
             Text(
                 stringResource(R.string.keepass_webdav_attach_title),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(

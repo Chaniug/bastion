@@ -937,7 +937,7 @@ fun PasswordDetailScreen(
                             Text(
                                 text = stringResource(R.string.passkey_bound_label),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(top = 12.dp)
                             )
                             PasskeyBoundCard(
@@ -1234,7 +1234,7 @@ private fun PasswordHistorySection(
             modifier = Modifier
                 .padding(16.dp)
                 .animateContentSize(),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1248,7 +1248,7 @@ private fun PasswordHistorySection(
                     Text(
                         text = stringResource(R.string.password_history_title),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -1300,7 +1300,7 @@ private fun PasswordHistorySection(
                     tonalElevation = if (index == 0) 2.dp else 1.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
+                        modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(
@@ -1497,14 +1497,14 @@ private fun HistoryPasswordConfirmDialog(
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     tonalElevation = 1.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
@@ -1575,7 +1575,7 @@ private fun HeaderSection(
         Text(
             text = entry.title,
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         if (entry.website.isNotEmpty()) {
@@ -1789,7 +1789,7 @@ private fun PasswordDetailSecurityAnalysisCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1803,7 +1803,7 @@ private fun PasswordDetailSecurityAnalysisCard(
                 Text(
                     text = stringResource(R.string.security_analysis),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -1924,7 +1924,7 @@ private fun StorageInfoCard(
                 Text(
                     text = stringResource(R.string.password_detail_storage_info),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -2065,7 +2065,7 @@ private fun TimeInfoCard(
                 Text(
                     text = stringResource(R.string.password_detail_time_info),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -2196,7 +2196,7 @@ private fun SsoLoginCard(
                 Text(
                     text = stringResource(R.string.sso_login_title),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
@@ -2369,7 +2369,7 @@ private fun TotpCard(
                 Text(
                     text = if (totpData != null) stringResource(R.string.dynamic_verification_code) else stringResource(R.string.linked_app),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -2385,7 +2385,7 @@ private fun TotpCard(
                         Text(
                             text = code.chunked(3).joinToString(" "),
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             letterSpacing = 4.sp
                         )
@@ -2473,7 +2473,7 @@ private fun PasskeyBoundCard(
                 Text(
                     text = stringResource(R.string.passkey_title),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -2753,7 +2753,7 @@ private fun NotesCard(notes: String) {
                 text = stringResource(R.string.notes),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = notes,
@@ -2806,7 +2806,7 @@ private fun BoundNoteCard(
                     text = stringResource(R.string.password_bound_note_title),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -2819,7 +2819,7 @@ private fun BoundNoteCard(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
@@ -2910,7 +2910,7 @@ private fun CustomFieldsCard(
                     text = stringResource(R.string.custom_field_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -2986,7 +2986,7 @@ private fun CollapsibleSection(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -3174,7 +3174,7 @@ private fun PasswordListCard(
                 text = stringResource(R.string.password),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
 
             passwords.forEachIndexed { index, entry ->
@@ -3409,7 +3409,7 @@ private fun MultiDeleteConfirmDialog(
                     Text(
                         text = stringResource(R.string.multi_del_select_all),
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 

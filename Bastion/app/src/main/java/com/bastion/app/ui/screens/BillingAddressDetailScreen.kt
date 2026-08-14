@@ -280,7 +280,7 @@ private fun DetailCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
             content()
         }
@@ -321,7 +321,7 @@ private fun BillingAddressCustomFieldsCard(
                     text = stringResource(R.string.custom_field_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 

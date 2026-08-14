@@ -99,7 +99,7 @@ fun DocumentCard(
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = contentColor
                     )
                     Text(
@@ -256,7 +256,7 @@ fun DocumentCard(
                     resolvedDocumentData.documentType
                 ),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = contentColor
             )
             
@@ -278,7 +278,7 @@ fun DocumentCard(
                         Text(
                             text = resolvedDocumentData.fullName,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = contentColor
                         )
                     }
@@ -295,7 +295,7 @@ fun DocumentCard(
                         Text(
                             text = resolvedDocumentData.expiryDate,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = contentColor
                         )
                     }

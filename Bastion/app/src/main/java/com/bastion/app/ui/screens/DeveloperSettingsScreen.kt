@@ -557,7 +557,7 @@ fun DebugLogsDialog(
             ) {
                 Text(
                     text = stringResource(R.string.developer_system_logs),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
                 IconButton(
                     onClick = { scope.launch { refreshLogs() } },

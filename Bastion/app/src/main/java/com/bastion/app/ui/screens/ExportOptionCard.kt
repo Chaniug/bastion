@@ -84,7 +84,7 @@ fun ExportOptionCard(
                     Text(
                         title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = if (selected)
                             MaterialTheme.colorScheme.onPrimaryContainer
                         else

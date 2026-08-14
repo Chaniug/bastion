@@ -240,7 +240,7 @@ fun PasswordSuggestionDialog(
                     .heightIn(max = 640.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 标题和图标
                 Row(
@@ -266,7 +266,7 @@ fun PasswordSuggestionDialog(
                         Text(
                             text = stringResource(R.string.password_suggestion_title),
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
@@ -480,7 +480,7 @@ fun PasswordSuggestionDialog(
                         Text(
                             text = stringResource(R.string.password_suggestion_accept),
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1
                         )
                     }
@@ -581,7 +581,7 @@ fun PasswordStrengthIndicator(strength: PasswordStrengthCalculator.PasswordStren
             Text(
                 text = strengthText,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = strengthColor
             )
         }

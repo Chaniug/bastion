@@ -329,7 +329,7 @@ private fun LargeFieldValueDialog(
                         text = value,
                         style = MaterialTheme.typography.displaySmall.copy(
                             fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         ),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -373,7 +373,7 @@ private fun FieldBarcodePage(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
                 Row(
@@ -386,7 +386,7 @@ private fun FieldBarcodePage(
                     Text(
                         text = stringResource(R.string.field_action_show_barcode),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -419,7 +419,7 @@ private fun FieldBarcodePage(
                                 modifier = Modifier
                                     .size(280.dp)
                                     .background(Color.White, RoundedCornerShape(16.dp))
-                                    .padding(14.dp)
+                                    .padding(16.dp)
                             )
                         } else {
                             Text(

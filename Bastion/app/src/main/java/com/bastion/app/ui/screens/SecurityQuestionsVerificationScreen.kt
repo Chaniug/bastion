@@ -91,8 +91,8 @@ fun SecurityQuestionsVerificationScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .imePadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SecurityQuestionVerificationHero()
 
@@ -204,7 +204,7 @@ private fun SecurityQuestionVerificationHero() {
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f)
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
@@ -224,7 +224,7 @@ private fun SecurityQuestionVerificationHero() {
             Text(
                 text = stringResource(R.string.answer_security_questions),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
 
@@ -252,8 +252,8 @@ private fun AnswerSecurityQuestionCard(
         tonalElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -286,7 +286,7 @@ private fun AnswerSecurityQuestionCard(
                 Text(
                     text = question,
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(14.dp)
+                    modifier = Modifier.padding(16.dp)
                 )
             }
 

@@ -154,7 +154,7 @@ internal fun CredentialsCard(
             Text(
                 text = stringResource(R.string.autofill_credentials),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             
@@ -369,7 +369,7 @@ internal fun PasswordGeneratorDialog(
         title = { 
             Text(
                 stringResource(R.string.password_generator_title),
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             ) 
         },
         text = {
@@ -519,7 +519,7 @@ internal fun VaultSelector(
                 Text(
                     text = stringResource(R.string.vault_select_storage),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 

@@ -156,7 +156,7 @@ fun PasswordVerificationContent(
         // App Title
         Text(
             text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.primary
         )
         

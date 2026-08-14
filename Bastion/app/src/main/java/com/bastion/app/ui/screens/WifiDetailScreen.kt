@@ -204,7 +204,7 @@ fun WifiDetailScreen(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // SSID
                     DetailRow(

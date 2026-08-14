@@ -1837,7 +1837,7 @@ fun AddEditPasswordScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -1996,7 +1996,7 @@ fun AddEditPasswordScreen(
                                     ) {
                                         Text(
                                             text = barcodePayload,
-                                            modifier = Modifier.padding(14.dp),
+                                            modifier = Modifier.padding(16.dp),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.78f),
                                             maxLines = 2,
@@ -2675,7 +2675,7 @@ fun AddEditPasswordScreen(
                                     )
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(14.dp),
+                                        modifier = Modifier.padding(16.dp),
                                         verticalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         Row(
@@ -3623,7 +3623,7 @@ private fun PasswordTotpBindingPickerBottomSheet(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -3962,7 +3962,7 @@ private fun CommonAccountSelectorOptionRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -4026,7 +4026,7 @@ private fun InlinePrimarySuggestionCard(
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -4136,7 +4136,7 @@ private fun InfoCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             content()
@@ -4183,7 +4183,7 @@ private fun CollapsibleCard(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 Icon(
@@ -4256,7 +4256,7 @@ private fun PasswordGeneratorDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(
@@ -4430,7 +4430,7 @@ private fun PasswordGeneratorDialog(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(14.dp),
+                                            .padding(16.dp),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Text(
