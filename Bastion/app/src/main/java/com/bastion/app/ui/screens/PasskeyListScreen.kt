@@ -460,17 +460,12 @@ fun PasskeyListScreen(
     }
 
     fun vibratePullThreshold(isSyncStage: Boolean) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (isSyncStage && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator?.vibrate(
-                    android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_DOUBLE_CLICK)
-                )
-            } else {
-                vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
-            }
+        if (isSyncStage && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            vibrator?.vibrate(
+                android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_DOUBLE_CLICK)
+            )
         } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(if (isSyncStage) 36 else 20)
+            vibrator?.vibrate(android.os.VibrationEffect.createWaveform(com.bastion.app.util.VibrationPatterns.TICK, -1))
         }
     }
 

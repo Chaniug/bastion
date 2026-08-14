@@ -161,14 +161,10 @@ fun AutofillSettingsV2Screen(
     }
 
     fun openSystemAutofillSettings() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
-                data = Uri.parse("package:${context.packageName}")
-            }
-            context.startActivity(intent)
-        } else {
-            context.startActivity(Intent(Settings.ACTION_SETTINGS))
+        val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
+            data = Uri.parse("package:${context.packageName}")
         }
+        context.startActivity(intent)
     }
 
     LaunchedEffect(Unit) {

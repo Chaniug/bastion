@@ -30,7 +30,7 @@ class VivoFingerprintHelper(private val context: Context) {
          * (Android 7.0+ 的 vivo 设备)
          */
         fun mayHaveUnderDisplayFingerprint(): Boolean {
-            return isVivoDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+            return isVivoDevice()
         }
         
         /**
@@ -46,11 +46,6 @@ class VivoFingerprintHelper(private val context: Context) {
      */
     fun hasUnderDisplayFingerprint(): Boolean {
         if (!isVivoDevice()) {
-            return false
-        }
-        
-        // Android 7.0 以下不支持屏下指纹
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             return false
         }
         

@@ -144,15 +144,11 @@ class PermissionRepository(private val context: Context) {
      */
     private fun checkAutofillStatus(): PermissionStatus {
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val autofillManager = context.getSystemService(android.view.autofill.AutofillManager::class.java)
-                if (autofillManager?.hasEnabledAutofillServices() == true) {
-                    PermissionStatus.GRANTED
-                } else {
-                    PermissionStatus.DENIED
-                }
+            val autofillManager = context.getSystemService(android.view.autofill.AutofillManager::class.java)
+            if (autofillManager?.hasEnabledAutofillServices() == true) {
+                PermissionStatus.GRANTED
             } else {
-                PermissionStatus.UNAVAILABLE
+                PermissionStatus.DENIED
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check autofill status", e)

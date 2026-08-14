@@ -686,9 +686,7 @@ class SecurityManager(private val context: Context) {
         .setUserAuthenticationRequired(true)
         .setUserAuthenticationValidityDurationSeconds(300) // Allow use for 5 minutes after authentication
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            builder.setInvalidatedByBiometricEnrollment(true) // Key becomes permanently invalid if new biometric is enrolled
-        }
+        builder.setInvalidatedByBiometricEnrollment(true) // Key becomes permanently invalid if new biometric is enrolled
         
         keyGenerator.init(builder.build())
         return keyGenerator.generateKey()

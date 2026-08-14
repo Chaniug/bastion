@@ -32,7 +32,7 @@
     <string name="field_action_show_barcode">显示为二维码</string>
     <string name="field_action_barcode_failed">无法为该内容生成二维码。</string>
     <string name="no_results">未找到结果</string>
-    <string name="note_placeholder">记点什么...</string>
+    <string name="note_placeholder">记点什么…</string>
     <string name="new_note">新建笔记</string>
     <string name="untitled">无标题</string>
     <string name="edit_note">编辑笔记</string>
@@ -130,7 +130,7 @@
     <string name="password_suggestion_copied">密码已复制</string>
     
     <!-- Password List Screen -->
-    <string name="search_passwords">搜索密码...</string>
+    <string name="search_passwords">搜索密码…</string>
     <string name="no_passwords_saved">还没有保存任何密码</string>
     <string name="password_list_quick_folder_root_empty">当前根目录没有可显示条目</string>
     <string name="password_list_quick_folder_root_empty_hint">请点击上方快捷文件夹查看目录内容</string>
@@ -245,7 +245,7 @@
     <string name="ssh_key_fingerprint">指纹 (SHA256)</string>
     <string name="ssh_key_comment">备注</string>
     <string name="ssh_key_generate">生成</string>
-    <string name="ssh_key_generating">正在生成 SSH 密钥...</string>
+    <string name="ssh_key_generating">正在生成 SSH 密钥…</string>
     <string name="ssh_key_regenerate">重新生成</string>
     <string name="ssh_key_empty_placeholder">尚未生成密钥，点击「生成」即可创建。</string>
     <string name="ssh_key_rsa_description">所有 SSH 客户端都支持的算法。RSA 推荐至少 2048 位，使用 3072 位或更高更安全。</string>
@@ -365,7 +365,7 @@
     <string name="lowercase_az">小写字母 (a-z)</string>
     <string name="numbers">数字 (0-9)</string>
     <string name="numbers_09">数字 (0-9)</string>
-    <string name="symbols">符号 (!@#$...)</string>
+    <string name="symbols">符号 (!@#$…)</string>
     <string name="exclude_similar">排除相似字符</string>
     <string name="analyze_common_passwords">常用密码分析</string>
     <string name="analyze_common_passwords_desc">分析已保存的密码并生成相似且易记的密码</string>
@@ -389,7 +389,7 @@
     <string name="totp_import_uri_action">导入链接</string>
     <string name="totp_import_uri_dialog_title">导入验证器链接</string>
     <string name="totp_import_uri_dialog_label">验证器链接</string>
-    <string name="totp_import_uri_dialog_hint">otpauth://totp/...</string>
+    <string name="totp_import_uri_dialog_hint">otpauth://totp/…</string>
     <string name="totp_import_uri_dialog_supporting">粘贴 otpauth://、otpauth-migration:// 或 motp:// 链接</string>
     <string name="totp_import_uri_empty">请粘贴验证器链接</string>
     <string name="issuer">发行者</string>
@@ -495,7 +495,7 @@
     <string name="country">国家</string>
     <string name="country_placeholder">如：中国</string>
     <string name="billing_address_saved">账单地址已保存</string>
-    <string name="notes_placeholder">添加备注信息...</string>
+    <string name="notes_placeholder">添加备注信息…</string>
     <string name="bottom_nav_settings">底部导航栏</string>
     <string name="bottom_nav_toggle_subtitle">在底部栏中显示或隐藏该页签</string>
     <string name="bottom_nav_reorder_hint">长按拖动可调整顺序，设置页始终位于最后。</string>
@@ -589,12 +589,12 @@
     
     <!-- Export/Import Data -->
     <string name="export_data_title">导出数据</string>
-    <string name="exporting">导出中...</string>
+    <string name="exporting">导出中…</string>
     <string name="start_export">开始导出</string>
         <string name="error_export_failed">导出失败</string>
         <string name="error_launch_export">无法打开文件选择器：%1$s</string>
     <string name="import_data_title">导入数据</string>
-    <string name="importing">导入中...</string>
+    <string name="importing">导入中…</string>
     <string name="start_import">开始导入</string>
     <string name="export_data_select_type">选择要导出的数据类型：</string>
     <string name="export_data_type_passwords">密码</string>
@@ -967,7 +967,7 @@
     <string name="generator_include_uppercase">包含大写字母 (A-Z)</string>
     <string name="generator_include_lowercase">包含小写字母 (a-z)</string>
     <string name="generator_include_numbers">包含数字 (0-9)</string>
-    <string name="generator_include_symbols">包含符号 (!@#$...)</string>
+    <string name="generator_include_symbols">包含符号 (!@#$…)</string>
     <string name="generator_exclude_similar">排除相似字符 (0,O,l,I)</string>
     <string name="generator_exclude_ambiguous">排除不明确字符</string>
     <string name="generator_first_letter_uppercase">首字母大写</string>
@@ -1040,7 +1040,7 @@
     <string name="version_info_simple_icons_note">图标资源已本地打包，来源于 Stratum Auth app（v1.4.0，GPL-3.0）。品牌名称与 Logo 的商标权归各自权利人所有。</string>
     <string name="update_check_title">检查更新</string>
     <string name="update_check_subtitle">对比当前版本与 GitHub 最新 Release</string>
-    <string name="update_check_checking">正在检查最新版本...</string>
+    <string name="update_check_checking">正在检查最新版本…</string>
     <string name="update_check_latest_release">GitHub 最新 Release</string>
     <string name="update_check_update_available_title">发现新版本</string>
     <string name="update_check_no_update_title">已是最新版本</string>
@@ -1055,7 +1055,7 @@
     <string name="update_check_latest_version">最新版本：%1$s</string>
     <string name="update_check_open_release">打开 Release</string>
     <string name="update_download_and_install">下载并安装</string>
-    <string name="update_download_downloading">正在下载...</string>
+    <string name="update_download_downloading">正在下载…</string>
     <string name="update_download_progress_known">%1$s / %2$s</string>
     <string name="update_download_progress_unknown">已下载 %1$s</string>
     <string name="update_download_failed">下载失败：%1$s</string>
@@ -1361,7 +1361,7 @@
     <string name="batch_delete_in_progress_title">正在删除项目</string>
     <string name="batch_delete_in_progress_message">正在删除所选项目，请稍候。</string>
     <string name="batch_delete_in_progress_count">%1$d / %2$d</string>
-    <string name="batch_delete_in_progress_preparing">准备中...</string>
+    <string name="batch_delete_in_progress_preparing">准备中…</string>
     <string name="batch_delete_notification_channel_name">批量删除进度</string>
     <string name="batch_delete_notification_channel_desc">显示跨数据库批量删除进度</string>
     <string name="batch_delete_notification_progress">已删除 %1$d/%2$d</string>
@@ -1641,7 +1641,7 @@
     <string name="autofill_status_enable_prompt">请在系统设置中启用 Bastion 作为自动填充服务</string>
     <string name="autofill_status_go_to_settings">前往系统设置</string>
     <string name="autofill_status_compatibility_issues">检测到兼容性问题:</string>
-    <string name="autofill_status_more_issues">还有 %d 个问题...</string>
+    <string name="autofill_status_more_issues">还有 %d 个问题…</string>
     <string name="autofill_status_troubleshoot">故障排查</string>
     <string name="autofill_status_summary_operational">自动填充服务运行正常</string>
     <string name="autofill_status_summary_not_declared">服务未正确声明</string>
@@ -1755,7 +1755,7 @@
     <string name="developer_share_subject">Bastion 应用日志</string>
     <string name="developer_share_title">分享日志</string>
     <string name="developer_system_logs">系统日志</string>
-    <string name="developer_loading_logs">正在加载日志...</string>
+    <string name="developer_loading_logs">正在加载日志…</string>
     <string name="developer_no_logs">暂无日志\n\n提示: 确保应用已运行过一些操作</string>
     <string name="developer_load_failed">加载失败: %s\n\n可能需要调试权限才能读取日志</string>
     <string name="developer_filter_all">全部</string>
@@ -2453,10 +2453,10 @@
     <string name="trash_status_disabled_permanent_delete">已禁用 · 删除将永久删除</string>
     
     <!-- 通用/组件硬编码修复 -->
-    <string name="topbar_search_hint">搜索...</string>
+    <string name="topbar_search_hint">搜索…</string>
     <string name="topbar_close_search">关闭搜索</string>
     <string name="back_to_top">回到顶部</string>
-    <string name="loading_default">加载中...</string>
+    <string name="loading_default">加载中…</string>
     <string name="common_count_items">%1$d 项</string>
     <string name="developer_mode_password_disabled">开发者模式: 已关闭密码验证</string>
     <string name="sync_status_synced_short">已同步</string>
@@ -2476,7 +2476,7 @@
     <string name="sync_now">立即同步</string>
     <string name="sync_status_synced_full">已同步到 Bitwarden</string>
     <string name="sync_status_pending_full">等待同步</string>
-    <string name="sync_status_syncing_full">正在同步...</string>
+    <string name="sync_status_syncing_full">正在同步…</string>
     <string name="sync_status_failed_full">同步失败</string>
     <string name="sync_status_conflict_full">存在同步冲突</string>
     <string name="sync_status_local_full">仅本地存储</string>
@@ -2496,7 +2496,7 @@
     <string name="password_owner_conflict_copy">这条数据存在归属冲突，当前不能安全复制密码。</string>
     <string name="pull_release_to_search">下拉进行搜索</string>
     <string name="pull_release_to_sync_bitwarden">松手进行 Bitwarden 同步</string>
-    <string name="pull_syncing_bitwarden">正在同步 Bitwarden...</string>
+    <string name="pull_syncing_bitwarden">正在同步 Bitwarden…</string>
     <string name="pull_sync_requires_bitwarden_login">请先登录并解锁 Bitwarden</string>
     <string name="pull_sync_success">Bitwarden 同步完成</string>
     <string name="bitwarden_sync_success_with_offline_ready">同步完成。本次处理 %1$d 处变更，当前有 %2$d 条密码可离线查看。</string>
@@ -2587,7 +2587,7 @@
     <string name="password_batch_transfer_notification_channel_name">批量迁移进度</string>
     <string name="password_batch_transfer_notification_channel_desc">显示数据库间批量复制与移动的进度</string>
     <string name="password_batch_transfer_notification_progress">已完成 %1$d/%2$d</string>
-    <string name="password_batch_transfer_progress_preparing">准备中...</string>
+    <string name="password_batch_transfer_progress_preparing">准备中…</string>
     <string name="password_batch_transfer_notification_done_copy">批量复制完成</string>
     <string name="password_batch_transfer_notification_done_move">批量移动完成</string>
     <string name="password_batch_transfer_notification_done_detail_success">已完成 %1$d 项</string>
@@ -2628,7 +2628,7 @@
     <string name="app_selector_manual_input_cd">手动输入应用信息</string>
     <string name="app_selector_total_apps">共 %1$d 个应用</string>
     <string name="app_selector_found_apps">找到 %1$d 个应用</string>
-    <string name="app_selector_loading">正在加载应用列表...</string>
+    <string name="app_selector_loading">正在加载应用列表…</string>
     <string name="app_selector_no_installed_apps">未找到已安装的应用</string>
     <string name="app_selector_no_match_apps">未找到匹配 \"%1$s\" 的应用</string>
     <string name="app_selector_manual_title">手动添加应用</string>
@@ -2650,7 +2650,7 @@
     <string name="custom_field_name">字段名称</string>
     <string name="custom_field_name_placeholder">如：安全问题、备用邮箱</string>
     <string name="custom_field_value">字段内容</string>
-    <string name="custom_field_value_placeholder">输入内容...</string>
+    <string name="custom_field_value_placeholder">输入内容…</string>
     <string name="custom_field_hide_content">隐藏内容</string>
     <string name="custom_field_show_content">显示内容</string>
     <string name="custom_field_sensitive">敏感数据</string>
@@ -2996,11 +2996,11 @@
     <string name="webdav_compress_images_one_tap">一键压缩图片</string>
     <string name="webdav_compress_dialog_title">压缩图片</string>
     <string name="webdav_compress_dialog_message">将压缩 %1$d 张大图片以减少备份文件大小。\n\n• 压缩后的图片质量会略有下降\n• 已压缩的图片不会重复压缩\n• 此操作不可撤销\n\n是否继续？</string>
-    <string name="webdav_compress_status_preparing">正在准备...</string>
-    <string name="webdav_compress_status_processing">正在压缩 %1$d/%2$d...</string>
+    <string name="webdav_compress_status_preparing">正在准备…</string>
+    <string name="webdav_compress_status_processing">正在压缩 %1$d/%2$d…</string>
     <string name="webdav_compress_status_done">完成</string>
     <string name="webdav_compress_failed">压缩失败: %1$s</string>
-    <string name="webdav_optimizing_images">正在优化图片...</string>
+    <string name="webdav_optimizing_images">正在优化图片…</string>
     <string name="webdav_restore_success">数据已成功恢复</string>
     <string name="webdav_tag_permanent">永久</string>
     <string name="webdav_tag_expiring">即将清理</string>
@@ -3046,7 +3046,7 @@
     <string name="webdav_restore_summary_part_data_failed">%1$d 个数据导入失败</string>
     <string name="webdav_restore_summary_issues_prefix">跳过/失败: %1$s</string>
     <string name="webdav_restore_summary_failed_details">导入失败详情:</string>
-    <string name="webdav_restore_summary_more_logs">...查看日志了解更多</string>
+    <string name="webdav_restore_summary_more_logs">…查看日志了解更多</string>
     <string name="keepass_webdav_title">KeePass WebDAV</string>
     <string name="keepass_webdav_load_files_failed">加载文件列表失败</string>
     <string name="keepass_webdav_refresh_failed">刷新失败</string>
@@ -3057,7 +3057,7 @@
     <string name="keepass_webdav_import_failed">导入失败: %1$s</string>
     <string name="keepass_webdav_user_summary">用户: %1$s</string>
     <string name="keepass_webdav_status_not_connected">未连接</string>
-    <string name="keepass_webdav_status_connecting">连接中...</string>
+    <string name="keepass_webdav_status_connecting">连接中…</string>
     <string name="keepass_webdav_status_connected">已连接</string>
     <string name="keepass_webdav_status_failed">连接失败</string>
     <string name="keepass_webdav_actions">操作</string>
@@ -3071,7 +3071,7 @@
     <string name="keepass_webdav_conflict_protection_enabled_hint">严格模式：若服务器未返回 ETag 或远端已变化，会阻止写入。</string>
     <string name="keepass_webdav_conflict_protection_disabled_hint">自动模式（推荐）：有 ETag 时使用 If-Match，无 ETag 时尽力保护后再写入。</string>
     <string name="keepass_webdav_create_action">新建远端数据库</string>
-    <string name="keepass_webdav_creating">创建中...</string>
+    <string name="keepass_webdav_creating">创建中…</string>
     <string name="keepass_webdav_create_title">新建远端 .kdbx</string>
     <string name="keepass_webdav_create_message">在 WebDAV 服务器上创建一个空的 KeePass 数据库。</string>
     <string name="keepass_webdav_create_name_label">数据库文件名</string>
@@ -3173,7 +3173,7 @@
     <string name="bastion_plus_card_desc">求各位股东入资，月收益10块，买不起token了，要饿死了😭😭😭😭</string>
     <string name="click_to_pay">点击付款</string>
     <string name="bastion_plus_features_title">Plus 功能</string>
-    <string name="bastion_plus_features_placeholder">更多功能敬请期待...</string>
+    <string name="bastion_plus_features_placeholder">更多功能敬请期待…</string>
     <string name="plus_title">Bastion Plus</string>
     <string name="plus_subtitle_active">已激活</string>
     <string name="plus_subtitle_inactive">支持开发</string>
@@ -3366,7 +3366,7 @@
     <string name="settings_search_hint">搜索设置项…</string>
     <string name="settings_search_empty_hint">试试其他关键词</string>
     <string name="keepass_onedrive_attach_card_description">把 OneDrive 中已有的 .kdbx 文件接入为本地工作副本</string>
-    <string name="keepass_remote_loading_files">正在加载云端文件...</string>
+    <string name="keepass_remote_loading_files">正在加载云端文件…</string>
     <string name="keepass_onedrive_attach_title">接入 OneDrive 数据库</string>
     <string name="keepass_onedrive_browser_message">先登录 OneDrive，然后浏览文件夹，选择已有的 .kdbx，或在当前目录直接创建新数据库。</string>
     <string name="keepass_onedrive_sign_in_action">连接</string>
@@ -3699,14 +3699,14 @@
     <string name="no_notes_description">Tap the + button to create your first secure note</string>
     <string name="no_notes_title">No notes yet</string>
     <string name="note_content">Content</string>
-    <string name="note_content_placeholder">Write something meaningful...</string>
+    <string name="note_content_placeholder">Write something meaningful…</string>
     <string name="note_has_image">Has image attachment</string>
     <string name="note_markdown_label">Markdown formatting</string>
     <string name="note_tags">Tags</string>
     <string name="note_title_label">Title</string>
     <string name="note_title_placeholder">e.g. Project ideas</string>
     <string name="notification_validator_no_match">No matching authenticator yet</string>
-    <string name="notification_validator_ready">Authenticator notification is starting...</string>
+    <string name="notification_validator_ready">Authenticator notification is starting…</string>
     <string name="passkey_category_empty">No categories yet. You can create one in folder management.</string>
     <string name="passkey_category_follow_binding">Category is inherited from the bound password.</string>
     <string name="passkey_category_updated">Category updated: %1$s</string>

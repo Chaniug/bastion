@@ -221,18 +221,12 @@ fun TotpCodeCard(
             android.util.Log.d("TotpCodeCard", "Triggering vibration at ${remainingSeconds}s")
             
             vibrator?.let { vib ->
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    // 使用双击模式震动（比单次100ms更有节奏感）
-                    val effect = android.os.VibrationEffect.createWaveform(
-                        VibrationPatterns.TICK,
-                        -1  // 不重复
-                    )
-                    vib.vibrate(effect)
-                } else {
-                    // 旧版本使用简单震动
-                    @Suppress("DEPRECATION")
-                    vib.vibrate(VibrationPatterns.TICK, -1)
-                }
+                // 使用双击模式震动（比单次100ms更有节奏感）
+                val effect = android.os.VibrationEffect.createWaveform(
+                    VibrationPatterns.TICK,
+                    -1  // 不重复
+                )
+                vib.vibrate(effect)
                 android.util.Log.d("TotpCodeCard", "Tick vibration executed at ${remainingSeconds}s")
             } ?: android.util.Log.w("TotpCodeCard", "Vibrator is null")
         }

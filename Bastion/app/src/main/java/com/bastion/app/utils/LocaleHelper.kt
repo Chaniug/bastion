@@ -19,12 +19,7 @@ object LocaleHelper {
     
     private fun getSystemLocale(): Locale {
         val systemConfig = android.content.res.Resources.getSystem().configuration
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            systemConfig.locales[0]
-        } else {
-            @Suppress("DEPRECATION")
-            systemConfig.locale
-        }
+        return systemConfig.locales[0]
     }
     
     private fun updateResources(context: Context, locale: Locale): Context {
@@ -33,13 +28,7 @@ object LocaleHelper {
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
         
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            context.createConfigurationContext(config)
-        } else {
-            @Suppress("DEPRECATION")
-            context.resources.updateConfiguration(config, context.resources.displayMetrics)
-            context
-        }
+        return context.createConfigurationContext(config)
     }
     
     fun getCurrentLanguage(context: Context): Language {

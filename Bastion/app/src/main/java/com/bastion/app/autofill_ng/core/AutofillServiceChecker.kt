@@ -160,53 +160,48 @@ class AutofillServiceChecker(private val context: Context) {
      * 检查系统是否启用了自动填充服务
      */
     private fun checkSystemEnabled(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                val autofillManager = context.getSystemService(AutofillManager::class.java)
-                val targetComponents = bastionAutofillComponents().toSet()
+        return try {
+            val autofillManager = context.getSystemService(AutofillManager::class.java)
+            val targetComponents = bastionAutofillComponents().toSet()
 
-                // 主路径：AutofillManager
-                val hasEnabledServices = autofillManager?.hasEnabledAutofillServices() == true
-                val managerComponent = autofillManager?.autofillServiceComponentName
-                val managerMatches = managerComponent != null && targetComponents.contains(managerComponent)
+            // 主路径：AutofillManager
+            val hasEnabledServices = autofillManager?.hasEnabledAutofillServices() == true
+            val managerComponent = autofillManager?.autofillServiceComponentName
+            val managerMatches = managerComponent != null && targetComponents.contains(managerComponent)
 
-                // 兜底路径：Settings.Secure（部分 ROM 上 manager 返回会延迟/空值）
-                val secureAutofillServiceRaw = Settings.Secure.getString(
-                    context.contentResolver,
-                    "autofill_service"
-                )
-                val secureComponent = ComponentName.unflattenFromString(secureAutofillServiceRaw)
-                val secureMatches = secureComponent != null && targetComponents.contains(secureComponent)
+            // 兜底路径：Settings.Secure（部分 ROM 上 manager 返回会延迟/空值）
+            val secureAutofillServiceRaw = Settings.Secure.getString(
+                context.contentResolver,
+                "autofill_service"
+            )
+            val secureComponent = ComponentName.unflattenFromString(secureAutofillServiceRaw)
+            val secureMatches = secureComponent != null && targetComponents.contains(secureComponent)
 
-                AutofillLogger.d(
-                    TAG,
-                    "System autofill state: managerEnabled=$hasEnabledServices, " +
-                        "managerComponent=$managerComponent, secureRaw=$secureAutofillServiceRaw, " +
-                        "secureComponent=$secureComponent, targets=${targetComponents.joinToString()}"
-                )
+            AutofillLogger.d(
+                TAG,
+                "System autofill state: managerEnabled=$hasEnabledServices, " +
+                    "managerComponent=$managerComponent, secureRaw=$secureAutofillServiceRaw, " +
+                    "secureComponent=$secureComponent, targets=${targetComponents.joinToString()}"
+            )
 
-                if (managerMatches || secureMatches) {
-                    if (!hasEnabledServices || !managerMatches) {
-                        AutofillLogger.w(
-                            TAG,
-                            "Detected via secure fallback (possible OEM framework inconsistency)"
-                        )
-                    }
-                    return true
+            if (managerMatches || secureMatches) {
+                if (!hasEnabledServices || !managerMatches) {
+                    AutofillLogger.w(
+                        TAG,
+                        "Detected via secure fallback (possible OEM framework inconsistency)"
+                    )
                 }
-
-                if (!hasEnabledServices && secureAutofillServiceRaw.isNullOrBlank()) {
-                    AutofillLogger.d(TAG, "No autofill service enabled in system")
-                } else {
-                    AutofillLogger.d(TAG, "Autofill is enabled but not Bastion service")
-                }
-                return false
-            } catch (e: Exception) {
-                AutofillLogger.e(TAG, "Error checking system enabled status", e)
-                false
+                return true
             }
-        } else {
-            AutofillLogger.w(TAG, "Autofill not supported on Android < 8.0")
+
+            if (!hasEnabledServices && secureAutofillServiceRaw.isNullOrBlank()) {
+                AutofillLogger.d(TAG, "No autofill service enabled in system")
+            } else {
+                AutofillLogger.d(TAG, "Autofill is enabled but not Bastion service")
+            }
+            return false
+        } catch (e: Exception) {
+            AutofillLogger.e(TAG, "Error checking system enabled status", e)
             false
         }
     }
@@ -268,11 +263,6 @@ class AutofillServiceChecker(private val context: Context) {
         val issues = mutableListOf<String>()
         
         try {
-            // 1. 检查 Android 版本
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                issues.add("Android 版本过低（需要 8.0 或更高版本）")
-            }
-            
             // 2. 检查设备品牌兼容性
             val manufacturer = Build.MANUFACTURER.lowercase()
             val isAndroid12Family =
@@ -320,13 +310,11 @@ class AutofillServiceChecker(private val context: Context) {
             }
             
             // 5. 检查系统自动填充框架
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val autofillManager = context.getSystemService(AutofillManager::class.java)
-                val isSupported = autofillManager?.isAutofillSupported == true
-                
-                if (!isSupported) {
-                    issues.add("设备不支持自动填充框架")
-                }
+            val autofillManager = context.getSystemService(AutofillManager::class.java)
+            val isSupported = autofillManager?.isAutofillSupported == true
+            
+            if (!isSupported) {
+                issues.add("设备不支持自动填充框架")
             }
             
             AutofillLogger.d(TAG, "Detected ${issues.size} compatibility issues")
@@ -457,16 +445,12 @@ class AutofillServiceChecker(private val context: Context) {
      * 用于跳转到系统设置页面
      */
     fun getAutofillSettingsIntent(): android.content.Intent? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                android.content.Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
-                    data = android.net.Uri.parse("package:${context.packageName}")
-                }
-            } catch (e: Exception) {
-                AutofillLogger.e(TAG, "Error creating autofill settings intent", e)
-                null
+        return try {
+            android.content.Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
+                data = android.net.Uri.parse("package:${context.packageName}")
             }
-        } else {
+        } catch (e: Exception) {
+            AutofillLogger.e(TAG, "Error creating autofill settings intent", e)
             null
         }
     }

@@ -360,18 +360,16 @@ class NotificationValidatorService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Notification Validator",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows the current TOTP code in the notification bar"
-                setShowBadge(false)
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Notification Validator",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows the current TOTP code in the notification bar"
+            setShowBadge(false)
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 }
 

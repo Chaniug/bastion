@@ -23,17 +23,16 @@ object ActiveFillNotificationHelper {
     private const val NOTIFICATION_ID = 9528
 
     fun createChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.autofill_active_fill_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.autofill_active_fill_channel_desc)
-            }
-            context.getSystemService(NotificationManager::class.java)
-                ?.createNotificationChannel(channel)
+        // minSdk 26 (Android 8.0) 起 NotificationChannel 恒可用，无需 SDK_INT 守卫。
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            context.getString(R.string.autofill_active_fill_channel_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.autofill_active_fill_channel_desc)
         }
+        context.getSystemService(NotificationManager::class.java)
+            ?.createNotificationChannel(channel)
     }
 
     private fun canPost(context: Context): Boolean {
@@ -46,12 +45,11 @@ object ActiveFillNotificationHelper {
         }
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = context.getSystemService(NotificationManager::class.java)
-                ?.getNotificationChannel(CHANNEL_ID)
-            if (channel != null && channel.importance == NotificationManager.IMPORTANCE_NONE) {
-                return false
-            }
+        // minSdk 26 起 getNotificationChannel 恒可用。
+        val channel = context.getSystemService(NotificationManager::class.java)
+            ?.getNotificationChannel(CHANNEL_ID)
+        if (channel != null && channel.importance == NotificationManager.IMPORTANCE_NONE) {
+            return false
         }
         return true
     }

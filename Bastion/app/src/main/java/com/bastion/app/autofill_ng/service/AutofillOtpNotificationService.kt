@@ -228,12 +228,7 @@ class AutofillOtpNotificationService : Service() {
             label
         }
 
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(this)
-        }
+        val builder = Notification.Builder(this, CHANNEL_ID)
 
         val copyActionText = runCatchingObserved {
             getString(R.string.autofill_otp_copy_action, code)
@@ -283,7 +278,6 @@ class AutofillOtpNotificationService : Service() {
     }
 
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(NotificationManager::class.java) ?: return
         if (nm.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
@@ -363,11 +357,7 @@ class AutofillOtpNotificationService : Service() {
                 putExtra(EXTRA_LABEL, label)
                 putExtra(EXTRA_DURATION_SECONDS, durationSeconds)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
     }
 }
