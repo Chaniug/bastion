@@ -194,8 +194,20 @@ P0（lint 基础设施修复）→ P1（state 审计，正确性）→ P3（机�
 **改动文件**：30 个（28 个 kt + 2 个 strings.xml），净删 ~151 行。
 **验证**：推 dev 后由 `Android CI debug` 编译 Debug APK + 单测基线兜底；通过后合 main，preview Release 产出 APK。
 
+### 2026-08-14 批次二：一致性小项（P3-e，已推 dev）
+
+| 任务 | baseline 量 | 实际处理 | 状态 | 说明 |
+|------|------|------|------|------|
+| P3-e DefaultLocale | 8 | 6 处 `String.format` 补 `Locale.US`（ImageCompressor 4 处随文件删除已消失；另补 2 处 baseline 未收录的 TotpGenerator/OneDriveBackupHelper） | ✅ | 全仓 grep 验证无 `String.format` 无 Locale 残留 |
+| P3-e UseAppTint | 11 | 1 处 `android:tint`→`app:tint`（autofill_manual_card.xml，补 xmlns:app）；另 10 处所在布局文件已删除 | ✅ | 其余 `android:tint` 仅在 drawable 矢量图内（vector 正确用法，不动） |
+| P3-e RtlSymmetry | 4 | 2 处补 `android:paddingStart="0dp"`（dataset_card/manual_card）；另 2 处布局已删除 | ✅ | 零视觉变化，仅 RTL 对称 |
+| P3-e DisableBaselineAlignment | 1 | 0 | ⏭️ 已消失 | 指向的 autofill_inline_suggestion.xml 已删除 |
+| P3-e Overdraw | 4 | 0 | ⏭️ 跳过 | 删 root `windowBackground` 有视觉回退风险且无法本地核验；纯性能警告，待真机确认 |
+| P3-e StaticFieldLeak | 3 | 1 处真修（DataExportImportViewModel 字段改持 applicationContext）；BitwardenRepository 单例已用 applicationContext（误报）；BitwardenSyncWorker 静态字段已随重构消失 | ✅ | 仅 1 处真实泄漏 |
+
+**改动文件**：8 个（6 kt + 2 xml），+16/-9 行。
+
 ### 待办（需用户确认或更高风险）
 - P3-d PluralsCandidate（89 处）：需为数量字符串补 `<plurals>` 资源并改 `getString` 调用点，涉及资源结构改动 → 先出细化方案再动。
-- P3-e 少量一致性项（RtlSymmetry/Overdraw/UseAppTint/DefaultLocale/StaticFieldLeak）：逐条按建议修，价值中等。
 - P3-f UnusedResources（586）：需警惕 `getIdentifier` 反射引用，仅删高置信未用项；风险较高 → 先出细化方案再动。
-- lint-baseline.xml 中已修复的 TypographyEllipsis(91)/ObsoleteSdkInt(43) 条目已失效，待 lint 跑过后重新生成 baseline。
+- 已修复项的 lint-baseline.xml 条目已失效，待 lint 跑过后统一重新生成 baseline（CI debug 不跑 lint，不影响构建闸门）。

@@ -487,7 +487,7 @@ class AutofillDiagnostics(private val context: Context) {
         stats["failedRequests"] = failedRequests
         
         if (totalRequests > 0) {
-            stats["successRate"] = String.format("%.1f%%", successfulRequests * 100.0 / totalRequests)
+            stats["successRate"] = String.format(Locale.US, "%.1f%%", successfulRequests * 100.0 / totalRequests)
         }
         
         if (requestTimes.isNotEmpty()) {

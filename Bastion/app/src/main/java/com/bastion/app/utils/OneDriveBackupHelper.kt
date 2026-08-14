@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import com.bastion.app.security.SecurityManager
 import java.io.File
 import java.util.Date
+import java.util.Locale
 
 data class OneDriveBackupConfig(
     val accountId: String,
@@ -212,7 +213,7 @@ class OneDriveBackupHelper(context: Context) {
         return when {
             bytes < 1024 -> "$bytes B"
             bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-            else -> String.format("%.2f MB", bytes / (1024.0 * 1024.0))
+            else -> String.format(Locale.US, "%.2f MB", bytes / (1024.0 * 1024.0))
         }
     }
 
