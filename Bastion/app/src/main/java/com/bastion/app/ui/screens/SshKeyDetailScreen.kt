@@ -238,7 +238,7 @@ private fun SshKeyDetailBody(
 private fun HeaderCard(data: SshKeyData) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )

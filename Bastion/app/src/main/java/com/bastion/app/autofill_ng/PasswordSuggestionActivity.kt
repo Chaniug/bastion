@@ -591,14 +591,14 @@ fun PasswordStrengthIndicator(strength: PasswordStrengthCalculator.PasswordStren
             modifier = Modifier
                 .fillMaxWidth()
                 .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(RoundedCornerShape(4.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(strengthProgress)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(4.dp))
                     .background(strengthColor)
             )
         }

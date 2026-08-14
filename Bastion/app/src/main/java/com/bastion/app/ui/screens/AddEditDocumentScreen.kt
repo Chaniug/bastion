@@ -1122,7 +1122,7 @@ private fun ExpandableSectionCard(
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -1138,7 +1138,7 @@ private fun ExpandableSectionCard(
             },
             leadingContent = {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Box(

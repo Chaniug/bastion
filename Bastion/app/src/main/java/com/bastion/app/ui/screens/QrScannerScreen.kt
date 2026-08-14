@@ -338,7 +338,7 @@ private fun QrCodeScanner(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                 tonalElevation = 6.dp,
                 shadowElevation = 8.dp

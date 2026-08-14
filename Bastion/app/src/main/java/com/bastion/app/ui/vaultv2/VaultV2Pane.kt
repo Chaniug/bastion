@@ -3467,7 +3467,7 @@ private fun VaultV2BreadcrumbPath(
 	Box(
 		modifier = modifier
 			.height(36.dp)
-			.clip(RoundedCornerShape(14.dp))
+			.clip(RoundedCornerShape(12.dp))
 			.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
 			.clickable(onClick = onOpenStorageFilter)
 	) {
@@ -3496,7 +3496,7 @@ private fun VaultV2BreadcrumbPath(
 			} else {
 				Box(
 					modifier = Modifier
-						.clip(RoundedCornerShape(10.dp))
+						.clip(RoundedCornerShape(8.dp))
 						.background(MaterialTheme.colorScheme.primaryContainer)
 						.padding(horizontal = 10.dp, vertical = 4.dp)
 				) {
@@ -3517,7 +3517,7 @@ private fun VaultV2BreadcrumbChip(
 ) {
 	Box(
 		modifier = Modifier
-			.clip(RoundedCornerShape(10.dp))
+			.clip(RoundedCornerShape(8.dp))
 			.background(
 				if (crumb.isCurrent) {
 					MaterialTheme.colorScheme.primaryContainer
@@ -3667,7 +3667,7 @@ private fun VaultV2ItemCard(
 		else -> null
 	}
 
-	val cardShape = RoundedCornerShape(14.dp)
+	val cardShape = RoundedCornerShape(12.dp)
 
 	Surface(
 		shape = cardShape,

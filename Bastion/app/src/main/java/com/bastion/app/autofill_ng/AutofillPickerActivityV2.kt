@@ -3084,7 +3084,7 @@ private fun StructuredAutofillCopyDialog(
                     enabled = false,
                     onClick = {},
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(text = stringResource(R.string.autofill_structured_fill_unavailable))
                 }
@@ -3112,7 +3112,7 @@ private fun StructuredCopyActionButton(
     OutlinedButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Icon(
@@ -3277,7 +3277,7 @@ private fun GeneratedPasswordBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(42.dp)
@@ -3336,7 +3336,7 @@ private fun GeneratedPasswordBottomSheet(
                 OutlinedButton(
                     onClick = onSaveAsNew,
                     modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp)
                 ) {
                     Icon(
@@ -3352,7 +3352,7 @@ private fun GeneratedPasswordBottomSheet(
                     modifier = Modifier
                         .weight(1f)
                         .height(44.dp),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(text = stringResource(R.string.autofill_generated_password_fill))
                 }
@@ -3360,7 +3360,7 @@ private fun GeneratedPasswordBottomSheet(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
@@ -3481,7 +3481,7 @@ private fun AutofillPasswordOptionSwitchRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 42.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(start = 10.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -3591,7 +3591,7 @@ private fun AutofillFabMenu(
                             updateExpanded(false)
                             action.onClick()
                         },
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         tonalElevation = 4.dp,
@@ -3782,7 +3782,7 @@ private fun AutofillExpressiveSearchBar(
             onValueChange = onQueryChange,
             modifier = Modifier.weight(1f),
             singleLine = true,
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(16.dp),
             placeholder = {
                 Text(
                     text = stringResource(R.string.search_passwords),
@@ -3840,8 +3840,8 @@ private fun AutofillFilterTrigger(
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val triggerShape = RoundedCornerShape(22.dp)
-    val panelShape = RoundedCornerShape(20.dp)
+    val triggerShape = RoundedCornerShape(16.dp)
+    val panelShape = RoundedCornerShape(16.dp)
     val containerMotion = tween<IntSize>(
         durationMillis = 140,
         easing = LinearEasing
@@ -3879,7 +3879,7 @@ private fun AutofillFilterTrigger(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)
                     ) {
                         Icon(
@@ -3911,7 +3911,7 @@ private fun AutofillFilterTrigger(
                     }
                     if (activeFilterCount > 0) {
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.secondaryContainer
                         ) {
                             Text(
@@ -3924,7 +3924,7 @@ private fun AutofillFilterTrigger(
                         Spacer(modifier = Modifier.width(6.dp))
                     }
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Icon(

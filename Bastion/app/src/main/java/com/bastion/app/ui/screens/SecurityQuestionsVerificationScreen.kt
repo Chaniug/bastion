@@ -164,7 +164,7 @@ fun SecurityQuestionsVerificationScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 enabled = !isLoading &&
                     answer1.trim().isNotEmpty() &&
                     answer2.trim().isNotEmpty() &&
@@ -187,7 +187,7 @@ fun SecurityQuestionsVerificationScreen(
                 OutlinedButton(
                     onClick = onNavigateBack,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(28.dp)
                 ) {
                     Text(stringResource(R.string.back_to_login))
                 }
@@ -280,7 +280,7 @@ private fun AnswerSecurityQuestionCard(
             }
 
             Surface(
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
             ) {
                 Text(
@@ -300,7 +300,7 @@ private fun AnswerSecurityQuestionCard(
                 leadingIcon = {
                     Icon(Icons.Default.HelpOutline, contentDescription = null)
                 },
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true
             )
         }
@@ -325,7 +325,7 @@ private fun SecurityQuestionVerificationMessageCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         color = containerColor
     ) {
         Row(

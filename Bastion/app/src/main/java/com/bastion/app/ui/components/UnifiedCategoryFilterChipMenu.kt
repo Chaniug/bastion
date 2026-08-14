@@ -105,7 +105,7 @@ val UnifiedCategoryFilterChipMenuOffset = DpOffset(x = 48.dp, y = 6.dp)
 private val UnifiedCategoryFilterChipMenuMinWidth = 280.dp
 private val UnifiedCategoryFilterChipMenuMaxWidth = 336.dp
 private val UnifiedCategoryFilterChipMenuCompactInset = 72.dp
-private val UnifiedCategoryFilterChipMenuShape = RoundedCornerShape(20.dp)
+private val UnifiedCategoryFilterChipMenuShape = RoundedCornerShape(16.dp)
 
 @Composable
 fun rememberUnifiedCategoryFilterChipMenuWidth(): androidx.compose.ui.unit.Dp {
@@ -149,8 +149,8 @@ fun UnifiedCategoryFilterChipMenuDropdown(
 ) {
     MaterialTheme(
         shapes = MaterialTheme.shapes.copy(
-            extraSmall = RoundedCornerShape(20.dp),
-            small = RoundedCornerShape(20.dp)
+            extraSmall = RoundedCornerShape(16.dp),
+            small = RoundedCornerShape(16.dp)
         )
     ) {
         DropdownMenu(

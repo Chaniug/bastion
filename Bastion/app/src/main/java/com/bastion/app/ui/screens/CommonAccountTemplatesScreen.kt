@@ -357,7 +357,7 @@ fun CommonAccountTemplatesScreen(
             if (templates.isEmpty()) {
                 item {
                     Card(
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -485,7 +485,7 @@ fun CommonAccountTemplatesScreen(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(style.containerColor, RoundedCornerShape(14.dp)),
+                            .background(style.containerColor, RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -555,7 +555,7 @@ fun CommonAccountTemplatesScreen(
                 )
 
                 Card(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ),

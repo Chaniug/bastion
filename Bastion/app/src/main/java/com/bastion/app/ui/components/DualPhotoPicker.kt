@@ -588,7 +588,7 @@ fun ImageDialog(
                     .size(48.dp)
                     .background(
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                        RoundedCornerShape(24.dp)
+                        RoundedCornerShape(28.dp)
                     )
             ) {
                 Icon(
@@ -608,7 +608,7 @@ fun ImageDialog(
                         .size(48.dp)
                         .background(
                             MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            RoundedCornerShape(24.dp)
+                            RoundedCornerShape(28.dp)
                         )
                 ) {
                     Icon(

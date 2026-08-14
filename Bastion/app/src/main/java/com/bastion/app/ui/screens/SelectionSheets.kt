@@ -59,7 +59,7 @@ fun AppearanceSelectionSheet(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
@@ -68,7 +68,7 @@ fun AppearanceSelectionSheet(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(18.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .clickable { onThemeSelected(theme) }
                                 .padding(horizontal = 8.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -98,7 +98,7 @@ fun AppearanceSelectionSheet(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -130,7 +130,7 @@ fun AppearanceSelectionSheet(
             FilledTonalButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text(context.getString(R.string.close))
             }

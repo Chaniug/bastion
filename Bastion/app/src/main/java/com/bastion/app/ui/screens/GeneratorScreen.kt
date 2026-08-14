@@ -1672,7 +1672,7 @@ private fun FilterChipTab(
     Surface(
         onClick = onClick,
         modifier = modifier.height(40.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (isSelected) 
             MaterialTheme.colorScheme.primary 
         else 
@@ -1950,7 +1950,7 @@ private fun ResultCard(
                             }
                         )
                         Surface(
-                            shape = RoundedCornerShape(99.dp),
+                            shape = RoundedCornerShape(999.dp),
                             color = strengthColor.copy(alpha = if (isCompact) 0.18f else 0.16f),
                             contentColor = strengthColor
                         ) {
@@ -2071,7 +2071,7 @@ private fun GeneratorTypeSplitButton(
             onDismissRequest = { onExpandedChange(false) },
             modifier = Modifier.width(240.dp),
             offset = DpOffset(x = 0.dp, y = 10.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 8.dp,
             shadowElevation = 12.dp
@@ -2103,7 +2103,7 @@ private fun GeneratorTypeMenuItem(
     Surface(
         onClick = onClick,
         modifier = Modifier.padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
         } else {

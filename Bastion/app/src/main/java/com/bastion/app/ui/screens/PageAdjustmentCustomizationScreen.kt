@@ -332,7 +332,7 @@ fun AddButtonCustomizationScreen(
 
                         if (settings.addButtonBehaviorMode == AddButtonBehaviorMode.DIRECT_PASSWORD) {
                             Surface(
-                                shape = RoundedCornerShape(18.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             ) {
@@ -451,7 +451,7 @@ fun AddButtonCustomizationScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .shadow(elevation, RoundedCornerShape(18.dp)),
+                                .shadow(elevation, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                             )
@@ -949,7 +949,7 @@ fun PasswordListCustomizationScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(MaterialTheme.colorScheme.primaryContainer)
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
@@ -967,7 +967,7 @@ fun PasswordListCustomizationScreen(
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.68f))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
@@ -985,7 +985,7 @@ fun PasswordListCustomizationScreen(
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.68f))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {

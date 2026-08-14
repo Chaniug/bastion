@@ -1294,7 +1294,7 @@ private fun PasswordHistorySection(
                     shape = if (index == 0) {
                         RoundedCornerShape(24.dp, 18.dp, 24.dp, 18.dp)
                     } else {
-                        RoundedCornerShape(18.dp)
+                        RoundedCornerShape(16.dp)
                     },
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     tonalElevation = if (index == 0) 2.dp else 1.dp
@@ -1460,12 +1460,12 @@ private fun HistoryPasswordConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 8.dp,
         icon = {
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.88f),
                 tonalElevation = 2.dp
             ) {
@@ -1499,7 +1499,7 @@ private fun HistoryPasswordConfirmDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     tonalElevation = 1.dp
                 ) {
@@ -1514,7 +1514,7 @@ private fun HistoryPasswordConfirmDialog(
                             lineHeight = 24.sp
                         )
                         Surface(
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
                         ) {
                             Row(
@@ -1542,7 +1542,7 @@ private fun HistoryPasswordConfirmDialog(
         confirmButton = {
             FilledTonalButton(
                 onClick = onConfirm,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -1554,7 +1554,7 @@ private fun HistoryPasswordConfirmDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text(stringResource(R.string.cancel))
             }
@@ -1782,7 +1782,7 @@ private fun PasswordDetailSecurityAnalysisCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceContainerHigh
         )
@@ -1993,7 +1993,7 @@ private fun OtherStorageLocationRow(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         tonalElevation = 1.dp
     ) {
@@ -2454,7 +2454,7 @@ private fun PasskeyBoundCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
@@ -2813,7 +2813,7 @@ private fun BoundNoteCard(
             if (boundNote != null) {
                 Surface(
                     onClick = onOpenBoundNote,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Column(

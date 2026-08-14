@@ -797,7 +797,7 @@ private fun MergeSummaryPanel(uiState: DedupEngineUiState) {
 @Composable
 private fun SummaryPill(label: String, value: Int) {
     Surface(
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
     ) {
         Text(
@@ -1016,7 +1016,7 @@ private fun PreviewRow(
                     )
                 }
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = if (existsInTarget) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(

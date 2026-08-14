@@ -78,7 +78,7 @@ import com.bastion.app.R
 import com.bastion.app.ui.icons.BastionIcons
 import com.bastion.app.utils.ClipboardUtils
 
-private val PasswordFieldActionMenuShape = RoundedCornerShape(20.dp)
+private val PasswordFieldActionMenuShape = RoundedCornerShape(16.dp)
 private val PasswordFieldActionMenuOffset = DpOffset(x = (-236).dp, y = 8.dp)
 private val PasswordFieldActionContentOffset = DpOffset(x = 0.dp, y = 6.dp)
 
@@ -418,7 +418,7 @@ private fun FieldBarcodePage(
                                 contentDescription = stringResource(R.string.field_action_show_barcode),
                                 modifier = Modifier
                                     .size(280.dp)
-                                    .background(Color.White, RoundedCornerShape(18.dp))
+                                    .background(Color.White, RoundedCornerShape(16.dp))
                                     .padding(14.dp)
                             )
                         } else {

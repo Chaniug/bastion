@@ -113,7 +113,7 @@ private fun QuickStatusTransferPathChip(
 ) {
     Surface(
         modifier = modifier.height(36.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = if (isTarget) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f)
         } else {
@@ -156,7 +156,7 @@ private fun QuickStatusTransferSuccessStatus(
         modifier = modifier
             .fillMaxWidth()
             .height(36.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         tonalElevation = 0.dp

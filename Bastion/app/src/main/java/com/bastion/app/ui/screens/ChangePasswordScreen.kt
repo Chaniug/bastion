@@ -134,7 +134,7 @@ fun ChangePasswordScreen(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 tonalElevation = 2.dp
             ) {
@@ -272,7 +272,7 @@ fun ChangePasswordScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 56.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         enabled = canSubmit
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
@@ -410,7 +410,7 @@ private fun ChangePasswordMessageCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         color = containerColor
     ) {
         Row(

@@ -385,7 +385,7 @@ private fun PasswordQuickAccessEmptyState(mode: PasswordQuickAccessMode) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 4.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
@@ -425,7 +425,7 @@ private fun PasswordQuickAccessRow(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -470,7 +470,7 @@ private fun PasswordQuickAccessRow(
             }
             Spacer(modifier = Modifier.size(8.dp))
             Surface(
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(8.dp),
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Text(
@@ -520,7 +520,7 @@ private fun PasswordQuickAccessLeadingIcon(
 
     Surface(
         modifier = Modifier.size(44.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Box(contentAlignment = Alignment.Center) {

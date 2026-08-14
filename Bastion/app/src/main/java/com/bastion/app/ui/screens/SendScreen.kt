@@ -538,7 +538,7 @@ private fun SendHeroCard(
     )
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         tonalElevation = 2.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -1255,7 +1255,7 @@ private fun SendFormSectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
     ) {
         Column(

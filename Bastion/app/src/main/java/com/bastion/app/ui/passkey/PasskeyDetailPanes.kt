@@ -66,7 +66,7 @@ internal fun PasskeyOverviewPane(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             ),
@@ -81,7 +81,7 @@ internal fun PasskeyOverviewPane(
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -250,7 +250,7 @@ internal fun PasskeyDetailPane(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f)
             )
@@ -421,7 +421,7 @@ private fun PasskeyBindingCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
@@ -509,7 +509,7 @@ private fun PasskeySectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )

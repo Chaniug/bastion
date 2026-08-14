@@ -260,7 +260,7 @@ fun AutofillSettingsV2Screen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = statusContainerColor,
                 ),
@@ -368,7 +368,7 @@ fun AutofillSettingsV2Screen(
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = sourceFilterMenuExpanded)
                         },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                     )
                     ExposedDropdownMenu(
                         expanded = sourceFilterMenuExpanded,
@@ -421,7 +421,7 @@ fun AutofillSettingsV2Screen(
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = keepassDbMenuExpanded)
                             },
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                         )
                         ExposedDropdownMenu(
                             expanded = keepassDbMenuExpanded,
@@ -482,7 +482,7 @@ fun AutofillSettingsV2Screen(
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = bitwardenVaultMenuExpanded)
                             },
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                         )
                         ExposedDropdownMenu(
                             expanded = bitwardenVaultMenuExpanded,

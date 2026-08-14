@@ -931,7 +931,7 @@ private fun SyncQueueEntryCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp)),
+                                .clip(RoundedCornerShape(4.dp)),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                         )
@@ -941,7 +941,7 @@ private fun SyncQueueEntryCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp)),
+                                .clip(RoundedCornerShape(4.dp)),
                             color = MaterialTheme.colorScheme.error,
                             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                         )

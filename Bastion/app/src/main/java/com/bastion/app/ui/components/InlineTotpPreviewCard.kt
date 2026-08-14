@@ -94,7 +94,7 @@ fun InlineTotpPreviewCard(
     ) {
         Surface(
             modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f),
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             tonalElevation = 1.dp,

@@ -1290,7 +1290,7 @@ private fun NoteEditorModeBody(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = MaterialTheme.colorScheme.surface,
                             tonalElevation = 6.dp,
                             shadowElevation = 8.dp
@@ -1367,7 +1367,7 @@ private fun NoteEditorModeBody(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = MaterialTheme.colorScheme.surface,
                             tonalElevation = 6.dp,
                             shadowElevation = 8.dp
@@ -1447,7 +1447,7 @@ private fun FullScreenNoteTopBar(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 2.dp,
             shadowElevation = 0.dp
@@ -1472,7 +1472,7 @@ private fun FullScreenNoteTopBar(
         }
 
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(16.dp),
             color = if (canSave && !isSaving) {
                 MaterialTheme.colorScheme.primary
             } else {

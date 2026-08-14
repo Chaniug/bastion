@@ -595,7 +595,7 @@ internal fun FastScrollPanel(
                                     .align(Alignment.TopCenter)
                                     .width(sliderWidth)
                                     .height(activeHeight)
-                                    .clip(RoundedCornerShape(22.dp))
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(activeTrackColor)
                             ) {
                                 Box(
@@ -626,7 +626,7 @@ internal fun FastScrollPanel(
                                     .offset(y = activeHeight + separatorGap + separatorThickness)
                                     .width(sliderWidth)
                                     .height(inactiveHeight)
-                                    .clip(RoundedCornerShape(22.dp))
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(inactiveTrackColor)
                             )
                         }
@@ -997,7 +997,7 @@ internal fun VaultV2FabMenu(
                             updateExpanded(false)
                             action.onClick()
                         },
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         tonalElevation = 4.dp,
