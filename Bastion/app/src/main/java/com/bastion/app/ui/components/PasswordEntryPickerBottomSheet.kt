@@ -418,7 +418,7 @@ fun PasswordEntryPickerBottomSheet(
                                         onSelect(entry)
                                     }
                                 },
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (selected) {
                                     MaterialTheme.colorScheme.primaryContainer

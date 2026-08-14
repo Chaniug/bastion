@@ -1950,7 +1950,7 @@ fun AddEditPasswordScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(64.dp),
-                                    shape = RoundedCornerShape(18.dp)
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.QrCodeScanner,
@@ -3611,7 +3611,7 @@ private fun PasswordTotpBindingPickerBottomSheet(
                                         onSelect(candidate)
                                     }
                                 },
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (selected) {
                                     MaterialTheme.colorScheme.primaryContainer
@@ -3955,7 +3955,7 @@ private fun CommonAccountSelectorOptionRow(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 1.dp
     ) {
@@ -3975,7 +3975,7 @@ private fun CommonAccountSelectorOptionRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer
                     ) {
                         Icon(
@@ -4019,7 +4019,7 @@ private fun InlinePrimarySuggestionCard(
         modifier = modifier
             .heightIn(min = 48.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = 1.dp,
@@ -4353,7 +4353,7 @@ private fun PasswordGeneratorDialog(
                                             )
                                         }
                                     },
-                                    shape = RoundedCornerShape(14.dp)
+                                    shape = RoundedCornerShape(12.dp)
                                 )
 
                                 Surface(
@@ -4454,7 +4454,7 @@ private fun PasswordGeneratorDialog(
                                         OutlinedCard(
                                             onClick = { onPasswordGenerated(option.content) },
                                             modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(14.dp)
+                                            shape = RoundedCornerShape(12.dp)
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -4464,7 +4464,7 @@ private fun PasswordGeneratorDialog(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Surface(
-                                                    shape = RoundedCornerShape(10.dp),
+                                                    shape = RoundedCornerShape(8.dp),
                                                     color = MaterialTheme.colorScheme.secondaryContainer
                                                 ) {
                                                     Icon(

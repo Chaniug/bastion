@@ -439,7 +439,7 @@ private fun WelcomeStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { languageExpanded = !languageExpanded },
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             )
@@ -625,7 +625,7 @@ private fun ThemePreviewCard(scheme: ColorScheme) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -671,7 +671,7 @@ private fun ThemePreviewCard(scheme: ColorScheme) {
                     modifier = Modifier
                         .weight(1f)
                         .height(88.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(if (index == 0) primary.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surface)
                         .padding(12.dp),
                     verticalArrangement = Arrangement.SpaceBetween
@@ -709,7 +709,7 @@ private fun MiniNavigationBarPreview(primary: Color) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -748,7 +748,7 @@ private fun BastionBottomNavPreview(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) {
         if (tabs.isEmpty()) {
@@ -1203,7 +1203,7 @@ private fun SetupSection(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -1242,7 +1242,7 @@ private fun SetupActionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         )
@@ -1285,7 +1285,7 @@ private fun SetupSwitchCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onCheckedChange(!checked) },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         )
@@ -1323,7 +1323,7 @@ private fun SetupSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1350,7 +1350,7 @@ private fun ColorSchemeRow(
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .background(
                 if (selected) {
@@ -1453,9 +1453,9 @@ private fun AnswerButton(
     Surface(
         modifier = modifier
             .height(52.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
@@ -1484,7 +1484,7 @@ private fun AnswerButton(
 @Composable
 private fun IconSurface(icon: ImageVector) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.size(48.dp)
     ) {

@@ -129,7 +129,7 @@ fun SimpleIconPickerBottomSheet(
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 placeholder = { Text(stringResource(R.string.custom_icon_search_hint)) },
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             )
             if (iconOptions.isEmpty()) {
                 Text(
@@ -241,7 +241,7 @@ private fun IconActionItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         tonalElevation = 1.dp
     ) {

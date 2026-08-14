@@ -139,7 +139,7 @@ fun CustomFieldEditCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -173,7 +173,7 @@ fun CustomFieldEditCard(
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = field.isPreset,
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         leadingIcon = {
                             Icon(

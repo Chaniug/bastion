@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.DpOffset
 import com.bastion.app.R
 
 internal val PasswordTopActionsMenuOffset = DpOffset(x = 48.dp, y = 6.dp)
-private val PasswordTopActionsMenuShape = RoundedCornerShape(20.dp)
+private val PasswordTopActionsMenuShape = RoundedCornerShape(16.dp)
 
 private fun passwordTopActionsMenuLayoutModifier(modifier: Modifier): Modifier {
     return modifier.widthIn(min = 220.dp, max = 260.dp)
@@ -50,8 +50,8 @@ internal fun PasswordTopActionsDropdownMenu(
 
     MaterialTheme(
         shapes = MaterialTheme.shapes.copy(
-            extraSmall = RoundedCornerShape(20.dp),
-            small = RoundedCornerShape(20.dp)
+            extraSmall = RoundedCornerShape(16.dp),
+            small = RoundedCornerShape(16.dp)
         )
     ) {
         DropdownMenu(

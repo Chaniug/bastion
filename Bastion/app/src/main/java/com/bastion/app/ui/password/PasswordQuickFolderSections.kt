@@ -235,7 +235,7 @@ private fun QuickStatusKeePassSyncBar(
             modifier = Modifier
                 .weight(1f)
                 .height(36.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             color = containerColor.copy(alpha = 0.9f),
             contentColor = contentColor,
             tonalElevation = 2.dp
@@ -339,7 +339,7 @@ private fun QuickStatusBitwardenSyncBar(
             modifier = Modifier
                 .weight(1f)
                 .height(36.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             tonalElevation = 2.dp
@@ -430,7 +430,7 @@ private fun PasswordQuickFolderBreadcrumbPath(
     Box(
         modifier = modifier
             .height(36.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
         Row(
@@ -443,7 +443,7 @@ private fun PasswordQuickFolderBreadcrumbPath(
             breadcrumbs.forEachIndexed { index, crumb ->
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             color = if (crumb.isCurrent) {
                                 MaterialTheme.colorScheme.primaryContainer

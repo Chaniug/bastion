@@ -1246,6 +1246,7 @@ fun BastionTheme(
     MaterialTheme(
         colorScheme = finalColorScheme,
         typography = Typography,
+        shapes = BastionShapes,
         content = content
     )
 }

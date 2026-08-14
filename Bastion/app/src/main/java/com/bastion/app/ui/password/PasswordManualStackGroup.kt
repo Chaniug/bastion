@@ -53,7 +53,7 @@ internal fun PasswordManualStackGroup(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = (index * 4).dp, start = 4.dp, end = 4.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = (index + 1).dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerLow

@@ -1464,7 +1464,7 @@ private fun VaultSelector(
     Surface(
         onClick = { showBottomSheet = true },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         color = if (isKeePass) 
             MaterialTheme.colorScheme.primaryContainer 
         else 
@@ -1619,7 +1619,7 @@ private fun VaultOptionItem(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (isSelected) containerColor else MaterialTheme.colorScheme.surfaceContainerLow,
         border = if (isSelected) null else androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -1636,7 +1636,7 @@ private fun VaultOptionItem(
         ) {
             // 图标
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = if (isSelected) iconColor else MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.size(44.dp)
             ) {

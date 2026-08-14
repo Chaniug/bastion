@@ -274,7 +274,7 @@ fun StackedPasswordGroup(
                                 },
                             elevation = CardDefaults.cardElevation(defaultElevation = (i * 1.5).dp),
                             colors = CardDefaults.cardColors(), // Use default colors to match single cards
-                            shape = RoundedCornerShape(14.dp)
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Box(modifier = Modifier.height(76.dp))
                         }
@@ -387,7 +387,7 @@ fun StackedPasswordGroup(
                                         ) {
                                             // 🏷️ 数量徽章
                                             Surface(
-                                                shape = RoundedCornerShape(18.dp),
+                                                shape = RoundedCornerShape(16.dp),
                                                 color = MaterialTheme.colorScheme.primaryContainer,
                                                 shadowElevation = 2.dp
                                             ) {

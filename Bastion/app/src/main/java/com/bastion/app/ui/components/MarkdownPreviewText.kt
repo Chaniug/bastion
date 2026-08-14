@@ -230,7 +230,7 @@ fun MarkdownPreviewText(
                         modifier = Modifier
                             .then(elementModifier)
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(12.dp)
                     ) {
@@ -310,7 +310,7 @@ fun MarkdownPreviewText(
                             modifier = Modifier
                                 .then(elementModifier)
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(2.dp)
                                 .then(clickModifier)
@@ -322,7 +322,7 @@ fun MarkdownPreviewText(
                             modifier = Modifier
                                 .then(elementModifier)
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(horizontal = 10.dp, vertical = 8.dp)
                                 .then(clickModifier)

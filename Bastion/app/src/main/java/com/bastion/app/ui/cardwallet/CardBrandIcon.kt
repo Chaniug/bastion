@@ -140,7 +140,7 @@ private fun CardBrandIconFrame(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(7.dp),
+        shape = RoundedCornerShape(8.dp),
         color = if (isDarkTheme) CardBrandIconDarkContainer else CardBrandIconLightContainer,
         border = BorderStroke(
             width = 0.5.dp,

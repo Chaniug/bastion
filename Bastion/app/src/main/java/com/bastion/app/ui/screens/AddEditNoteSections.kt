@@ -301,7 +301,7 @@ internal fun NoteEditorSection(
     } else {
         Surface(
             modifier = modifier,
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             tonalElevation = 1.dp
         ) {
@@ -428,7 +428,7 @@ internal fun NoteImagesSection(
     onRemoveImage: (String) -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 1.dp
     ) {

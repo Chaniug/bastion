@@ -472,7 +472,7 @@ private fun BottomMiniHintBubble(
     ) {
         Surface(
             modifier = Modifier.widthIn(max = 260.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             tonalElevation = 2.dp,
             color = containerColor
         ) {

@@ -379,7 +379,7 @@ fun UnifiedCategoryFilterBottomSheet(
                                             DropdownMenu(
                                                 expanded = expandedMenuId == menuId,
                                                 onDismissRequest = { expandedMenuId = null },
-                                                modifier = Modifier.clip(RoundedCornerShape(18.dp))
+                                                modifier = Modifier.clip(RoundedCornerShape(16.dp))
                                             ) {
                                                 if (onMoveKeePassGroup != null) {
                                                     DropdownMenuItem(
@@ -481,7 +481,7 @@ fun UnifiedCategoryFilterBottomSheet(
                 item {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLow
                     ) {
                         if (quickFilterContent != null) {
@@ -600,7 +600,7 @@ fun UnifiedCategoryFilterBottomSheet(
                                                 DropdownMenu(
                                                     expanded = expandedMenuId == category.id,
                                                     onDismissRequest = { expandedMenuId = null },
-                                                    modifier = Modifier.clip(RoundedCornerShape(18.dp))
+                                                    modifier = Modifier.clip(RoundedCornerShape(16.dp))
                                                 ) {
                                                     if (canCreateLocal) {
                                                         DropdownMenuItem(
@@ -786,7 +786,7 @@ fun UnifiedCategoryFilterBottomSheet(
                                                             DropdownMenu(
                                                                 expanded = expandedMenuId == folder.id,
                                                                 onDismissRequest = { expandedMenuId = null },
-                                                                modifier = Modifier.clip(RoundedCornerShape(18.dp))
+                                                                modifier = Modifier.clip(RoundedCornerShape(16.dp))
                                                             ) {
                                                                 if (onRenameBitwardenFolder != null) {
                                                                     DropdownMenuItem(
@@ -849,7 +849,7 @@ fun UnifiedCategoryFilterBottomSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 4.dp),
-                            shape = RoundedCornerShape(18.dp)
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1260,7 +1260,7 @@ private fun MoveDestinationItem(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.34f),
@@ -1324,7 +1324,7 @@ private fun StorageSectionCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
@@ -1452,7 +1452,7 @@ private fun HierarchyIndentedItem(
                         modifier = Modifier
                             .width(4.dp)
                             .height(24.dp)
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(RoundedCornerShape(4.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = alpha))
                     )
                 }
@@ -1545,7 +1545,7 @@ private fun UnifiedCategoryListItem(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = containerColor,

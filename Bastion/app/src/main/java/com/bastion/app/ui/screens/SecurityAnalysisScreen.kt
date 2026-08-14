@@ -357,7 +357,7 @@ private fun SecurityOverviewHeader(
         else -> colorScheme.error
     }
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant.copy(alpha = 0.22f)),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -449,7 +449,7 @@ private fun SecurityStrengthDistributionCard(
     val colorScheme = MaterialTheme.colorScheme
     val total = distribution.total
     Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant.copy(alpha = 0.18f))
     ) {
         Column(
@@ -485,7 +485,7 @@ private fun SecurityStrengthDistributionCard(
                                     .fillMaxSize()
                                     .background(
                                         color = color.copy(alpha = 0.72f),
-                                        shape = RoundedCornerShape(6.dp)
+                                        shape = RoundedCornerShape(8.dp)
                                     )
                             )
                         }

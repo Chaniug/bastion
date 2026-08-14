@@ -108,7 +108,7 @@ fun AutofillSaveBlockedTargetsScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     ),
@@ -122,7 +122,7 @@ fun AutofillSaveBlockedTargetsScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.12f),
                             ) {
                                 Icon(
@@ -161,7 +161,7 @@ fun AutofillSaveBlockedTargetsScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         ),
@@ -224,7 +224,7 @@ private fun SaveBlockedTargetCard(
     val isDomainTarget = !record.webDomain.isNullOrBlank()
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
@@ -294,7 +294,7 @@ private fun SaveBlockedTargetSourceCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         Row(

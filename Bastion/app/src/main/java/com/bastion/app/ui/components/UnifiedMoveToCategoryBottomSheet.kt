@@ -529,7 +529,7 @@ fun UnifiedMoveToCategoryBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh
             ) {
                 Column(
@@ -587,7 +587,7 @@ private fun MoveTargetItem(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = if (selected) {

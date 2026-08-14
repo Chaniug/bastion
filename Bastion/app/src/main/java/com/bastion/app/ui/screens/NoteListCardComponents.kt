@@ -174,7 +174,7 @@ fun ExpressiveNoteCard(
                 if (hasImageAttachment) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                         } else {

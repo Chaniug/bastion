@@ -71,7 +71,7 @@ fun QuickStatusDeleteBar(
         modifier = modifier
             .fillMaxWidth()
             .height(36.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         tonalElevation = 1.dp
@@ -155,7 +155,7 @@ private fun QuickStatusDeleteSuccessStatus(
         modifier = modifier
             .fillMaxWidth()
             .height(36.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.error,
         contentColor = MaterialTheme.colorScheme.onError,
         tonalElevation = 0.dp

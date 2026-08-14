@@ -234,7 +234,7 @@ internal fun CreateCategoryDialog(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = targetTint.copy(alpha = 0.18f)
                     ) {
                         Icon(

@@ -806,7 +806,7 @@ private fun PasskeyAuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         if (isAuthenticating) {
                             CircularProgressIndicator(
@@ -830,7 +830,7 @@ private fun PasskeyAuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
@@ -902,7 +902,7 @@ private fun PasskeyAuthScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),

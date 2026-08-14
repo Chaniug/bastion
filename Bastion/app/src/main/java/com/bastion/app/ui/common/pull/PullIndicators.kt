@@ -115,7 +115,7 @@ fun PullGestureIndicator(
         MaterialTheme.colorScheme.onSurface
     }
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         color = containerColor,
         tonalElevation = 4.dp,
         shadowElevation = 6.dp,

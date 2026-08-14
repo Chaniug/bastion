@@ -387,7 +387,7 @@ fun CustomColorSettingsScreen(
             )
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 tonalElevation = 3.dp,
                 color = previewScheme.surfaceContainer
             ) {
@@ -406,7 +406,7 @@ fun CustomColorSettingsScreen(
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = previewScheme.surfaceContainerHigh
                     ) {
                         Row(
@@ -429,7 +429,7 @@ fun CustomColorSettingsScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = previewScheme.primary
                             ) {
                                 Text(
@@ -443,7 +443,7 @@ fun CustomColorSettingsScreen(
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = previewScheme.surfaceContainerLow
                     ) {
                         Column(
@@ -466,7 +466,7 @@ fun CustomColorSettingsScreen(
                             Spacer(modifier = Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     color = previewScheme.primary,
                                     modifier = Modifier.weight(1f)
                                 ) {
@@ -481,7 +481,7 @@ fun CustomColorSettingsScreen(
                                     )
                                 }
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     color = previewScheme.secondaryContainer,
                                     modifier = Modifier.weight(1f)
                                 ) {
@@ -643,7 +643,7 @@ fun ColorPickerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = currentColor(),
                     modifier = Modifier
                         .fillMaxWidth()

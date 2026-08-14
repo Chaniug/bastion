@@ -271,7 +271,7 @@ fun SecurityQuestionsSetupScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 enabled = !isLoading &&
                     selectedQuestion1 != null &&
                     selectedQuestion2 != null &&
@@ -434,7 +434,7 @@ private fun SecurityQuestionConfigCard(
                         .fillMaxWidth()
                         .menuAnchor(),
                     colors = outlinedTextFieldColors(),
-                    shape = RoundedCornerShape(22.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
 
                 ExposedDropdownMenu(
@@ -464,7 +464,7 @@ private fun SecurityQuestionConfigCard(
                         Icon(Icons.Default.Edit, contentDescription = null)
                     },
                     enabled = enabled,
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     singleLine = true
                 )
             }
@@ -479,7 +479,7 @@ private fun SecurityQuestionConfigCard(
                     Icon(Icons.Default.HelpOutline, contentDescription = null)
                 },
                 enabled = enabled,
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true
             )
         }
@@ -546,7 +546,7 @@ private fun SecurityQuestionMessageCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         color = containerColor
     ) {
         Row(

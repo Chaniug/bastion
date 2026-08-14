@@ -137,7 +137,7 @@ fun MultiStorageTargetSelectorCard(
     Surface(
         onClick = onAddTargetClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = visuals.containerColor,
         tonalElevation = 2.dp
     ) {
@@ -148,7 +148,7 @@ fun MultiStorageTargetSelectorCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = visuals.iconContainerColor,
                 modifier = Modifier.size(40.dp)
             ) {

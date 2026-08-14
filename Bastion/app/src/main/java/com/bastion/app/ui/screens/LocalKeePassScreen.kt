@@ -405,7 +405,7 @@ private fun EmptyKeePassState(
         )
         
         Surface(
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.size((80 * scale).dp)
         ) {

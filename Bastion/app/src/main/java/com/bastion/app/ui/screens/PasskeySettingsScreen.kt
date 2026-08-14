@@ -349,7 +349,7 @@ private fun PasskeyIntroSection(isSupported: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSupported) {
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)

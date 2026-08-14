@@ -1372,7 +1372,7 @@ private fun PasskeyCreateScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         if (isCreating) {
                             CircularProgressIndicator(
@@ -1396,7 +1396,7 @@ private fun PasskeyCreateScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Link,
@@ -1471,7 +1471,7 @@ private fun PasskeyCreateScreen(
 
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -1496,7 +1496,7 @@ private fun PasskeyCreateScreen(
             ElevatedCard(
                 onClick = { showStoragePicker = true },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.elevatedCardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 )

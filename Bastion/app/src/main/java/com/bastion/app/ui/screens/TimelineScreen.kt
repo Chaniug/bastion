@@ -1572,7 +1572,7 @@ private fun StandardLogDetailSheet(
                         if (log.isReverted) {
                             Surface(
                                 color = colorScheme.tertiaryContainer,
-                                shape = RoundedCornerShape(6.dp)
+                                shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
                                     text = stringResource(R.string.timeline_reverted),
@@ -2736,8 +2736,8 @@ private fun TrashHeaderBar(
                     }
                     MaterialTheme(
                         shapes = MaterialTheme.shapes.copy(
-                            extraSmall = RoundedCornerShape(20.dp),
-                            small = RoundedCornerShape(20.dp)
+                            extraSmall = RoundedCornerShape(16.dp),
+                            small = RoundedCornerShape(16.dp)
                         )
                     ) {
                         DropdownMenu(
@@ -2746,13 +2746,13 @@ private fun TrashHeaderBar(
                             offset = DpOffset(x = 48.dp, y = 6.dp),
                             modifier = Modifier
                                 .widthIn(min = 220.dp, max = 260.dp)
-                                .shadow(10.dp, RoundedCornerShape(20.dp))
-                                .clip(RoundedCornerShape(20.dp))
+                                .shadow(10.dp, RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                 .border(
                                     width = 1.dp,
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f),
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = RoundedCornerShape(16.dp)
                                 )
                         ) {
                             DropdownMenuItem(
