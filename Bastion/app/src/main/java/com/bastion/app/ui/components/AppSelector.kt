@@ -31,6 +31,7 @@ import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 import com.bastion.app.R
 import com.bastion.app.ui.components.OutlinedTextField
 
@@ -780,8 +781,8 @@ private suspend fun exportAppListToFile(context: Context, currentList: List<AppI
         sb.appendLine("  • 总应用数量: $totalApps")
         sb.appendLine("  • 用户应用: $userApps")
         sb.appendLine("  • 系统应用: $systemApps (已更新: $updatedSystemApps)")
-        sb.appendLine("  • ✅ 当前显示: $visibleCount (${String.format("%.1f", visibleCount * 100.0 / totalApps)}%)")
-        sb.appendLine("  • ❌ 被隐藏: $hiddenCount (${String.format("%.1f", hiddenCount * 100.0 / totalApps)}%)")
+        sb.appendLine("  • ✅ 当前显示: $visibleCount (${String.format(Locale.US, "%.1f", visibleCount * 100.0 / totalApps)}%)")
+        sb.appendLine("  • ❌ 被隐藏: $hiddenCount (${String.format(Locale.US, "%.1f", hiddenCount * 100.0 / totalApps)}%)")
         sb.appendLine()
         
         // 健康度评估

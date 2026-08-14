@@ -68,8 +68,10 @@ import java.util.zip.ZipOutputStream
 class DataExportImportViewModel(
     private val secureItemRepository: SecureItemRepository,
     private val passwordRepository: PasswordRepository,
-    private val context: Context
+    ctx: Context
 ) : ViewModel() {
+
+    private val context = ctx.applicationContext
 
     private data class ImportedAuthenticatorDraft(
         val authenticatorKey: String,
