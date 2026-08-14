@@ -267,7 +267,7 @@ private fun HeaderCard(data: SshKeyData) {
                 Text(
                     text = data.algorithm.ifBlank { stringResource(R.string.ssh_key_algorithm_rsa) },
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 if (data.keySize > 0) {

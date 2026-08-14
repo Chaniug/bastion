@@ -82,7 +82,7 @@ fun BastionPlusCard(
                     Text(
                         text = stringResource(R.string.plus_title),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))

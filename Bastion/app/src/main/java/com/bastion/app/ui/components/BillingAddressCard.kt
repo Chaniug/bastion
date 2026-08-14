@@ -106,7 +106,7 @@ fun BillingAddressCard(
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = contentColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis

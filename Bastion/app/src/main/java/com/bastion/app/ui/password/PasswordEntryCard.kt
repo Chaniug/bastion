@@ -204,7 +204,7 @@ fun PasswordEntryCard(
                         Text(
                             text = displayTitle,
                             style = if (isSingleCard) {
-                                MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                             } else {
                                 MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                             },

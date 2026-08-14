@@ -852,7 +852,7 @@ private fun PasskeyAuthScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -865,7 +865,7 @@ private fun PasskeyAuthScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -885,7 +885,7 @@ private fun PasskeyAuthScreen(
                     Text(
                         text = stringResource(R.string.passkey_auth_title),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
 
@@ -905,7 +905,7 @@ private fun PasskeyAuthScreen(
                 shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     PasskeyAuthInfoRow(

@@ -396,7 +396,7 @@ private fun CompactSelectionRow(
                     if (complete) {
                         Icon(Icons.Default.Check, contentDescription = "已完成", modifier = Modifier.size(19.dp))
                     } else {
-                        Text(index.toString(), fontWeight = FontWeight.Bold)
+                        Text(index.toString(), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -625,7 +625,7 @@ private fun WarningSheet(warnings: List<String>, onDismiss: () -> Unit) {
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
                     ) {
                         Row(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.Top
                         ) {
@@ -660,7 +660,7 @@ private fun FailureSheet(result: DedupMergeExecutionResult, onDismiss: () -> Uni
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(failure.label, fontWeight = FontWeight.Medium)
                             Text(failure.reason, style = MaterialTheme.typography.bodySmall)
                         }
@@ -1003,7 +1003,7 @@ private fun PreviewRow(
             }
         )
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)

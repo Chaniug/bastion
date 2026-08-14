@@ -134,7 +134,7 @@ fun LocalKeePassScreen(
                 title = { 
                     Text(
                         stringResource(R.string.local_keepass_database),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     ) 
                 },
                 navigationIcon = {
@@ -424,7 +424,7 @@ private fun EmptyKeePassState(
         Text(
             stringResource(R.string.no_keepass_database),
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         
@@ -531,7 +531,7 @@ private fun SectionHeader(
             Text(
                 title,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = color
             )
             Text(
@@ -1054,7 +1054,7 @@ private fun CreateKeePassDatabaseBottomSheet(
             Text(
                 stringResource(R.string.create_keepass_database),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             
@@ -1214,7 +1214,7 @@ private fun CreateKeePassDatabaseBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
@@ -1425,7 +1425,7 @@ private fun CreateKeePassDatabaseBottomSheet(
                 Text(
                     stringResource(R.string.create),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -1626,7 +1626,7 @@ private fun ImportExternalDatabaseDialog(
         title = {
             Text(
                 stringResource(R.string.import_existing_database),
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         },
         text = {
@@ -1908,7 +1908,7 @@ private fun DatabaseDetailBottomSheet(
                     Text(
                         database.name,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                     
                     Row(
@@ -2122,7 +2122,7 @@ private fun DatabaseDetailBottomSheet(
             Text(
                 stringResource(R.string.actions),
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             

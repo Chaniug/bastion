@@ -143,7 +143,7 @@ internal fun NoteEditorSection(
     } else {
         Modifier
             .fillMaxWidth()
-            .padding(14.dp)
+            .padding(16.dp)
     }
 
     @Composable
@@ -186,11 +186,11 @@ internal fun NoteEditorSection(
                     Text(
                         stringResource(R.string.title),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 },
-                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 colors = NoteEditorFieldColors
@@ -435,7 +435,7 @@ internal fun NoteImagesSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(

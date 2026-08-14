@@ -1311,13 +1311,13 @@ private fun NoteEditorModeBody(
                     .imePadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .padding(bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(normalEditorScrollState),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     storageSelectorContent()
 

@@ -407,7 +407,7 @@ private fun HistoryPillTabItem(
             .clickable(onClick = onClick)
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1360,7 +1360,7 @@ private fun AggregatedLogItem(
                             color = colorScheme.onPrimary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -1858,7 +1858,7 @@ private fun ConflictBranchItem(
                             text = stringResource(R.string.sync_conflict),
                             style = MaterialTheme.typography.labelMedium,
                             color = colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))

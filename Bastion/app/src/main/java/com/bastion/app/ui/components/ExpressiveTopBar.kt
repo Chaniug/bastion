@@ -140,7 +140,7 @@ fun ExpressiveTopBar(
             Text(
                 text = title,
                 style = titleStyle,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = if (isLongTitle) 2 else 1,
                 overflow = TextOverflow.Clip

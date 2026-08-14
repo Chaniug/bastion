@@ -1659,7 +1659,7 @@ fun SettingsScreen(
                 Text(
                     text = context.getString(R.string.clear_all_data),
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )

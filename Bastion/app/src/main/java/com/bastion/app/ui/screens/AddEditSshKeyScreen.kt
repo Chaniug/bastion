@@ -546,7 +546,7 @@ private fun SshKeyFormBody(
                     Text(
                         stringResource(R.string.ssh_key_section_basic),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 

@@ -332,7 +332,7 @@ fun UnifiedCategoryFilterChipMenu(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

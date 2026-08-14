@@ -114,7 +114,7 @@ fun PasswordFieldCustomizationScreen(
                 Text(
                     text = stringResource(R.string.password_field_customization_system_fields),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -228,7 +228,7 @@ fun PasswordFieldCustomizationScreen(
                         Text(
                             text = stringResource(R.string.password_field_customization_preset_section_title),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = stringResource(R.string.password_field_customization_preset_section_subtitle),

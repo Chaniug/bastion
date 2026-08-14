@@ -101,13 +101,13 @@ fun InlineTotpPreviewCard(
             shadowElevation = 0.dp
         ) {
             Box(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
                     text = formatInlinePreviewOtpCode(currentCode, totpData.otpType),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
@@ -155,7 +155,7 @@ private fun InlineTotpNumericBadge(
             text = value,
             color = MaterialTheme.colorScheme.surface,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 1
         )
     }

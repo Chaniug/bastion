@@ -521,7 +521,7 @@ fun GeneratorScreen(
                     Text(
                         text = stringResource(R.string.generator_title),
                         style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
@@ -1688,7 +1688,7 @@ private fun FilterChipTab(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (isSelected) 
                     MaterialTheme.colorScheme.onPrimary 
                 else 
@@ -2114,7 +2114,7 @@ private fun GeneratorTypeMenuItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2132,7 +2132,7 @@ private fun GeneratorTypeMenuItem(
                 text = title,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             )
             if (selected) {
                 Icon(

@@ -142,8 +142,8 @@ fun SecurityQuestionsSetupScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .imePadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SecurityQuestionSetupHero(isExistingSetup = isExistingSetup)
 
@@ -308,7 +308,7 @@ private fun SecurityQuestionSetupHero(isExistingSetup: Boolean) {
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.68f)
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
@@ -332,7 +332,7 @@ private fun SecurityQuestionSetupHero(isExistingSetup: Boolean) {
                     stringResource(R.string.setup_security_questions)
                 },
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
@@ -390,8 +390,8 @@ private fun SecurityQuestionConfigCard(
         tonalElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),

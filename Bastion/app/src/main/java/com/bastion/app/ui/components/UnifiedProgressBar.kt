@@ -114,7 +114,7 @@ fun UnifiedProgressBar(
         Text(
             text = "${remainingSeconds}s",
             style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             ),
             color = progressColor
         )

@@ -522,7 +522,7 @@ private fun ManualInputDialog(
                         Text(
                             text = stringResource(R.string.app_selector_how_get_package_name),
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))

@@ -179,7 +179,7 @@ fun DocumentDetailScreen(
                             Text(
                                 text = getDocumentTypeName(data.documentType),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                         
@@ -216,7 +216,7 @@ fun DocumentDetailScreen(
                          Text(
                             text = stringResource(R.string.details),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                         
                         if (data.issuedDate.isNotBlank() || data.expiryDate.isNotBlank()) {
@@ -289,7 +289,7 @@ fun DocumentDetailScreen(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(text = stringResource(R.string.extended_fields_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.extended_fields_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             if (data.title.isNotBlank()) InfoField(label = stringResource(R.string.document_title_prefix_label), value = data.title)
                             if (data.company.isNotBlank()) InfoField(label = stringResource(R.string.document_company_label), value = data.company)
                             if (data.email.isNotBlank()) InfoField(label = stringResource(R.string.email), value = data.email)
@@ -334,7 +334,7 @@ fun DocumentDetailScreen(
                             Text(
                                 text = stringResource(R.string.document_images),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                              frontBitmap?.let { bmp ->
                                 Image(
@@ -380,7 +380,7 @@ fun DocumentDetailScreen(
                              Text(
                                 text = stringResource(R.string.notes),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = documentItem?.notes ?: "",
@@ -515,7 +515,7 @@ private fun DocumentCustomFieldsCard(
                     text = stringResource(R.string.custom_field_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 

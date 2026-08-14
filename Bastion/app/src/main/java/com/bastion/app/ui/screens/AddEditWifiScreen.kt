@@ -494,7 +494,7 @@ private fun WifiFormBody(
                     Text(
                         stringResource(R.string.wifi_section_basic),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                     )
                 }
 

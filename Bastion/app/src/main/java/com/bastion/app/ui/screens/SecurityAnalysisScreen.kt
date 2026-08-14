@@ -197,7 +197,7 @@ fun SecurityAnalysisScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
             item {
@@ -372,7 +372,7 @@ private fun SecurityOverviewHeader(
                 Text(
                     text = if (isAnalyzing) "—" else score.coerceIn(0, 100).toString(),
                     style = MaterialTheme.typography.displayMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (isAnalyzing) colorScheme.onSurfaceVariant else scoreColor
                 )
                 Text(
@@ -454,7 +454,7 @@ private fun SecurityStrengthDistributionCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = stringResource(R.string.security_strength_distribution),
@@ -523,7 +523,7 @@ private fun StrengthStatistic(
             text = count.toString(),
             style = MaterialTheme.typography.titleMedium,
             color = color,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
         Text(
             text = label,
@@ -601,7 +601,7 @@ private fun SecurityIssueRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Text(text = item.count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(text = item.count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,

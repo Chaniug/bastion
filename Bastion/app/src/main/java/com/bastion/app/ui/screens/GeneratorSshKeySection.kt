@@ -59,7 +59,7 @@ fun GeneratorSshKeySection(
         Text(
             text = stringResource(R.string.generator_ssh_key),
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
 
         SshKeyAlgorithmDropdown(

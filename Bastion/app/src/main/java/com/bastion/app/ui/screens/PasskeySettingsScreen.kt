@@ -400,7 +400,7 @@ private fun PasskeyIntroSection(isSupported: Boolean) {
                     stringResource(R.string.passkey_settings_unsupported_title)
                 },
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
             
@@ -522,7 +522,7 @@ private fun StatItem(
         Text(
             text = value,
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary
         )
         

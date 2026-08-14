@@ -187,7 +187,7 @@ fun BankCardDetailScreen(
                             Text(
                                 text = stringResource(R.string.card_details),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                             
                             // Card Number
@@ -258,7 +258,7 @@ fun BankCardDetailScreen(
                                 Text(
                                     text = stringResource(R.string.billing_address),
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = billingAddress.formatForDisplay(),
@@ -296,7 +296,7 @@ fun BankCardDetailScreen(
                                 Text(
                                     text = stringResource(R.string.extended_fields_title),
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 if (data.nickname.isNotBlank()) {
                                     InfoFieldWithCopy(label = stringResource(R.string.bank_card_nickname_label), value = data.nickname, context = context)
@@ -356,7 +356,7 @@ fun BankCardDetailScreen(
                              Text(
                                 text = stringResource(R.string.notes),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = item.notes,
@@ -382,7 +382,7 @@ fun BankCardDetailScreen(
                             Text(
                                 text = stringResource(R.string.card_photos),
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                             
                             Row(
@@ -598,7 +598,7 @@ private fun BankCardCustomFieldsCard(
                     text = stringResource(R.string.custom_field_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 

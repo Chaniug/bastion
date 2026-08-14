@@ -374,7 +374,7 @@ fun ExportDataScreen(
                         Text(
                             stringResource(R.string.export_data_title),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
@@ -390,7 +390,7 @@ fun ExportDataScreen(
             Text(
                 stringResource(R.string.export_select_option),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             

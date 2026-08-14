@@ -190,7 +190,7 @@ private fun PickerList(
                 ),
                 onClick = { onSelect(item) },
             ) {
-                Row(modifier = Modifier.padding(14.dp)) {
+                Row(modifier = Modifier.padding(16.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = item.title.ifBlank { "Untitled" },

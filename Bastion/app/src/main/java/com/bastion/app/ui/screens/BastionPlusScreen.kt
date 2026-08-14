@@ -85,7 +85,7 @@ fun BastionPlusScreen(
                             Text(
                                 text = stringResource(R.string.bastion_plus_title),
                                 style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -127,7 +127,7 @@ fun BastionPlusScreen(
                 Text(
                     text = stringResource(R.string.bastion_plus_features_title),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
