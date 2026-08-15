@@ -43,6 +43,15 @@ compose.desktop {
             packageVersion = (findProperty("bastion.packageVersion") as? String)
                 ?.takeIf { it.isNotBlank() } ?: "0.1.0"
             description = "Bastion Password Manager - Bitwarden sync, KDBX editor, OneDrive sync"
+            // 显式指定内置 JRE 的 jlink 模块。SQLDelight JdbcSqliteDriver 通过
+            // Class.forName 反射加载 org.sqlite.JDBC 并调用 java.sql.DriverManager，
+            // jdeps 静态分析看不到反射依赖，默认模块列表不含 java.sql，
+            // 会导致打包后启动即崩 java.lang.NoClassDefFoundError: java/sql/DriverManager
+            // （jpackage 启动器弹 "Failed to launch JVM"）。
+            modules(
+                "java.base", "java.datatransfer", "java.xml", "java.prefs",
+                "java.desktop", "java.logging", "java.sql", "jdk.crypto.ec"
+            )
             windows {
                 // 固定升级 UUID：保证各版本/各次构建的 MSI 走同一条升级链，
                 // 避免升级安装变成“已安装同版本(1638)维护模式”或残留多个注册项。

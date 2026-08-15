@@ -96,22 +96,30 @@ jobs:
           Write-Host "Bundled JRE OK: $rel"
           # 冒烟测试：jpackage 启动器会派生一个子进程承载 JVM，父进程只是等待者。
           # 只观察父进程会漏检“应用启动数秒后崩溃弹 'Failed to launch JVM'”的坏包，
-          # 因此必须监控整棵进程树 + 检测错误弹窗。
-          $app = Start-Process -FilePath $exe.FullName -PassThru
+          # 因此：1) 经 cmd 重定向捕获应用 stdout/stderr（子进程继承句柄），
+          #        2) 监控整棵进程树，3) 检测错误弹窗。
+          $out = Join-Path $env:RUNNER_TEMP 'bastion-smoke-out.txt'
+          Remove-Item $out -ErrorAction SilentlyContinue
+          $app = Start-Process cmd.exe -ArgumentList "/c cd /d `"$($exe.DirectoryName)`" && `"$($exe.FullName)`" > `"$out`" 2>&1" -PassThru -WindowStyle Hidden
           Start-Sleep -Seconds 15
-          $tree = Get-CimInstance Win32_Process | Where-Object {
-            $_.ProcessId -eq $app.Id -or $_.ParentProcessId -eq $app.Id
-          }
+          $tree = @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $app.Id })
           if ($app.HasExited) {
             Write-Error "launcher exited during smoke test (exit code $($app.ExitCode))"
             exit 1
           }
-          $children = @($tree | Where-Object { $_.ProcessId -ne $app.Id })
-          if ($children.Count -eq 0) {
+          if ($tree.Count -eq 0) {
             Write-Error 'JVM child process not found (launcher failed to start JVM)'
             exit 1
           }
-          $childIds = @($children | ForEach-Object { [int]$_.ProcessId })
+          # 应用输出中的异常文本 = 应用层崩溃（如 NoClassDefFoundError/UnsatisfiedLinkError）
+          if (Test-Path $out) {
+            $content = Get-Content $out -Raw -ErrorAction SilentlyContinue
+            if ($content -match 'Exception|Error was captured in composition|NoClassDefFoundError|UnsatisfiedLinkError|Could not find or load main class') {
+              Write-Error "app crashed during smoke test. Output: $content"
+              exit 1
+            }
+          }
+          $childIds = @($tree | ForEach-Object { [int]$_.ProcessId })
           Add-Type @"
             using System;
             using System.Runtime.InteropServices;
@@ -142,7 +150,7 @@ jobs:
             Write-Error "app showed error dialog: $errorText"
             exit 1
           }
-          Write-Host "Smoke test OK: app alive after 15s (children: $($children.Count))"
+          Write-Host "Smoke test OK: app alive after 15s (children: $($tree.Count))"
           & taskkill /PID $app.Id /T /F 2>$null | Out-Null
           Remove-Item -Recurse -Force $extract -ErrorAction SilentlyContinue
 
