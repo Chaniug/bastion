@@ -17,8 +17,6 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,12 +52,6 @@ internal fun PasswordDatabaseFiltersSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = stringResource(R.string.category_selection_menu_databases),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 2.dp)
-        )
         AnimatedVisibility(
             visible = expanded,
             enter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(120)),

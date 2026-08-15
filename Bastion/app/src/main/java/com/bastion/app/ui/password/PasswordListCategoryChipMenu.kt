@@ -219,6 +219,8 @@ internal fun PasswordListCategoryChipMenu(
             coroutineScope = coroutineScope,
             onTopModulesOrderChange = onTopModulesOrderChange,
             isExpandedStateLoaded = uiState.isExpandedStateLoaded,
+            activeTab = selectedTab,
+            showHeaders = uiState.categoryEditMode,
         )
 
         AnimatedVisibility(

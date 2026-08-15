@@ -74,6 +74,8 @@ internal fun PasswordListCategoryChipMenuModulesSection(
     coroutineScope: CoroutineScope,
     onTopModulesOrderChange: (List<PasswordListTopModule>) -> Unit,
     isExpandedStateLoaded: Boolean = true,
+    activeTab: Int = 1,
+    showHeaders: Boolean = false,
 ) {
     val quickFilterBindings = buildCategoryMenuQuickFilterBindings(
         quickFilterFavorite = quickFilterFavorite,
@@ -155,6 +157,8 @@ internal fun PasswordListCategoryChipMenuModulesSection(
             onDragEnd = moduleDragCallbacks.onDragEnd,
             onDragDelta = moduleDragCallbacks.onDragDelta,
             isExpandedStateLoaded = isExpandedStateLoaded,
+            activeTab = activeTab,
+            showHeaders = showHeaders,
         )
     )
 }

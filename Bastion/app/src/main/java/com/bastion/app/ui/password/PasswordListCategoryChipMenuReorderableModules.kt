@@ -40,6 +40,10 @@ internal data class PasswordListCategoryChipMenuReorderableModulesParams(
     val onDragEnd: (PasswordListTopModule) -> Unit,
     val onDragDelta: (PasswordListTopModule, Offset) -> Unit,
     val isExpandedStateLoaded: Boolean = true,
+    // 方案 A：普通模式由顶部 Tab 驱动，仅渲染选中 Tab 对应模块并隐藏折叠头；
+    // 编辑模式 showHeaders=true，保留折叠头作为拖拽排序抓手、两个模块都渲染。
+    val activeTab: Int = 1,
+    val showHeaders: Boolean = false,
 )
 
 @Composable
@@ -47,7 +51,19 @@ internal fun PasswordListCategoryChipMenuReorderableModules(
     params: PasswordListCategoryChipMenuReorderableModulesParams
 ) {
     params.orderedModules.forEach { module ->
+        val moduleTab = when (module) {
+            PasswordListTopModule.QUICK_FILTERS -> 1
+            PasswordListTopModule.QUICK_FOLDERS -> 2
+        }
+        // 普通模式只渲染选中 Tab 的模块；编辑模式（showHeaders）渲染全部以便排序。
+        if (!params.showHeaders && params.activeTab != moduleTab) return@forEach
         key(module) {
+            val headerVisible = params.showHeaders
+            val uiStateExpanded = if (module == PasswordListTopModule.QUICK_FILTERS) {
+                params.quickFiltersExpanded
+            } else {
+                params.foldersExpanded
+            }
             val sectionParams = PasswordReorderableTopModuleSectionParams(
                 title = stringResource(
                     if (module == PasswordListTopModule.QUICK_FILTERS) {
@@ -56,11 +72,7 @@ internal fun PasswordListCategoryChipMenuReorderableModules(
                         R.string.category_selection_menu_folders
                     }
                 ),
-                expanded = if (module == PasswordListTopModule.QUICK_FILTERS) {
-                    params.quickFiltersExpanded
-                } else {
-                    params.foldersExpanded
-                },
+                expanded = if (headerVisible) uiStateExpanded else true,
                 onExpandedChange = { expanded ->
                     if (module == PasswordListTopModule.QUICK_FILTERS) {
                         params.onQuickFiltersExpandedChange(expanded)
@@ -68,6 +80,7 @@ internal fun PasswordListCategoryChipMenuReorderableModules(
                         params.onFoldersExpandedChange(expanded)
                     }
                 },
+                headerVisible = headerVisible,
                 categoryEditMode = params.categoryEditMode,
                 moduleDisplayOffset = params.moduleDisplayOffset(module),
                 isActiveDragModule = params.isActiveDragModule(module),

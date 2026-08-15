@@ -25,6 +25,7 @@ internal data class PasswordReorderableTopModuleSectionParams(
     val onDragEnd: () -> Unit,
     val onDragDelta: (Offset) -> Unit,
     val animate: Boolean = true,
+    val headerVisible: Boolean = true,
 )
 
 @Composable
@@ -44,6 +45,7 @@ internal fun PasswordReorderableTopModuleSection(
         title = params.title,
         expanded = params.expanded,
         onExpandedChange = params.onExpandedChange,
+        headerVisible = params.headerVisible,
         modifier = Modifier
             .onGloballyPositioned { coordinates ->
                 onModuleBoundsChanged(coordinates.boundsInWindow())

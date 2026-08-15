@@ -37,6 +37,7 @@ internal fun PasswordMenuSection(
     headerModifier: Modifier = Modifier,
     toggleEnabled: Boolean = true,
     animate: Boolean = true,
+    headerVisible: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val arrowRotation by animateFloatAsState(
@@ -44,42 +45,47 @@ internal fun PasswordMenuSection(
         animationSpec = tween(durationMillis = 160),
         label = "password_menu_section_arrow"
     )
+    // 普通模式下由顶部 Tab 驱动内容切换时隐藏折叠头（避免与 Tab 重复），内容恒显；
+    // 编辑模式下保留折叠头作为拖拽排序抓手。
+    val contentVisible = if (headerVisible) expanded else true
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val baseHeaderModifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp)
-        Row(
-            modifier = if (toggleEnabled) {
-                baseHeaderModifier
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onExpandedChange(!expanded) }
-                    .then(headerModifier)
-            } else {
-                baseHeaderModifier.then(headerModifier)
-            },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.graphicsLayer { rotationZ = arrowRotation }
-            )
+        if (headerVisible) {
+            val baseHeaderModifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp)
+            Row(
+                modifier = if (toggleEnabled) {
+                    baseHeaderModifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onExpandedChange(!expanded) }
+                        .then(headerModifier)
+                } else {
+                    baseHeaderModifier.then(headerModifier)
+                },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.graphicsLayer { rotationZ = arrowRotation }
+                )
+            }
         }
         if (animate) {
             AnimatedVisibility(
-                visible = expanded,
+                visible = contentVisible,
                 enter = expandVertically(animationSpec = tween(160)) + fadeIn(animationSpec = tween(100)),
                 exit = shrinkVertically(animationSpec = tween(120)) + fadeOut(animationSpec = tween(80))
             ) {
@@ -89,7 +95,7 @@ internal fun PasswordMenuSection(
                     content = content
                 )
             }
-        } else if (expanded) {
+        } else if (contentVisible) {
             // 持久化状态加载完成前用纯 if/else 显示，
             // 避免 visible 从 true 突变到 false 触发 AnimatedVisibility 的退出动画。
             Column(
