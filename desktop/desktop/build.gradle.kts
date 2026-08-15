@@ -43,6 +43,11 @@ compose.desktop {
             packageVersion = (findProperty("bastion.packageVersion") as? String)
                 ?.takeIf { it.isNotBlank() } ?: "0.1.0"
             description = "Bastion Password Manager - Bitwarden sync, KDBX editor, OneDrive sync"
+            windows {
+                // 固定升级 UUID：保证各版本/各次构建的 MSI 走同一条升级链，
+                // 避免升级安装变成“已安装同版本(1638)维护模式”或残留多个注册项。
+                upgradeUuid = "7a4f1c9e-2b3d-4e5f-8a6b-1c2d3e4f5a6b"
+            }
         }
     }
 }
