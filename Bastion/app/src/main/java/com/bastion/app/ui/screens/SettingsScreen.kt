@@ -880,6 +880,72 @@ fun SettingsScreen(
                             onClick = onNavigateToPageCustomization
                         )
                     }
+
+                    // 可拖拽底部导航栏（从预览毕业）
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { viewModel.updateUseDraggableBottomNav(!settings.useDraggableBottomNav) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwipeUp,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.draggable_bottom_nav),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = stringResource(R.string.draggable_bottom_nav_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = settings.useDraggableBottomNav,
+                            onCheckedChange = { viewModel.updateUseDraggableBottomNav(it) }
+                        )
+                    }
+
+                    // 滚动时隐藏悬浮按钮（从预览毕业）
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { viewModel.updateHideFabOnScroll(!settings.hideFabOnScroll) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VisibilityOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.hide_fab_on_scroll_title),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = stringResource(R.string.hide_fab_on_scroll_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = settings.hideFabOnScroll,
+                            onCheckedChange = { viewModel.updateHideFabOnScroll(it) }
+                        )
+                    }
                 }
             }
 
@@ -1452,72 +1518,6 @@ fun SettingsScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    // 可拖拽底部导航栏开关
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { viewModel.updateUseDraggableBottomNav(!settings.useDraggableBottomNav) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwipeUp,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.draggable_bottom_nav),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = stringResource(R.string.draggable_bottom_nav_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = settings.useDraggableBottomNav,
-                            onCheckedChange = { viewModel.updateUseDraggableBottomNav(it) }
-                        )
-                    }
-
-                    // 滚动隐藏 FAB 开关
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { viewModel.updateHideFabOnScroll(!settings.hideFabOnScroll) }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.VisibilityOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.hide_fab_on_scroll_title),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = stringResource(R.string.hide_fab_on_scroll_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = settings.hideFabOnScroll,
-                            onCheckedChange = { viewModel.updateHideFabOnScroll(it) }
-                        )
-                    }
-
                     // 导航栏版本切换 - Removed
 
                     // Bitwarden 底部状态栏开关（实验）
@@ -1557,17 +1557,21 @@ fun SettingsScreen(
                         )
                     }
 
-                    // 减少动画设置
+                    // KeePass DX 类引擎（实验）
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { viewModel.updateReduceAnimations(!settings.reduceAnimations) }
+                            .clickable {
+                                viewModel.updateKeepassDxLikeMutationEnabled(
+                                    !settings.keepassDxLikeMutationEnabled
+                                )
+                            }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Speed,
+                            imageVector = Icons.Default.Storage,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(24.dp)
@@ -1575,18 +1579,18 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.reduce_animations),
+                                text = stringResource(R.string.keepass_dx_like_mutation_title),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = stringResource(R.string.reduce_animations_description),
+                                text = stringResource(R.string.keepass_dx_like_mutation_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
-                            checked = settings.reduceAnimations,
-                            onCheckedChange = { viewModel.updateReduceAnimations(it) }
+                            checked = settings.keepassDxLikeMutationEnabled,
+                            onCheckedChange = { viewModel.updateKeepassDxLikeMutationEnabled(it) }
                         )
                     }
 

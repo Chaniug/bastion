@@ -225,13 +225,6 @@ class SettingsViewModel(
     
     fun clearAllPresetCustomFields() = commitUpdate { clearAllPresetCustomFields() }
     
-    /**
-     * 更新减少动画设置
-     * 开启后将禁用共享元素动画，改为简单的淡入淡出效果
-     * 主要用于解决 HyperOS 2 / Android 15 等设备上的动画卡顿问题
-     */
-    fun updateReduceAnimations(enabled: Boolean) = commitUpdate { updateReduceAnimations(enabled) }
-
     fun updateSmartDeduplicationEnabled(enabled: Boolean) = commitUpdate { updateSmartDeduplicationEnabled(enabled) }
 
     fun updateSeparateUsernameAccountEnabled(enabled: Boolean) = commitUpdate { updateSeparateUsernameAccountEnabled(enabled) }
