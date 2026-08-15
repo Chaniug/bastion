@@ -64,8 +64,40 @@ jobs:
         run: ./gradlew :shared:compileKotlinJvm --no-build-cache --stacktrace
 
       - name: Package Windows app (MSI + EXE)
+        shell: bash
         run: |
-          ./gradlew :desktop:packageMsi :desktop:packageExe --no-build-cache --stacktrace
+          # 仅 workflow_dispatch 时把 Release 版本注入安装包版本号（BastionDesktop-<version>.msi/.exe），
+          # 与 Release 标签保持一致；push/PR 校验构建则保持 build.gradle.kts 默认版本。
+          PKG_VERSION="${{ github.event.inputs.version }}"
+          EXTRA=()
+          if [ -n "$PKG_VERSION" ]; then EXTRA+=("-Pbastion.packageVersion=$PKG_VERSION"); fi
+          ./gradlew :desktop:packageMsi :desktop:packageExe --no-build-cache --stacktrace "${EXTRA[@]}"
+
+      - name: Verify bundled JRE & launch smoke test
+        shell: bash
+        run: |
+          # 防止发布“缺少内置 JRE”的安装包：安装后若 runtime 目录缺失/损坏，
+          # jpackage 启动器会直接报 "Failed to launch JVM / JVM 未安装" 类错误。
+          APP_EXE=$(find desktop/build/compose/binaries/main/app -maxdepth 4 -name 'BastionDesktop.exe' | head -1)
+          if [ -z "$APP_EXE" ]; then
+            echo "::error::BastionDesktop.exe not found in app image"; exit 1
+          fi
+          RT="$(dirname "$APP_EXE")/runtime"
+          if [ ! -f "$RT/bin/server/jvm.dll" ]; then
+            echo "::error::bundled JRE missing: $RT/bin/server/jvm.dll"; exit 1
+          fi
+          grep -q '^JAVA_VERSION=' "$RT/release" || { echo "::error::invalid runtime release file"; exit 1; }
+          echo "Bundled JRE OK: $(grep '^JAVA_VERSION=' "$RT/release") ($APP_EXE)"
+          # 启动冒烟测试：启动器 + JVM 必须能拉起应用并保持运行，否则视为启动失败。
+          "$APP_EXE" & PID=$!
+          sleep 15
+          if kill -0 "$PID" 2>/dev/null; then
+            echo "Smoke test OK: app alive after 15s"
+            taskkill //PID "$PID" //T //F >/dev/null 2>&1 || true
+          else
+            echo "::error::app exited during smoke test (launcher/JVM startup failure)"
+            exit 1
+          fi
 
       - name: Stop Gradle Daemon
         if: always()
@@ -168,7 +200,12 @@ jobs:
             > **下载安装（任选一种）：**
             > * **EXE 安装版**：双击安装，自动写入开始菜单
             > * **MSI 安装版**：双击安装，支持企业部署/组策略
-            > * 说明：EXE 比 MSI 略小（约 5%），两者都内置运行时，无需预装 Java。
+            > * 说明：EXE 比 MSI 略小（约 5%），两者都内置 JRE 17 运行时，**无需预装 Java**。
+            >
+            > **遇到 "Failed to launch JVM / 未找到 JVM" 提示怎么办？**
+            > * 该提示来自应用启动器，仅表示安装目录下的 `runtime`（内置 JRE）缺失或损坏，**不是**要求你手动安装 Java。
+            > * 常见原因：旧版本未完全卸载、安装被安全软件拦截/隔离、或安装包与已安装版本同名冲突（提示 1638）。
+            > * 处理：先卸载旧版 → 重启 → 放行杀毒软件（或将 `D:\Program Files\BastionDesktop` / `C:\Program Files\BastionDesktop` 加入白名单）→ 重新安装本版本。
             >
             > ## 更新内容 (What's Changed)
             > ${{ steps.changelog.outputs.notes }}
