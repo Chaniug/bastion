@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.ui.components.rememberUnifiedCategoryFilterChipMenuWidth
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.viewmodel.CategoryFilter
+import com.bastion.app.R
 
 @Composable
 internal fun PasswordListCategoryChipMenu(
