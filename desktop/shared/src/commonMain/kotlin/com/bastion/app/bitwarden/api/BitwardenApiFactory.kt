@@ -52,9 +52,17 @@ object BitwardenApiFactory {
         explicitNulls = false
     }
     
+    /**
+     * 请求指纹（UA / Sec-Ch-Ua 头组合）。
+     *
+     * Bitwarden 官方服务前有 Cloudflare WAF，某些网络环境（代理/VPN/被标记 IP）
+     * 会对特定指纹返回 403。遇到 403 时认证流程会依次换用 [KEYGUARD_FALLBACK]、
+     * [FIREFOX_FALLBACK] 重试。
+     */
     enum class HeaderProfile {
         MONICA_DEFAULT,
-        KEYGUARD_FALLBACK
+        KEYGUARD_FALLBACK,
+        FIREFOX_FALLBACK
     }
 
     private data class HeaderSpec(
@@ -62,12 +70,14 @@ object BitwardenApiFactory {
         val fullVersion: String
     )
 
-    // Bastion 当前默认请求指纹
+    // Bastion 当前默认请求指纹（与安卓端完全一致，勿随意改动）
     private const val MONICA_CHROME_MAJOR_VERSION = "131"
     private const val MONICA_CHROME_FULL_VERSION = "$MONICA_CHROME_MAJOR_VERSION.0.6778.140"
     // Keyguard 当前使用的请求指纹
     private const val KEYGUARD_CHROME_MAJOR_VERSION = "126"
     private const val KEYGUARD_CHROME_FULL_VERSION = "$KEYGUARD_CHROME_MAJOR_VERSION.0.6478.114"
+    // Firefox 回退指纹：不带 Sec-Ch-Ua 系列头，用于 WAF 403 时换指纹重试
+    private const val FIREFOX_FULL_VERSION = "128.0"
     
     /**
      * 创建 OkHttp 客户端
@@ -90,13 +100,15 @@ object BitwardenApiFactory {
                 val original = chain.request()
                 val builder = original.newBuilder()
                 
-                builder.header("User-Agent", buildUserAgent(headerSpec.fullVersion))
+                builder.header("User-Agent", buildUserAgent(headerProfile, headerSpec.fullVersion))
                 builder.header("Keyguard-Client", "1")
                 builder.header("Accept-Language", java.util.Locale.getDefault().toLanguageTag())
-                builder.header("Sec-Ch-Ua", """"Not.A/Brand";v="8", "Chromium";v="${headerSpec.majorVersion}"""")
-
-                builder.header("Sec-Ch-Ua-Mobile", "?0")
-                builder.header("Sec-Ch-Ua-Platform", "Linux")
+                // Firefox 指纹不声明 Sec-Ch-Ua 系列头（Firefox 本身不发送）
+                if (headerProfile != HeaderProfile.FIREFOX_FALLBACK) {
+                    builder.header("Sec-Ch-Ua", """"Not.A/Brand";v="8", "Chromium";v="${headerSpec.majorVersion}"""")
+                    builder.header("Sec-Ch-Ua-Mobile", "?0")
+                    builder.header("Sec-Ch-Ua-Platform", "Linux")
+                }
                 // Bitwarden 服务端根据客户端版本决定是否返回 Type 5 (SSH Key) 等新类型数据
                 // 不声明版本时服务端会降级为 Type 1 并丢弃 sshKey 字段
                 builder.header("Bitwarden-Client-Name", "desktop")
@@ -122,11 +134,16 @@ object BitwardenApiFactory {
     fun headerProfileName(profile: HeaderProfile): String = when (profile) {
         HeaderProfile.MONICA_DEFAULT -> "bastion_default"
         HeaderProfile.KEYGUARD_FALLBACK -> "keyguard_fallback"
+        HeaderProfile.FIREFOX_FALLBACK -> "firefox_fallback"
     }
 
     fun headerProfileUserAgentVersion(profile: HeaderProfile): String {
         val spec = getHeaderSpec(profile)
-        return "Chrome/${spec.fullVersion}"
+        return if (profile == HeaderProfile.FIREFOX_FALLBACK) {
+            "Firefox/$FIREFOX_FULL_VERSION"
+        } else {
+            "Chrome/${spec.fullVersion}"
+        }
     }
 
     fun isRefererApplied(profile: HeaderProfile, refererUrl: String?): Boolean {
@@ -242,8 +259,14 @@ object BitwardenApiFactory {
         return if (url.endsWith("/")) url else "$url/"
     }
 
-    private fun buildUserAgent(chromeFullVersion: String): String {
-        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromeFullVersion Safari/537.36"
+    private fun buildUserAgent(profile: HeaderProfile, chromeFullVersion: String): String {
+        return when (profile) {
+            HeaderProfile.FIREFOX_FALLBACK ->
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/$FIREFOX_FULL_VERSION"
+
+            else ->
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromeFullVersion Safari/537.36"
+        }
     }
 
     private fun getHeaderSpec(profile: HeaderProfile): HeaderSpec {
@@ -256,6 +279,11 @@ object BitwardenApiFactory {
             HeaderProfile.KEYGUARD_FALLBACK -> HeaderSpec(
                 majorVersion = KEYGUARD_CHROME_MAJOR_VERSION,
                 fullVersion = KEYGUARD_CHROME_FULL_VERSION
+            )
+
+            HeaderProfile.FIREFOX_FALLBACK -> HeaderSpec(
+                majorVersion = "128",
+                fullVersion = FIREFOX_FULL_VERSION
             )
         }
     }

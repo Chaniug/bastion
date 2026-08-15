@@ -94,7 +94,12 @@ fun BitwardenTab(repository: BitwardenRepository) {
                             statusMessage = "需要验证码（暂不支持自动化，请在服务器端完成）"
                         }
                         is BitwardenRepository.RepositoryLoginResult.Error -> {
-                            statusMessage = result.message
+                            statusMessage = result.message + if (result.message.contains("403")) {
+                                "\n提示：请求被 Bitwarden 风控拦截（403）。应用已自动尝试备用指纹；若仍失败，" +
+                                    "请检查系统代理/VPN 是否被拦截，或更换网络后重试。"
+                            } else {
+                                ""
+                            }
                         }
                     }
                 }
@@ -115,7 +120,14 @@ fun BitwardenTab(repository: BitwardenRepository) {
                             activeVaultId = result.vault.id
                             vaults = repository.getAllVaults()
                         }
-                        is BitwardenRepository.RepositoryLoginResult.Error -> statusMessage = result.message
+                        is BitwardenRepository.RepositoryLoginResult.Error -> {
+                            statusMessage = result.message + if (result.message.contains("403")) {
+                                "\n提示：请求被 Bitwarden 风控拦截（403）。应用已自动尝试备用指纹；若仍失败，" +
+                                    "请检查系统代理/VPN 是否被拦截，或更换网络后重试。"
+                            } else {
+                                ""
+                            }
+                        }
                         is BitwardenRepository.RepositoryLoginResult.TwoFactorRequired -> {
                             loginUiState = loginUiState.copy(twoFactorState = result.state)
                         }
