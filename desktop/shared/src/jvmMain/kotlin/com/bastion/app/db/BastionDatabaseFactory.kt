@@ -50,6 +50,11 @@ object BastionDatabaseFactory {
     private fun ensureSchema(driver: SqlDriver) {
         val tableExists = tableExists(driver, "password_entries")
         if (!tableExists) {
+            // 库中可能残留旧占位 schema 或上次创建中断留下的部分表
+            // （例如只有 bitwarden_conflict_backups 而没有 password_entries），
+            // 直接 Schema.create 会报 "table xxx already exists" 导致启动崩溃，
+            // 因此先清空全部业务表再重建。
+            ALL_TABLES.forEach { driver.execute(null, "DROP TABLE IF EXISTS $it", 0) }
             BastionDatabase.Schema.create(driver)
             return
         }
