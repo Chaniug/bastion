@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -85,8 +86,15 @@ internal fun PasswordListCategoryChipMenu(
     // 选中 Tab 即展开对应区块、收起其余，避免三个折叠区纵向堆叠过长。
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     val databasesExpanded = selectedTab == 0
-    val quickFiltersExpanded = selectedTab == 1
-    val foldersExpanded = selectedTab == 2
+    // 快捷筛选 / 分类文件夹的展开以 uiState 为单一事实来源；Tab 切换时通过
+    // 下方 LaunchedEffect 同步，避免 Tab 驱动的只读布尔值与折叠 header 点击写入的
+    // uiState 状态互相覆盖（两套状态打架会导致 AnimatedVisibility 重组异常）。
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            1 -> { uiState.onQuickFiltersExpandedChange(true); uiState.onFoldersExpandedChange(false) }
+            2 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
+        }
+    }
 
     val quickFilterState = rememberCategoryMenuQuickFilterState(configuredQuickFilterItems)
     val moduleDragState = rememberCategoryMenuModuleDragState(topModulesOrder)
@@ -151,9 +159,9 @@ internal fun PasswordListCategoryChipMenu(
 
         PasswordListCategoryChipMenuModulesSection(
             orderedModules = orderedModules,
-            quickFiltersExpanded = quickFiltersExpanded,
+            quickFiltersExpanded = uiState.quickFiltersExpanded,
             onQuickFiltersExpandedChange = uiState.onQuickFiltersExpandedChange,
-            foldersExpanded = foldersExpanded,
+            foldersExpanded = uiState.foldersExpanded,
             onFoldersExpandedChange = uiState.onFoldersExpandedChange,
             categoryEditMode = uiState.categoryEditMode,
             menuWidth = menuWidth,
