@@ -230,7 +230,7 @@ fun SyncStatusRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SyncStatusIcon(status = status, size = 20.dp)

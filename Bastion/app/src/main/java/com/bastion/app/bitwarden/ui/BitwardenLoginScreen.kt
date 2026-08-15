@@ -378,7 +378,7 @@ fun BitwardenLoginScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp)
+                                        .padding(16.dp)
                                 ) {
                                     Text(
                                         text = "高级 TLS（可选）",

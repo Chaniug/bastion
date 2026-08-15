@@ -890,8 +890,11 @@
     <string name="passkey_create_message">为 %1$s 创建通行密钥，无需密码即可登录</string>
     <string name="passkey_create_confirm">创建通行密钥</string>
     <string name="passkey_auth_title">使用通行密钥登录</string>
-    <string name="passkey_auth_message">使用您的通行密钥登录 %1$s</string>
+    <string name="passkey_auth_message">正在通过 Bastion 中的通行密钥登录 %1$s</string>
     <string name="passkey_auth_confirm">登录</string>
+    <string name="passkey_auth_site_label">服务</string>
+    <string name="passkey_auth_account_label">账号</string>
+    <string name="passkey_auth_security_note">需通过指纹、面容或主密码验证后，才会把通行密钥发送给该应用。</string>
     <string name="passkey_scan_qr_menu_title">扫描通行密钥二维码</string>
     <string name="passkey_qr_invalid">无效的通行密钥二维码</string>
     <string name="passkey_qr_open_failed">当前系统无法处理此通行密钥二维码</string>

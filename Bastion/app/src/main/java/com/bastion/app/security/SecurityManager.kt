@@ -97,7 +97,14 @@ class SecurityManager(private val context: Context) {
         private const val SECURITY_QUESTION_2_ID_KEY = "security_question_2_id"
         private const val SECURITY_QUESTION_2_ANSWER_KEY = "security_question_2_answer"
         private const val SECURITY_QUESTION_2_TEXT_KEY = "security_question_2_text"
-        private const val PBKDF2_ITERATIONS = 100000
+        private const val SECURITY_QUESTION_1_SALT_KEY = "security_question_1_salt"
+        private const val SECURITY_QUESTION_2_SALT_KEY = "security_question_2_salt"
+        // KDF 迭代次数：新参数按 OWASP 标准取 600k；存量数据无迭代键时按旧值 100k 解读，
+        // 验证成功后由 upgradePbkdf2ParamsIfNeeded 透明升级到新参数。
+        private const val PBKDF2_ITERATIONS = 600000
+        private const val PBKDF2_ITERATIONS_LEGACY = 100000
+        private const val MASTER_PASSWORD_ITERATIONS_KEY = "master_password_kdf_iterations"
+        private const val MDK_PASSWORD_ITERATIONS_KEY = "mdk_password_kdf_iterations"
         private const val MDK_PASSWORD_BLOB_KEY = "mdk_password_blob"
         private const val MDK_PASSWORD_SALT_KEY = "mdk_password_salt"
         private const val MDK_KEYSTORE_BLOB_KEY = "mdk_keystore_blob"
@@ -149,14 +156,18 @@ class SecurityManager(private val context: Context) {
     /**
      * Hash the master password using PBKDF2
      */
-    fun hashMasterPassword(password: String, salt: ByteArray? = null): Pair<String, ByteArray> {
+    fun hashMasterPassword(
+        password: String,
+        salt: ByteArray? = null,
+        iterations: Int = PBKDF2_ITERATIONS
+    ): Pair<String, ByteArray> {
         val actualSalt = salt ?: generateSalt()
-        val spec = PBEKeySpec(password.toCharArray(), actualSalt, PBKDF2_ITERATIONS, 256)
+        val spec = PBEKeySpec(password.toCharArray(), actualSalt, iterations, 256)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val hash = factory.generateSecret(spec).encoded
         return Pair(hash.joinToString("") { "%02x".format(it) }, actualSalt)
     }
-    
+
     /**
      * Generate a random salt
      */
@@ -164,6 +175,50 @@ class SecurityManager(private val context: Context) {
         val salt = ByteArray(16)
         SecureRandom().nextBytes(salt)
         return salt
+    }
+
+    private fun decodeHex(hex: String): ByteArray {
+        return hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    }
+
+    private fun getStoredMasterPasswordIterations(): Int {
+        return sharedPreferences.getInt(MASTER_PASSWORD_ITERATIONS_KEY, PBKDF2_ITERATIONS_LEGACY)
+    }
+
+    private fun getStoredMdkPasswordIterations(): Int {
+        return sharedPreferences.getInt(MDK_PASSWORD_ITERATIONS_KEY, PBKDF2_ITERATIONS_LEGACY)
+    }
+
+    /**
+     * 存量 KDF 参数（PBKDF2 100k）透明升级到当前参数（600k）。
+     * 仅在主密码验证成功、MDK 已驻留内存缓存后调用；MDK 本身不变，
+     * 仅以新盐+新迭代重新计算口令哈希并重新包装 MDK。
+     */
+    private fun upgradePbkdf2ParamsIfNeeded(password: String) {
+        val needsHashUpgrade = getStoredMasterPasswordIterations() < PBKDF2_ITERATIONS
+        val needsMdkUpgrade = getStoredMdkPasswordIterations() < PBKDF2_ITERATIONS
+        if (!needsHashUpgrade && !needsMdkUpgrade) return
+        try {
+            if (needsHashUpgrade) {
+                val (newHash, newSalt) = hashMasterPassword(password, null, PBKDF2_ITERATIONS)
+                sharedPreferences.edit()
+                    .putString(MASTER_PASSWORD_HASH_KEY, newHash)
+                    .putString(MASTER_PASSWORD_SALT_KEY, newSalt.joinToString("") { "%02x".format(it) })
+                    .putInt(MASTER_PASSWORD_ITERATIONS_KEY, PBKDF2_ITERATIONS)
+                    .apply()
+            }
+            if (needsMdkUpgrade) {
+                // forceUpdate 会重新生成 MDK 包装盐并按当前迭代派生 KEK，
+                // MDK 取自 processCachedMdk（同一把密钥，仅重新包装）。
+                ensureMdkInitializedWithPassword(password, forceUpdate = true)
+            }
+            SecurityDiagLogger.append(
+                "I/$logTag upgradePbkdf2ParamsIfNeeded: hash=$needsHashUpgrade mdk=$needsMdkUpgrade"
+            )
+        } catch (e: Exception) {
+            android.util.Log.w(logTag, "upgradePbkdf2ParamsIfNeeded failed: ${e.message}")
+            SecurityDiagLogger.append("W/$logTag upgradePbkdf2ParamsIfNeeded failed: ${e.javaClass.simpleName}")
+        }
     }
     
     /**
@@ -173,15 +228,16 @@ class SecurityManager(private val context: Context) {
         android.util.Log.d("SecurityManager", "Performing normal password verification")
         val storedHash = sharedPreferences.getString(MASTER_PASSWORD_HASH_KEY, null) ?: return false
         val storedSalt = sharedPreferences.getString(MASTER_PASSWORD_SALT_KEY, null)?.let { saltStr ->
-            saltStr.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+            decodeHex(saltStr)
         } ?: return false
-        
-        val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt)
+
+        val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, getStoredMasterPasswordIterations())
         val result = computedHash == storedHash
         android.util.Log.d("SecurityManager", "Password verification result: $result")
         if (result) {
             try {
                 ensureMdkInitializedWithPassword(inputPassword)
+                upgradePbkdf2ParamsIfNeeded(inputPassword)
             } catch (e: Exception) {
                 android.util.Log.w("SecurityManager", "MDK init failed: ${e.message}")
             }
@@ -199,15 +255,16 @@ class SecurityManager(private val context: Context) {
         return try {
             val storedHash = sharedPreferences.getString(MASTER_PASSWORD_HASH_KEY, null) ?: return false
             val storedSalt = sharedPreferences.getString(MASTER_PASSWORD_SALT_KEY, null)?.let { saltStr ->
-                saltStr.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                decodeHex(saltStr)
             } ?: return false
 
-            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt)
+            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, getStoredMasterPasswordIterations())
             if (computedHash != storedHash) {
                 return false
             }
 
             ensureMdkInitializedWithPassword(inputPassword)
+            upgradePbkdf2ParamsIfNeeded(inputPassword)
             true
         } catch (e: Exception) {
             android.util.Log.w("SecurityManager", "Vault password unlock failed: ${e.message}")
@@ -477,6 +534,7 @@ class SecurityManager(private val context: Context) {
         sharedPreferences.edit()
             .putString(MASTER_PASSWORD_HASH_KEY, hashedPassword)
             .putString(MASTER_PASSWORD_SALT_KEY, salt.joinToString("") { "%02x".format(it) })
+            .putInt(MASTER_PASSWORD_ITERATIONS_KEY, PBKDF2_ITERATIONS)
             .apply()
         try {
             ensureMdkInitializedWithPassword(password, true)
@@ -513,14 +571,18 @@ class SecurityManager(private val context: Context) {
         sharedPreferences.edit()
             .remove(MASTER_PASSWORD_HASH_KEY)
             .remove(MASTER_PASSWORD_SALT_KEY)
+            .remove(MASTER_PASSWORD_ITERATIONS_KEY)
             .remove(BIOMETRIC_ENABLED_KEY)
             .remove(AUTO_LOCK_TIMEOUT_KEY)
             .remove(SECURITY_QUESTION_1_ID_KEY)
             .remove(SECURITY_QUESTION_1_ANSWER_KEY)
+            .remove(SECURITY_QUESTION_1_SALT_KEY)
             .remove(SECURITY_QUESTION_2_ID_KEY)
             .remove(SECURITY_QUESTION_2_ANSWER_KEY)
+            .remove(SECURITY_QUESTION_2_SALT_KEY)
             .remove(MDK_PASSWORD_BLOB_KEY)
             .remove(MDK_PASSWORD_SALT_KEY)
+            .remove(MDK_PASSWORD_ITERATIONS_KEY)
             .remove(MDK_KEYSTORE_BLOB_KEY)
             .remove(MDK_READY_KEY)
             // V2 Bitwarden 凭据
@@ -571,18 +633,23 @@ class SecurityManager(private val context: Context) {
         question1Text: String? = null,
         question2Text: String? = null
     ) {
-        val hashedAnswer1 = hashAnswer(answer1)
-        val hashedAnswer2 = hashAnswer(answer2)
-        
+        // 每个答案独立随机盐 + PBKDF2 慢哈希，抵御离线字典攻击（密保答案熵普遍偏低）。
+        val salt1 = generateSalt()
+        val salt2 = generateSalt()
+        val hashedAnswer1 = hashAnswer(answer1, salt1)
+        val hashedAnswer2 = hashAnswer(answer2, salt2)
+
         sharedPreferences.edit()
             .putInt(SECURITY_QUESTION_1_ID_KEY, question1Id)
             .putString(SECURITY_QUESTION_1_ANSWER_KEY, hashedAnswer1)
+            .putString(SECURITY_QUESTION_1_SALT_KEY, salt1.joinToString("") { "%02x".format(it) })
             .putString(
                 SECURITY_QUESTION_1_TEXT_KEY,
                 if (PredefinedSecurityQuestions.isCustomQuestion(question1Id)) question1Text else null
             )
             .putInt(SECURITY_QUESTION_2_ID_KEY, question2Id)
             .putString(SECURITY_QUESTION_2_ANSWER_KEY, hashedAnswer2)
+            .putString(SECURITY_QUESTION_2_SALT_KEY, salt2.joinToString("") { "%02x".format(it) })
             .putString(
                 SECURITY_QUESTION_2_TEXT_KEY,
                 if (PredefinedSecurityQuestions.isCustomQuestion(question2Id)) question2Text else null
@@ -622,28 +689,73 @@ class SecurityManager(private val context: Context) {
     fun verifySecurityAnswers(answer1: String, answer2: String): Boolean {
         val storedAnswer1 = sharedPreferences.getString(SECURITY_QUESTION_1_ANSWER_KEY, null) ?: return false
         val storedAnswer2 = sharedPreferences.getString(SECURITY_QUESTION_2_ANSWER_KEY, null) ?: return false
-        
-        val hashedAnswer1 = hashAnswer(answer1)
-        val hashedAnswer2 = hashAnswer(answer2)
-        
-        return hashedAnswer1 == storedAnswer1 && hashedAnswer2 == storedAnswer2
+
+        val salt1Hex = sharedPreferences.getString(SECURITY_QUESTION_1_SALT_KEY, null)
+        val salt2Hex = sharedPreferences.getString(SECURITY_QUESTION_2_SALT_KEY, null)
+
+        val match1 = if (salt1Hex != null) {
+            hashAnswer(answer1, decodeHex(salt1Hex)) == storedAnswer1
+        } else {
+            hashAnswerLegacy(answer1) == storedAnswer1
+        }
+        val match2 = if (salt2Hex != null) {
+            hashAnswer(answer2, decodeHex(salt2Hex)) == storedAnswer2
+        } else {
+            hashAnswerLegacy(answer2) == storedAnswer2
+        }
+
+        // 旧无盐格式验证通过后透明升级为加盐 PBKDF2，用户无感知。
+        if (match1 && match2 && (salt1Hex == null || salt2Hex == null)) {
+            upgradeSecurityAnswerHashes(answer1, answer2)
+        }
+        return match1 && match2
     }
-    
-    private fun hashAnswer(answer: String): String {
+
+    private fun upgradeSecurityAnswerHashes(answer1: String, answer2: String) {
+        try {
+            val editor = sharedPreferences.edit()
+            if (sharedPreferences.getString(SECURITY_QUESTION_1_SALT_KEY, null) == null) {
+                val salt = generateSalt()
+                editor.putString(SECURITY_QUESTION_1_SALT_KEY, salt.joinToString("") { "%02x".format(it) })
+                editor.putString(SECURITY_QUESTION_1_ANSWER_KEY, hashAnswer(answer1, salt))
+            }
+            if (sharedPreferences.getString(SECURITY_QUESTION_2_SALT_KEY, null) == null) {
+                val salt = generateSalt()
+                editor.putString(SECURITY_QUESTION_2_SALT_KEY, salt.joinToString("") { "%02x".format(it) })
+                editor.putString(SECURITY_QUESTION_2_ANSWER_KEY, hashAnswer(answer2, salt))
+            }
+            editor.apply()
+            SecurityDiagLogger.append("I/$logTag upgradeSecurityAnswerHashes: legacy SHA-256 upgraded to salted PBKDF2")
+        } catch (e: Exception) {
+            android.util.Log.w(logTag, "upgradeSecurityAnswerHashes failed: ${e.message}")
+        }
+    }
+
+    private fun hashAnswer(answer: String, salt: ByteArray, iterations: Int = PBKDF2_ITERATIONS): String {
+        val cleanAnswer = answer.trim().lowercase()
+        val spec = PBEKeySpec(cleanAnswer.toCharArray(), salt, iterations, 256)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        return factory.generateSecret(spec).encoded.joinToString("") { "%02x".format(it) }
+    }
+
+    /** 旧版无盐 SHA-256，仅用于存量数据验证与透明升级。 */
+    private fun hashAnswerLegacy(answer: String): String {
         val cleanAnswer = answer.trim().lowercase()
         val digest = MessageDigest.getInstance("SHA-256")
         val hashedBytes = digest.digest(cleanAnswer.toByteArray())
         return hashedBytes.joinToString("") { "%02x".format(it) }
     }
-    
+
     fun clearSecurityQuestions() {
         sharedPreferences.edit()
             .remove(SECURITY_QUESTION_1_ID_KEY)
             .remove(SECURITY_QUESTION_1_ANSWER_KEY)
             .remove(SECURITY_QUESTION_1_TEXT_KEY)
+            .remove(SECURITY_QUESTION_1_SALT_KEY)
             .remove(SECURITY_QUESTION_2_ID_KEY)
             .remove(SECURITY_QUESTION_2_ANSWER_KEY)
             .remove(SECURITY_QUESTION_2_TEXT_KEY)
+            .remove(SECURITY_QUESTION_2_SALT_KEY)
             .apply()
     }
 
@@ -856,8 +968,12 @@ class SecurityManager(private val context: Context) {
         return b
     }
 
-    private fun deriveAesKeyFromPassword(password: String, salt: ByteArray): SecretKeySpec {
-        val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, 256)
+    private fun deriveAesKeyFromPassword(
+        password: String,
+        salt: ByteArray,
+        iterations: Int = PBKDF2_ITERATIONS
+    ): SecretKeySpec {
+        val spec = PBEKeySpec(password.toCharArray(), salt, iterations, 256)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val keyBytes = factory.generateSecret(spec).encoded
         return SecretKeySpec(keyBytes, "AES")
@@ -901,9 +1017,16 @@ class SecurityManager(private val context: Context) {
             generateRandom(32)
         } else {
             val saltHex = sharedPreferences.getString(MDK_PASSWORD_SALT_KEY, null)
-            saltHex?.chunked(2)?.map { it.toInt(16).toByte() }?.toByteArray() ?: generateRandom(32)
+            saltHex?.let { decodeHex(it) } ?: generateRandom(32)
         }
-        val pwKey = deriveAesKeyFromPassword(password, salt)
+        // 解密存量 blob 用存储的迭代次数（无键时按旧值 100k）；
+        // 新建/重写包装时升级到当前参数，并把实际值持久化。
+        val mdkIterations = if (forceUpdate || !hasPasswordBlob) {
+            PBKDF2_ITERATIONS
+        } else {
+            getStoredMdkPasswordIterations()
+        }
+        val pwKey = deriveAesKeyFromPassword(password, salt, mdkIterations)
         var shouldRewritePasswordBlob = !hasPasswordBlob || forceUpdate
         val actualMdk = if (hasPasswordBlob && !forceUpdate) {
             val blob = sharedPreferences.getString(MDK_PASSWORD_BLOB_KEY, null)
@@ -962,6 +1085,7 @@ class SecurityManager(private val context: Context) {
             sharedPreferences.edit()
                 .putString(MDK_PASSWORD_BLOB_KEY, blob)
                 .putString(MDK_PASSWORD_SALT_KEY, salt.joinToString("") { "%02x".format(it) })
+                .putInt(MDK_PASSWORD_ITERATIONS_KEY, mdkIterations)
                 .putBoolean(MDK_READY_KEY, true)
                 .apply()
         } else {

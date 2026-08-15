@@ -1136,7 +1136,7 @@ fun PasswordListCustomizationScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(option.icon, contentDescription = null)
@@ -1660,7 +1660,7 @@ fun PasswordCardAdjustmentScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(selectedGroupOption.icon, contentDescription = null)
@@ -1713,7 +1713,7 @@ fun PasswordCardAdjustmentScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(option.icon, contentDescription = null)
@@ -1832,7 +1832,7 @@ fun PasswordCardAdjustmentScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(option.icon, contentDescription = null)
@@ -2249,7 +2249,7 @@ fun AuthenticatorCardAdjustmentScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(option.icon, contentDescription = null)

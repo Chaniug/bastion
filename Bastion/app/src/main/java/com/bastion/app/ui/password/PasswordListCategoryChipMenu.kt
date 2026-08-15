@@ -1,14 +1,38 @@
 package com.bastion.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -20,6 +44,7 @@ import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.ui.components.rememberUnifiedCategoryFilterChipMenuWidth
 import com.bastion.app.utils.KeePassGroupInfo
 import com.bastion.app.viewmodel.CategoryFilter
+import com.bastion.app.R
 
 @Composable
 internal fun PasswordListCategoryChipMenu(
@@ -72,6 +97,22 @@ internal fun PasswordListCategoryChipMenu(
     val menuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
     val uiState = rememberCategoryMenuUiState()
 
+    // 方案 A：用顶部 Tab 串联"数据库 / 快捷筛选 / 分类"三个区块，
+    // 选中 Tab 即展开对应区块、收起其余，避免三个折叠区纵向堆叠过长。
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    // 快捷筛选 / 分类文件夹的展开以 uiState 为单一事实来源；Tab 切换时通过
+    // 下方 LaunchedEffect 同步，避免 Tab 驱动的只读布尔值与折叠 header 点击写入的
+    // uiState 状态互相覆盖（两套状态打架会导致 AnimatedVisibility 重组异常）。
+    // 切 Tab 即展开对应区块、收起其余，形成完整闭环（含 Tab 0）。
+    // 注意：仅在“切 Tab”这一刻同步，用户在该 Tab 内手动折叠后不会被迫重新展开。
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            0 -> { uiState.onQuickFiltersExpandedChange(false); uiState.onFoldersExpandedChange(false) }
+            1 -> { uiState.onQuickFiltersExpandedChange(true); uiState.onFoldersExpandedChange(false) }
+            2 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
+        }
+    }
+
     val quickFilterState = rememberCategoryMenuQuickFilterState(configuredQuickFilterItems)
     val moduleDragState = rememberCategoryMenuModuleDragState(topModulesOrder)
     BindCategoryMenuModuleDragState(
@@ -101,13 +142,19 @@ internal fun PasswordListCategoryChipMenu(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        PasswordListCategoryChipMenuTabBar(
+            selectedTab = selectedTab,
+            onSelectTab = { selectedTab = it }
+        )
+
         PasswordDatabaseFiltersSection(
             params = PasswordDatabaseFiltersSectionParams(
                 currentFilter = currentFilter,
                 keepassDatabases = keepassDatabases,
                 bitwardenVaults = bitwardenVaults,
                 onSelectFilter = onSelectFilter
-            )
+            ),
+            expanded = selectedTab == 0
         )
 
         PasswordListCategoryChipMenuModulesSection(
@@ -172,28 +219,92 @@ internal fun PasswordListCategoryChipMenu(
             coroutineScope = coroutineScope,
             onTopModulesOrderChange = onTopModulesOrderChange,
             isExpandedStateLoaded = uiState.isExpandedStateLoaded,
+            activeTab = selectedTab,
+            showHeaders = uiState.categoryEditMode,
         )
 
-        PasswordListCategoryChipMenuBottomActions(
-            categories = categories,
-            keepassDatabases = keepassDatabases,
-            bitwardenVaults = bitwardenVaults,
-            getBitwardenFolders = getBitwardenFolders,
-            getKeePassGroups = getKeePassGroups,
-            categoryEditMode = uiState.categoryEditMode,
-            onCategoryEditModeChange = uiState.onCategoryEditModeChange,
-            onDismiss = onDismiss,
-            onCreateCategory = onCreateCategory,
-            onMoveCategory = onMoveCategory,
-            onMoveCategoryToStorageTarget = onMoveCategoryToStorageTarget,
-            onRenameCategory = onRenameCategory,
-            onDeleteCategory = onDeleteCategory,
-            categoryActionTarget = uiState.categoryActionTarget,
-            onCategoryActionTargetChange = uiState.onCategoryActionTargetChange,
-            renameCategoryTarget = uiState.renameCategoryTarget,
-            onRenameCategoryTargetChange = uiState.onRenameCategoryTargetChange,
-            renameCategoryInput = uiState.renameCategoryInput,
-            onRenameCategoryInputChange = uiState.onRenameCategoryInputChange
-        )
+        AnimatedVisibility(
+            visible = selectedTab == 2,
+            enter = fadeIn(animationSpec = tween(160)) + expandVertically(animationSpec = tween(180)),
+            exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = tween(140))
+        ) {
+            PasswordListCategoryChipMenuBottomActions(
+                categories = categories,
+                keepassDatabases = keepassDatabases,
+                bitwardenVaults = bitwardenVaults,
+                getBitwardenFolders = getBitwardenFolders,
+                getKeePassGroups = getKeePassGroups,
+                categoryEditMode = uiState.categoryEditMode,
+                onCategoryEditModeChange = uiState.onCategoryEditModeChange,
+                onDismiss = onDismiss,
+                onCreateCategory = onCreateCategory,
+                onMoveCategory = onMoveCategory,
+                onMoveCategoryToStorageTarget = onMoveCategoryToStorageTarget,
+                onRenameCategory = onRenameCategory,
+                onDeleteCategory = onDeleteCategory,
+                categoryActionTarget = uiState.categoryActionTarget,
+                onCategoryActionTargetChange = uiState.onCategoryActionTargetChange,
+                renameCategoryTarget = uiState.renameCategoryTarget,
+                onRenameCategoryTargetChange = uiState.onRenameCategoryTargetChange,
+                renameCategoryInput = uiState.renameCategoryInput,
+                onRenameCategoryInputChange = uiState.onRenameCategoryInputChange
+            )
+        }
+    }
+}
+
+@Composable
+private fun PasswordListCategoryChipMenuTabBar(
+    selectedTab: Int,
+    onSelectTab: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tabs = listOf(
+        R.string.category_selection_menu_databases,
+        R.string.category_selection_menu_quick_filters,
+        R.string.category_selection_menu_folders
+    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        tabs.forEachIndexed { index, labelRes ->
+            val selected = selectedTab == index
+            val containerColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    Color.Transparent
+                },
+                animationSpec = tween(durationMillis = 220),
+                label = "tab_container_color"
+            )
+            val contentColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                animationSpec = tween(durationMillis = 220),
+                label = "tab_content_color"
+            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(containerColor)
+                    .clickable { onSelectTab(index) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = contentColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
