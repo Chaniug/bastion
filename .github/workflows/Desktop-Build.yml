@@ -74,30 +74,36 @@ jobs:
           ./gradlew :desktop:packageMsi :desktop:packageExe --no-build-cache --stacktrace "${EXTRA[@]}"
 
       - name: Verify bundled JRE & launch smoke test
-        shell: bash
+        shell: pwsh
         run: |
           # 防止发布“缺少内置 JRE”的安装包：安装后若 runtime 目录缺失/损坏，
           # jpackage 启动器会直接报 "Failed to launch JVM / JVM 未安装" 类错误。
-          APP_EXE=$(find desktop/build/compose/binaries/main/app -maxdepth 4 -name 'BastionDesktop.exe' | head -1)
-          if [ -z "$APP_EXE" ]; then
-            echo "::error::BastionDesktop.exe not found in app image"; exit 1
-          fi
-          RT="$(dirname "$APP_EXE")/runtime"
-          if [ ! -f "$RT/bin/server/jvm.dll" ]; then
-            echo "::error::bundled JRE missing: $RT/bin/server/jvm.dll"; exit 1
-          fi
-          grep -q '^JAVA_VERSION=' "$RT/release" || { echo "::error::invalid runtime release file"; exit 1; }
-          echo "Bundled JRE OK: $(grep '^JAVA_VERSION=' "$RT/release") ($APP_EXE)"
-          # 启动冒烟测试：启动器 + JVM 必须能拉起应用并保持运行，否则视为启动失败。
-          "$APP_EXE" & PID=$!
-          sleep 15
-          if kill -0 "$PID" 2>/dev/null; then
-            echo "Smoke test OK: app alive after 15s"
-            taskkill //PID "$PID" //T //F >/dev/null 2>&1 || true
-          else
-            echo "::error::app exited during smoke test (launcher/JVM startup failure)"
+          # 用 msiexec /a 把 MSI 里的 app image 解包出来做真实验证。
+          $ErrorActionPreference = 'Stop'
+          $msi = Get-ChildItem "desktop/build/compose/binaries/main/msi" -Filter '*.msi' | Select-Object -First 1
+          if (-not $msi) { Write-Error 'no MSI found under compose/binaries/main/msi'; exit 1 }
+          $extract = Join-Path $env:RUNNER_TEMP 'bastion-msi-check'
+          New-Item -ItemType Directory -Force -Path $extract | Out-Null
+          $p = Start-Process msiexec.exe -ArgumentList "/a `"$($msi.FullName)`" /qn TARGETDIR=`"$extract`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Error "msiexec /a failed with exit $($p.ExitCode)"; exit 1 }
+          $exe = Get-ChildItem $extract -Recurse -Filter 'BastionDesktop.exe' | Select-Object -First 1
+          if (-not $exe) { Write-Error 'BastionDesktop.exe not found inside MSI'; exit 1 }
+          $rtDir = Join-Path $exe.DirectoryName 'runtime'
+          $jvmDll = Join-Path $rtDir 'bin\server\jvm.dll'
+          if (-not (Test-Path $jvmDll)) { Write-Error "bundled JRE missing: $jvmDll"; exit 1 }
+          $rel = Get-Content (Join-Path $rtDir 'release') | Where-Object { $_ -match '^JAVA_VERSION=' }
+          if (-not $rel) { Write-Error 'invalid runtime release file'; exit 1 }
+          Write-Host "Bundled JRE OK: $rel"
+          # 冒烟测试：启动器 + JVM 必须能拉起应用并保持运行，否则视为启动失败。
+          $app = Start-Process -FilePath $exe.FullName -PassThru
+          Start-Sleep -Seconds 15
+          if ($app.HasExited) {
+            Write-Error "app exited during smoke test (exit code $($app.ExitCode))"
             exit 1
-          fi
+          }
+          Write-Host 'Smoke test OK: app alive after 15s'
+          & taskkill /PID $app.Id /T /F 2>$null | Out-Null
+          Remove-Item -Recurse -Force $extract -ErrorAction SilentlyContinue
 
       - name: Stop Gradle Daemon
         if: always()
