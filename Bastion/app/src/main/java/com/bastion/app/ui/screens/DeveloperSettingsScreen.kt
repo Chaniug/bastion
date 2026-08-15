@@ -753,34 +753,14 @@ private object DeveloperLogDebugHelper {
         runCatchingObserved { BitwardenDiagLogger.initialize(context.applicationContext) }
         runCatchingObserved { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
         runCatchingObserved { SecurityDiagLogger.initialize(context.applicationContext) }
-        val autofillTagLogs = readAutofillTagLogs()
-        val appProcessLogs = readLogcat(
-            arrayOf(
-                "logcat",
-                "-d",
-                "-v",
-                "threadtime",
-                "--pid",
-                android.os.Process.myPid().toString(),
-                "-t",
-                "400",
-                "*:V"
-            )
-        )
-        val crashLogs = readLogcat(
-            arrayOf(
-                "logcat",
-                "-d",
-                "-v",
-                "threadtime",
-                "-t",
-                "300",
-                "AndroidRuntime:E",
-                "System.err:W",
-                "libc:E",
-                "*:S"
-            )
-        )
+        val myPid = android.os.Process.myPid().toString()
+        // 合并为一整次 logcat dump 后客户端按 PID / 标签 / 崩溃切分，
+        // 替代原先 3 次串行的 logcat -d 读取（每次都会遍历整个环形缓冲，是抓取慢的主因）。
+        val allLogcat = readLogcatFull()
+        val autofillTagSet = AUTOFILL_LOG_TAGS.map { it.substringBefore(':') }.toSet()
+        val appProcessLogs = allLogcat.filter { logcatPidOf(it) == myPid }.joinToString("\n")
+        val crashLogs = allLogcat.filter { isCrashLogLine(it) }.joinToString("\n")
+        val autofillTagLogs = allLogcat.filter { logcatTagOf(it) in autofillTagSet }.joinToString("\n")
         val selectedLogs = buildString {
             if (autofillTagLogs.isNotBlank()) {
                 appendLine("---- autofill-tags ----")
@@ -991,18 +971,46 @@ private object DeveloperLogDebugHelper {
         return output.trim()
     }
 
-    private fun readAutofillTagLogs(): String {
-        val command = mutableListOf(
-            "logcat",
-            "-d",
-            "-v",
-            "threadtime",
-            "-t",
-            LOG_LINE_LIMIT.toString()
-        ).apply {
-            addAll(AUTOFILL_LOG_TAGS)
-        }.toTypedArray()
-        return readLogcat(command)
+    /**
+     * 一次性 dump 整个 logcat 缓冲（带行数上限）。原实现对每个维度各起一次进程读取，
+     * 这里改为单次读取后在客户端按 PID / 标签 / 级别切分，避免重复遍历环形缓冲。
+     */
+    private fun readLogcatFull(): List<String> {
+        val raw = readLogcat(
+            arrayOf(
+                "logcat",
+                "-d",
+                "-v",
+                "threadtime",
+                "-t",
+                LOG_LINE_LIMIT.toString(),
+                "*:V"
+            )
+        )
+        if (raw.isBlank()) return emptyList()
+        return raw.lineSequence()
+            .map { it.trimEnd() }
+            .filter { it.isNotBlank() }
+            .toList()
+    }
+
+    /** threadtime 格式「date time pid tid level tag: msg」中解析 PID（第 3 个字段）。 */
+    private fun logcatPidOf(line: String): String {
+        val tokens = line.split(Regex("\\s+"))
+        return if (tokens.size >= 4) tokens[2] else ""
+    }
+
+    /** threadtime 格式中解析 tag（紧接级别字符、以冒号结尾的字段）。 */
+    private fun logcatTagOf(line: String): String {
+        val match = Regex("""\s[VDIWEAF]\s([^:\s]+):""").find(line)
+        return match?.groupValues?.getOrNull(1) ?: ""
+    }
+
+    private fun isCrashLogLine(line: String): Boolean {
+        val level = detectLevel(line)
+        return (line.contains("AndroidRuntime") && level == DeveloperLogLevel.ERROR) ||
+                (line.contains("System.err") && (level == DeveloperLogLevel.WARN || level == DeveloperLogLevel.ERROR)) ||
+                (line.contains("libc") && level == DeveloperLogLevel.ERROR)
     }
 
     private fun parseLines(raw: String): List<DeveloperLogLine> {
