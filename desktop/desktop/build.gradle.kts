@@ -37,8 +37,26 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "BastionDesktop"
-            packageVersion = "0.1.0"
+            // 发布版本号由 CI 通过 -Pbastion.packageVersion=<version> 注入（与 GitHub Release 标签保持一致），
+            // 本地构建默认 0.1.0。避免安装包文件名（BastionDesktop-<version>.msi/.exe）与 Release 版本不一致，
+            // 导致用户把新版安装包误当成旧版（jpackage 检测到已安装同版本会报 1638 进入维护模式）。
+            packageVersion = (findProperty("bastion.packageVersion") as? String)
+                ?.takeIf { it.isNotBlank() } ?: "0.1.0"
             description = "Bastion Password Manager - Bitwarden sync, KDBX editor, OneDrive sync"
+            // 显式指定内置 JRE 的 jlink 模块。SQLDelight JdbcSqliteDriver 通过
+            // Class.forName 反射加载 org.sqlite.JDBC 并调用 java.sql.DriverManager，
+            // jdeps 静态分析看不到反射依赖，默认模块列表不含 java.sql，
+            // 会导致打包后启动即崩 java.lang.NoClassDefFoundError: java/sql/DriverManager
+            // （jpackage 启动器弹 "Failed to launch JVM"）。
+            modules(
+                "java.base", "java.datatransfer", "java.xml", "java.prefs",
+                "java.desktop", "java.logging", "java.sql", "jdk.crypto.ec"
+            )
+            windows {
+                // 固定升级 UUID：保证各版本/各次构建的 MSI 走同一条升级链，
+                // 避免升级安装变成“已安装同版本(1638)维护模式”或残留多个注册项。
+                upgradeUuid = "7a4f1c9e-2b3d-4e5f-8a6b-1c2d3e4f5a6b"
+            }
         }
     }
 }

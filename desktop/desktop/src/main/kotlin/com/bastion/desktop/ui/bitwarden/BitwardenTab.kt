@@ -19,6 +19,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -87,6 +88,8 @@ fun BitwardenTab(repository: BitwardenRepository) {
                             loginUiState = loginUiState.copy(
                                 require2fa = true,
                                 providers = result.providers,
+                                // 默认选中服务器返回的第一个可用方式（服务器按优先级排序）
+                                selected2faProvider = result.providers.firstOrNull() ?: 0,
                                 twoFactorState = result.state
                             )
                         }
@@ -94,7 +97,12 @@ fun BitwardenTab(repository: BitwardenRepository) {
                             statusMessage = "需要验证码（暂不支持自动化，请在服务器端完成）"
                         }
                         is BitwardenRepository.RepositoryLoginResult.Error -> {
-                            statusMessage = result.message
+                            statusMessage = result.message + if (result.message.contains("403")) {
+                                "\n提示：请求被 Bitwarden 风控拦截（403）。应用已自动尝试备用指纹；若仍失败，" +
+                                    "请检查系统代理/VPN 是否被拦截，或更换网络后重试。"
+                            } else {
+                                ""
+                            }
                         }
                     }
                 }
@@ -115,7 +123,14 @@ fun BitwardenTab(repository: BitwardenRepository) {
                             activeVaultId = result.vault.id
                             vaults = repository.getAllVaults()
                         }
-                        is BitwardenRepository.RepositoryLoginResult.Error -> statusMessage = result.message
+                        is BitwardenRepository.RepositoryLoginResult.Error -> {
+                            statusMessage = result.message + if (result.message.contains("403")) {
+                                "\n提示：请求被 Bitwarden 风控拦截（403）。应用已自动尝试备用指纹；若仍失败，" +
+                                    "请检查系统代理/VPN 是否被拦截，或更换网络后重试。"
+                            } else {
+                                ""
+                            }
+                        }
                         is BitwardenRepository.RepositoryLoginResult.TwoFactorRequired -> {
                             loginUiState = loginUiState.copy(twoFactorState = result.state)
                         }
@@ -150,9 +165,20 @@ private data class LoginUiState(
     val serverUrl: String = "https://vault.bitwarden.com",
     val require2fa: Boolean = false,
     val providers: List<Int> = emptyList(),
+    val selected2faProvider: Int = 0,
     val twoFactorCode: String = "",
     val twoFactorState: com.bastion.app.bitwarden.service.LoginResult.TwoFactorRequired? = null
 )
+
+/** Bitwarden 两步验证方式名称（providerId → 显示名）。 */
+private fun twoFactorProviderLabel(provider: Int): String = when (provider) {
+    0 -> "验证器应用"
+    1 -> "邮箱验证码"
+    2 -> "Duo"
+    3 -> "YubiKey"
+    4 -> "安全密钥(U2F)"
+    else -> "验证方式 $provider"
+}
 
 /**
  * 登录表单。
@@ -209,6 +235,28 @@ private fun LoginForm(
                     Spacer(Modifier.height(12.dp))
                     Text("两步验证", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
+                    if (state.providers.isNotEmpty()) {
+                        // 验证方式选择：以前硬编码 provider=0（验证器应用），
+                        // 邮箱验证码/YubiKey 等账户会报 "Two-step token is invalid"。
+                        Text(
+                            "验证方式",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            state.providers.forEach { provider ->
+                                FilterChip(
+                                    selected = state.selected2faProvider == provider,
+                                    onClick = {
+                                        onStateChange(state.copy(selected2faProvider = provider))
+                                    },
+                                    label = { Text(twoFactorProviderLabel(provider)) }
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
                     OutlinedTextField(
                         value = state.twoFactorCode,
                         onValueChange = { onStateChange(state.copy(twoFactorCode = it)) },
@@ -218,7 +266,7 @@ private fun LoginForm(
                     )
                     Spacer(Modifier.height(8.dp))
                     Button(
-                        onClick = { onTwoFactor(0, state.twoFactorCode.trim()) },
+                        onClick = { onTwoFactor(state.selected2faProvider, state.twoFactorCode.trim()) },
                         enabled = !loading && state.twoFactorCode.isNotBlank(),
                         modifier = Modifier.fillMaxWidth()
                     ) {

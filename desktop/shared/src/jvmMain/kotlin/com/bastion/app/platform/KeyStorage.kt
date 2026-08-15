@@ -77,8 +77,20 @@ actual object KeyStorage {
             dwFlags: Int,
             pDataOut: DataBlob
         ): Boolean
+    }
 
+    /**
+     * LocalFree 由 kernel32.dll 导出（crypt32.dll 并不导出它）。
+     * 若把 LocalFree 声明在 Crypt32 接口里，JNA GetProcAddress 会失败并抛
+     * UnsatisfiedLinkError: Error looking up function 'LocalFree'，
+     * 导致应用在首次 DPAPI 调用时崩溃（启动即崩，jpackage 启动器报 "Failed to launch JVM"）。
+     */
+    private interface Kernel32 : Library {
         fun LocalFree(hMem: Pointer?): Pointer?
+
+        companion object {
+            val INSTANCE: Kernel32 = Native.load("kernel32", Kernel32::class.java)
+        }
     }
 
     private fun cryptProtect(data: ByteArray, entropy: String): ByteArray {
@@ -113,7 +125,7 @@ actual object KeyStorage {
             val ptr = blob.pbData ?: return ByteArray(0)
             return ptr.getByteArray(0, size)
         } finally {
-            Crypt32.INSTANCE.LocalFree(blob.pbData)
+            Kernel32.INSTANCE.LocalFree(blob.pbData)
         }
     }
 }

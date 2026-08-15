@@ -16,7 +16,7 @@ class OneDriveUploadSessionRequestTest {
     @Test
     fun uploadSessionRequestBodyUsesReplaceConflictBehavior() {
         val source = OneDriveKeePassFileSource(authTokenProvider = { "" })
-        val body = source.json.encodeToString(UploadSessionRequestDto())
+        val body = source.json.encodeToString(OneDriveKeePassFileSource.UploadSessionRequestDto())
         assertEquals("""{"item":{"@microsoft.graph.conflictBehavior":"replace"}}""", body)
     }
 }

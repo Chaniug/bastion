@@ -64,8 +64,95 @@ jobs:
         run: ./gradlew :shared:compileKotlinJvm --no-build-cache --stacktrace
 
       - name: Package Windows app (MSI + EXE)
+        shell: bash
         run: |
-          ./gradlew :desktop:packageMsi :desktop:packageExe --no-build-cache --stacktrace
+          # 仅 workflow_dispatch 时把 Release 版本注入安装包版本号（BastionDesktop-<version>.msi/.exe），
+          # 与 Release 标签保持一致；push/PR 校验构建则保持 build.gradle.kts 默认版本。
+          PKG_VERSION="${{ github.event.inputs.version }}"
+          EXTRA=()
+          if [ -n "$PKG_VERSION" ]; then EXTRA+=("-Pbastion.packageVersion=$PKG_VERSION"); fi
+          ./gradlew :desktop:packageMsi :desktop:packageExe --no-build-cache --stacktrace "${EXTRA[@]}"
+
+      - name: Verify bundled JRE & launch smoke test
+        shell: pwsh
+        run: |
+          # 防止发布“缺少内置 JRE”的安装包：安装后若 runtime 目录缺失/损坏，
+          # jpackage 启动器会直接报 "Failed to launch JVM / JVM 未安装" 类错误。
+          # 用 msiexec /a 把 MSI 里的 app image 解包出来做真实验证。
+          $ErrorActionPreference = 'Stop'
+          $msi = Get-ChildItem "desktop/build/compose/binaries/main/msi" -Filter '*.msi' | Select-Object -First 1
+          if (-not $msi) { Write-Error 'no MSI found under compose/binaries/main/msi'; exit 1 }
+          $extract = Join-Path $env:RUNNER_TEMP 'bastion-msi-check'
+          New-Item -ItemType Directory -Force -Path $extract | Out-Null
+          $p = Start-Process msiexec.exe -ArgumentList "/a `"$($msi.FullName)`" /qn TARGETDIR=`"$extract`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Error "msiexec /a failed with exit $($p.ExitCode)"; exit 1 }
+          $exe = Get-ChildItem $extract -Recurse -Filter 'BastionDesktop.exe' | Select-Object -First 1
+          if (-not $exe) { Write-Error 'BastionDesktop.exe not found inside MSI'; exit 1 }
+          $rtDir = Join-Path $exe.DirectoryName 'runtime'
+          $jvmDll = Join-Path $rtDir 'bin\server\jvm.dll'
+          if (-not (Test-Path $jvmDll)) { Write-Error "bundled JRE missing: $jvmDll"; exit 1 }
+          $rel = Get-Content (Join-Path $rtDir 'release') | Where-Object { $_ -match '^JAVA_VERSION=' }
+          if (-not $rel) { Write-Error 'invalid runtime release file'; exit 1 }
+          Write-Host "Bundled JRE OK: $rel"
+          # 冒烟测试：jpackage 启动器会派生一个子进程承载 JVM，父进程只是等待者。
+          # 只观察父进程会漏检“应用启动数秒后崩溃弹 'Failed to launch JVM'”的坏包，
+          # 因此：1) 经 cmd 重定向捕获应用 stdout/stderr（子进程继承句柄），
+          #        2) 监控整棵进程树，3) 检测错误弹窗。
+          $out = Join-Path $env:RUNNER_TEMP 'bastion-smoke-out.txt'
+          Remove-Item $out -ErrorAction SilentlyContinue
+          $app = Start-Process cmd.exe -ArgumentList "/c cd /d `"$($exe.DirectoryName)`" && `"$($exe.FullName)`" > `"$out`" 2>&1" -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 15
+          $tree = @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $app.Id })
+          if ($app.HasExited) {
+            Write-Error "launcher exited during smoke test (exit code $($app.ExitCode))"
+            exit 1
+          }
+          if ($tree.Count -eq 0) {
+            Write-Error 'JVM child process not found (launcher failed to start JVM)'
+            exit 1
+          }
+          # 应用输出中的异常文本 = 应用层崩溃（如 NoClassDefFoundError/UnsatisfiedLinkError）
+          if (Test-Path $out) {
+            $content = Get-Content $out -Raw -ErrorAction SilentlyContinue
+            if ($content -match 'Exception|Error was captured in composition|NoClassDefFoundError|UnsatisfiedLinkError|Could not find or load main class') {
+              Write-Error "app crashed during smoke test. Output: $content"
+              exit 1
+            }
+          }
+          $childIds = @($tree | ForEach-Object { [int]$_.ProcessId })
+          Add-Type @"
+            using System;
+            using System.Runtime.InteropServices;
+            using System.Text;
+            public class SmokeWin {
+              [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc cb, IntPtr l);
+              public delegate bool EnumProc(IntPtr h, IntPtr l);
+              [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint procId);
+              [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+              [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+            }
+          "@
+          $errorText = $null
+          [SmokeWin]::EnumWindows({ param($h, $l)
+            $pid2 = 0
+            [SmokeWin]::GetWindowThreadProcessId($h, [ref]$pid2) | Out-Null
+            if ($pid2 -in $childIds -and [SmokeWin]::IsWindowVisible($h)) {
+              $t = New-Object System.Text.StringBuilder 1024
+              [SmokeWin]::GetWindowText($h, $t, 1024) | Out-Null
+              if ($t.ToString() -match 'Failed to launch JVM|Failed to find JVM|Could not find or load main class') {
+                $script:errorText = $t.ToString()
+                return $false
+              }
+            }
+            return $true
+          }, [IntPtr]::Zero) | Out-Null
+          if ($errorText) {
+            Write-Error "app showed error dialog: $errorText"
+            exit 1
+          }
+          Write-Host "Smoke test OK: app alive after 15s (children: $($tree.Count))"
+          & taskkill /PID $app.Id /T /F 2>$null | Out-Null
+          Remove-Item -Recurse -Force $extract -ErrorAction SilentlyContinue
 
       - name: Stop Gradle Daemon
         if: always()
@@ -168,7 +255,12 @@ jobs:
             > **下载安装（任选一种）：**
             > * **EXE 安装版**：双击安装，自动写入开始菜单
             > * **MSI 安装版**：双击安装，支持企业部署/组策略
-            > * 说明：EXE 比 MSI 略小（约 5%），两者都内置运行时，无需预装 Java。
+            > * 说明：EXE 比 MSI 略小（约 5%），两者都内置 JRE 17 运行时，**无需预装 Java**。
+            >
+            > **遇到 "Failed to launch JVM / 未找到 JVM" 提示怎么办？**
+            > * 该提示来自应用启动器，仅表示安装目录下的 `runtime`（内置 JRE）缺失或损坏，**不是**要求你手动安装 Java。
+            > * 常见原因：旧版本未完全卸载、安装被安全软件拦截/隔离、或安装包与已安装版本同名冲突（提示 1638）。
+            > * 处理：先卸载旧版 → 重启 → 放行杀毒软件（或将 `D:\Program Files\BastionDesktop` / `C:\Program Files\BastionDesktop` 加入白名单）→ 重新安装本版本。
             >
             > ## 更新内容 (What's Changed)
             > ${{ steps.changelog.outputs.notes }}
