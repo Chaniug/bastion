@@ -57,9 +57,11 @@ internal data class PasswordDatabaseFiltersSectionParams(
 @Composable
 internal fun PasswordDatabaseFiltersSection(
     params: PasswordDatabaseFiltersSectionParams,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    expandedOverride: Boolean? = null
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val effectiveExpanded = expandedOverride ?: expanded
     val arrowRotation by animateFloatAsState(
         targetValue = if (expanded) 0f else -90f,
         animationSpec = tween(durationMillis = 160),
@@ -93,7 +95,7 @@ internal fun PasswordDatabaseFiltersSection(
             )
         }
         AnimatedVisibility(
-            visible = expanded,
+            visible = effectiveExpanded,
             enter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(120)),
             exit = shrinkVertically(animationSpec = tween(140)) + fadeOut(animationSpec = tween(100))
         ) {
@@ -139,7 +141,7 @@ internal fun PasswordDatabaseFiltersSection(
             }
         }
         AnimatedVisibility(
-            visible = !expanded,
+            visible = !effectiveExpanded,
             enter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(120)),
             exit = shrinkVertically(animationSpec = tween(140)) + fadeOut(animationSpec = tween(100))
         ) {

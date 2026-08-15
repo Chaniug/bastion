@@ -883,6 +883,13 @@ private fun PasskeyAuthScreen(
                     }
 
                     Text(
+                        text = "Bastion",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
                         text = stringResource(R.string.passkey_auth_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
@@ -910,6 +917,7 @@ private fun PasskeyAuthScreen(
                 ) {
                     PasskeyAuthInfoRow(
                         icon = Icons.Default.Language,
+                        caption = stringResource(R.string.passkey_auth_site_label),
                         title = passkey.rpName,
                         subtitle = passkey.rpId
                     )
@@ -918,15 +926,9 @@ private fun PasskeyAuthScreen(
 
                     PasskeyAuthInfoRow(
                         icon = Icons.Default.Person,
-        title = passkey.displayTitle(),
-                        subtitle = if (
-                            passkey.userName != passkey.userDisplayName &&
-                            passkey.userDisplayName.isNotBlank()
-                        ) {
-                            passkey.userName
-                        } else {
-                            passkey.userName
-                        }
+                        caption = stringResource(R.string.passkey_auth_account_label),
+                        title = passkey.displayTitle(),
+                        subtitle = passkey.userName
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -938,6 +940,31 @@ private fun PasskeyAuthScreen(
                     )
                 }
             }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.passkey_auth_security_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -946,7 +973,8 @@ private fun PasskeyAuthScreen(
 private fun PasskeyAuthInfoRow(
     icon: ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    caption: String? = null
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
@@ -957,6 +985,13 @@ private fun PasskeyAuthInfoRow(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (caption != null) {
+                Text(
+                    text = caption,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,

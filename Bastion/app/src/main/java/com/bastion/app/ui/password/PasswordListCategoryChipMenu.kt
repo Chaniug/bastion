@@ -4,11 +4,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -72,6 +79,13 @@ internal fun PasswordListCategoryChipMenu(
     val menuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
     val uiState = rememberCategoryMenuUiState()
 
+    // 方案 A：用顶部 Tab 串联"数据库 / 快捷筛选 / 分类"三个区块，
+    // 选中 Tab 即展开对应区块、收起其余，避免三个折叠区纵向堆叠过长。
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    val databasesExpanded = selectedTab == 0
+    val quickFiltersExpanded = selectedTab == 1
+    val foldersExpanded = selectedTab == 2
+
     val quickFilterState = rememberCategoryMenuQuickFilterState(configuredQuickFilterItems)
     val moduleDragState = rememberCategoryMenuModuleDragState(topModulesOrder)
     BindCategoryMenuModuleDragState(
@@ -101,20 +115,43 @@ internal fun PasswordListCategoryChipMenu(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ScrollableTabRow(
+            selectedTabIndex = selectedTab,
+            edgePadding = 0.dp,
+            divider = {}
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text(stringResource(R.string.category_selection_menu_databases)) }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text(stringResource(R.string.category_selection_menu_quick_filters)) }
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = { selectedTab = 2 },
+                text = { Text(stringResource(R.string.category_selection_menu_folders)) }
+            )
+        }
+
         PasswordDatabaseFiltersSection(
             params = PasswordDatabaseFiltersSectionParams(
                 currentFilter = currentFilter,
                 keepassDatabases = keepassDatabases,
                 bitwardenVaults = bitwardenVaults,
                 onSelectFilter = onSelectFilter
-            )
+            ),
+            expandedOverride = databasesExpanded
         )
 
         PasswordListCategoryChipMenuModulesSection(
             orderedModules = orderedModules,
-            quickFiltersExpanded = uiState.quickFiltersExpanded,
+            quickFiltersExpanded = quickFiltersExpanded,
             onQuickFiltersExpandedChange = uiState.onQuickFiltersExpandedChange,
-            foldersExpanded = uiState.foldersExpanded,
+            foldersExpanded = foldersExpanded,
             onFoldersExpandedChange = uiState.onFoldersExpandedChange,
             categoryEditMode = uiState.categoryEditMode,
             menuWidth = menuWidth,
@@ -174,26 +211,28 @@ internal fun PasswordListCategoryChipMenu(
             isExpandedStateLoaded = uiState.isExpandedStateLoaded,
         )
 
-        PasswordListCategoryChipMenuBottomActions(
-            categories = categories,
-            keepassDatabases = keepassDatabases,
-            bitwardenVaults = bitwardenVaults,
-            getBitwardenFolders = getBitwardenFolders,
-            getKeePassGroups = getKeePassGroups,
-            categoryEditMode = uiState.categoryEditMode,
-            onCategoryEditModeChange = uiState.onCategoryEditModeChange,
-            onDismiss = onDismiss,
-            onCreateCategory = onCreateCategory,
-            onMoveCategory = onMoveCategory,
-            onMoveCategoryToStorageTarget = onMoveCategoryToStorageTarget,
-            onRenameCategory = onRenameCategory,
-            onDeleteCategory = onDeleteCategory,
-            categoryActionTarget = uiState.categoryActionTarget,
-            onCategoryActionTargetChange = uiState.onCategoryActionTargetChange,
-            renameCategoryTarget = uiState.renameCategoryTarget,
-            onRenameCategoryTargetChange = uiState.onRenameCategoryTargetChange,
-            renameCategoryInput = uiState.renameCategoryInput,
-            onRenameCategoryInputChange = uiState.onRenameCategoryInputChange
-        )
+        if (selectedTab == 2) {
+            PasswordListCategoryChipMenuBottomActions(
+                categories = categories,
+                keepassDatabases = keepassDatabases,
+                bitwardenVaults = bitwardenVaults,
+                getBitwardenFolders = getBitwardenFolders,
+                getKeePassGroups = getKeePassGroups,
+                categoryEditMode = uiState.categoryEditMode,
+                onCategoryEditModeChange = uiState.onCategoryEditModeChange,
+                onDismiss = onDismiss,
+                onCreateCategory = onCreateCategory,
+                onMoveCategory = onMoveCategory,
+                onMoveCategoryToStorageTarget = onMoveCategoryToStorageTarget,
+                onRenameCategory = onRenameCategory,
+                onDeleteCategory = onDeleteCategory,
+                categoryActionTarget = uiState.categoryActionTarget,
+                onCategoryActionTargetChange = uiState.onCategoryActionTargetChange,
+                renameCategoryTarget = uiState.renameCategoryTarget,
+                onRenameCategoryTargetChange = uiState.onRenameCategoryTargetChange,
+                renameCategoryInput = uiState.renameCategoryInput,
+                onRenameCategoryInputChange = uiState.onRenameCategoryInputChange
+            )
+        }
     }
 }
