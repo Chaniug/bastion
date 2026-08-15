@@ -89,8 +89,11 @@ internal fun PasswordListCategoryChipMenu(
     // 快捷筛选 / 分类文件夹的展开以 uiState 为单一事实来源；Tab 切换时通过
     // 下方 LaunchedEffect 同步，避免 Tab 驱动的只读布尔值与折叠 header 点击写入的
     // uiState 状态互相覆盖（两套状态打架会导致 AnimatedVisibility 重组异常）。
+    // 切 Tab 即展开对应区块、收起其余，形成完整闭环（含 Tab 0）。
+    // 注意：仅在“切 Tab”这一刻同步，用户在该 Tab 内手动折叠后不会被迫重新展开。
     LaunchedEffect(selectedTab) {
         when (selectedTab) {
+            0 -> { uiState.onQuickFiltersExpandedChange(false); uiState.onFoldersExpandedChange(false) }
             1 -> { uiState.onQuickFiltersExpandedChange(true); uiState.onFoldersExpandedChange(false) }
             2 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
         }
