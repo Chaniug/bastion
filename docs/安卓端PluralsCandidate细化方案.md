@@ -1,14 +1,26 @@
 # 安卓端 PluralsCandidate 细化方案（P3-d）
 
-> 状态：**方案待确认**（未实施）
+> 状态：**已评估 → 建议跳过**（前提失效，2026-08-15 复核）
 > 分支流程：dev → `Android CI debug` → 真机验收 → 合 main
 > 关联：`docs/安卓端UI优化计划.md`（lint 清理，已全部完成）、`docs/安卓端界面视觉优化计划.md`（P4 视觉打磨，B1/B2 已完成）
 
 ## 1. 背景与目的
 
-lint 报告 **PluralsCandidate 89 处**：字符串里 `%d`/`%1$d` 后跟英文名词（如 `%d passwords`、`%1$d items`），英语需要单复数变化（"1 password" vs "2 passwords"）。当前用普通 `<string>` 无法区分单复数，英文环境下文案不地道。
+lint 报告 **PluralsCandidate 89 处**：字符串里 `%d`/`%1$d` 后跟名词（如 `%d passwords`、`%1$d items`），英语需要单复数变化（"1 password" vs "2 passwords"）。
 
-**目标**：把这 89 处数量文案改成 `<plurals>` 资源，让英文正确单复数化；中文（values-zh）无语法复数，保持单一形式。
+**原目标**：把这 89 处数量文案改成 `<plurals>` 资源，让英文正确单复数化。
+
+## 1.5 ⚠️ 复核结论：前提已失效，建议跳过（与 TypographyDashes 同理）
+
+2026-08-15 实施前复核发现：
+
+- 默认 `values/strings.xml` **3446 条中 3204 条已是中文（93%）**，且**无 `values-en`**（仅 values / values-zh / night / v31）。
+- 这 89 条 PluralsCandidate 是 baseline 生成时（英文时代）标记的；**当前真实文本已全是中文**（如 `收起 %d 个密码`、`成功导入 %d 条数据`）。
+- **中文无语法复数**（量词不变），改成 `<plurals>` 用户可见收益≈0，却要改 89 条资源 + 全部调用点（`getQuantityString`），纯为满足一条过期 lint。
+
+**决策：跳过 P3-d 批量复数改造**。真正的遗留问题是 **MissingTranslation（242 条英文残留混在中文主应用）**，属于翻译完整性任务，需用户定方向（见 §7）。
+
+
 
 ## 2. 现状清单（89 处，全部来自 `lint-baseline.xml`）
 
@@ -96,10 +108,12 @@ context.resources.getQuantityString(R.plurals.passwords_count, count, count)
 2. 真机（荣耀 Android 17，可切英文）：触发批量删除、导入、回收站清空、WebDAV 恢复等，肉眼确认 "1 item" / "2 items" 文案。
 3. 中文环境：确认文案与改前一致（only other 形式）。
 
-## 6. 待确认
+## 6. 待确认（已跳过后更新）
 
-- [ ] 用户确认本方案（特别是「特殊项：比率/多 %d 跳过」的取舍）
-- [ ] 批次 1 实施
-- [ ] 批次 2 实施
-- [ ] 批次 3 实施（人工逐条）
+- [x] 复核：89 条已中文化，复数建议失效 → **跳过批量改造**（见 §1.5）
+- [ ] **MissingTranslation（242 条英文残留）方向待定**：
+  - 选项 A：把 242 条英文残留**翻译成中文**（中文主应用一致化，推荐；量约 240 条，需逐条核对占位符）
+  - 选项 B：**保持现状**（部分英文是技术名词/品牌词，如 "autofill_service_description"，可接受）
+  - 选项 C：补一个真正的 `values-en`（英文完整版），把默认 values 保持中文——工作量大，需整体评估
+- [ ] 用户确认方向后实施
 - [ ] 每批真机验收后合 main
