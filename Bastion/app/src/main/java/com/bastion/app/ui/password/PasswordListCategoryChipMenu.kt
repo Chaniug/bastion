@@ -1,8 +1,14 @@
 package com.bastion.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -94,7 +99,6 @@ internal fun PasswordListCategoryChipMenu(
     // 方案 A：用顶部 Tab 串联"数据库 / 快捷筛选 / 分类"三个区块，
     // 选中 Tab 即展开对应区块、收起其余，避免三个折叠区纵向堆叠过长。
     var selectedTab by rememberSaveable { mutableStateOf(0) }
-    val databasesExpanded = selectedTab == 0
     // 快捷筛选 / 分类文件夹的展开以 uiState 为单一事实来源；Tab 切换时通过
     // 下方 LaunchedEffect 同步，避免 Tab 驱动的只读布尔值与折叠 header 点击写入的
     // uiState 状态互相覆盖（两套状态打架会导致 AnimatedVisibility 重组异常）。
@@ -149,7 +153,7 @@ internal fun PasswordListCategoryChipMenu(
                 bitwardenVaults = bitwardenVaults,
                 onSelectFilter = onSelectFilter
             ),
-            expandedOverride = databasesExpanded
+            expanded = selectedTab == 0
         )
 
         PasswordListCategoryChipMenuModulesSection(
@@ -216,7 +220,11 @@ internal fun PasswordListCategoryChipMenu(
             isExpandedStateLoaded = uiState.isExpandedStateLoaded,
         )
 
-        if (selectedTab == 2) {
+        AnimatedVisibility(
+            visible = selectedTab == 2,
+            enter = fadeIn(animationSpec = tween(160)) + expandVertically(animationSpec = tween(180)),
+            exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = tween(140))
+        ) {
             PasswordListCategoryChipMenuBottomActions(
                 categories = categories,
                 keepassDatabases = keepassDatabases,
@@ -259,25 +267,30 @@ private fun PasswordListCategoryChipMenuTabBar(
     ) {
         tabs.forEachIndexed { index, labelRes ->
             val selected = selectedTab == index
-            val containerColor = if (selected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                Color.Transparent
-            }
-            val contentColor = if (selected) {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
+            val containerColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    Color.Transparent
+                },
+                animationSpec = tween(durationMillis = 220),
+                label = "tab_container_color"
+            )
+            val contentColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                animationSpec = tween(durationMillis = 220),
+                label = "tab_content_color"
+            )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
                     .background(containerColor)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onSelectTab(index) }
+                    .clickable { onSelectTab(index) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
