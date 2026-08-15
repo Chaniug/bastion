@@ -1,11 +1,16 @@
 package com.bastion.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -15,9 +20,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -128,27 +137,10 @@ internal fun PasswordListCategoryChipMenu(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        ScrollableTabRow(
-            selectedTabIndex = selectedTab,
-            edgePadding = 0.dp,
-            divider = {}
-        ) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text(stringResource(R.string.category_selection_menu_databases)) }
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text(stringResource(R.string.category_selection_menu_quick_filters)) }
-            )
-            Tab(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                text = { Text(stringResource(R.string.category_selection_menu_folders)) }
-            )
-        }
+        PasswordListCategoryChipMenuTabBar(
+            selectedTab = selectedTab,
+            onSelectTab = { selectedTab = it }
+        )
 
         PasswordDatabaseFiltersSection(
             params = PasswordDatabaseFiltersSectionParams(
@@ -246,6 +238,57 @@ internal fun PasswordListCategoryChipMenu(
                 renameCategoryInput = uiState.renameCategoryInput,
                 onRenameCategoryInputChange = uiState.onRenameCategoryInputChange
             )
+        }
+    }
+}
+
+@Composable
+private fun PasswordListCategoryChipMenuTabBar(
+    selectedTab: Int,
+    onSelectTab: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tabs = listOf(
+        R.string.category_selection_menu_databases,
+        R.string.category_selection_menu_quick_filters,
+        R.string.category_selection_menu_folders
+    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        tabs.forEachIndexed { index, labelRes ->
+            val selected = selectedTab == index
+            val containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                Color.Transparent
+            }
+            val contentColor = if (selected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(containerColor)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onSelectTab(index) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = contentColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
