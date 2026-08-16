@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -197,22 +198,26 @@ internal fun PasswordListTopSection(
                     }
                 }
 
+                // 搜索：突出显示（FilledTonalIconButton 容器背景），无论 archive 与否都可访问
+                FilledTonalIconButton(onClick = { onSearchExpandedChange(true) }) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.search)
+                    )
+                }
+
                 if (!isArchiveView) {
-                    IconButton(onClick = { onCategorySheetVisibleChange(true) }) {
+                    // 文件夹：降权（缩小尺寸）
+                    IconButton(
+                        onClick = { onCategorySheetVisibleChange(true) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Folder,
                             contentDescription = stringResource(R.string.category),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
-
-                IconButton(onClick = { onSearchExpandedChange(true) }) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
 
                 Box {
