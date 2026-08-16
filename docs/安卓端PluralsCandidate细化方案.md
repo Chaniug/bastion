@@ -111,9 +111,13 @@ context.resources.getQuantityString(R.plurals.passwords_count, count, count)
 ## 6. 待确认（已跳过后更新）
 
 - [x] 复核：89 条已中文化，复数建议失效 → **跳过批量改造**（见 §1.5）
-- [ ] **MissingTranslation（242 条英文残留）方向待定**：
-  - 选项 A：把 242 条英文残留**翻译成中文**（中文主应用一致化，推荐；量约 240 条，需逐条核对占位符）
-  - 选项 B：**保持现状**（部分英文是技术名词/品牌词，如 "autofill_service_description"，可接受）
-  - 选项 C：补一个真正的 `values-en`（英文完整版），把默认 values 保持中文——工作量大，需整体评估
-- [ ] 用户确认方向后实施
+- [x] **MissingTranslation（242 条英文残留）方向已决策（2026-08-16）**：
+  - **结论：选项 B（保持现状）**。经逐项抽样核对，238 条"英文残留"几乎全为：
+    - 专有名词/品牌词/技术缩写（Bastion、CVV、WIFI、RSA、WEP/WPA2、DHCP、IBAN、SWIFT/BIC、PIN、QRCode、Bitwarden、KeePass、GitHub、Steam Guard、Yandex 等）
+    - 语言选择器必须原样显示的语言名（English、Tiếng Việt、Русский 等）
+    - 格式模板 / 掩码 / 版本号（`%1$s · %2$s`、`••••••••`、`V1.0.297` 等）
+    - **翻译成中文反而错误，无需处理。**
+  - **补充（已实施）**：values-zh 实际缺失 **12 个 key**（Bitwarden JSON 导入/导出相关），已补齐中文翻译；默认 values 与 values-zh 双向差集归零（3448 = 3448），lint MissingTranslation 消除。
+  - 选项 C（values-en 英文完整版）：**暂不做**（当前面向中文用户，非中文系统显示中文可接受；如未来面向海外，再作独立任务用 AI 批量翻译，约 3200 条）。
+- [x] 用户确认方向（2026-08-16）：补 12 条缺失 + 242 条专有名词不处理 + 暂不做英文界面
 - [ ] 每批真机验收后合 main

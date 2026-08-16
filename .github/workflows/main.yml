@@ -212,9 +212,10 @@ jobs:
             Bastion/app/build/outputs/apk/debug/*.APK
           if-no-files-found: error
 
-      # 2.5) push 到 dev/main 时，把 debug APK 发布到 preview Release，方便直接从 Release 页下载真机验证
+      # 2.5) push 到 dev 时，把 debug APK 发布到 preview Release，方便直接从 Release 页下载真机验证。
+      #      push 到 main（合并验证）跳过 preview 发布：preview 由 dev push 维护，main 合并不重复覆盖。
       - name: Generate preview version suffix
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         id: preview_meta
         shell: bash
         run: |
@@ -222,7 +223,7 @@ jobs:
           echo "preview_version_suffix=$suffix" >> "$GITHUB_OUTPUT"
 
       - name: Cleanup previous preview release (assets + release + tag)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -241,7 +242,7 @@ jobs:
           echo "Cleanup done"
 
       - name: Collect debug APK metadata
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         id: apk_meta
         shell: bash
         run: |
@@ -260,7 +261,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish Debug APK to preview Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: preview

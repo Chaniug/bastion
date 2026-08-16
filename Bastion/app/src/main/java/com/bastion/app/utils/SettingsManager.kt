@@ -259,9 +259,6 @@ class SettingsManager(private val context: Context) {
         
         // 预设自定义字段 (JSON 格式存储)
         private val PRESET_CUSTOM_FIELDS_KEY = stringPreferencesKey("preset_custom_fields")
-        
-        // 减少动画 - 解决部分设备动画卡顿问题
-        private val REDUCE_ANIMATIONS_KEY = booleanPreferencesKey("reduce_animations")
 
         // 智能去重
         private val SMART_DEDUPLICATION_ENABLED_KEY = booleanPreferencesKey("smart_deduplication_enabled")
@@ -683,7 +680,6 @@ class SettingsManager(private val context: Context) {
                 addressInfo = preferences[FIELD_ADDRESS_INFO_KEY] ?: true,
                 paymentInfo = preferences[FIELD_PAYMENT_INFO_KEY] ?: true
             ),
-            reduceAnimations = preferences[REDUCE_ANIMATIONS_KEY] ?: false,
             smartDeduplicationEnabled = preferences[SMART_DEDUPLICATION_ENABLED_KEY] ?: true,
             separateUsernameAccountEnabled = preferences[SEPARATE_USERNAME_ACCOUNT_ENABLED_KEY] ?: false,
             keepassDxLikeMutationEnabled = preferences[KEEPASS_DX_LIKE_MUTATION_ENABLED_KEY] ?: false,
@@ -1582,17 +1578,6 @@ class SettingsManager(private val context: Context) {
         }
     }
     
-    /**
-     * 更新减少动画设置
-     * 开启后将禁用共享元素动画，改为简单的淡入淡出效果
-     * 主要用于解决 HyperOS 2 / Android 15 等设备上的动画卡顿问题
-     */
-    suspend fun updateReduceAnimations(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[REDUCE_ANIMATIONS_KEY] = enabled
-        }
-    }
-
     suspend fun updateSmartDeduplicationEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[SMART_DEDUPLICATION_ENABLED_KEY] = enabled

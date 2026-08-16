@@ -14,17 +14,44 @@ android {
     compileSdk 37
 
     def previewVersionSuffix = project.findProperty('previewVersionSuffix')?.toString()?.trim()
-    // versionCode 取当前 epoch 秒以保证每次构建严格大于上次（覆盖安装必须）
-    def appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
-    // 主版本号随每次 git 提交自动递增：patch 位取仓库提交总数，根治「版本号永远停在 1.0.297」。
-    // 仍兼容 -PpreviewVersionSuffix=xxx 标记预览构建（如 1.0.839-preview）。
+    // commit_count 仍用于 preview 构建（反映开发进度）；release 跟随 git tag（与 GitHub Release 名一致）
     def gitCommitCount = 0
     try {
         gitCommitCount = ['git', 'rev-list', '--count', 'HEAD'].execute([], rootDir).text.trim().toInteger()
     } catch (ignored) {
         gitCommitCount = 0
     }
-    def baseVersionName = previewVersionSuffix ? "1.0.${gitCommitCount}-${previewVersionSuffix}" : "1.0.${gitCommitCount}"
+    // 尝试精确匹配当前 HEAD 上的 tag；命中则用 tag 作 versionName（如 v1.0.307 → 1.0.307），
+    // 与 GitHub Release 名对齐；不命中（无 tag / 非 release 分支）走 commit_count fallback。
+    def exactTag = ''
+    try {
+        exactTag = ['git', 'describe', '--tags', '--exact-match', 'HEAD'].execute([], rootDir).text.trim()
+    } catch (ignored) {
+        exactTag = ''
+    }
+    def appVersionCode
+    def baseVersionName
+    if (previewVersionSuffix) {
+        // preview 构建：保留 commit_count + 时间戳后缀 + epoch 秒 versionCode（保证严格递增）
+        appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
+        baseVersionName = "1.0.${gitCommitCount}-${previewVersionSuffix}"
+    } else if (exactTag && exactTag.startsWith('v')) {
+        // release 构建：HEAD 上有 tag，用 tag 名作 versionName（如 v1.0.307 → 1.0.307）
+        baseVersionName = exactTag.substring(1)
+        def parts = baseVersionName.split('\\.')
+        try {
+            int major = parts.length > 0 ? parts[0].toInteger() : 0
+            int minor = parts.length > 1 ? parts[1].toInteger() : 0
+            int patch = parts.length > 2 ? parts[2].toInteger() : 0
+            appVersionCode = major * 1000000 + minor * 1000 + patch
+        } catch (ignored) {
+            appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
+        }
+    } else {
+        // fallback（如本地构建无 tag）：保持 commit_count 机制
+        appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
+        baseVersionName = "1.0.${gitCommitCount}"
+    }
     def normalizeTwoDigits = { raw ->
         def value = raw?.toString()?.trim()?.replaceAll('\\D', '')
         if (!value) {

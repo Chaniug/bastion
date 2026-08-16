@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (no v prefix), e.g. 1.0.297'
-        required: true
-        default: '1.0.297'
+        description: 'Release version (no v prefix), e.g. 1.0.297. 留空则自动建议：上一个 stable tag 的 patch +1'
+        required: false
+        default: ''
   push:
     tags:
       - 'v*'
@@ -97,6 +97,20 @@ jobs:
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
+      - name: Suggest next stable version
+        id: suggest
+        shell: bash
+        run: |
+          last_tag="$(git tag -l 'v*' --sort=-v:refname 2>/dev/null | head -1 || true)"
+          if [ -n "$last_tag" ] && [[ "$last_tag" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            maj="${BASH_REMATCH[1]}"; min="${BASH_REMATCH[2]}"; pat="${BASH_REMATCH[3]}"
+            suggested="${maj}.${min}.$((pat + 1))"
+          else
+            suggested="1.0.1"
+          fi
+          echo "suggested=$suggested" >> "$GITHUB_OUTPUT"
+          echo "Suggested version (上一个 stable +1): $suggested" >&2
+
       - name: Resolve release version & tag
         id: meta
         shell: bash
@@ -105,7 +119,8 @@ jobs:
             tag="${{ github.ref_name }}"
             version="${tag#v}"
           else
-            version="${{ github.event.inputs.version }}"
+            # dispatch：留空则用 Suggest step 的建议值（上一个 stable +1）
+            version="${{ github.event.inputs.version || steps.suggest.outputs.suggested }}"
             tag="v${version}"
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
@@ -184,12 +199,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          if [ "${{ github.event_name }}" = "push" ]; then
-            cur="${{ steps.meta.outputs.tag }}"
-            prev="$(git describe --tags --abbrev=0 "${cur}^" 2>/dev/null || true)"
-          else
-            prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-          fi
+          cur="${{ steps.meta.outputs.tag }}"
+          # 按版本号排序取最近 stable，跳过当前 tag；不依赖 git describe 在 merge commit 上的可达性
+          prev="$(git tag -l 'v*' --sort=-v:refname | grep -v "^${cur}$" | head -1 || true)"
           notes="$(python3 "${{ github.workspace }}/scripts/generate_changelog.py" --prev "$prev" --head HEAD --repo "${{ github.workspace }}")"
           if [ -z "$notes" ]; then
             notes="- 无变更记录"

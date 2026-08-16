@@ -47,7 +47,7 @@ object FaviconCache {
      * Get icon for domain.
      * This function should be called from a coroutine.
      *
-     * 多源顺序尝试：DuckDuckGo -> Google S2 -> 备选。
+     * 多源顺序尝试：站点直连 /favicon.ico -> DuckDuckGo -> Google S2。
      * 任一源成功即返回并写入缓存；全部失败返回 null（最终落到首字母头像兜底）。
      */
     suspend fun getIcon(context: Context, url: String): ImageBitmap? {
@@ -106,9 +106,11 @@ object FaviconCache {
 
     /**
      * 按优先级生成 favicon 候选源。
-     * DuckDuckGo 在国内通常比 Google S2 更可达；Google S2 作为海外兜底。
+     * 站点直连 /favicon.ico 不依赖任何第三方服务（国内可用且最快）；
+     * DuckDuckGo 作次选兜底；Google S2 作海外兜底。
      */
     private fun buildFaviconCandidates(domain: String): List<String> = listOf(
+        "https://$domain/favicon.ico",
         "https://icons.duckduckgo.com/ip3/$domain.ico",
         "https://www.google.com/s2/favicons?domain=$domain&sz=64",
         "https://www.google.com/s2/favicons?domain=$domain&sz=128"
