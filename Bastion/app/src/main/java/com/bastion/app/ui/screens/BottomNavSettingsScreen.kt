@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.SwipeUp
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -130,6 +131,18 @@ fun BottomNavSettingsScreen(
                         checked = settings.autoHideBottomNavWhenSingleTab,
                         switchEnabled = true,
                         onCheckedChange = viewModel::updateAutoHideBottomNavWhenSingleTab,
+                        showDragHandle = false,
+                    )
+                }
+
+                item(key = "bottom_nav_draggable") {
+                    BottomNavConfigRow(
+                        icon = Icons.Default.SwipeUp,
+                        title = context.getString(R.string.draggable_bottom_nav),
+                        subtitle = context.getString(R.string.draggable_bottom_nav_description),
+                        checked = settings.useDraggableBottomNav,
+                        switchEnabled = true,
+                        onCheckedChange = viewModel::updateUseDraggableBottomNav,
                         showDragHandle = false,
                     )
                 }
