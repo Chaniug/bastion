@@ -1433,8 +1433,6 @@
     <string name="passkey_strict_validation_title">严格校验</string>
     <string name="passkey_strict_validation_desc">阻断明显不符合依赖方来源规则的请求。</string>
     <string name="passkey_strict_validation_warning">严格模式可能会拦截接入不规范的应用登录，仅在排障时开启。</string>
-    <string name="passkey_hyperos_bypass_title">HyperOS 生物识别兼容</string>
-    <string name="passkey_hyperos_bypass_desc">在小米 HyperOS 上跳过通行密钥生物识别提示，并在需要时回退到主密码验证。</string>
     <string name="passkey_diagnostics_title">校验诊断</string>
     <string name="passkey_diagnostics_summary">请求数：%1$d，可疑：%2$d，严格候选：%3$d</string>
     <string name="passkey_diagnostics_top_bucket">最高风险：%1$s @ %2$s（可疑 %3$d）</string>
@@ -1739,24 +1737,8 @@
     <string name="developer_share_logs">分享日志</string>
     <string name="developer_share_logs_desc">导出并分享最近的日志</string>
     <string name="developer_functions">开发者功能</string>
-    <string name="developer_disable_password_verification">关闭密码验证</string>
-    <string name="developer_disable_password_verification_desc">跳过应用启动时的密码验证（仅用于开发测试）</string>
-    <string name="developer_passkey_hyperos_biometric_bypass">Passkey HyperOS 兼容</string>
-    <string name="developer_passkey_hyperos_biometric_bypass_desc">在 HyperOS 设备上跳过通行密钥生物识别，并回退到主密码。除非该设备生物识别弹窗异常，否则保持关闭。</string>
     <string name="developer_launcher_name_use_pass">主应用名称显示 bastionpass</string>
     <string name="developer_launcher_name_use_pass_desc">开启后桌面主入口显示 bastionpass，关闭后显示 bastionpass。只影响主入口名称。</string>
-    <string name="developer_bitwarden_forensics_toggle">启用 Bitwarden 同步取证</string>
-    <string name="developer_bitwarden_forensics_toggle_desc">记录脱敏同步快照（仅长度与计数，不记录明文）</string>
-    <string name="developer_bitwarden_forensics_raw_toggle">记录 Bitwarden 原始请求/响应</string>
-    <string name="developer_bitwarden_forensics_raw_toggle_desc">为同步与上传诊断保留强脱敏的请求/响应预览，敏感字段会脱敏且超长内容自动截断。</string>
-    <string name="developer_bitwarden_forensics_dir">取证输出目录</string>
-    <string name="developer_bitwarden_forensics_dir_not_set">未选择外部目录，日志仅保存在应用私有目录。</string>
-    <string name="developer_bitwarden_forensics_dir_selected">当前目录：%1$s</string>
-    <string name="developer_bitwarden_forensics_dir_saved">取证输出目录已保存</string>
-    <string name="developer_bitwarden_forensics_dir_permission_warning">目录已保存，但持久权限授予失败；如写入失败请重新选择目录。</string>
-    <string name="developer_bitwarden_forensics_clear_dir">清除取证输出目录</string>
-    <string name="developer_bitwarden_forensics_clear_dir_desc">停止镜像到外部存储，仅保留应用内部日志</string>
-    <string name="developer_bitwarden_forensics_dir_cleared">取证输出目录已清除</string>
     <string name="developer_warning">⚠️ 开发者功能仅供测试使用，请勿在生产环境中启用</string>
     <string name="developer_log_buffer_cleared">日志缓冲区已清除</string>
     <string name="developer_clear_failed">清除失败: %s</string>
@@ -2010,7 +1992,6 @@
     <string name="sync_backup_description">管理数据库、文件夹与备份</string>
     <string name="sync_backup_local">本地备份</string>
     <string name="sync_backup_cloud">云同步</string>
-    <string name="sync_backup_plus_hint">升级 Bastion Plus 解锁更多云同步功能</string>
 
     <string name="database_folder_management_title">数据库文件夹管理</string>
     <string name="folder_management_title">文件夹管理</string>
@@ -3131,15 +3112,6 @@
     <string name="keepass_webdav_not_configured">WebDAV 未配置</string>
     <string name="keepass_webdav_import_wrong_password">密码错误，无法解密数据库</string>
     <string name="keepass_webdav_import_invalid_database">无效的 KeePass 数据库文件</string>
-    <string name="developer_autofill_debug">自动填充调试</string>
-    <string name="developer_launch_autofill_v2_test">启动自动填充 V2 (测试)</string>
-    <string name="developer_launch_autofill_v2_desc">使用模拟数据打开自动填充界面，方便调试 UI 和逻辑</string>
-    <string name="developer_launch_failed">启动失败: %1$s</string>
-    <string name="developer_session_status">会话状态</string>
-    <string name="developer_session_unlocked_remaining">已解锁 (剩余 %1$d 分钟)</string>
-    <string name="developer_session_locked">已锁定</string>
-    <string name="developer_session_locked_toast">会话已锁定</string>
-    <string name="developer_session_unlocked_toast">会话已解锁</string>
     <string name="local_keepass_security_options">安全选项</string>
     <string name="local_keepass_use_key_file">使用密钥文件</string>
     <string name="local_keepass_use_key_file_desc">增加额外的安全层</string>
@@ -3170,35 +3142,7 @@
     <string name="local_keepass_select_key_file">选择密钥文件</string>
     <string name="local_keepass_no_key_file_selected">未选择密钥文件</string>
     <string name="local_keepass_key_file_selected">已选择密钥文件</string>
-    <string name="plus_feature_premium_themes_title">会员专属主题</string>
-    <string name="plus_feature_premium_themes_desc">解锁莫奈等专属主题配色。</string>
-    <string name="plus_feature_notification_validator_title">通知栏验证器</string>
-    <string name="plus_feature_notification_validator_desc">在通知栏固定显示 TOTP 验证码，随时查看。</string>
-    <string name="plus_feature_validator_vibration_title">验证器震动提醒</string>
-    <string name="plus_feature_validator_vibration_desc">验证码即将刷新时震动提醒，避免错过窗口。</string>
-    <string name="plus_feature_copy_next_code_title">智能复制下一个验证码</string>
-    <string name="plus_feature_copy_next_code_desc">倒计时剩余不足 5 秒时复制，自动复制下一个验证码。</string>
-    <string name="plus_feature_bitwarden_sync_title">Bitwarden 同步</string>
-    <string name="plus_feature_bitwarden_sync_desc">连接 Bitwarden，跨设备同步密码、卡片等数据。</string>
-    <string name="plus_feature_keepass_webdav_title">KeePass WebDAV</string>
-    <string name="plus_feature_keepass_webdav_desc">通过 WebDAV 与 KeePass（.kdbx）同步数据。</string>
-    <string name="bastion_plus_title">Bastion Plus</string>
-    <string name="bastion_plus_card_desc">求各位股东入资，月收益10块，买不起token了，要饿死了😭😭😭😭</string>
     <string name="click_to_pay">点击付款</string>
-    <string name="bastion_plus_features_title">Plus 功能</string>
-    <string name="bastion_plus_features_placeholder">更多功能敬请期待…</string>
-    <string name="plus_title">Bastion Plus</string>
-    <string name="plus_subtitle_active">已激活</string>
-    <string name="plus_subtitle_inactive">支持开发</string>
-    <string name="plus_description">求各位股东入资，月收益10块，买不起token了，要饿死了😭😭😭😭</string>
-    <string name="plus_activation_title">Plus 状态</string>
-    <string name="plus_status_activated">已激活</string>
-    <string name="plus_payment_button">点击付款</string>
-    <string name="plus_features_title">Plus 功能</string>
-    <string name="plus_feature_unlocked">已解锁</string>
-    <string name="plus_feature_locked">需要 Plus</string>
-    <string name="plus_thank_you">感谢你的支持！</string>
-    <string name="plus_payment_links_title">支付链接</string>
     <string name="page_adjust_custom_title">页面调整自定义</string>
     <string name="page_adjust_custom_subtitle">自定义页面布局与显示行为</string>
     <string name="password_list_customization_title">密码列表自定义</string>
@@ -3462,8 +3406,6 @@
     <string name="qs_step_password_card_subtitle">决定密码卡片直接显示哪些信息</string>
     <string name="qs_step_authenticator_card_title">验证器卡片调整</string>
     <string name="qs_step_authenticator_card_subtitle">决定验证码卡片的信息和进度显示</string>
-    <string name="qs_step_bastion_plus_title">Bastion Plus</string>
-    <string name="qs_step_bastion_plus_subtitle">最后决定是否开启更多扩展能力</string>
     <string name="qs_finish_dialog_title">初始化完成</string>
     <string name="qs_finish_dialog_message">不用担心，如果设置项有失误，稍后可以在设置里继续修改，你也可以从"功能拓展"中再次找到我</string>
     <string name="qs_finish">完成</string>
@@ -3532,11 +3474,6 @@
     <string name="qs_live_preview">实时预览</string>
     <string name="qs_preview_note_3_fields">卡片上只会显示已选择字段中的前 3 项。</string>
     <string name="qs_authenticator_preview_note">验证器卡片会按这里的字段和进度设置实时展示。</string>
-    <string name="qs_plus_activated">Bastion Plus 已开启</string>
-    <string name="qs_plus_prompt">是否要开启 Bastion Plus？</string>
-    <string name="qs_plus_activated_desc">Plus 能力已经可用，完成初始化后就可以继续使用。</string>
-    <string name="qs_plus_prompt_desc">如果你需要 Plus 配色、更多同步与扩展能力，可以现在去开启；不需要的话直接完成就行。</string>
-    <string name="qs_open_bastion_plus">打开 Bastion Plus</string>
     <string name="qs_yes">是</string>
     <string name="qs_no">不是</string>
 
@@ -3569,7 +3506,6 @@
     <string name="attachment_error_kdbx_locked">KeePass 数据库未解锁。</string>
     <string name="attachment_error_kdbx_capacity">文件过大，当前 KeePass 数据库无法容纳。</string>
 
-    <string name="attachment_upgrade_plus_action">前往 Bastion Plus</string>
     <string name="attachment_upgrade_bitwarden_action">了解如何升级 Bitwarden</string>
 
     <string name="attachment_kdbx_soft_limit_title">附件较大</string>
@@ -3730,7 +3666,6 @@
     <string name="passwords_title">Passwords</string>
     <string name="payment_kofi_link">ko-fi.com/joyinjoester</string>
     <string name="payment_page_title">支持作者</string>
-    <string name="payment_paid_button">我已付款，激活plus</string>
     <string name="payment_qr_code_title">收款二维码</string>
     <string name="previous">Previous</string>
     <string name="qr_authenticator_added">Authenticator added: %1$s</string>

@@ -366,36 +366,12 @@ class PasskeyAuthActivity : FragmentActivity() {
 
     private fun requestPasskeyUserVerification(passkey: PasskeyEntry) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val settings = SettingsManager(applicationContext).settingsFlow.first()
-            val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
-                romType = DeviceUtils.getROMType(),
-                isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
-                hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
-            )
-
             withContext(Dispatchers.Main) {
-                if (!shouldBypassBiometric) {
-                    requestBiometricAuth(passkey)
-                    return@withContext
-                }
-
-                repository.logAudit("PASSKEY_AUTH_BIOMETRIC_BYPASSED_HYPER_OS", passkey.credentialId)
-                recordPasskeyEvent(
-                    stage = "biometric_bypassed_hyperos",
-                    rpId = passkey.rpId,
-                    credentialId = passkey.credentialId,
-                )
-
-                if (securityManager.isMasterPasswordSet()) {
-                    showMasterPasswordDialog.value = true
-                    return@withContext
-                }
-
-                authenticateWithPasskey(pendingRequestJson, passkey)
+                requestBiometricAuth(passkey)
             }
         }
     }
-    
+
     /**
      * 请求生物识别验证
      * 只有通过生物识别后才能使用 Passkey 进行签名

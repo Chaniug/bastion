@@ -31,7 +31,6 @@ import com.bastion.app.data.SecureItem
 @Composable
 fun ExtensionsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToBastionPlus: () -> Unit = {},
     onNavigateToQuickSetup: () -> Unit = {},
     smartDeduplicationEnabled: Boolean = false,
     onSmartDeduplicationEnabledChange: (Boolean) -> Unit = {},

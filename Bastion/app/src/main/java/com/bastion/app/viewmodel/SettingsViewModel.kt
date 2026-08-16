@@ -108,16 +108,6 @@ class SettingsViewModel(
 
     fun updatePasswordSwipeSelectionMode(mode: PasswordSwipeSelectionMode) = commitUpdate { updatePasswordSwipeSelectionMode(mode) }
 
-    fun updateDisablePasswordVerification(disabled: Boolean) = commitUpdate { updateDisablePasswordVerification(disabled) }
-
-    fun updatePasskeyHyperOsBiometricBypassEnabled(enabled: Boolean) = commitUpdate { updatePasskeyHyperOsBiometricBypassEnabled(enabled) }
-
-    fun updateBitwardenSyncForensicsEnabled(enabled: Boolean) = commitUpdate { updateBitwardenSyncForensicsEnabled(enabled) }
-
-    fun updateBitwardenSyncForensicsDirectoryUri(uri: String?) = commitUpdate { updateBitwardenSyncForensicsDirectoryUri(uri) }
-
-    fun updateBitwardenSyncForensicsRawCaptureEnabled(enabled: Boolean) = commitUpdate { updateBitwardenSyncForensicsRawCaptureEnabled(enabled) }
-
     fun updateValidatorProgressBarStyle(style: com.bastion.app.data.ProgressBarStyle) = commitUpdate { updateValidatorProgressBarStyle(style) }
 
     fun updateValidatorUnifiedProgressBar(mode: com.bastion.app.data.UnifiedProgressBarMode) = commitUpdate { updateValidatorUnifiedProgressBar(mode) }
@@ -142,7 +132,6 @@ class SettingsViewModel(
 
     fun updateNotificationValidatorAutoMatch(enabled: Boolean) = commitUpdate { updateNotificationValidatorAutoMatch(enabled) }
 
-    fun updatePlusActivated(activated: Boolean) = commitUpdate { updatePlusActivated(activated) }
     
     fun updateUseDraggableBottomNav(enabled: Boolean) = commitUpdate { updateUseDraggableBottomNav(enabled) }
 

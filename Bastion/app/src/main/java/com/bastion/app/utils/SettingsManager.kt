@@ -183,15 +183,6 @@ class SettingsManager(private val context: Context) {
         private val USE_DRAGGABLE_BOTTOM_NAV_KEY = booleanPreferencesKey("use_draggable_bottom_nav")
         private val AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY =
             booleanPreferencesKey("auto_hide_bottom_nav_when_single_tab")
-        private val DISABLE_PASSWORD_VERIFICATION_KEY = booleanPreferencesKey("disable_password_verification")
-        private val PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY =
-            booleanPreferencesKey("passkey_hyperos_biometric_bypass_enabled")
-        private val BITWARDEN_SYNC_FORENSICS_ENABLED_KEY =
-            booleanPreferencesKey("bitwarden_sync_forensics_enabled")
-        private val BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY =
-            stringPreferencesKey("bitwarden_sync_forensics_directory_uri")
-        private val BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY =
-            booleanPreferencesKey("bitwarden_sync_forensics_raw_capture_enabled")
         private val VALIDATOR_PROGRESS_BAR_STYLE_KEY = stringPreferencesKey("validator_progress_bar_style")
         private val VALIDATOR_UNIFIED_PROGRESS_BAR_KEY = stringPreferencesKey("validator_unified_progress_bar")
         private val VALIDATOR_SMOOTH_PROGRESS_KEY = booleanPreferencesKey("validator_smooth_progress")
@@ -201,7 +192,6 @@ class SettingsManager(private val context: Context) {
         private val NOTIFICATION_VALIDATOR_ENABLED_KEY = booleanPreferencesKey("notification_validator_enabled")
         private val NOTIFICATION_VALIDATOR_AUTO_MATCH_KEY = booleanPreferencesKey("notification_validator_auto_match")
         private val NOTIFICATION_VALIDATOR_ID_KEY = longPreferencesKey("notification_validator_id")
-        private val IS_PLUS_ACTIVATED_KEY = booleanPreferencesKey("is_plus_activated")
         private val STACK_CARD_MODE_KEY = stringPreferencesKey("stack_card_mode")
         private val PASSWORD_GROUP_MODE_KEY = stringPreferencesKey("password_group_mode")
         private val PASSWORD_WEBSITE_STACK_MATCH_MODE_KEY =
@@ -495,7 +485,6 @@ class SettingsManager(private val context: Context) {
             preferences[PASSWORD_PAGE_VISIBLE_CONTENT_TYPES_KEY]
         ) ?: PasswordPageContentType.DEFAULT_VISIBLE_TYPES
 
-        val isPlusActivated = preferences[IS_PLUS_ACTIVATED_KEY] ?: true
 
         return AppSettings(
             themeMode = ThemeMode.valueOf(
@@ -537,15 +526,6 @@ class SettingsManager(private val context: Context) {
             useDraggableBottomNav = preferences[USE_DRAGGABLE_BOTTOM_NAV_KEY] ?: false,
             autoHideBottomNavWhenSingleTab =
                 preferences[AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY] ?: false,
-            disablePasswordVerification = preferences[DISABLE_PASSWORD_VERIFICATION_KEY] ?: false,
-            passkeyHyperOsBiometricBypassEnabled =
-                preferences[PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY] ?: false,
-            bitwardenSyncForensicsEnabled =
-                preferences[BITWARDEN_SYNC_FORENSICS_ENABLED_KEY] ?: false,
-            bitwardenSyncForensicsDirectoryUri =
-                preferences[BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY],
-            bitwardenSyncForensicsRawCaptureEnabled =
-                preferences[BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY] ?: false,
             validatorProgressBarStyle = runCatchingObserved {
                 val styleString = preferences[VALIDATOR_PROGRESS_BAR_STYLE_KEY]
                     ?: com.bastion.app.data.ProgressBarStyle.LINEAR.name
@@ -568,7 +548,6 @@ class SettingsManager(private val context: Context) {
             notificationValidatorEnabled = false,
             notificationValidatorAutoMatch = false,
             notificationValidatorId = -1L,
-            isPlusActivated = isPlusActivated,
             stackCardMode = preferences[STACK_CARD_MODE_KEY] ?: "AUTO",
             passwordGroupMode = preferences[PASSWORD_GROUP_MODE_KEY] ?: "smart",
             passwordWebsiteStackMatchMode =
@@ -847,40 +826,6 @@ class SettingsManager(private val context: Context) {
         }
     }
 
-    suspend fun updateDisablePasswordVerification(disabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[DISABLE_PASSWORD_VERIFICATION_KEY] = disabled
-        }
-    }
-
-    suspend fun updatePasskeyHyperOsBiometricBypassEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[BITWARDEN_SYNC_FORENSICS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsDirectoryUri(uri: String?) {
-        dataStore.edit { preferences ->
-            if (uri.isNullOrBlank()) {
-                preferences.remove(BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY)
-            } else {
-                preferences[BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY] = uri
-            }
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsRawCaptureEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY] = enabled
-        }
-    }
-
     suspend fun updateValidatorProgressBarStyle(style: com.bastion.app.data.ProgressBarStyle) {
         android.util.Log.d("SettingsManager", "Saving progress bar style: ${style.name}")
         dataStore.edit { preferences ->
@@ -940,12 +885,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updateNotificationValidatorId(id: Long) {
         dataStore.edit { preferences ->
             preferences[NOTIFICATION_VALIDATOR_ID_KEY] = -1L
-        }
-    }
-
-    suspend fun updatePlusActivated(activated: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[IS_PLUS_ACTIVATED_KEY] = activated
         }
     }
 

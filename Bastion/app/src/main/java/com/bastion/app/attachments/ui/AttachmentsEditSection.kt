@@ -71,7 +71,6 @@ data class AttachmentPendingDraft(
 @Composable
 fun AttachmentsEditSection(
     passwordId: Long,
-    isPlusActivated: Boolean,
     modifier: Modifier = Modifier,
     attachmentSource: AttachmentSource = AttachmentSource.LOCAL,
     keepassContext: AttachmentFacade.KeePassContext? = null,
@@ -116,7 +115,6 @@ fun AttachmentsEditSection(
                         parentPasswordId = passwordId,
                         source = attachmentSource,
                         uri = uri,
-                        isPlusActivated = isPlusActivated,
                         keepassContext = keepassContext,
                         kdbxSoftLimitAccepted = acceptSoftLimit
                     )
@@ -257,7 +255,6 @@ suspend fun flushPendingDraftsTo(
     context: android.content.Context,
     passwordId: Long,
     pendingDrafts: SnapshotStateList<AttachmentPendingDraft>,
-    isPlusActivated: Boolean,
     attachmentSource: AttachmentSource = AttachmentSource.LOCAL,
     keepassContext: AttachmentFacade.KeePassContext? = null,
     kdbxSoftLimitAccepted: Boolean = true
@@ -273,7 +270,6 @@ suspend fun flushPendingDraftsTo(
                     parentPasswordId = passwordId,
                     source = attachmentSource,
                     uri = draft.uri,
-                    isPlusActivated = isPlusActivated,
                     keepassContext = keepassContext,
                     kdbxSoftLimitAccepted = kdbxSoftLimitAccepted
                 )

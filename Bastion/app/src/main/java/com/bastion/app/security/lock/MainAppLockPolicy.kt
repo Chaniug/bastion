@@ -1,7 +1,6 @@
 package com.bastion.app.security.lock
 
 import android.content.Context
-import com.bastion.app.BuildConfig
 import com.bastion.app.security.SecurityManager
 
 /**
@@ -10,17 +9,13 @@ import com.bastion.app.security.SecurityManager
  * Allowed callers:
  * - MainActivity cold-start bootstrap
  * - MainActivity foreground restoration
- *
- * The developer setting `disablePasswordVerification` is intentionally scoped
- * to app startup because the setting text describes startup verification only.
  */
 object MainAppLockPolicy {
 
     fun resolveAccessState(
         securityManager: SecurityManager,
         context: Context,
-        autoLockMinutes: Int,
-        disablePasswordVerification: Boolean
+        autoLockMinutes: Int
     ): MainAppAccessState {
         val firstTime = !securityManager.isMasterPasswordSet()
         if (firstTime) {
@@ -29,15 +24,6 @@ object MainAppLockPolicy {
                 bypassEnabled = false,
                 canRestoreSession = false,
                 reason = "first_time_setup_required"
-            )
-        }
-
-        if (disablePasswordVerification && BuildConfig.DEBUG) {
-            return MainAppAccessState(
-                isFirstTime = false,
-                bypassEnabled = true,
-                canRestoreSession = false,
-                reason = "startup_password_verification_disabled"
             )
         }
 
