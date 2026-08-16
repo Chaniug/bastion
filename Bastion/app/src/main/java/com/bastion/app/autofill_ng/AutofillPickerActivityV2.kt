@@ -1572,7 +1572,6 @@ private fun AutofillPickerContent(
             PasswordVerificationContent(
                 modifier = Modifier.fillMaxSize(),
                 isFirstTime = false,
-                disablePasswordVerification = false,
                 biometricEnabled = biometricEnabled,
                 autoLockMinutes = autoLockMinutes,
                 persistVaultUnlockToSession = false,

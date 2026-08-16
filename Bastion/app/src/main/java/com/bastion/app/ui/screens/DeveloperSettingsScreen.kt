@@ -7,8 +7,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.horizontalScroll
@@ -81,14 +79,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bastion.app.BuildConfig
 import com.bastion.app.R
-import com.bastion.app.autofill_ng.AutofillPickerActivityV2
 import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.bitwarden.service.BitwardenDiagLogger
-import com.bastion.app.bitwarden.service.BitwardenSyncForensicsLogger
 import com.bastion.app.data.AppLauncherLabel
 import com.bastion.app.passkey.PasskeyValidationDiagnostics
 import com.bastion.app.security.SecurityDiagLogger
-import com.bastion.app.security.SessionManager
 import com.bastion.app.viewmodel.SettingsViewModel
 
 /**
@@ -107,63 +102,11 @@ fun DeveloperSettingsScreen(
     val scope = rememberCoroutineScope()
 
     var showDebugLogsDialog by remember { mutableStateOf(false) }
-    var disablePasswordVerification by remember { mutableStateOf(settings.disablePasswordVerification) }
-    var passkeyHyperOsBiometricBypassEnabled by remember {
-        mutableStateOf(settings.passkeyHyperOsBiometricBypassEnabled)
-    }
-    var bitwardenSyncForensicsEnabled by remember {
-        mutableStateOf(settings.bitwardenSyncForensicsEnabled)
-    }
-    var bitwardenSyncForensicsDirectoryUri by remember {
-        mutableStateOf(settings.bitwardenSyncForensicsDirectoryUri)
-    }
-    var bitwardenSyncForensicsRawCaptureEnabled by remember {
-        mutableStateOf(settings.bitwardenSyncForensicsRawCaptureEnabled)
-    }
     var appLauncherLabel by remember {
         mutableStateOf(settings.appLauncherLabel)
     }
-    LaunchedEffect(
-        settings.disablePasswordVerification,
-        settings.passkeyHyperOsBiometricBypassEnabled,
-        settings.bitwardenSyncForensicsEnabled,
-        settings.bitwardenSyncForensicsDirectoryUri,
-        settings.bitwardenSyncForensicsRawCaptureEnabled,
-        settings.appLauncherLabel
-    ) {
-        disablePasswordVerification = settings.disablePasswordVerification
-        passkeyHyperOsBiometricBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled
-        bitwardenSyncForensicsEnabled = settings.bitwardenSyncForensicsEnabled
-        bitwardenSyncForensicsDirectoryUri = settings.bitwardenSyncForensicsDirectoryUri
-        bitwardenSyncForensicsRawCaptureEnabled = settings.bitwardenSyncForensicsRawCaptureEnabled
+    LaunchedEffect(settings.appLauncherLabel) {
         appLauncherLabel = settings.appLauncherLabel
-    }
-
-    val forensicsDirectoryPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        if (uri == null) {
-            return@rememberLauncherForActivityResult
-        }
-
-        scope.launch {
-            val permissionsResult = runCatchingObserved {
-                val flags =
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                context.contentResolver.takePersistableUriPermission(uri, flags)
-            }
-
-            val uriString = uri.toString()
-            bitwardenSyncForensicsDirectoryUri = uriString
-            viewModel.updateBitwardenSyncForensicsDirectoryUri(uriString)
-
-            val toastMessage = if (permissionsResult.isSuccess) {
-                context.getString(R.string.developer_bitwarden_forensics_dir_saved)
-            } else {
-                context.getString(R.string.developer_bitwarden_forensics_dir_permission_warning)
-            }
-            Toast.makeText(context, toastMessage, Toast.LENGTH_SHORT).show()
-        }
     }
 
     // 准备共享元素 Modifier
@@ -269,39 +212,6 @@ fun DeveloperSettingsScreen(
             SettingsSection(
                 title = stringResource(R.string.developer_functions)
             ) {
-                if (BuildConfig.DEBUG) {
-                    SettingsItemWithSwitch(
-                        icon = Icons.Default.Lock,
-                        title = stringResource(R.string.developer_disable_password_verification),
-                        subtitle = stringResource(R.string.developer_disable_password_verification_desc),
-                        checked = disablePasswordVerification,
-                        onCheckedChange = { enabled ->
-                            android.util.Log.d("DeveloperSettings", "Toggling password verification: $enabled")
-                            disablePasswordVerification = enabled
-                            scope.launch {
-                                viewModel.updateDisablePasswordVerification(enabled)
-                                android.util.Log.d(
-                                    "DeveloperSettings",
-                                    "Password verification setting updated to: $enabled"
-                                )
-                            }
-                        }
-                    )
-                }
-
-                SettingsItemWithSwitch(
-                    icon = Icons.Default.WarningAmber,
-                    title = stringResource(R.string.developer_passkey_hyperos_biometric_bypass),
-                    subtitle = stringResource(R.string.developer_passkey_hyperos_biometric_bypass_desc),
-                    checked = passkeyHyperOsBiometricBypassEnabled,
-                    onCheckedChange = { enabled ->
-                        passkeyHyperOsBiometricBypassEnabled = enabled
-                        scope.launch {
-                            viewModel.updatePasskeyHyperOsBiometricBypassEnabled(enabled)
-                        }
-                    }
-                )
-
                 SettingsItemWithSwitch(
                     icon = Icons.Default.AutoAwesome,
                     title = stringResource(R.string.developer_launcher_name_use_pass),
@@ -319,128 +229,7 @@ fun DeveloperSettingsScreen(
                         }
                     }
                 )
-
-                SettingsItemWithSwitch(
-                    icon = Icons.Default.BugReport,
-                    title = stringResource(R.string.developer_bitwarden_forensics_toggle),
-                    subtitle = stringResource(R.string.developer_bitwarden_forensics_toggle_desc),
-                    checked = bitwardenSyncForensicsEnabled,
-                    onCheckedChange = { enabled ->
-                        bitwardenSyncForensicsEnabled = enabled
-                        scope.launch {
-                            viewModel.updateBitwardenSyncForensicsEnabled(enabled)
-                        }
-                    }
-                )
-
-                SettingsItemWithSwitch(
-                    icon = Icons.Default.WarningAmber,
-                    title = stringResource(R.string.developer_bitwarden_forensics_raw_toggle),
-                    subtitle = stringResource(R.string.developer_bitwarden_forensics_raw_toggle_desc),
-                    checked = bitwardenSyncForensicsRawCaptureEnabled,
-                    onCheckedChange = { enabled ->
-                        bitwardenSyncForensicsRawCaptureEnabled = enabled
-                        scope.launch {
-                            viewModel.updateBitwardenSyncForensicsRawCaptureEnabled(enabled)
-                        }
-                    }
-                )
-
-                val directorySubtitle = bitwardenSyncForensicsDirectoryUri
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { rawUri ->
-                        context.getString(
-                            R.string.developer_bitwarden_forensics_dir_selected,
-                            summarizeDocumentTreeUri(rawUri)
-                        )
-                    }
-                    ?: stringResource(R.string.developer_bitwarden_forensics_dir_not_set)
-
-                SettingsItem(
-                    icon = Icons.Default.Share,
-                    title = stringResource(R.string.developer_bitwarden_forensics_dir),
-                    subtitle = directorySubtitle,
-                    onClick = {
-                        val initialUri = bitwardenSyncForensicsDirectoryUri
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { Uri.parse(it) }
-                        forensicsDirectoryPickerLauncher.launch(initialUri)
-                    }
-                )
-
-                SettingsItem(
-                    icon = Icons.Default.DeleteSweep,
-                    title = stringResource(R.string.developer_bitwarden_forensics_clear_dir),
-                    subtitle = stringResource(R.string.developer_bitwarden_forensics_clear_dir_desc),
-                    onClick = {
-                        bitwardenSyncForensicsDirectoryUri = null
-                        scope.launch {
-                            viewModel.updateBitwardenSyncForensicsDirectoryUri(null)
-                        }
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.developer_bitwarden_forensics_dir_cleared),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
             }
-            SettingsSection(
-                title = stringResource(R.string.developer_autofill_debug)
-            ) {
-                SettingsItem(
-                    icon = Icons.Default.AutoAwesome,
-                    title = stringResource(R.string.developer_launch_autofill_v2_test),
-                    subtitle = stringResource(R.string.developer_launch_autofill_v2_desc),
-                    onClick = {
-                        try {
-                            val testIntent = AutofillPickerActivityV2.getTestIntent(context)
-                            context.startActivity(testIntent)
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.developer_launch_failed, e.message),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                )
-
-                // 显示会话状态
-                if (BuildConfig.DEBUG) {
-                    val sessionUnlocked by SessionManager.isUnlocked.collectAsState()
-                    val remainingMinutes = SessionManager.getRemainingMinutes()
-
-                    SettingsItem(
-                        icon = if (sessionUnlocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                        title = stringResource(R.string.developer_session_status),
-                        subtitle = if (sessionUnlocked) {
-                            stringResource(R.string.developer_session_unlocked_remaining, remainingMinutes)
-                        } else {
-                            stringResource(R.string.developer_session_locked)
-                        },
-                        onClick = {
-                            // 手动锁定/解锁会话（用于测试）
-                            if (sessionUnlocked) {
-                                SessionManager.markLocked()
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.developer_session_locked_toast),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                SessionManager.markUnlocked()
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.developer_session_unlocked_toast),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // 警告提示
@@ -481,15 +270,6 @@ fun DeveloperSettingsScreen(
             onDismiss = { showDebugLogsDialog = false }
         )
     }
-}
-
-private fun summarizeDocumentTreeUri(uriRaw: String): String {
-    val parsed = runCatchingObserved { Uri.parse(uriRaw) }.getOrNull()
-    val name = parsed?.lastPathSegment
-        ?.substringAfterLast(':')
-        ?.substringAfterLast('/')
-        ?.takeIf { it.isNotBlank() }
-    return name ?: uriRaw.take(64)
 }
 
 /**
@@ -751,7 +531,6 @@ private object DeveloperLogDebugHelper {
     suspend fun collectLogs(context: Context): DeveloperLogSnapshot = withContext(Dispatchers.IO) {
         runCatchingObserved { AutofillLogger.initialize(context.applicationContext) }
         runCatchingObserved { BitwardenDiagLogger.initialize(context.applicationContext) }
-        runCatchingObserved { BitwardenSyncForensicsLogger.initialize(context.applicationContext) }
         runCatchingObserved { SecurityDiagLogger.initialize(context.applicationContext) }
         val myPid = android.os.Process.myPid().toString()
         // 合并为一整次 logcat dump 后客户端按 PID / 标签 / 崩溃切分，
@@ -792,11 +571,6 @@ private object DeveloperLogDebugHelper {
             BitwardenDiagLogger.exportPersistedLogs(2000)
         }.getOrElse {
             "Bitwarden persisted logs unavailable: ${it.message}"
-        }
-        val persistedForensicsLogs = runCatchingObserved {
-            BitwardenSyncForensicsLogger.exportPersistedLogs(context, 12)
-        }.getOrElse {
-            "Bitwarden sync forensics logs unavailable: ${it.message}"
         }
         val persistedSecurityLogs = runCatchingObserved {
             SecurityDiagLogger.exportPersistedLogs(2000)
@@ -841,13 +615,6 @@ private object DeveloperLogDebugHelper {
                 appendLine(persistedBitwardenLogs.trim())
             }
             appendLine()
-            appendLine("=== Bitwarden Sync Forensics ===")
-            if (persistedForensicsLogs.isBlank()) {
-                appendLine(context.getString(R.string.developer_no_logs))
-            } else {
-                appendLine(persistedForensicsLogs.trim())
-            }
-            appendLine()
             appendLine("=== Security Persisted Logs ===")
             if (persistedSecurityLogs.isBlank()) {
                 appendLine(context.getString(R.string.developer_no_logs))
@@ -866,12 +633,10 @@ private object DeveloperLogDebugHelper {
         val parsedSystem = parseLines(selectedLogs)
         val parsedPersisted = parseLines(persistedAutofillLogs)
         val parsedBitwarden = parseLines(persistedBitwardenLogs)
-        val parsedForensics = parseLines(persistedForensicsLogs)
         val parsedSecurity = parseLines(persistedSecurityLogs)
         val parsed = when {
             parsedSystem.isNotEmpty() -> parsedSystem
             parsedSecurity.isNotEmpty() -> parsedSecurity
-            parsedForensics.isNotEmpty() -> parsedForensics
             parsedBitwarden.isNotEmpty() -> parsedBitwarden
             parsedPersisted.isNotEmpty() -> parsedPersisted
             else -> parseLines(autofillLogs)
@@ -885,9 +650,6 @@ private object DeveloperLogDebugHelper {
         }
         runCatchingObserved {
             BitwardenDiagLogger.clear()
-        }
-        runCatchingObserved {
-            BitwardenSyncForensicsLogger.clear(context.applicationContext)
         }
         runCatchingObserved {
             SecurityDiagLogger.clear()

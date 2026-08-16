@@ -728,22 +728,7 @@ class CipherUploadProcessor(
         success: Boolean,
         error: String? = null
     ) {
-        runCatchingObserved {
-            BitwardenSyncForensicsLogger.captureRawExchange(
-                context = context,
-                vaultId = vaultId,
-                operation = operation,
-                method = method,
-                endpoint = endpoint,
-                requestBody = requestBody,
-                responseCode = responseCode,
-                responseBody = responseBody,
-                success = success,
-                errorMessage = error
-            )
-        }.onFailure { captureError ->
-            android.util.Log.w(TAG, "Capture raw exchange failed: ${captureError.message}")
-        }
+        // 取证采集已移除（BitwardenSyncForensicsLogger 已删除）；保留方法签名以避免改动多处调用点。
     }
 
     private fun logBitwardenSecureItemEditHistory(

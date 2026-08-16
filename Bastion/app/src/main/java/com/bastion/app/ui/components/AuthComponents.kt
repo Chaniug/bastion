@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import com.bastion.app.BuildConfig
 import com.bastion.app.R
 import com.bastion.app.security.MasterPasswordPolicy
 import com.bastion.app.security.SecurityManager
@@ -35,7 +34,6 @@ fun PasswordVerificationContent(
     modifier: Modifier = Modifier,
     isFirstTime: Boolean = false,
     isConfirmingPassword: Boolean = false,
-    disablePasswordVerification: Boolean = false,
     biometricEnabled: Boolean = false,
     autoLockMinutes: Int = 5,
     persistVaultUnlockToSession: Boolean = true,
@@ -183,17 +181,6 @@ fun PasswordVerificationContent(
             )
         }
         
-        if (!isFirstTime && disablePasswordVerification && BuildConfig.DEBUG) {
-            Text(
-                text = stringResource(R.string.developer_mode_password_disabled),
-                color = MaterialTheme.colorScheme.tertiary,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
-        }
-        
         Spacer(modifier = Modifier.height(32.dp))
         
         // Master Password Field
@@ -244,12 +231,6 @@ fun PasswordVerificationContent(
         // Login/Setup Button
         Button(
             onClick = {
-                // 如果已存在主密码且关闭了密码验证,直接通过
-                if (!isFirstTime && disablePasswordVerification && BuildConfig.DEBUG) {
-                    completeAuthentication()
-                    return@Button
-                }
-                
                 if (isFirstTime) {
                     // 首次设置密码
                     if (!internalIsConfirming) {
@@ -282,8 +263,7 @@ fun PasswordVerificationContent(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = disablePasswordVerification ||
-                (if (internalIsConfirming) confirmPassword else masterPassword).isNotEmpty()
+            enabled = (if (internalIsConfirming) confirmPassword else masterPassword).isNotEmpty()
         ) {
             Text(
                 text = when {

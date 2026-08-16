@@ -506,35 +506,8 @@ class PasskeyCreateActivity : FragmentActivity() {
 
     private fun requestPasskeyUserVerificationBeforeCreate() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val settings = SettingsManager(applicationContext).settingsFlow.first()
-            val shouldBypassBiometric = PasskeyBiometricCompatibilityPolicy.shouldBypassBiometricForPasskey(
-                romType = DeviceUtils.getROMType(),
-                isBypassEnabled = settings.passkeyHyperOsBiometricBypassEnabled,
-                hasHyperOsSystemProperty = DeviceUtils.isHyperOsSystemPropertyPresent(),
-            )
-
             withContext(Dispatchers.Main) {
-                if (!shouldBypassBiometric) {
-                    requestBiometricAuth()
-                    return@withContext
-                }
-
-                repository.logAudit("PASSKEY_CREATE_BIOMETRIC_BYPASSED_HYPER_OS", pendingRpId)
-                recordPasskeyEvent(stage = "biometric_bypassed_hyperos")
-
-                if (securityManager.isMasterPasswordSet()) {
-                    showMasterPasswordDialog.value = true
-                    return@withContext
-                }
-
-                lifecycleScope.launch(Dispatchers.IO) {
-                    createPasskey(
-                        pendingRequestJson,
-                        pendingRpId,
-                        pendingUserName,
-                        pendingUserDisplayName,
-                    )
-                }
+                requestBiometricAuth()
             }
         }
     }

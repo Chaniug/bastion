@@ -183,15 +183,6 @@ class SettingsManager(private val context: Context) {
         private val USE_DRAGGABLE_BOTTOM_NAV_KEY = booleanPreferencesKey("use_draggable_bottom_nav")
         private val AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY =
             booleanPreferencesKey("auto_hide_bottom_nav_when_single_tab")
-        private val DISABLE_PASSWORD_VERIFICATION_KEY = booleanPreferencesKey("disable_password_verification")
-        private val PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY =
-            booleanPreferencesKey("passkey_hyperos_biometric_bypass_enabled")
-        private val BITWARDEN_SYNC_FORENSICS_ENABLED_KEY =
-            booleanPreferencesKey("bitwarden_sync_forensics_enabled")
-        private val BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY =
-            stringPreferencesKey("bitwarden_sync_forensics_directory_uri")
-        private val BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY =
-            booleanPreferencesKey("bitwarden_sync_forensics_raw_capture_enabled")
         private val VALIDATOR_PROGRESS_BAR_STYLE_KEY = stringPreferencesKey("validator_progress_bar_style")
         private val VALIDATOR_UNIFIED_PROGRESS_BAR_KEY = stringPreferencesKey("validator_unified_progress_bar")
         private val VALIDATOR_SMOOTH_PROGRESS_KEY = booleanPreferencesKey("validator_smooth_progress")
@@ -535,15 +526,6 @@ class SettingsManager(private val context: Context) {
             useDraggableBottomNav = preferences[USE_DRAGGABLE_BOTTOM_NAV_KEY] ?: false,
             autoHideBottomNavWhenSingleTab =
                 preferences[AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY] ?: false,
-            disablePasswordVerification = preferences[DISABLE_PASSWORD_VERIFICATION_KEY] ?: false,
-            passkeyHyperOsBiometricBypassEnabled =
-                preferences[PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY] ?: false,
-            bitwardenSyncForensicsEnabled =
-                preferences[BITWARDEN_SYNC_FORENSICS_ENABLED_KEY] ?: false,
-            bitwardenSyncForensicsDirectoryUri =
-                preferences[BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY],
-            bitwardenSyncForensicsRawCaptureEnabled =
-                preferences[BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY] ?: false,
             validatorProgressBarStyle = runCatchingObserved {
                 val styleString = preferences[VALIDATOR_PROGRESS_BAR_STYLE_KEY]
                     ?: com.bastion.app.data.ProgressBarStyle.LINEAR.name
@@ -841,40 +823,6 @@ class SettingsManager(private val context: Context) {
             preferences[CUSTOM_TERTIARY_COLOR_KEY] = tertiary
             preferences[CUSTOM_NEUTRAL_COLOR_KEY] = neutral
             preferences[CUSTOM_NEUTRAL_VARIANT_COLOR_KEY] = neutralVariant
-        }
-    }
-
-    suspend fun updateDisablePasswordVerification(disabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[DISABLE_PASSWORD_VERIFICATION_KEY] = disabled
-        }
-    }
-
-    suspend fun updatePasskeyHyperOsBiometricBypassEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[PASSKEY_HYPEROS_BIOMETRIC_BYPASS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[BITWARDEN_SYNC_FORENSICS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsDirectoryUri(uri: String?) {
-        dataStore.edit { preferences ->
-            if (uri.isNullOrBlank()) {
-                preferences.remove(BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY)
-            } else {
-                preferences[BITWARDEN_SYNC_FORENSICS_DIRECTORY_URI_KEY] = uri
-            }
-        }
-    }
-
-    suspend fun updateBitwardenSyncForensicsRawCaptureEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[BITWARDEN_SYNC_FORENSICS_RAW_CAPTURE_ENABLED_KEY] = enabled
         }
     }
 

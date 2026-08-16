@@ -5,7 +5,6 @@ package com.bastion.app.security.lock
  *
  * Scope:
  * - Used only by main-process startup and foreground restoration.
- * - `disablePasswordVerification` may affect this state only for app startup.
  * - Secondary verification points must use their own explicit password or biometric checks.
  */
 data class MainAppAccessState(

@@ -584,8 +584,7 @@ fun BastionApp(
                 MainAppLockPolicy.resolveAccessState(
                     securityManager,
                     context.applicationContext,
-                    settingsSnapshot.autoLockMinutes,
-                    settingsSnapshot.disablePasswordVerification
+                    settingsSnapshot.autoLockMinutes
                 )
             }.getOrElse {
                 MainAppAccessState(
@@ -752,7 +751,6 @@ fun BastionContent(
     val mainAppAccessState = remember(
         isAuthenticated,
         settings.autoLockMinutes,
-        settings.disablePasswordVerification,
         initialAuthState
     ) {
         if (isAuthenticated) {
@@ -761,8 +759,7 @@ fun BastionContent(
             MainAppLockPolicy.resolveAccessState(
                 securityManager,
                 context.applicationContext,
-                settings.autoLockMinutes,
-                settings.disablePasswordVerification
+                settings.autoLockMinutes
             )
         }
     }
@@ -786,12 +783,11 @@ fun BastionContent(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
-                    val accessState = MainAppLockPolicy.resolveAccessState(
-                        securityManager,
-                        context.applicationContext,
-                        currentSettings.autoLockMinutes,
-                        currentSettings.disablePasswordVerification
-                    )
+                val accessState = MainAppLockPolicy.resolveAccessState(
+                    securityManager,
+                    context.applicationContext,
+                    currentSettings.autoLockMinutes
+                )
 
                     if (!currentIsAuthenticated && accessState.canEnterMainApp) {
                         android.util.Log.d(

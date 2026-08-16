@@ -23,7 +23,6 @@ fun LoginScreen(
     
     // 获取设置
     val settings = settingsViewModel?.settings?.collectAsState()?.value
-    val disablePasswordVerification = settings?.disablePasswordVerification ?: false
     val biometricEnabled = settings?.biometricEnabled ?: false
     val autoLockMinutes = settings?.autoLockMinutes ?: 5
 
@@ -39,7 +38,6 @@ fun LoginScreen(
         PasswordVerificationContent(
             modifier = Modifier.fillMaxSize(),
             isFirstTime = isFirstTime,
-            disablePasswordVerification = disablePasswordVerification,
             biometricEnabled = biometricEnabled,
             autoLockMinutes = autoLockMinutes,
             onVerifyPassword = { password -> 

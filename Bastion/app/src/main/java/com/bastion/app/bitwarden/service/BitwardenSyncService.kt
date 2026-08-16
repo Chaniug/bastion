@@ -148,31 +148,6 @@ class BitwardenSyncService(
                 return@withContext SyncResult.Error("Empty sync response")
             }
 
-            val rawForensicsEnabled = runCatchingObserved {
-                BitwardenSyncForensicsLogger.isRawCaptureEnabled(context)
-            }.getOrDefault(false)
-            if (rawForensicsEnabled) {
-                captureRawExchange(
-                    vaultId = vault.id,
-                    operation = "sync_full",
-                    method = "GET",
-                    endpoint = "/sync?excludeDomains=true",
-                    requestBody = null,
-                    responseCode = response.code(),
-                    responseBody = buildSyncFullRawSummary(syncResponse),
-                    success = true
-                )
-                runCatchingObserved {
-                    BitwardenSyncForensicsLogger.captureSyncCipherSnapshots(
-                        context = context,
-                        vaultId = vault.id,
-                        ciphers = syncResponse.ciphers
-                    )
-                }.onFailure { captureError ->
-                    android.util.Log.w(TAG, "Capture sync cipher snapshots failed: ${captureError.message}")
-                }
-            }
-            
             // ===== 空 Vault 保护检查 =====
             val serverCipherCount = syncResponse.ciphers.size
             val localCipherCount = passwordEntryDao.getBitwardenEntriesCount(vault.id)
@@ -262,23 +237,12 @@ class BitwardenSyncService(
         // Send 防回收的双重保护基线：本次 sync 启动时刻。
         // 任何 created_at >= 这个值的 send，都会被 deleteNotInProtectingDirty 视作"本次 sync 之后才出现"。
         val syncStartedAtMs = System.currentTimeMillis()
-        val forensicsSession = BitwardenSyncForensicsLogger.startSession(
-            context = context,
-            vaultId = vault.id,
-            response = response
-        )
         var foldersAdded = 0
         var ciphersAdded = 0
         var ciphersUpdated = 0
         var conflictsDetected = 0
         var skippedDueToLocalDirty = 0
         var sendsSynced = 0
-        val forensicsCollector: ((BitwardenSyncForensicsSummary) -> Unit)? =
-            if (forensicsSession.enabled) {
-                { summary -> BitwardenSyncForensicsLogger.recordCipher(forensicsSession, summary) }
-            } else {
-                null
-            }
         val activeServerCipherIds = response.ciphers
             .asSequence()
             .filter { it.deletedDate == null }
@@ -334,8 +298,7 @@ class BitwardenSyncService(
                     val result = cipherSyncProcessor.syncCipherFromServer(
                         vault = vault,
                         cipher = cipherApi,
-                        symmetricKey = symmetricKey,
-                        forensicsCollector = forensicsCollector
+                        symmetricKey = symmetricKey
                     )
                     when (result) {
                         is CipherSyncResult.Added -> ciphersAdded++
@@ -392,18 +355,6 @@ class BitwardenSyncService(
                     }
                 } catch (e: Exception) {
                     android.util.Log.w(TAG, "Failed to sync cipher ${cipherApi.id}: ${e.message}")
-                    BitwardenSyncForensicsLogger.recordCipher(
-                        forensicsSession,
-                        BitwardenSyncForensicsSummary(
-                            cipherId = cipherApi.id,
-                            cipherType = cipherApi.type,
-                            syncOutcome = "ERROR",
-                            deleted = cipherApi.deletedDate != null,
-                            revisionMillis = parseRevisionMillis(cipherApi.revisionDate),
-                            customFieldCount = cipherApi.fields?.size ?: 0,
-                            message = e.message?.take(200)
-                        )
-                    )
                 }
             }
 
@@ -454,14 +405,8 @@ class BitwardenSyncService(
                 conflictsDetected = conflictsDetected,
                 skippedDueToLocalDirty = skippedDueToLocalDirty
             )
-            BitwardenSyncForensicsLogger.finishSession(context, forensicsSession, successResult)
             return successResult
         } catch (e: Exception) {
-            BitwardenSyncForensicsLogger.finishSession(
-                context,
-                forensicsSession,
-                SyncResult.Error("processSyncResponse failed: ${e.message ?: "unknown"}")
-            )
             throw e
         }
     }
@@ -1356,22 +1301,7 @@ class BitwardenSyncService(
         success: Boolean,
         error: String? = null
     ) {
-        runCatchingObserved {
-            BitwardenSyncForensicsLogger.captureRawExchange(
-                context = context,
-                vaultId = vaultId,
-                operation = operation,
-                method = method,
-                endpoint = endpoint,
-                requestBody = requestBody,
-                responseCode = responseCode,
-                responseBody = responseBody,
-                success = success,
-                errorMessage = error
-            )
-        }.onFailure { captureError ->
-            android.util.Log.w(TAG, "Capture raw exchange failed: ${captureError.message}")
-        }
+        // 取证采集已移除（BitwardenSyncForensicsLogger 已删除）；保留方法签名以避免改动多处调用点。
     }
 
     private fun logBitwardenPasswordEditHistory(
@@ -1582,22 +1512,6 @@ class BitwardenSyncService(
         return "${vaultId}:$cipherId".hashCode().toLong() and 0x7FFFFFFFL
     }
 
-    private fun buildSyncFullRawSummary(response: SyncResponse): String {
-        return json.encodeToString(
-            SyncFullRawSummary(
-                profileIdDigest = response.profile.id.takeIf { it.isNotBlank() }?.let { shortSha(it) },
-                emailDigest = response.profile.email.takeIf { it.isNotBlank() }?.let { shortSha(it.lowercase()) },
-                premium = response.profile.hasPremium,
-                folderCount = response.folders.size,
-                cipherCount = response.ciphers.size,
-                activeCipherCount = response.ciphers.count { it.deletedDate == null },
-                collectionCount = response.collections?.size ?: 0,
-                policyCount = response.policies?.size ?: 0,
-                sendCount = response.sends?.size ?: 0
-            )
-        )
-    }
-    
     /**
      * 删除远程 Cipher
      */
@@ -2390,22 +2304,6 @@ class BitwardenSyncService(
         }
     }
 }
-
-@Serializable
-private data class SyncFullRawSummary(
-    val schemaVersion: Int = 1,
-    val rawResponseOmitted: Boolean = true,
-    val reason: String = "sync_full success response can be very large; per-cipher snapshots are captured separately",
-    val profileIdDigest: String? = null,
-    val emailDigest: String? = null,
-    val premium: Boolean = false,
-    val folderCount: Int = 0,
-    val cipherCount: Int = 0,
-    val activeCipherCount: Int = 0,
-    val collectionCount: Int = 0,
-    val policyCount: Int = 0,
-    val sendCount: Int = 0
-)
 
 // ========== 同步结果 ==========
 
