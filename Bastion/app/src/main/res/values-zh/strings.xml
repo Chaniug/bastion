@@ -617,6 +617,14 @@
     <string name="kdbx_password_hint">此密码用于加密 KDBX 文件，请牢记密码。导入时需要输入此密码。</string>
     <string name="kdbx_import_password_title">输入 KDBX 密码</string>
     <string name="kdbx_import_password_hint">请输入用于解密此 KDBX 文件的密码</string>
+    <string name="export_option_bitwarden_json">Bitwarden JSON（明文）</string>
+    <string name="export_option_bitwarden_json_desc">导出为 Bitwarden 兼容的明文 JSON，可被 Bitwarden 官方导入，或用 bw2keepass 转换为 KeePass 等格式。</string>
+    <string name="export_option_bitwarden_encrypted_json">Bitwarden JSON（加密）</string>
+    <string name="export_option_bitwarden_encrypted_json_desc">以密码保护信封导出加密 JSON，结构与 bw2keepass 对称，导入时需输入导出密码。</string>
+    <string name="encrypted_json_password_title">设置加密导出密码</string>
+    <string name="encrypted_json_password_hint">此密码用于加密导出的 JSON 文件，请牢记。导入或转换时需要输入此密码。</string>
+    <string name="export_success_bitwarden_json">已导出 Bitwarden 明文 JSON</string>
+    <string name="export_success_bitwarden_encrypted_json">已导出 Bitwarden 加密 JSON</string>
     <string name="import_data_btn">导入</string>
     
     <string name="import_data_warning_title">警告</string>
@@ -2939,6 +2947,10 @@
     <string name="import_type_keepass_format_title">KeePass 格式</string>
     <string name="import_type_keepass_format_desc">导入 KeePass 兼容的 .kdbx 数据库文件</string>
     <string name="import_type_keepass_format_file_hint">选择 .kdbx 文件</string>
+    <string name="import_type_bitwarden_json_title">Bitwarden JSON</string>
+    <string name="import_type_bitwarden_json_desc">导入 Bitwarden 导出的 JSON 文件（明文或密码保护加密）</string>
+    <string name="import_type_bitwarden_json_file_hint">选择 Bitwarden .json 文件</string>
+    <string name="import_data_bitwarden_json_import_success_count">成功导入 %d 条 Bitwarden 数据</string>
     <string name="import_type_csv_data_title">CSV 数据</string>
     <string name="import_type_csv_data_desc">导入 Bastion / KeePass / Bitwarden / Proton Pass / 密码键盘软件 的 CSV 文件</string>
     <string name="import_type_csv_data_file_hint">选择 .csv 文件</string>
