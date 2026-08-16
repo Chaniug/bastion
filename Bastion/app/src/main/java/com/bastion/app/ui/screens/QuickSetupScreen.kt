@@ -1054,7 +1054,6 @@ private fun AuthenticatorCardLivePreview(
     }
 }
 
-@Composable
 private fun togglePasswordCardField(
     fields: List<PasswordCardDisplayField>,
     field: PasswordCardDisplayField,
