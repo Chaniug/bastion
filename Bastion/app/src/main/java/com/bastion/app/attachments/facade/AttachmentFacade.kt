@@ -34,7 +34,7 @@ import java.io.OutputStream
  * [UploadRequest] 或 [BitwardenContext] 中显式传入，避免把附件逻辑与业务模块互锁。
  *
  * 职责分工：
- * - Quota / Size 校验：[AttachmentQuotaPolicy]、[AttachmentSizeValidator]
+ * - Size 校验：[AttachmentSizeValidator]
  * - 字节加解密：executor 层（Local / Bitwarden / KeePass）
  * - Room 事务：通过 [AttachmentRepository]
  *
@@ -66,7 +66,6 @@ class AttachmentFacade(
         val parentPasswordId: Long,
         val source: AttachmentSource,
         val uri: Uri,
-        val isPlusActivated: Boolean,
         val bitwardenPremium: Boolean = true,
         val kdbxSoftLimitAccepted: Boolean = false,
         val bitwardenContext: BitwardenContext? = null,
@@ -107,11 +106,7 @@ class AttachmentFacade(
      */
     suspend fun addAttachment(request: UploadRequest): Attachment = withContext(Dispatchers.IO) {
         try {
-            // 1. Quota（仅本地/Bitwarden/KeePass 都一致地受 Plus 限制）
-            val existingCount = repository.countActive(request.parentPasswordId)
-            AttachmentQuotaPolicy.check(existingCount, request.isPlusActivated)?.let { throw it }
-
-            // 2. Size / 类型上限
+            // 1. Size / 类型上限
             val meta = AttachmentUriMetadata.resolve(context, request.uri)
             if (meta.sizeBytes >= 0) {
                 val validation = AttachmentSizeValidator.validate(

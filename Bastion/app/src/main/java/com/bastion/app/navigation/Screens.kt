@@ -193,8 +193,6 @@ sealed class Screen(val route: String) {
     object AddButtonCustomization : Screen("add_button_customization") // 兼容旧路由：已并入密码列表自定义
     object SyncBackup : Screen("sync_backup")  // 同步与备份页面路由
     object LocalKeePass : Screen("local_keepass")  // 本地 KeePass 数据库页面
-    object BastionPlus : Screen("bastion_plus") // Bastion Plus 页面
-    object Payment : Screen("payment") // 付款页面
     
     // Bitwarden 集成相关路由
     object BitwardenLogin : Screen("bitwarden_login")  // Bitwarden 登录页面

@@ -18,8 +18,7 @@ import java.io.InputStream
  * 本地附件读写执行器：负责把 SAF URI 流式落盘为加密密文，
  * 并在解码时还原 [InputStream]。
  *
- * 不承担配额/大小校验，那些由上游 [com.bastion.app.attachments.facade.AttachmentQuotaPolicy]
- * 与 [com.bastion.app.attachments.facade.AttachmentSizeValidator] 处理。
+ * 不承担大小校验，那些由上游 [com.bastion.app.attachments.facade.AttachmentSizeValidator] 处理。
  */
 class LocalAttachmentExecutor(
     private val context: Context,

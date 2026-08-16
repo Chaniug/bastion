@@ -142,7 +142,6 @@ class SettingsViewModel(
 
     fun updateNotificationValidatorAutoMatch(enabled: Boolean) = commitUpdate { updateNotificationValidatorAutoMatch(enabled) }
 
-    fun updatePlusActivated(activated: Boolean) = commitUpdate { updatePlusActivated(activated) }
     
     fun updateUseDraggableBottomNav(enabled: Boolean) = commitUpdate { updateUseDraggableBottomNav(enabled) }
 

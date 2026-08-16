@@ -156,10 +156,6 @@ private enum class QuickSetupStep(
     AUTHENTICATOR_CARD(
         titleRes = R.string.qs_step_authenticator_card_title,
         subtitleRes = R.string.qs_step_authenticator_card_subtitle
-    ),
-    MONICA_PLUS(
-        titleRes = R.string.qs_step_bastion_plus_title,
-        subtitleRes = R.string.qs_step_bastion_plus_subtitle
     )
 }
 
@@ -176,8 +172,7 @@ fun QuickSetupScreen(
     onOpenBitwardenSettings: () -> Unit,
     onOpenWebDavBackup: () -> Unit,
     onOpenLocalKeePass: () -> Unit,
-    onOpenImportData: () -> Unit,
-    onOpenBastionPlus: () -> Unit
+    onOpenImportData: () -> Unit
 ) {
     val settings by settingsViewModel.settings.collectAsState()
     val steps = remember { QuickSetupStep.values().toList() }
@@ -226,7 +221,7 @@ fun QuickSetupScreen(
                 total = steps.size,
                 primaryText = when (step) {
                     QuickSetupStep.WELCOME -> stringResource(R.string.qs_start)
-                    QuickSetupStep.MONICA_PLUS -> stringResource(R.string.qs_finish)
+                    QuickSetupStep.AUTHENTICATOR_CARD -> stringResource(R.string.qs_finish)
                     else -> stringResource(R.string.qs_next)
                 },
                 onBack = if (stepIndex > 0) {
@@ -397,11 +392,6 @@ fun QuickSetupScreen(
                                 )
                             },
                             onSmoothProgressChange = settingsViewModel::updateValidatorSmoothProgress
-                        )
-
-                        QuickSetupStep.MONICA_PLUS -> BastionPlusStep(
-                            isPlusActivated = true,
-                            onOpenBastionPlus = onOpenBastionPlus
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -1065,24 +1055,6 @@ private fun AuthenticatorCardLivePreview(
 }
 
 @Composable
-private fun BastionPlusStep(
-    isPlusActivated: Boolean,
-    onOpenBastionPlus: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            text = stringResource(R.string.qs_plus_activated),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = stringResource(R.string.qs_plus_activated_desc),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
 private fun togglePasswordCardField(
     fields: List<PasswordCardDisplayField>,
     field: PasswordCardDisplayField,

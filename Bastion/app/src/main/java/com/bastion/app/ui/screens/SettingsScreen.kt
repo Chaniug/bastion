@@ -99,7 +99,6 @@ fun SettingsScreen(
     onSecurityAnalysis: () -> Unit = {},
     onNavigateToDeveloperSettings: () -> Unit = {},
     onNavigateToPermissionManagement: () -> Unit = {},
-    onNavigateToBastionPlus: () -> Unit = {},
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToPageCustomization: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { _, _, _, _, _, _ -> },

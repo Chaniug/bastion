@@ -201,7 +201,6 @@ class SettingsManager(private val context: Context) {
         private val NOTIFICATION_VALIDATOR_ENABLED_KEY = booleanPreferencesKey("notification_validator_enabled")
         private val NOTIFICATION_VALIDATOR_AUTO_MATCH_KEY = booleanPreferencesKey("notification_validator_auto_match")
         private val NOTIFICATION_VALIDATOR_ID_KEY = longPreferencesKey("notification_validator_id")
-        private val IS_PLUS_ACTIVATED_KEY = booleanPreferencesKey("is_plus_activated")
         private val STACK_CARD_MODE_KEY = stringPreferencesKey("stack_card_mode")
         private val PASSWORD_GROUP_MODE_KEY = stringPreferencesKey("password_group_mode")
         private val PASSWORD_WEBSITE_STACK_MATCH_MODE_KEY =
@@ -495,7 +494,6 @@ class SettingsManager(private val context: Context) {
             preferences[PASSWORD_PAGE_VISIBLE_CONTENT_TYPES_KEY]
         ) ?: PasswordPageContentType.DEFAULT_VISIBLE_TYPES
 
-        val isPlusActivated = preferences[IS_PLUS_ACTIVATED_KEY] ?: true
 
         return AppSettings(
             themeMode = ThemeMode.valueOf(
@@ -568,7 +566,6 @@ class SettingsManager(private val context: Context) {
             notificationValidatorEnabled = false,
             notificationValidatorAutoMatch = false,
             notificationValidatorId = -1L,
-            isPlusActivated = isPlusActivated,
             stackCardMode = preferences[STACK_CARD_MODE_KEY] ?: "AUTO",
             passwordGroupMode = preferences[PASSWORD_GROUP_MODE_KEY] ?: "smart",
             passwordWebsiteStackMatchMode =
@@ -940,12 +937,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updateNotificationValidatorId(id: Long) {
         dataStore.edit { preferences ->
             preferences[NOTIFICATION_VALIDATOR_ID_KEY] = -1L
-        }
-    }
-
-    suspend fun updatePlusActivated(activated: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[IS_PLUS_ACTIVATED_KEY] = activated
         }
     }
 

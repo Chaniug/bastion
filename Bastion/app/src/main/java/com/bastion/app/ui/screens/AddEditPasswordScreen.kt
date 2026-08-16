@@ -1620,7 +1620,6 @@ fun AddEditPasswordScreen(
                                 context = context,
                                 passwordId = firstPasswordId,
                                 pendingDrafts = pendingAttachmentDrafts,
-                                isPlusActivated = true,
                                 attachmentSource = if (draftKeePassContext != null) {
                                     com.bastion.app.attachments.model.AttachmentSource.KEEPASS
                                 } else {
@@ -2784,7 +2783,6 @@ fun AddEditPasswordScreen(
                     }
                     com.bastion.app.attachments.ui.AttachmentsEditSection(
                         passwordId = passwordId ?: -1L,
-                        isPlusActivated = true,
                         attachmentSource = if (editKeePassContext != null) {
                             com.bastion.app.attachments.model.AttachmentSource.KEEPASS
                         } else {

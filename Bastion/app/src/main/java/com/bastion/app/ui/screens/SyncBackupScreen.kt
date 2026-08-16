@@ -116,8 +116,7 @@ fun SyncBackupScreen(
                     title = stringResource(R.string.webdav_backup),
                     description = stringResource(R.string.webdav_backup_description),
                     onClick = onNavigateToWebDav,
-                    enabled = true,
-                    badge = null
+                    enabled = true
                 )
 
                 HorizontalDivider(
@@ -130,8 +129,7 @@ fun SyncBackupScreen(
                     title = stringResource(R.string.onedrive_backup_title),
                     description = stringResource(R.string.onedrive_backup_description),
                     onClick = onNavigateToOneDrive,
-                    enabled = true,
-                    badge = null
+                    enabled = true
                 )
 
                 HorizontalDivider(
@@ -144,8 +142,7 @@ fun SyncBackupScreen(
                     title = stringResource(R.string.sync_backup_bitwarden_sync_title),
                     description = stringResource(R.string.sync_backup_bitwarden_sync_desc),
                     onClick = onNavigateToBitwarden,
-                    enabled = true,
-                    badge = null
+                    enabled = true
                 )
             }
 
@@ -244,8 +241,7 @@ private fun SyncBackupItem(
     title: String,
     description: String,
     onClick: () -> Unit,
-    enabled: Boolean = true,
-    badge: String? = null
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -293,22 +289,6 @@ private fun SyncBackupItem(
                     else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-                
-                // Plus 徽章
-                if (badge != null) {
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.tertiaryContainer
-                    ) {
-                        Text(
-                            badge,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
             }
             
             Text(

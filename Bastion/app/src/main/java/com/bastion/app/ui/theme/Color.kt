@@ -235,7 +235,6 @@ val TechPurpleOutlineDark = Color(0xFF948E99)
 val TechPurpleOutlineVariantDark = Color(0xFF49454E)
 
 // ============================================
-// 🐱 Catppuccin palettes (Plus)
 // Values pick official palette accents with M3E-compliant contrast.
 // ============================================
 

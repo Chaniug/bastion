@@ -399,7 +399,6 @@ fun ColorSchemeSelectionList(
             }
         )
 
-        // Catppuccin (Plus exclusive)
         ColorSchemeOption(
             colorScheme = ColorScheme.CATPPUCCIN_LATTE,
             name = stringResource(R.string.catppuccin_latte_scheme),

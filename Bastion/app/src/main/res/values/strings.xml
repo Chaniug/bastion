@@ -2010,7 +2010,6 @@
     <string name="sync_backup_description">管理数据库、文件夹与备份</string>
     <string name="sync_backup_local">本地备份</string>
     <string name="sync_backup_cloud">云同步</string>
-    <string name="sync_backup_plus_hint">升级 Bastion Plus 解锁更多云同步功能</string>
 
     <string name="database_folder_management_title">数据库文件夹管理</string>
     <string name="folder_management_title">文件夹管理</string>
@@ -3170,35 +3169,7 @@
     <string name="local_keepass_select_key_file">选择密钥文件</string>
     <string name="local_keepass_no_key_file_selected">未选择密钥文件</string>
     <string name="local_keepass_key_file_selected">已选择密钥文件</string>
-    <string name="plus_feature_premium_themes_title">会员专属主题</string>
-    <string name="plus_feature_premium_themes_desc">解锁莫奈等专属主题配色。</string>
-    <string name="plus_feature_notification_validator_title">通知栏验证器</string>
-    <string name="plus_feature_notification_validator_desc">在通知栏固定显示 TOTP 验证码，随时查看。</string>
-    <string name="plus_feature_validator_vibration_title">验证器震动提醒</string>
-    <string name="plus_feature_validator_vibration_desc">验证码即将刷新时震动提醒，避免错过窗口。</string>
-    <string name="plus_feature_copy_next_code_title">智能复制下一个验证码</string>
-    <string name="plus_feature_copy_next_code_desc">倒计时剩余不足 5 秒时复制，自动复制下一个验证码。</string>
-    <string name="plus_feature_bitwarden_sync_title">Bitwarden 同步</string>
-    <string name="plus_feature_bitwarden_sync_desc">连接 Bitwarden，跨设备同步密码、卡片等数据。</string>
-    <string name="plus_feature_keepass_webdav_title">KeePass WebDAV</string>
-    <string name="plus_feature_keepass_webdav_desc">通过 WebDAV 与 KeePass（.kdbx）同步数据。</string>
-    <string name="bastion_plus_title">Bastion Plus</string>
-    <string name="bastion_plus_card_desc">求各位股东入资，月收益10块，买不起token了，要饿死了😭😭😭😭</string>
     <string name="click_to_pay">点击付款</string>
-    <string name="bastion_plus_features_title">Plus 功能</string>
-    <string name="bastion_plus_features_placeholder">更多功能敬请期待…</string>
-    <string name="plus_title">Bastion Plus</string>
-    <string name="plus_subtitle_active">已激活</string>
-    <string name="plus_subtitle_inactive">支持开发</string>
-    <string name="plus_description">求各位股东入资，月收益10块，买不起token了，要饿死了😭😭😭😭</string>
-    <string name="plus_activation_title">Plus 状态</string>
-    <string name="plus_status_activated">已激活</string>
-    <string name="plus_payment_button">点击付款</string>
-    <string name="plus_features_title">Plus 功能</string>
-    <string name="plus_feature_unlocked">已解锁</string>
-    <string name="plus_feature_locked">需要 Plus</string>
-    <string name="plus_thank_you">感谢你的支持！</string>
-    <string name="plus_payment_links_title">支付链接</string>
     <string name="page_adjust_custom_title">页面调整自定义</string>
     <string name="page_adjust_custom_subtitle">自定义页面布局与显示行为</string>
     <string name="password_list_customization_title">密码列表自定义</string>
@@ -3462,8 +3433,6 @@
     <string name="qs_step_password_card_subtitle">决定密码卡片直接显示哪些信息</string>
     <string name="qs_step_authenticator_card_title">验证器卡片调整</string>
     <string name="qs_step_authenticator_card_subtitle">决定验证码卡片的信息和进度显示</string>
-    <string name="qs_step_bastion_plus_title">Bastion Plus</string>
-    <string name="qs_step_bastion_plus_subtitle">最后决定是否开启更多扩展能力</string>
     <string name="qs_finish_dialog_title">初始化完成</string>
     <string name="qs_finish_dialog_message">不用担心，如果设置项有失误，稍后可以在设置里继续修改，你也可以从"功能拓展"中再次找到我</string>
     <string name="qs_finish">完成</string>
@@ -3532,11 +3501,6 @@
     <string name="qs_live_preview">实时预览</string>
     <string name="qs_preview_note_3_fields">卡片上只会显示已选择字段中的前 3 项。</string>
     <string name="qs_authenticator_preview_note">验证器卡片会按这里的字段和进度设置实时展示。</string>
-    <string name="qs_plus_activated">Bastion Plus 已开启</string>
-    <string name="qs_plus_prompt">是否要开启 Bastion Plus？</string>
-    <string name="qs_plus_activated_desc">Plus 能力已经可用，完成初始化后就可以继续使用。</string>
-    <string name="qs_plus_prompt_desc">如果你需要 Plus 配色、更多同步与扩展能力，可以现在去开启；不需要的话直接完成就行。</string>
-    <string name="qs_open_bastion_plus">打开 Bastion Plus</string>
     <string name="qs_yes">是</string>
     <string name="qs_no">不是</string>
 
@@ -3569,7 +3533,6 @@
     <string name="attachment_error_kdbx_locked">KeePass 数据库未解锁。</string>
     <string name="attachment_error_kdbx_capacity">文件过大，当前 KeePass 数据库无法容纳。</string>
 
-    <string name="attachment_upgrade_plus_action">前往 Bastion Plus</string>
     <string name="attachment_upgrade_bitwarden_action">了解如何升级 Bitwarden</string>
 
     <string name="attachment_kdbx_soft_limit_title">附件较大</string>
@@ -3730,7 +3693,6 @@
     <string name="passwords_title">Passwords</string>
     <string name="payment_kofi_link">ko-fi.com/joyinjoester</string>
     <string name="payment_page_title">支持作者</string>
-    <string name="payment_paid_button">我已付款，激活plus</string>
     <string name="payment_qr_code_title">收款二维码</string>
     <string name="previous">Previous</string>
     <string name="qr_authenticator_added">Authenticator added: %1$s</string>

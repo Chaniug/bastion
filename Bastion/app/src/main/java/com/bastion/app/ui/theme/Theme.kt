@@ -687,7 +687,6 @@ private val ParliamentFogDarkColorScheme = darkColorScheme(
 )
 
 // ============================================
-// 🐱 Catppuccin (Plus)
 // ============================================
 private val CatLatteLightColorScheme = lightColorScheme(
     primary = CatLattePrimary,

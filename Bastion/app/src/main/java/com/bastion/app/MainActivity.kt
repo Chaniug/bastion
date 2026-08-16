@@ -120,8 +120,6 @@ import com.bastion.app.ui.screens.SecurityQuestionsSetupScreen
 import com.bastion.app.ui.screens.SecurityQuestionsVerificationScreen
 import com.bastion.app.ui.screens.SettingsScreen
 import com.bastion.app.ui.screens.PermissionManagementScreen
-import com.bastion.app.ui.screens.BastionPlusScreen
-import com.bastion.app.ui.screens.PaymentScreen
 import com.bastion.app.ui.screens.SupportAuthorScreen
 import com.bastion.app.ui.screens.OneDriveBackupScreen
 import com.bastion.app.ui.screens.WebDavBackupScreen
@@ -1162,9 +1160,6 @@ fun BastionContent(
                 },
                 onNavigateToPermissionManagement = {
                     navController.navigate(Screen.PermissionManagement.route)
-                },
-                onNavigateToBastionPlus = {
-                    android.util.Log.d("MainActivity", "Navigating to Bastion Plus"); navController.navigate(Screen.BastionPlus.route)
                 },
                 onNavigateToExtensions = {
                     navController.navigate(Screen.Extensions.route)
@@ -2628,9 +2623,6 @@ fun BastionContent(
                 onNavigateToPermissionManagement = {
                     navController.navigate(Screen.PermissionManagement.route)
                 },
-                onNavigateToBastionPlus = {
-                    android.util.Log.d("MainActivity", "Navigating to Bastion Plus"); navController.navigate(Screen.BastionPlus.route)
-                },
                 onNavigateToExtensions = {
                     navController.navigate(Screen.Extensions.route)
                 },
@@ -3088,9 +3080,6 @@ fun BastionContent(
                 },
                 onOpenImportData = {
                     navController.navigate(Screen.ImportData.route)
-                },
-                onOpenBastionPlus = {
-                    navController.navigate(Screen.BastionPlus.route)
                 }
             )
         }
@@ -3129,9 +3118,6 @@ fun BastionContent(
             com.bastion.app.ui.screens.ExtensionsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onNavigateToBastionPlus = {
-                    navController.navigate(Screen.BastionPlus.route)
                 },
                 onNavigateToQuickSetup = {
                     navController.navigate(Screen.QuickSetup.route)
@@ -3508,40 +3494,6 @@ fun BastionContent(
             }
         }
 
-        composable(
-            route = Screen.BastionPlus.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-            val settings by settingsViewModel.settings.collectAsState()
-            androidx.compose.runtime.CompositionLocalProvider(
-                com.bastion.app.ui.LocalAnimatedVisibilityScope provides this
-            ) {
-            BastionPlusScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        }
-
-        composable(
-            route = Screen.Payment.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
-        ) {
-
-            PaymentScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        
         // Bitwarden 登录页面
         composable(
             route = Screen.BitwardenLogin.route,
