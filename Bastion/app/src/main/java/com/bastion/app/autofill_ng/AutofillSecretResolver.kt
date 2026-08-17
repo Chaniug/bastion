@@ -3,6 +3,7 @@ package com.bastion.app.autofill_ng
 import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import android.util.Log
+import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.security.SecurityManager
 
 /**
@@ -27,7 +28,21 @@ object AutofillSecretResolver {
             securityManager.decryptData(encryptedOrPlain)
         }.onFailure { e ->
             Log.w(logTag, "Password decrypt failed for autofill entry", e)
+            AutofillLogger.w(
+                "SECRET",
+                "Password decrypt failed for autofill entry",
+                metadata = mapOf(
+                    "logTag" to logTag,
+                    "error" to (e.message ?: e::class.java.simpleName),
+                    "looksEncrypted" to looksEncryptedPayload(encryptedOrPlain)
+                )
+            )
         }.getOrNull() ?: return if (looksEncryptedPayload(encryptedOrPlain)) {
+            AutofillLogger.w(
+                "SECRET",
+                "Encrypted payload unresolved, returning null (may trigger auth-callback demotion)",
+                metadata = mapOf("logTag" to logTag)
+            )
             null
         } else {
             encryptedOrPlain
@@ -35,6 +50,11 @@ object AutofillSecretResolver {
 
         if (decrypted == encryptedOrPlain && looksEncryptedPayload(encryptedOrPlain)) {
             Log.w(logTag, "Password decrypt unresolved, skipping encrypted payload")
+            AutofillLogger.w(
+                "SECRET",
+                "Password decrypt unresolved (decrypted==encrypted), skipping encrypted payload",
+                metadata = mapOf("logTag" to logTag)
+            )
             return null
         }
 

@@ -132,6 +132,7 @@ class FillResponseBuilderNg(
             request = request
         )
 
+        val demotedToAuthCount = filledData.filledPartitions.count { it.requiresAuthentication }
         android.util.Log.i(
             TAG,
             "build result: cipherDatasets=$cipherDatasetCount, " +
@@ -139,6 +140,7 @@ class FillResponseBuilderNg(
                 "strongPasswordDataset=${if (strongPasswordDataset != null) 1 else 0}, " +
                 "vaultDataset=1, fillableIds=${fillableAutofillIds.size}, " +
                 "suggestedIds=${filledData.filledPartitions.count { it.autofillCipher.cipherId != null }}, " +
+                "demotedToAuth=$demotedToAuthCount, " +
                 "authRequired=$requireAuthentication, sdk=${Build.VERSION.SDK_INT}, " +
                 "callbackCipherDatasets=$callbackCipherDatasetCount"
         )
@@ -152,6 +154,7 @@ class FillResponseBuilderNg(
                 "vaultDataset" to true,
                 "fillableIds" to fillableAutofillIds.size,
                 "suggestedIds" to filledData.filledPartitions.count { it.autofillCipher.cipherId != null },
+                "demotedToAuth" to demotedToAuthCount,
                 "authRequired" to requireAuthentication,
                 "sdk" to Build.VERSION.SDK_INT,
                 "callbackCipherDatasets" to callbackCipherDatasetCount,
