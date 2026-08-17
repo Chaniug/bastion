@@ -86,7 +86,13 @@ class BastionAutofillServiceNg : AutofillService() {
      * 仅当缓存的所有登录字段 AutofillId 仍存在于当前 AssistStructure 时才整体回补，
      * 避免注入失效 id。
      */
-    private val passwordMemoryByPackage = mutableMapOf<String, List<ParsedItem>>()
+    // LruCache(16)：限制无界增长，accessOrder=true 使最近访问置尾，淘汰最久未用。
+    // 原 mutableMapOf 无上限，长期运行的 autofill 进程切换 App 时不断累积 ParsedItem（含 AutofillId）。
+    private val passwordMemoryByPackage =
+        object : LinkedHashMap<String, List<ParsedItem>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: Map.Entry<String, List<ParsedItem>>): Boolean =
+                size > 16
+        }
 
     private data class RecentFillSuggestions(
         val key: String,
