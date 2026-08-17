@@ -138,6 +138,7 @@ class BastionAutofillServiceNg : AutofillService() {
     private var screenOffReceiverRegistered = false
     @Volatile
     private var recentFillSuggestions: RecentFillSuggestions? = null
+    private val recentFillSuggestionsLock = Any()
 
     override fun onCreate() {
         super.onCreate()
@@ -998,39 +999,42 @@ class BastionAutofillServiceNg : AutofillService() {
         targetCount: Int,
     ): List<PasswordEntry> {
         val now = System.currentTimeMillis()
-        val cached = recentFillSuggestions
-        val cachedIsUsable = cached != null &&
-            cached.key == key &&
-            now - cached.createdAtMs <= RESPONSE_STABILITY_WINDOW_MS &&
-            cached.targetCount >= targetCount &&
-            cached.passwords.size > matchedPasswords.size
+        // synchronized 防并发 onFillRequest 先读后写竞态（两个请求可能互相覆盖缓存）。
+        synchronized(recentFillSuggestionsLock) {
+            val cached = recentFillSuggestions
+            val cachedIsUsable = cached != null &&
+                cached.key == key &&
+                now - cached.createdAtMs <= RESPONSE_STABILITY_WINDOW_MS &&
+                cached.targetCount >= targetCount &&
+                cached.passwords.size > matchedPasswords.size
 
-        if (cachedIsUsable) {
-            AutofillLogger.w(
-                "AF",
-                "Reusing recent stronger fill suggestions",
-                metadata = mapOf(
-                    "requestId" to requestId,
-                    "previousRequestId" to cached!!.requestId,
-                    "ageMs" to (now - cached.createdAtMs),
-                    "previousMatches" to cached.passwords.size,
-                    "currentMatches" to matchedPasswords.size,
-                    "targetCount" to targetCount,
-                ),
-            )
-            return cached.passwords
-        }
+            if (cachedIsUsable) {
+                AutofillLogger.w(
+                    "AF",
+                    "Reusing recent stronger fill suggestions",
+                    metadata = mapOf(
+                        "requestId" to requestId,
+                        "previousRequestId" to cached!!.requestId,
+                        "ageMs" to (now - cached.createdAtMs),
+                        "previousMatches" to cached.passwords.size,
+                        "currentMatches" to matchedPasswords.size,
+                        "targetCount" to targetCount,
+                    ),
+                )
+                return cached.passwords
+            }
 
-        if (matchedPasswords.isNotEmpty()) {
-            recentFillSuggestions = RecentFillSuggestions(
-                key = key,
-                createdAtMs = now,
-                requestId = requestId,
-                targetCount = targetCount,
-                passwords = matchedPasswords,
-            )
+            if (matchedPasswords.isNotEmpty()) {
+                recentFillSuggestions = RecentFillSuggestions(
+                    key = key,
+                    createdAtMs = now,
+                    requestId = requestId,
+                    targetCount = targetCount,
+                    passwords = matchedPasswords,
+                )
+            }
+            return matchedPasswords
         }
-        return matchedPasswords
     }
 
     private suspend fun resolveLastFilledEntry(
