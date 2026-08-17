@@ -2,7 +2,7 @@ package com.bastion.app.autofill_ng
 
 import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.data.PasswordEntry
-import java.net.URL
+import java.net.URI
 import java.util.Locale
 
 /**
@@ -305,7 +305,8 @@ class BitwardenLikeAutofillMatcherNg {
         if (raw.startsWith("androidapp://")) return null
 
         val fullValue = if (raw.contains("://")) raw else "https://$raw"
-        val parsedHost = runCatchingObserved { URL(fullValue).host }
+        // URI 比 URL 轻：不做 URLStreamHandler 查找与网络相关校验，纯语法解析，热路径更省。
+        val parsedHost = runCatchingObserved { URI(fullValue).host }
             .getOrNull()
             ?.trim()
             ?.lowercase(Locale.ROOT)

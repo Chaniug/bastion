@@ -42,7 +42,7 @@ import com.bastion.app.keepass.KeePassPendingChangeDao
         // KeePass entry-level pending changes
         KeePassPendingChange::class
     ],
-    version = 74,
+    version = 75,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -2220,6 +2220,16 @@ abstract class PasswordDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_74_75 = object : androidx.room.migration.Migration(74, 75) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // 覆盖 autofill/列表常用查询：WHERE isDeleted AND isArchived ORDER BY isFavorite, sortOrder
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_password_entries_active_favorite_sort` " +
+                        "ON `password_entries` (`isDeleted`, `isArchived`, `isFavorite`, `sortOrder`)"
+                )
+            }
+        }
+
         /**
          * 通用表重建辅助：通过 PRAGMA 动态读取旧表结构，
          * 去掉指定列后建新表并拷贝数据（SQLite < 3.35 不支持 DROP COLUMN），
@@ -2412,7 +2422,8 @@ abstract class PasswordDatabase : RoomDatabase() {
                         MIGRATION_70_71,   // KeePass pending base snapshots
                         MIGRATION_71_72,   // KeePass sync state updated timestamp
                         MIGRATION_72_73,   // Encrypted timeline version snapshots
-                        MIGRATION_73_74    // Remove MDBX: drop tables + drop columns
+                        MIGRATION_73_74,   // Remove MDBX: drop tables + drop columns
+                        MIGRATION_74_75    // 覆盖 autofill/列表查询的复合索引
                     )
                     // 启用多进程失效通知：IME 跑在 :ime 独立进程，主进程需要
                     // 感知 IME 进程对数据库的修改（例如最近填充时间戳等）。

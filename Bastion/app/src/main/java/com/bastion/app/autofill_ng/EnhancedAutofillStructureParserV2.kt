@@ -17,6 +17,14 @@ class EnhancedAutofillStructureParserV2 {
     private companion object {
         private val PACKAGE_NAME_REGEX =
             Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
+        // 正则静态化：避免每次 EnhancedAutofillStructureParserV2() 实例化重编译。
+        private val autofillLabelCreditCardNumberTranslations = listOf(
+            ".*(credit|debit|card)+.*number.*".toRegex(),
+            ".*(cc|card)[-_ ]?(no|num|number).*".toRegex(),
+            ".*银行卡号.*".toRegex(),
+            ".*信用卡号.*".toRegex(),
+            ".*卡号.*".toRegex(),
+        )
     }
 
     data class ParsedStructure(
@@ -215,14 +223,6 @@ class EnhancedAutofillStructureParserV2 {
         "майл",
         "电子邮箱",
         "電子郵箱",
-    )
-
-    private val autofillLabelCreditCardNumberTranslations = listOf(
-        ".*(credit|debit|card)+.*number.*".toRegex(),
-        ".*(cc|card)[-_ ]?(no|num|number).*".toRegex(),
-        ".*银行卡号.*".toRegex(),
-        ".*信用卡号.*".toRegex(),
-        ".*卡号.*".toRegex(),
     )
 
     private val autofillLabelCreditCardSecurityCodeTranslations = listOf(
@@ -819,6 +819,42 @@ class EnhancedAutofillStructureParserV2 {
                     parentWebViewNodeId = selectedItem.parentWebViewNodeId,
                     traversalIndex = selectedItem.traversalIndex,
                 )
+
+                // 对齐 Bitwarden：账户覆盖密码冲突时，不彻底丢弃密码候选。
+                // Via/系统 WebView 在 PayPal 等站点会把用户名/密码框分配相同 autofillId，
+                // 落入同组后被上面策略丢弃 → fillableTargets 无 PASSWORD → 密码框填不进。
+                // 这里把被丢弃的最高分密码候选追加为独立 ParsedItem(PASSWORD)，使密码框
+                // 重新进入可填目标。同 autofillId 多 hint：框架对同 id 的 setValue 以目标框
+                // 实际类型为准，非密码框不接受 password 值，不会造成错误填充。
+                val droppedPassword = fieldRoleSelection.droppedPasswordCandidate
+                if (droppedPassword != null) {
+                    val passwordMappedHint = mapHint(droppedPassword.hint)
+                    if (passwordMappedHint != null) {
+                        items += ParsedItem(
+                            id = groupedById.key,
+                            hint = passwordMappedHint,
+                            value = droppedPassword.value,
+                            accuracy = droppedPassword.accuracy,
+                            isFocused = droppedPassword.isFocused,
+                            isVisible = droppedPassword.isVisible,
+                            parentWebViewNodeId = droppedPassword.parentWebViewNodeId,
+                            traversalIndex = droppedPassword.traversalIndex,
+                        )
+                        AutofillLogger.i(
+                            "PARSING",
+                            "Dropped password candidate retained as independent target",
+                            metadata = mapOf(
+                                "groupId" to groupedById.key.toString(),
+                                "passwordHint" to passwordMappedHint.name,
+                                "passwordAccuracy" to droppedPassword.accuracy.name,
+                                "passwordScore" to droppedPassword.score.toString(),
+                                "focused" to droppedPassword.isFocused,
+                                "visible" to droppedPassword.isVisible,
+                                "traversalIndex" to droppedPassword.traversalIndex,
+                            ),
+                        )
+                    }
+                }
             }
 
         // 诊断：记录 groupBy 后每组被跳过的原因，排查 loginFilteredCount>0 但 parsedItems=0

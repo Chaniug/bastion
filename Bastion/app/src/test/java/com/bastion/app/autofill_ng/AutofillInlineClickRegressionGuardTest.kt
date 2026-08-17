@@ -32,8 +32,8 @@ class AutofillInlineClickRegressionGuardTest {
             cipherDatasetBody.contains("createNoopPendingIntent")
         )
         assertTrue(
-            "Inline alone must not wrap direct-fill suggestions; Dataset authentication is only for locked authenticated suggestions.",
-            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication)") &&
+            "Inline alone must not wrap direct-fill suggestions; Dataset authentication is only for locked authenticated suggestions (or WebView forceDatasetAuth aligned with Bitwarden).",
+            cipherDatasetBody.contains("val authPendingIntent = if (partition.requiresAuthentication || partition.forceDatasetAuth)") &&
                 cipherDatasetBody.contains("if (authPendingIntent != null)") &&
                 cipherDatasetBody.contains("datasetBuilder.setAuthentication(authPendingIntent.intentSender)")
         )

@@ -4,6 +4,7 @@ import android.content.Context
 import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.utils.SettingsManager
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -89,16 +90,28 @@ object AutofillConfigCache {
                     autoLockMinutes = settings.autoLockMinutes
                     separateUsernameAccountEnabled = settings.separateUsernameAccountEnabled
                     autofillAuthRequired = settings.autofillAuthRequired
-                    isInlineSuggestionsEnabled = prefs.isInlineSuggestionsEnabled.first()
-                    isAutofillEnabled = prefs.isAutofillEnabled.first()
-                    isV2RespectAutofillOffEnabled = prefs.isV2RespectAutofillOffEnabled.first()
-                    v2DefaultSourceFilter = prefs.v2DefaultSourceFilter.first()
-                    v2DefaultKeepassDatabaseId = prefs.v2DefaultKeepassDatabaseId.first()
-                    v2DefaultBitwardenVaultId = prefs.v2DefaultBitwardenVaultId.first()
-                    isBitwardenStrictModeEnabled = prefs.isBitwardenStrictModeEnabled.first()
-                    isBitwardenSubdomainMatchEnabled = prefs.isBitwardenSubdomainMatchEnabled.first()
-                    domainMatchStrategy = prefs.domainMatchStrategy.first()
-                    isPasswordSuggestionEnabled = prefs.isPasswordSuggestionEnabled.first()
+                    // 并行读取 10 个独立 Flow，避免串行 .first() 累加超时（低端机/IO 抖动）。
+                    // 各类型不同，不能 awaitAll 解构；用 async 各自启动 + 集中 await 实现并行。
+                    val dInline = async { prefs.isInlineSuggestionsEnabled.first() }
+                    val dEnabled = async { prefs.isAutofillEnabled.first() }
+                    val dRespectOff = async { prefs.isV2RespectAutofillOffEnabled.first() }
+                    val dFilter = async { prefs.v2DefaultSourceFilter.first() }
+                    val dKeepassId = async { prefs.v2DefaultKeepassDatabaseId.first() }
+                    val dBwId = async { prefs.v2DefaultBitwardenVaultId.first() }
+                    val dStrict = async { prefs.isBitwardenStrictModeEnabled.first() }
+                    val dSubdomain = async { prefs.isBitwardenSubdomainMatchEnabled.first() }
+                    val dStrategy = async { prefs.domainMatchStrategy.first() }
+                    val dSuggestion = async { prefs.isPasswordSuggestionEnabled.first() }
+                    isInlineSuggestionsEnabled = dInline.await()
+                    isAutofillEnabled = dEnabled.await()
+                    isV2RespectAutofillOffEnabled = dRespectOff.await()
+                    v2DefaultSourceFilter = dFilter.await()
+                    v2DefaultKeepassDatabaseId = dKeepassId.await()
+                    v2DefaultBitwardenVaultId = dBwId.await()
+                    isBitwardenStrictModeEnabled = dStrict.await()
+                    isBitwardenSubdomainMatchEnabled = dSubdomain.await()
+                    domainMatchStrategy = dStrategy.await()
+                    isPasswordSuggestionEnabled = dSuggestion.await()
                 }
             }
         }.onFailure {

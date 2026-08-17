@@ -72,6 +72,11 @@ class BastionAutofillServiceNg : AutofillService() {
         private const val RESPONSE_STABILITY_WINDOW_MS = 2_000L
         private const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
         private val fillRequestSequence = AtomicLong(0L)
+        // SHA-256 digest 复用：避免每次 onFillRequest 都 MessageDigest.getInstance（含 Provider 查找）。
+        // ThreadLocal 保证线程安全（autofill 服务回调可能并发）。digest() 调用后自动 reset。
+        private val shaDigest by lazy {
+            ThreadLocal.withInitial { MessageDigest.getInstance("SHA-256") }
+        }
     }
 
     /**
@@ -81,7 +86,13 @@ class BastionAutofillServiceNg : AutofillService() {
      * 仅当缓存的所有登录字段 AutofillId 仍存在于当前 AssistStructure 时才整体回补，
      * 避免注入失效 id。
      */
-    private val passwordMemoryByPackage = mutableMapOf<String, List<ParsedItem>>()
+    // LruCache(16)：限制无界增长，accessOrder=true 使最近访问置尾，淘汰最久未用。
+    // 原 mutableMapOf 无上限，长期运行的 autofill 进程切换 App 时不断累积 ParsedItem（含 AutofillId）。
+    private val passwordMemoryByPackage =
+        object : LinkedHashMap<String, List<ParsedItem>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: Map.Entry<String, List<ParsedItem>>): Boolean =
+                size > 16
+        }
 
     private data class RecentFillSuggestions(
         val key: String,
@@ -133,6 +144,7 @@ class BastionAutofillServiceNg : AutofillService() {
     private var screenOffReceiverRegistered = false
     @Volatile
     private var recentFillSuggestions: RecentFillSuggestions? = null
+    private val recentFillSuggestionsLock = Any()
 
     override fun onCreate() {
         super.onCreate()
@@ -825,6 +837,21 @@ class BastionAutofillServiceNg : AutofillService() {
                 "webDomain" to (webDomain ?: "none"),
             )
         )
+        // WebView 单条匹配对齐 Bitwarden：挂 setAuthentication 走"点选→回调→回填"路径，
+        // 该路径对系统 WebView 密码框虚拟节点回填比纯直填更可靠（Bitwarden 始终挂 auth）。
+        // forceDatasetAuth：挂 auth 但 vault 解锁态不触发指纹，filledItems 保留真实值，
+        // 回调直接回填不重新映射，避免 Edge 账户名失配。原生 App（无 webDomain）仍纯直填。
+        val forceDatasetAuthForWeb = isWebViewFill && passwordsForResponse.size == 1
+        AutofillLogger.i(
+            "AUTH",
+            "Dataset auth policy for fill",
+            metadata = mapOf(
+                "isWebViewFill" to isWebViewFill,
+                "singleMatch" to (passwordsForResponse.size == 1),
+                "forceDatasetAuthForWeb" to forceDatasetAuthForWeb,
+                "a11yAvailable" to BastionAccessibilityService.isCredentialFillAvailable(applicationContext),
+            )
+        )
         val response = bwCompatProcessor.process(
             packageName = packageName,
             uri = requestUri,
@@ -836,6 +863,7 @@ class BastionAutofillServiceNg : AutofillService() {
             preferDirectAutoFill = isPasswordOnlyLogin && passwordsForResponse.size == 1,
             passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled,
             requireAuthentication = effectiveAuthenticationRequired,
+            forceDatasetAuthForWeb = forceDatasetAuthForWeb,
         )
 
         if (response == null) {
@@ -977,39 +1005,42 @@ class BastionAutofillServiceNg : AutofillService() {
         targetCount: Int,
     ): List<PasswordEntry> {
         val now = System.currentTimeMillis()
-        val cached = recentFillSuggestions
-        val cachedIsUsable = cached != null &&
-            cached.key == key &&
-            now - cached.createdAtMs <= RESPONSE_STABILITY_WINDOW_MS &&
-            cached.targetCount >= targetCount &&
-            cached.passwords.size > matchedPasswords.size
+        // synchronized 防并发 onFillRequest 先读后写竞态（两个请求可能互相覆盖缓存）。
+        synchronized(recentFillSuggestionsLock) {
+            val cached = recentFillSuggestions
+            val cachedIsUsable = cached != null &&
+                cached.key == key &&
+                now - cached.createdAtMs <= RESPONSE_STABILITY_WINDOW_MS &&
+                cached.targetCount >= targetCount &&
+                cached.passwords.size > matchedPasswords.size
 
-        if (cachedIsUsable) {
-            AutofillLogger.w(
-                "AF",
-                "Reusing recent stronger fill suggestions",
-                metadata = mapOf(
-                    "requestId" to requestId,
-                    "previousRequestId" to cached!!.requestId,
-                    "ageMs" to (now - cached.createdAtMs),
-                    "previousMatches" to cached.passwords.size,
-                    "currentMatches" to matchedPasswords.size,
-                    "targetCount" to targetCount,
-                ),
-            )
-            return cached.passwords
-        }
+            if (cachedIsUsable) {
+                AutofillLogger.w(
+                    "AF",
+                    "Reusing recent stronger fill suggestions",
+                    metadata = mapOf(
+                        "requestId" to requestId,
+                        "previousRequestId" to cached!!.requestId,
+                        "ageMs" to (now - cached.createdAtMs),
+                        "previousMatches" to cached.passwords.size,
+                        "currentMatches" to matchedPasswords.size,
+                        "targetCount" to targetCount,
+                    ),
+                )
+                return cached.passwords
+            }
 
-        if (matchedPasswords.isNotEmpty()) {
-            recentFillSuggestions = RecentFillSuggestions(
-                key = key,
-                createdAtMs = now,
-                requestId = requestId,
-                targetCount = targetCount,
-                passwords = matchedPasswords,
-            )
+            if (matchedPasswords.isNotEmpty()) {
+                recentFillSuggestions = RecentFillSuggestions(
+                    key = key,
+                    createdAtMs = now,
+                    requestId = requestId,
+                    targetCount = targetCount,
+                    passwords = matchedPasswords,
+                )
+            }
+            return matchedPasswords
         }
-        return matchedPasswords
     }
 
     private suspend fun resolveLastFilledEntry(
@@ -1388,8 +1419,7 @@ class BastionAutofillServiceNg : AutofillService() {
             append('|')
             append(targetSummary)
         }
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(rawSignature.toByteArray(Charsets.UTF_8))
+        val digest = shaDigest.get().digest(rawSignature.toByteArray(Charsets.UTF_8))
         return digest.joinToString(separator = "") { byte -> "%02x".format(byte) }
     }
 

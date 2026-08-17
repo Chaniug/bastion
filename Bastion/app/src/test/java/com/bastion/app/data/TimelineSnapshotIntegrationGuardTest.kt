@@ -14,10 +14,12 @@ class TimelineSnapshotIntegrationGuardTest {
         ).readText()
 
         assertTrue(source.contains("TimelineVersionSnapshot::class"))
-        assertTrue(source.contains("version = 74"))
+        assertTrue(source.contains("version = 75"))
         assertTrue(source.contains("Migration(73, 74)"))
+        assertTrue(source.contains("Migration(74, 75)"))
         assertTrue(source.contains("CREATE TABLE IF NOT EXISTS timeline_version_snapshots"))
         assertTrue(source.contains("MIGRATION_73_74"))
+        assertTrue(source.contains("MIGRATION_74_75"))
     }
 
     @Test
