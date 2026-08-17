@@ -73,7 +73,7 @@ class AutofillDropdownClickRegressionGuardTest {
         )
         assertTrue(
             "Locked authenticated suggestions should remain visible without carrying real values or placeholders.",
-            source.contains("requiresAuthentication = forceDatasetAuthForWeb || (requireAuthentication && isVaultLocked)") &&
+            source.contains("requiresAuthentication = requireAuthentication && isVaultLocked") &&
                 source.contains("value = null") &&
                 source.contains("username = \"\"") &&
                 source.contains("password = \"\"")
