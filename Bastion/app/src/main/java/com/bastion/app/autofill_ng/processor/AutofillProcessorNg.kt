@@ -33,6 +33,7 @@ class AutofillProcessorNg(
         preferDirectAutoFill: Boolean = false,
         passwordSuggestionEnabled: Boolean = true,
         requireAuthentication: Boolean = true,
+        forceDatasetAuthForWeb: Boolean = false,
     ): FillResponse? {
         val request = parser.parse(
             packageName = packageName,
@@ -49,7 +50,8 @@ class AutofillProcessorNg(
         val filledData = filledDataBuilder.build(
             request = request,
             passwords = passwords,
-            requireAuthentication = requireAuthentication
+            requireAuthentication = requireAuthentication,
+            forceDatasetAuthForWeb = forceDatasetAuthForWeb,
         )
         return fillResponseBuilder.build(
             request = request,
