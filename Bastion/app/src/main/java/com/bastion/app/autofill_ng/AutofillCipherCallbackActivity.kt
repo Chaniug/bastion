@@ -75,6 +75,12 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
         val fieldSignatureKey: String? = null,
         val rememberLastFilled: Boolean = true,
         val requireAuthentication: Boolean = false,
+        /**
+         * WebView 对齐 Bitwarden 场景：跳过 AssistStructure re-parse，直接用 callback_args 烘焙的
+         * autofillIds/autofillHints 回填。re-parse 在 WebView（如 Edge）上可能给出与构建期不同的
+         * hints，导致 resolveFilledValues 按 hint 映射时账户名失配。
+         */
+        val forceCallbackTargets: Boolean = false,
     ) : Parcelable
 
     private var callbackArgs: Args? = null
@@ -392,6 +398,21 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
         val assistStructure = getAssistStructureOrNull()
         val callbackIds = callbackArgs.autofillIds?.distinct().orEmpty()
         val callbackHints = callbackArgs.autofillHints.orEmpty()
+
+        // WebView 对齐 Bitwarden 场景（forceCallbackTargets）：跳过 re-parse，直接用 callback_args
+        // 烘焙的 ids/hints。re-parse 在 WebView（如 Edge）上可能给出与构建期不同的 hints，导致
+        // resolveFilledValues 按 hint 映射时账户名失配。callback_args 的 id 虽是构建期的，但
+        // forceDatasetAuth 路径下填充值已带在 dataset（filledItems），框架回灌时用相同 id 集合即可。
+        if (callbackArgs.forceCallbackTargets && callbackIds.isNotEmpty()) {
+            val idHintPairs = callbackIds.mapIndexed { index, id ->
+                id to callbackHints.getOrNull(index).orEmpty()
+            }
+            return ResolvedAutofillTargets(
+                ids = idHintPairs.map { it.first },
+                hints = idHintPairs.map { it.second },
+                source = "callback_args_forced_webview",
+            )
+        }
 
         // Bitwarden 对齐：优先从当前 AssistStructure 重新解析 autofillId。
         // WebView（尤其是 Via 等第三方浏览器）的 autofillId 可能在 FillResponse

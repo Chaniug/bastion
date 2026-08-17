@@ -825,6 +825,21 @@ class BastionAutofillServiceNg : AutofillService() {
                 "webDomain" to (webDomain ?: "none"),
             )
         )
+        // WebView 单条匹配对齐 Bitwarden：挂 setAuthentication 走"点选→回调→回填"路径，
+        // 该路径对系统 WebView 密码框虚拟节点回填比纯直填更可靠（Bitwarden 始终挂 auth）。
+        // forceDatasetAuth：挂 auth 但 vault 解锁态不触发指纹，filledItems 保留真实值，
+        // 回调直接回填不重新映射，避免 Edge 账户名失配。原生 App（无 webDomain）仍纯直填。
+        val forceDatasetAuthForWeb = isWebViewFill && passwordsForResponse.size == 1
+        AutofillLogger.i(
+            "AUTH",
+            "Dataset auth policy for fill",
+            metadata = mapOf(
+                "isWebViewFill" to isWebViewFill,
+                "singleMatch" to (passwordsForResponse.size == 1),
+                "forceDatasetAuthForWeb" to forceDatasetAuthForWeb,
+                "a11yAvailable" to BastionAccessibilityService.isCredentialFillAvailable(applicationContext),
+            )
+        )
         val response = bwCompatProcessor.process(
             packageName = packageName,
             uri = requestUri,
@@ -836,6 +851,7 @@ class BastionAutofillServiceNg : AutofillService() {
             preferDirectAutoFill = isPasswordOnlyLogin && passwordsForResponse.size == 1,
             passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled,
             requireAuthentication = effectiveAuthenticationRequired,
+            forceDatasetAuthForWeb = forceDatasetAuthForWeb,
         )
 
         if (response == null) {

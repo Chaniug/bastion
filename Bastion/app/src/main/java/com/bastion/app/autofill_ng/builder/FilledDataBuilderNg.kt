@@ -47,6 +47,7 @@ class FilledDataBuilderNg(
         request: AutofillRequest.Fillable,
         passwords: List<PasswordEntry>,
         requireAuthentication: Boolean = true,
+        forceDatasetAuthForWeb: Boolean = false,
     ): FilledData {
         val autoLockMinutes = resolveAutoLockTimeoutForAutofill()
         // 用户设置“永不过期/不锁定”(autoLockMinutes == -1)时，只要密钥材料当前可读即视为已解锁，
@@ -91,7 +92,8 @@ class FilledDataBuilderNg(
                         autofillCipher = autofillCipher,
                         autofillViews = loginViews,
                         inlinePresentationSpec = getCipherInlinePresentationOrNull(),
-                        requiresAuthentication = requireAuthentication && isVaultLocked
+                        requiresAuthentication = requireAuthentication && isVaultLocked,
+                        forceDatasetAuthForWeb = forceDatasetAuthForWeb,
                     )
                 }
                 .filter { it.filledItems.isNotEmpty() }
@@ -117,6 +119,7 @@ class FilledDataBuilderNg(
         autofillViews: List<AutofillView.Login>,
         inlinePresentationSpec: InlinePresentationSpec?,
         requiresAuthentication: Boolean,
+        forceDatasetAuthForWeb: Boolean = false,
     ): FilledPartition {
         if (requiresAuthentication) {
             // 认证回灌路径：所有字段进 filledItems（value=null 占位），callback 重新解密写值。
@@ -191,14 +194,16 @@ class FilledDataBuilderNg(
                 "fieldCount" to autofillViews.size,
                 "passwordValuePresent" to collected
                     .filter { it.first is AutofillView.Login.Password }
-                    .any { !it.third.isNullOrBlank() }
+                    .any { !it.third.isNullOrBlank() },
+                "forceDatasetAuth" to forceDatasetAuthForWeb
             )
         )
         return FilledPartition(
             autofillCipher = autofillCipher,
             filledItems = filledItems,
             inlinePresentationSpec = inlinePresentationSpec,
-            requiresAuthentication = false
+            requiresAuthentication = false,
+            forceDatasetAuth = forceDatasetAuthForWeb,
         )
     }
 

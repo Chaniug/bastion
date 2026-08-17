@@ -289,16 +289,17 @@ class FillResponseBuilderNg(
             (partition.inlinePresentationSpec != null || !request.inlinePresentationSpecs.isNullOrEmpty())
         val callbackTargets = buildLoginCallbackTargets(request.partition.views)
 
-        // 对齐 Bitwarden 行为：仅 vault 锁定 / 需二次认证时才给 dataset 挂 setAuthentication
-        // 走 AutofillCipherCallbackActivity 回灌。vault 解锁 + 单条直填时返回纯直填 dataset，
-        // 框架当场写入输入框，不绕 Activity 回灌——Via 等 WebView 不需无障碍也能直接填入。
-        // OTP 自动复制副作用由 autofill 服务层在「唯一条目直填」时直接在服务进程内触发。
-        val authPendingIntent = if (partition.requiresAuthentication) {
+        // 对齐 Bitwarden：vault 锁定（requiresAuthentication）或 WebView 场景（forceDatasetAuth）
+        // 都挂 setAuthentication，让框架走"用户点选→AutofillCipherCallbackActivity 回灌→回填"
+        // 路径。该路径对系统 WebView 密码框虚拟节点回填比纯直填更可靠（Bitwarden 始终挂 auth）。
+        // 关键差异：forceDatasetAuth 时 vault 已解锁，回调 requireAuthentication=false → 不触发指纹；
+        // filledItems 保留真实值，回调直接回填，不重新按 hint 映射，避免 Edge 账户名失配。
+        val authPendingIntent = if (partition.requiresAuthentication || partition.forceDatasetAuth) {
             val intent = createCipherAuthPendingIntent(
                 request = request,
                 partition = partition,
                 callbackTargets = callbackTargets,
-                requireAuthentication = true,
+                requireAuthentication = partition.requiresAuthentication,
             )
             if (intent == null) {
                 throw IllegalStateException("Authentication required but cipher callback pending intent is unavailable")
@@ -503,6 +504,7 @@ class FillResponseBuilderNg(
             fieldSignatureKey = request.fieldSignatureKey,
             rememberLastFilled = true,
             requireAuthentication = requireAuthentication,
+            forceCallbackTargets = partition.forceDatasetAuth,
         )
         val pickerIntent = AutofillCipherCallbackActivity.getIntent(context, args)
         return PendingIntent.getActivity(
