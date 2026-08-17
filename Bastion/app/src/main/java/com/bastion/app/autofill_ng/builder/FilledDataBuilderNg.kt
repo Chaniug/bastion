@@ -47,7 +47,6 @@ class FilledDataBuilderNg(
         request: AutofillRequest.Fillable,
         passwords: List<PasswordEntry>,
         requireAuthentication: Boolean = true,
-        forceDatasetAuthForWeb: Boolean = false,
     ): FilledData {
         val autoLockMinutes = resolveAutoLockTimeoutForAutofill()
         // 用户设置“永不过期/不锁定”(autoLockMinutes == -1)时，只要密钥材料当前可读即视为已解锁，
@@ -92,7 +91,7 @@ class FilledDataBuilderNg(
                         autofillCipher = autofillCipher,
                         autofillViews = loginViews,
                         inlinePresentationSpec = getCipherInlinePresentationOrNull(),
-                        requiresAuthentication = forceDatasetAuthForWeb || (requireAuthentication && isVaultLocked)
+                        requiresAuthentication = requireAuthentication && isVaultLocked
                     )
                 }
                 .filter { it.filledItems.isNotEmpty() }

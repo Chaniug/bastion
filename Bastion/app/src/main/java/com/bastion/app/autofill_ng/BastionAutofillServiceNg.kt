@@ -825,22 +825,6 @@ class BastionAutofillServiceNg : AutofillService() {
                 "webDomain" to (webDomain ?: "none"),
             )
         )
-        // WebView 单条匹配改走认证 dataset 回灌（setAuthentication）：
-        // Via 系统 WebView 对直填 dataset 的 setField 密码框回填不可靠（账户框可写、
-        // 密码框吞值），但认证回灌（EXTRA_AUTHENTICATION_RESULT）对 WebView 虚拟节点
-        // 写入更可靠——Bitwarden 即走此路径。原生 App（无 webDomain）仍纯直填，不受影响。
-        val forceDatasetAuthForWeb = isWebViewFill && passwordsForResponse.size == 1
-        AutofillLogger.i(
-            "AUTH",
-            "Dataset auth policy for fill",
-            metadata = mapOf(
-                "isWebViewFill" to isWebViewFill,
-                "singleMatch" to (passwordsForResponse.size == 1),
-                "forceDatasetAuthForWeb" to forceDatasetAuthForWeb,
-                "inlineRequestPresent" to (inlineRequest != null),
-                "a11yAvailable" to BastionAccessibilityService.isCredentialFillAvailable(applicationContext),
-            )
-        )
         val response = bwCompatProcessor.process(
             packageName = packageName,
             uri = requestUri,
@@ -852,7 +836,6 @@ class BastionAutofillServiceNg : AutofillService() {
             preferDirectAutoFill = isPasswordOnlyLogin && passwordsForResponse.size == 1,
             passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled,
             requireAuthentication = effectiveAuthenticationRequired,
-            forceDatasetAuthForWeb = forceDatasetAuthForWeb,
         )
 
         if (response == null) {
