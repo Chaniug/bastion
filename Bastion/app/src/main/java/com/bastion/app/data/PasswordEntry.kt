@@ -23,6 +23,11 @@ import java.util.Date
             value = ["bitwarden_vault_id", "bitwarden_cipher_id"],
             unique = true,
             name = "index_password_entries_bitwarden_vault_cipher_unique"
+        ),
+        // 覆盖 autofill/列表常用查询：WHERE isDeleted AND isArchived ORDER BY isFavorite, sortOrder
+        Index(
+            value = ["isDeleted", "isArchived", "isFavorite", "sortOrder"],
+            name = "index_password_entries_active_favorite_sort"
         )
     ]
 )

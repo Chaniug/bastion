@@ -4,6 +4,8 @@ import android.content.Context
 import com.bastion.app.autofill_ng.core.AutofillLogger
 import com.bastion.app.logging.runCatchingObserved
 import com.bastion.app.utils.SettingsManager
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -89,16 +91,30 @@ object AutofillConfigCache {
                     autoLockMinutes = settings.autoLockMinutes
                     separateUsernameAccountEnabled = settings.separateUsernameAccountEnabled
                     autofillAuthRequired = settings.autofillAuthRequired
-                    isInlineSuggestionsEnabled = prefs.isInlineSuggestionsEnabled.first()
-                    isAutofillEnabled = prefs.isAutofillEnabled.first()
-                    isV2RespectAutofillOffEnabled = prefs.isV2RespectAutofillOffEnabled.first()
-                    v2DefaultSourceFilter = prefs.v2DefaultSourceFilter.first()
-                    v2DefaultKeepassDatabaseId = prefs.v2DefaultKeepassDatabaseId.first()
-                    v2DefaultBitwardenVaultId = prefs.v2DefaultBitwardenVaultId.first()
-                    isBitwardenStrictModeEnabled = prefs.isBitwardenStrictModeEnabled.first()
-                    isBitwardenSubdomainMatchEnabled = prefs.isBitwardenSubdomainMatchEnabled.first()
-                    domainMatchStrategy = prefs.domainMatchStrategy.first()
-                    isPasswordSuggestionEnabled = prefs.isPasswordSuggestionEnabled.first()
+                    // 并行读取 10 个独立 Flow，避免串行 .first() 累加超时（低端机/IO 抖动）。
+                    val (inline, enabled, respectOff, filter, keepassId, bwId, strict, subdomain, strategy, suggestion) =
+                        awaitAll(
+                            async { prefs.isInlineSuggestionsEnabled.first() },
+                            async { prefs.isAutofillEnabled.first() },
+                            async { prefs.isV2RespectAutofillOffEnabled.first() },
+                            async { prefs.v2DefaultSourceFilter.first() },
+                            async { prefs.v2DefaultKeepassDatabaseId.first() },
+                            async { prefs.v2DefaultBitwardenVaultId.first() },
+                            async { prefs.isBitwardenStrictModeEnabled.first() },
+                            async { prefs.isBitwardenSubdomainMatchEnabled.first() },
+                            async { prefs.domainMatchStrategy.first() },
+                            async { prefs.isPasswordSuggestionEnabled.first() },
+                        )
+                    isInlineSuggestionsEnabled = inline
+                    isAutofillEnabled = enabled
+                    isV2RespectAutofillOffEnabled = respectOff
+                    v2DefaultSourceFilter = filter
+                    v2DefaultKeepassDatabaseId = keepassId
+                    v2DefaultBitwardenVaultId = bwId
+                    isBitwardenStrictModeEnabled = strict
+                    isBitwardenSubdomainMatchEnabled = subdomain
+                    domainMatchStrategy = strategy
+                    isPasswordSuggestionEnabled = suggestion
                 }
             }
         }.onFailure {
