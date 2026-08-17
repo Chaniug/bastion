@@ -72,6 +72,11 @@ class BastionAutofillServiceNg : AutofillService() {
         private const val RESPONSE_STABILITY_WINDOW_MS = 2_000L
         private const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
         private val fillRequestSequence = AtomicLong(0L)
+        // SHA-256 digest 复用：避免每次 onFillRequest 都 MessageDigest.getInstance（含 Provider 查找）。
+        // ThreadLocal 保证线程安全（autofill 服务回调可能并发）。digest() 调用后自动 reset。
+        private val shaDigest by lazy {
+            ThreadLocal.withInitial { MessageDigest.getInstance("SHA-256") }
+        }
     }
 
     /**
@@ -1404,8 +1409,7 @@ class BastionAutofillServiceNg : AutofillService() {
             append('|')
             append(targetSummary)
         }
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(rawSignature.toByteArray(Charsets.UTF_8))
+        val digest = shaDigest.get().digest(rawSignature.toByteArray(Charsets.UTF_8))
         return digest.joinToString(separator = "") { byte -> "%02x".format(byte) }
     }
 

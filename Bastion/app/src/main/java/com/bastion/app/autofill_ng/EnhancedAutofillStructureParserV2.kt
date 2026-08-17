@@ -17,6 +17,14 @@ class EnhancedAutofillStructureParserV2 {
     private companion object {
         private val PACKAGE_NAME_REGEX =
             Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
+        // 正则静态化：避免每次 EnhancedAutofillStructureParserV2() 实例化重编译。
+        private val autofillLabelCreditCardNumberTranslations = listOf(
+            ".*(credit|debit|card)+.*number.*".toRegex(),
+            ".*(cc|card)[-_ ]?(no|num|number).*".toRegex(),
+            ".*银行卡号.*".toRegex(),
+            ".*信用卡号.*".toRegex(),
+            ".*卡号.*".toRegex(),
+        )
     }
 
     data class ParsedStructure(
@@ -215,14 +223,6 @@ class EnhancedAutofillStructureParserV2 {
         "майл",
         "电子邮箱",
         "電子郵箱",
-    )
-
-    private val autofillLabelCreditCardNumberTranslations = listOf(
-        ".*(credit|debit|card)+.*number.*".toRegex(),
-        ".*(cc|card)[-_ ]?(no|num|number).*".toRegex(),
-        ".*银行卡号.*".toRegex(),
-        ".*信用卡号.*".toRegex(),
-        ".*卡号.*".toRegex(),
     )
 
     private val autofillLabelCreditCardSecurityCodeTranslations = listOf(
