@@ -86,39 +86,33 @@ class WebDavKeePassFileSource(
             throw IOException("远端目录不存在: ${parentPathOf(normalizedRemotePath)}")
         }
 
-        // 条件写：expectedVersion 非空时先 stat 预检（缩小窗口）。
-        // 若服务器支持 ETag，进一步用 If-Match 头做原子条件 PUT，消除 stat→put 之间的
-        // TOCTOU（并发设备在预检后、写入前修改远端时，服务器返回 412，本次写入被拒绝，
-        // 不再静默覆盖）。服务器不支持 ETag 时退化为 stat 预检。
-        val currentEtag = if (!expectedVersion.isNullOrBlank()) {
+        // 并发写防护：sardine-android 0.8 不支持 If-Match 条件 PUT（lockToken 走 If header），
+        // 因此退化为"写前 stat 版本预检"（缩小 TOCTOU 窗口）+ "写后读回校验"（检测写入损坏/截断）。
+        // 多设备严格并发仍可能覆盖（stat→put 窗口），完整原子性需升级 sardine 或引入 OkHttp 条件 PUT。
+        if (!expectedVersion.isNullOrBlank()) {
             val current = runCatchingObserved { stat() }.getOrNull()
             if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
                 throw IOException("远端文件已变化，请先重新同步")
             }
-            current?.etag?.takeIf { it.isNotBlank() }
-        } else {
-            null
         }
 
+        sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
+
+        // 读回校验：部分 WebDAV 供应商可能返回成功但未完整写入（截断/损坏）。
+        // 写后立即读取远端并比对 SHA-256，不一致则报错，避免本地误以为同步成功。
         try {
-            if (currentEtag != null) {
-                sardine.put(
-                    remoteUrl,
-                    bytes,
-                    KEEPASS_KDBX_MIME_TYPE,
-                    false,
-                    mapOf("If-Match" to currentEtag)
+            val writtenBytes = read()
+            if (!writtenBytes.contentEquals(bytes)) {
+                throw IOException(
+                    "远端文件写入校验失败（读回内容与本地不一致），" +
+                        "可能是网络中断或服务器截断，请重新同步"
                 )
-            } else {
-                sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
             }
-        } catch (e: Exception) {
-            if (currentEtag != null) {
-                // If-Match 条件写失败（典型为 412 Precondition Failed）→ 远端已被并发修改。
-                throw IOException("远端文件已被其他设备修改，本次写入已取消，请先重新同步", e)
-            }
-            throw e
+        } catch (e: IOException) {
+            if (e.message?.contains("远端文件写入校验失败") == true) throw e
+            // 读回本身失败（网络抖动）：不阻断，交由下次同步校验
         }
+
         val latest = runCatchingObserved { stat() }.getOrDefault(FileSourceStat())
         FileSourceWriteResult(
             versionToken = latest.versionToken,
