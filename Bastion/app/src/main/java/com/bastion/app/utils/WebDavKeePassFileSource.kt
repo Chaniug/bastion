@@ -86,14 +86,39 @@ class WebDavKeePassFileSource(
             throw IOException("远端目录不存在: ${parentPathOf(normalizedRemotePath)}")
         }
 
-        if (!expectedVersion.isNullOrBlank()) {
+        // 条件写：expectedVersion 非空时先 stat 预检（缩小窗口）。
+        // 若服务器支持 ETag，进一步用 If-Match 头做原子条件 PUT，消除 stat→put 之间的
+        // TOCTOU（并发设备在预检后、写入前修改远端时，服务器返回 412，本次写入被拒绝，
+        // 不再静默覆盖）。服务器不支持 ETag 时退化为 stat 预检。
+        val currentEtag = if (!expectedVersion.isNullOrBlank()) {
             val current = runCatchingObserved { stat() }.getOrNull()
             if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
                 throw IOException("远端文件已变化，请先重新同步")
             }
+            current?.etag?.takeIf { it.isNotBlank() }
+        } else {
+            null
         }
 
-        sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
+        try {
+            if (currentEtag != null) {
+                sardine.put(
+                    remoteUrl,
+                    bytes,
+                    KEEPASS_KDBX_MIME_TYPE,
+                    false,
+                    mapOf("If-Match" to currentEtag)
+                )
+            } else {
+                sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
+            }
+        } catch (e: Exception) {
+            if (currentEtag != null) {
+                // If-Match 条件写失败（典型为 412 Precondition Failed）→ 远端已被并发修改。
+                throw IOException("远端文件已被其他设备修改，本次写入已取消，请先重新同步", e)
+            }
+            throw e
+        }
         val latest = runCatchingObserved { stat() }.getOrDefault(FileSourceStat())
         FileSourceWriteResult(
             versionToken = latest.versionToken,

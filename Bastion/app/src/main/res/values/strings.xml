@@ -3608,6 +3608,7 @@
     <string name="import_data_keepass_tip_format_unsupported">Unsupported format/cipher, or the file is damaged. Check it in KeePassDX/KeePassXC.</string>
     <string name="import_data_keepass_tip_invalid_credential">Check the password and key file. Make sure the key format matches its source.</string>
     <string name="import_data_keepass_tip_io_failed">I/O failed while reading the file. Check file integrity and storage availability, then retry.</string>
+    <string name="import_data_keepass_tip_ambiguous_match">Multiple entries match the same title/username/URL. Rename or mark one of them in KeePass first, then retry.</string>
     <string name="import_data_keepass_tip_kdf_memory">KDF memory is too high for this device. Lower Argon2 memory/parallelism and retry.</string>
     <string name="import_data_keepass_tip_legacy_kdb">Open this file in KeePassDX or KeePassXC and save it as .kdbx, then import again.</string>
     <string name="import_data_keepass_tip_permission">Re-select the database or key file and grant read permission again.</string>
