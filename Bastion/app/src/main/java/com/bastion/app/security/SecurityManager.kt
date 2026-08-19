@@ -85,6 +85,21 @@ class SecurityManager(private val context: Context) {
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
+
+    /**
+     * 主密码是否已设置的进程内缓存。
+     *
+     * isMasterPasswordSet() 底层是 EncryptedSharedPreferences.contains()，每次调用都
+     * 读取加密文件并解密 key 前缀（主线程 IO + 密码学操作）。LoginScreen 顶层
+     * isFirstTime 与 MainAppLockPolicy.resolveAccessState 在重组/设置变化时高频调用它，
+     * 首次登录输入密码时 settings Flow 更新频繁 → 反复触发该 IO → 输入卡顿。
+     *
+     * 该状态只会在 setMasterPassword（true）与 clearSecurityData（false）时变化，
+     * 用 @Volatile 缓存避免重复读盘；跨进程（autofill 独立进程各自 new 本类）
+     * 缓存互不影响，且此状态在进程生命周期内几乎不变化，一致性问题可忽略。
+     */
+    @Volatile
+    private var masterPasswordSetCached: Boolean? = null
     
     companion object {
         private const val MASTER_PASSWORD_HASH_KEY = "master_password_hash"
@@ -536,6 +551,7 @@ class SecurityManager(private val context: Context) {
             .putString(MASTER_PASSWORD_SALT_KEY, salt.joinToString("") { "%02x".format(it) })
             .putInt(MASTER_PASSWORD_ITERATIONS_KEY, PBKDF2_ITERATIONS)
             .apply()
+        masterPasswordSetCached = true
         try {
             ensureMdkInitializedWithPassword(password, true)
         } catch (e: Exception) {
@@ -547,7 +563,8 @@ class SecurityManager(private val context: Context) {
      * Check if master password is set
      */
     fun isMasterPasswordSet(): Boolean {
-        return sharedPreferences.contains(MASTER_PASSWORD_HASH_KEY)
+        return masterPasswordSetCached ?: sharedPreferences.contains(MASTER_PASSWORD_HASH_KEY)
+            .also { masterPasswordSetCached = it }
     }
     
     /**
@@ -597,6 +614,7 @@ class SecurityManager(private val context: Context) {
             .remove(BITWARDEN_SERVER_URL_KEY)
             .remove(BITWARDEN_CONNECTED_KEY)
             .apply()
+        masterPasswordSetCached = false
         clearRuntimeUnlockCache()
     }
     
