@@ -106,7 +106,6 @@ import com.bastion.app.data.Language
 import com.bastion.app.data.PasswordCardDisplayField
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
-import com.bastion.app.data.UnifiedProgressBarMode
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.TotpCodeCard
@@ -133,29 +132,9 @@ private enum class QuickSetupStep(
         titleRes = R.string.qs_step_autofill_title,
         subtitleRes = R.string.qs_step_autofill_subtitle
     ),
-    APPEARANCE(
-        titleRes = R.string.qs_step_appearance_title,
-        subtitleRes = R.string.qs_step_appearance_subtitle
-    ),
-    BOTTOM_NAV(
-        titleRes = R.string.qs_step_bottom_nav_title,
-        subtitleRes = R.string.qs_step_bottom_nav_subtitle
-    ),
     DATA_IMPORT(
         titleRes = R.string.qs_step_data_import_title,
         subtitleRes = R.string.qs_step_data_import_subtitle
-    ),
-    PASSWORD_LIST(
-        titleRes = R.string.qs_step_password_list_title,
-        subtitleRes = R.string.qs_step_password_list_subtitle
-    ),
-    PASSWORD_CARD(
-        titleRes = R.string.qs_step_password_card_title,
-        subtitleRes = R.string.qs_step_password_card_subtitle
-    ),
-    AUTHENTICATOR_CARD(
-        titleRes = R.string.qs_step_authenticator_card_title,
-        subtitleRes = R.string.qs_step_authenticator_card_subtitle
     )
 }
 
@@ -221,7 +200,7 @@ fun QuickSetupScreen(
                 total = steps.size,
                 primaryText = when (step) {
                     QuickSetupStep.WELCOME -> stringResource(R.string.qs_start)
-                    QuickSetupStep.AUTHENTICATOR_CARD -> stringResource(R.string.qs_finish)
+                    QuickSetupStep.DATA_IMPORT -> stringResource(R.string.qs_finish)
                     else -> stringResource(R.string.qs_next)
                 },
                 onBack = if (stepIndex > 0) {
@@ -321,77 +300,11 @@ fun QuickSetupScreen(
                             onOpenAutofillSettings = onOpenAutofillSettings
                         )
 
-                        QuickSetupStep.APPEARANCE -> AppearanceStep(
-                            selectedScheme = settings.colorScheme,
-                            onSchemeSelected = settingsViewModel::updateColorScheme
-                        )
-
-                        QuickSetupStep.BOTTOM_NAV -> BottomNavStep(
-                            visibleTabs = settings.bottomNavOrder
-                                .filterNot { it == BottomNavContentTab.PASSKEY }
-                                .filter { tab ->
-                                    if (tab == BottomNavContentTab.AUTHENTICATOR) {
-                                        settings.bottomNavVisibility.authenticator ||
-                                            settings.bottomNavVisibility.passkey
-                                    } else {
-                                        settings.bottomNavVisibility.isVisible(tab)
-                                    }
-                                },
-                            allTabs = settings.bottomNavOrder
-                                .filterNot { it == BottomNavContentTab.PASSKEY },
-                            isVisible = { tab ->
-                                if (tab == BottomNavContentTab.AUTHENTICATOR) {
-                                    settings.bottomNavVisibility.authenticator ||
-                                        settings.bottomNavVisibility.passkey
-                                } else {
-                                    settings.bottomNavVisibility.isVisible(tab)
-                                }
-                            },
-                            onVisibilityChange = settingsViewModel::updateBottomNavVisibility
-                        )
-
                         QuickSetupStep.DATA_IMPORT -> DataImportStep(
                             onOpenBitwardenSettings = onOpenBitwardenSettings,
                             onOpenWebDavBackup = onOpenWebDavBackup,
                             onOpenLocalKeePass = onOpenLocalKeePass,
                             onOpenImportData = onOpenImportData
-                        )
-
-                        QuickSetupStep.PASSWORD_LIST -> PasswordListAdjustmentStep(
-                            aggregateEnabled = settings.passwordPageAggregateEnabled,
-                            quickFiltersEnabled = settings.passwordListQuickFiltersEnabled,
-                            categoryQuickFiltersEnabled = settings.passwordListCategoryQuickFiltersEnabled,
-                            quickAccessEnabled = settings.passwordListQuickAccessEnabled,
-                            onAggregateChange = settingsViewModel::updatePasswordPageAggregateEnabled,
-                            onQuickFiltersChange = settingsViewModel::updatePasswordListQuickFiltersEnabled,
-                            onCategoryQuickFiltersChange = settingsViewModel::updatePasswordListCategoryQuickFiltersEnabled,
-                            onQuickAccessChange = settingsViewModel::updatePasswordListQuickAccessEnabled
-                        )
-
-                        QuickSetupStep.PASSWORD_CARD -> PasswordCardAdjustmentStep(
-                            settings = settings,
-                            selectedFields = settings.passwordCardDisplayFields,
-                            showAuthenticator = settings.passwordCardShowAuthenticator,
-                            hideOtherContentWhenAuthenticator = settings.passwordCardHideOtherContentWhenAuthenticator,
-                            onFieldsChange = settingsViewModel::updatePasswordCardDisplayFields,
-                            onShowAuthenticatorChange = settingsViewModel::updatePasswordCardShowAuthenticator,
-                            onHideOtherContentWhenAuthenticatorChange =
-                                settingsViewModel::updatePasswordCardHideOtherContentWhenAuthenticator
-                        )
-
-                        QuickSetupStep.AUTHENTICATOR_CARD -> AuthenticatorCardAdjustmentStep(
-                            settings = settings,
-                            selectedFields = settings.authenticatorCardDisplayFields,
-                            unifiedProgressEnabled =
-                                settings.validatorUnifiedProgressBar == UnifiedProgressBarMode.ENABLED,
-                            smoothProgressEnabled = settings.validatorSmoothProgress,
-                            onFieldsChange = settingsViewModel::updateAuthenticatorCardDisplayFields,
-                            onUnifiedProgressChange = { enabled ->
-                                settingsViewModel.updateValidatorUnifiedProgressBar(
-                                    if (enabled) UnifiedProgressBarMode.ENABLED else UnifiedProgressBarMode.DISABLED
-                                )
-                            },
-                            onSmoothProgressChange = settingsViewModel::updateValidatorSmoothProgress
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -553,59 +466,7 @@ private fun AutofillStep(onOpenAutofillSettings: () -> Unit) {
     )
 }
 
-@Composable
-private fun AppearanceStep(
-    selectedScheme: ColorScheme,
-    onSchemeSelected: (ColorScheme) -> Unit
-) {
-    val recommended = listOf(
-        ColorScheme.DEFAULT,
-        ColorScheme.OCEAN_BLUE,
-        ColorScheme.FOREST_GREEN,
-        ColorScheme.SUNSET_ORANGE,
-        ColorScheme.GREY_STYLE,
-        ColorScheme.BLACK_MAMBA
-    )
-    SetupSection(title = stringResource(R.string.qs_color_scheme), icon = Icons.Default.Palette) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            recommended.forEach { scheme ->
-                ColorSchemeRow(
-                    scheme = scheme,
-                    selected = selectedScheme == scheme,
-                    onClick = { onSchemeSelected(scheme) }
-                )
-            }
-        }
-    }
-}
 
-@Composable
-private fun BottomNavStep(
-    visibleTabs: List<BottomNavContentTab>,
-    allTabs: List<BottomNavContentTab>,
-    isVisible: (BottomNavContentTab) -> Boolean,
-    onVisibilityChange: (BottomNavContentTab, Boolean) -> Unit
-) {
-    SetupSection(title = stringResource(R.string.qs_bottom_preview), icon = Icons.Default.Widgets) {
-        BastionBottomNavPreview(
-            tabs = visibleTabs,
-            selectedTab = visibleTabs.firstOrNull() ?: BottomNavContentTab.PASSWORDS
-        )
-    }
-
-    SetupSection(title = stringResource(R.string.qs_display_items), icon = Icons.Default.DashboardCustomize) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            allTabs.forEach { tab ->
-                SetupSwitchRow(
-                    icon = tabIcon(tab),
-                    title = stringResource(tabLabelRes(tab)),
-                    checked = isVisible(tab),
-                    onCheckedChange = { onVisibilityChange(tab, it) }
-                )
-            }
-        }
-    }
-}
 @Composable
 private fun ThemePreviewCard(scheme: ColorScheme) {
     val swatches = schemeSwatches(scheme)
@@ -849,136 +710,8 @@ private fun DataImportStep(
     )
 }
 
-@Composable
-private fun PasswordListAdjustmentStep(
-    aggregateEnabled: Boolean,
-    quickFiltersEnabled: Boolean,
-    categoryQuickFiltersEnabled: Boolean,
-    quickAccessEnabled: Boolean,
-    onAggregateChange: (Boolean) -> Unit,
-    onQuickFiltersChange: (Boolean) -> Unit,
-    onCategoryQuickFiltersChange: (Boolean) -> Unit,
-    onQuickAccessChange: (Boolean) -> Unit
-) {
-    SetupSection(title = stringResource(R.string.qs_list_content), icon = Icons.Default.DashboardCustomize) {
-        SetupSwitchRow(
-            icon = Icons.Default.Widgets,
-            title = stringResource(R.string.qs_aggregate_all_items),
-            checked = aggregateEnabled,
-            onCheckedChange = onAggregateChange
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.Security,
-            title = stringResource(R.string.qs_quick_access),
-            checked = quickAccessEnabled,
-            onCheckedChange = onQuickAccessChange
-        )
-    }
-    SetupSection(title = stringResource(R.string.qs_filter), icon = Icons.Default.Storage) {
-        SetupSwitchRow(
-            icon = Icons.Default.Check,
-            title = stringResource(R.string.qs_quick_filters),
-            checked = quickFiltersEnabled,
-            onCheckedChange = onQuickFiltersChange
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.DashboardCustomize,
-            title = stringResource(R.string.qs_category_quick_filters),
-            checked = categoryQuickFiltersEnabled,
-            onCheckedChange = onCategoryQuickFiltersChange
-        )
-    }
-}
 
-@Composable
-private fun PasswordCardAdjustmentStep(
-    settings: AppSettings,
-    selectedFields: List<PasswordCardDisplayField>,
-    showAuthenticator: Boolean,
-    hideOtherContentWhenAuthenticator: Boolean,
-    onFieldsChange: (List<PasswordCardDisplayField>) -> Unit,
-    onShowAuthenticatorChange: (Boolean) -> Unit,
-    onHideOtherContentWhenAuthenticatorChange: (Boolean) -> Unit
-) {
-    PasswordCardLivePreview(settings = settings, selectedFields = selectedFields)
-    SetupSection(title = stringResource(R.string.qs_display_fields), icon = Icons.Default.Password) {
-        SetupSwitchRow(
-            icon = Icons.Default.Key,
-            title = stringResource(R.string.qs_show_username),
-            checked = PasswordCardDisplayField.USERNAME in selectedFields,
-            onCheckedChange = {
-                onFieldsChange(togglePasswordCardField(selectedFields, PasswordCardDisplayField.USERNAME, it))
-            }
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.Language,
-            title = stringResource(R.string.qs_show_website),
-            checked = PasswordCardDisplayField.WEBSITE in selectedFields,
-            onCheckedChange = {
-                onFieldsChange(togglePasswordCardField(selectedFields, PasswordCardDisplayField.WEBSITE, it))
-            }
-        )
-    }
-    SetupSection(title = stringResource(R.string.qs_authenticator_link), icon = Icons.Default.Security) {
-        SetupSwitchRow(
-            icon = Icons.Default.Lock,
-            title = stringResource(R.string.qs_show_bound_authenticator),
-            checked = showAuthenticator,
-            onCheckedChange = onShowAuthenticatorChange
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.Shield,
-            title = stringResource(R.string.qs_hide_other_when_authenticator),
-            checked = hideOtherContentWhenAuthenticator,
-            onCheckedChange = onHideOtherContentWhenAuthenticatorChange
-        )
-    }
-}
 
-@Composable
-private fun AuthenticatorCardAdjustmentStep(
-    settings: AppSettings,
-    selectedFields: List<AuthenticatorCardDisplayField>,
-    unifiedProgressEnabled: Boolean,
-    smoothProgressEnabled: Boolean,
-    onFieldsChange: (List<AuthenticatorCardDisplayField>) -> Unit,
-    onUnifiedProgressChange: (Boolean) -> Unit,
-    onSmoothProgressChange: (Boolean) -> Unit
-) {
-    AuthenticatorCardLivePreview(settings = settings, selectedFields = selectedFields)
-    SetupSection(title = stringResource(R.string.qs_display_fields), icon = Icons.Default.Security) {
-        SetupSwitchRow(
-            icon = Icons.Default.Shield,
-            title = stringResource(R.string.qs_show_issuer),
-            checked = AuthenticatorCardDisplayField.ISSUER in selectedFields,
-            onCheckedChange = {
-                onFieldsChange(toggleAuthenticatorField(selectedFields, AuthenticatorCardDisplayField.ISSUER, it))
-            }
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.Key,
-            title = stringResource(R.string.qs_show_account_name),
-            checked = AuthenticatorCardDisplayField.ACCOUNT_NAME in selectedFields,
-            onCheckedChange = {
-                onFieldsChange(toggleAuthenticatorField(selectedFields, AuthenticatorCardDisplayField.ACCOUNT_NAME, it))
-            }
-        )
-    }
-    SetupSection(title = stringResource(R.string.qs_progress_display), icon = Icons.Default.AutoAwesome) {
-        SetupSwitchRow(
-            icon = Icons.Default.Widgets,
-            title = stringResource(R.string.qs_unified_progress_bar),
-            checked = unifiedProgressEnabled,
-            onCheckedChange = onUnifiedProgressChange
-        )
-        SetupSwitchRow(
-            icon = Icons.Default.AutoAwesome,
-            title = stringResource(R.string.qs_smooth_progress_animation),
-            checked = smoothProgressEnabled,
-            onCheckedChange = onSmoothProgressChange
-        )
-    }
-}
 
 @Composable
 private fun PasswordCardLivePreview(
