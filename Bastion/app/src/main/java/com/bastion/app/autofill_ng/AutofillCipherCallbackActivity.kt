@@ -414,6 +414,23 @@ class AutofillCipherCallbackActivity : AppCompatActivity() {
             )
         }
 
+        // 认证回灌路径（forceCallbackTargets=false，如 vault 锁定 / 密码解密失败降级）：
+        // 优先使用构建期烘焙的完整目标（含 username+password），条件是这些 id 在当前 assist
+        // structure 中仍然存活。Edge 等标准 WebView 的 autofillId 在回调期保持有效，直接复用
+        // 烘焙目标可避免 re-parse 只命中密码框（如 GitHub 登录页）导致"只填密码、账号缺失"的
+        // 半填充。Via 等 DOM 节点复用的 WebView，构建期 id 已失效（不在当前结构中），此时回退
+        // 下方 re-parse 拿"活的" id，保证写回不静默失败（回归保护）。
+        if (callbackIds.isNotEmpty() && assistStructure != null) {
+            val liveIds = collectAutofillIds(assistStructure)
+            if (callbackIds.all { liveIds.contains(it) }) {
+                return ResolvedAutofillTargets(
+                    ids = callbackIds,
+                    hints = callbackHints,
+                    source = "callback_args_live_verified",
+                )
+            }
+        }
+
         // Bitwarden 对齐：优先从当前 AssistStructure 重新解析 autofillId。
         // WebView（尤其是 Via 等第三方浏览器）的 autofillId 可能在 FillResponse
         // 构建时与 callback 回调时不一致（DOM 节点复用导致 id 变化），使用烘焙进
