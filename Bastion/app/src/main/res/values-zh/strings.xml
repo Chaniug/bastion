@@ -3413,15 +3413,6 @@
     <string name="qs_previous">上一步</string>
     <string name="qs_welcome_heading">Bastion的设置可能有点复杂，所以我可以带你进行快速初始化，是否要开始？</string>
     <string name="qs_welcome_description">下面只保留第一次使用最容易影响体验的设置。你可以跳过，也可以之后在"功能拓展"里重新打开。</string>
-    <string name="qs_language_selection">语言选择</string>
-    <string name="qs_collapse">收起</string>
-    <string name="qs_change">更改</string>
-    <string name="qs_lang_system">跟随系统</string>
-    <string name="qs_lang_english">English</string>
-    <string name="qs_lang_chinese">简体中文</string>
-    <string name="qs_lang_vietnamese">Tiếng Việt</string>
-    <string name="qs_lang_japanese">日本語</string>
-    <string name="qs_lang_russian">Русский</string>
     <string name="qs_master_password">主密码</string>
     <string name="qs_master_password_set">已设置，可以用于解锁和保护数据</string>
     <string name="qs_master_password_unset">建议先设置一个主密码</string>

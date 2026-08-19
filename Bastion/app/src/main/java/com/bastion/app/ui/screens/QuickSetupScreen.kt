@@ -1,6 +1,5 @@
 package com.bastion.app.ui.screens
 
-import android.app.Activity
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,7 +39,6 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Note
@@ -65,7 +62,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -83,10 +79,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -102,7 +96,6 @@ import com.bastion.app.data.AppSettings
 import com.bastion.app.data.AuthenticatorCardDisplayField
 import com.bastion.app.data.ColorScheme
 import com.bastion.app.data.ItemType
-import com.bastion.app.data.Language
 import com.bastion.app.data.PasswordCardDisplayField
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
@@ -111,8 +104,6 @@ import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.TotpCodeCard
 import com.bastion.app.ui.password.PasswordEntryCard as PasswordEntryCardV2
 import com.bastion.app.viewmodel.SettingsViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -158,8 +149,6 @@ fun QuickSetupScreen(
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var showFinishDialog by remember { mutableStateOf(false) }
     val step = steps[stepIndex]
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     fun completeWithoutDialog() {
         settingsViewModel.updateQuickSetupCompleted(true)
@@ -274,18 +263,7 @@ fun QuickSetupScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     when (steps[targetStep]) {
-                        QuickSetupStep.WELCOME -> WelcomeStep(
-                            selectedLanguage = settings.language,
-                            onLanguageSelected = { language ->
-                                coroutineScope.launch {
-                                    settingsViewModel.updateLanguage(language)
-                                    delay(200)
-                                    if (context is Activity) {
-                                        context.recreate()
-                                    }
-                                }
-                            }
-                        )
+                        QuickSetupStep.WELCOME -> WelcomeStep()
 
                         QuickSetupStep.SECURITY -> SecurityStep(
                             biometricEnabled = settings.biometricEnabled,
@@ -315,11 +293,7 @@ fun QuickSetupScreen(
 }
 
 @Composable
-private fun WelcomeStep(
-    selectedLanguage: Language,
-    onLanguageSelected: (Language) -> Unit
-) {
-    var languageExpanded by rememberSaveable { mutableStateOf(false) }
+private fun WelcomeStep() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(22.dp)
@@ -336,77 +310,6 @@ private fun WelcomeStep(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { languageExpanded = !languageExpanded },
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.qs_language_selection),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = stringResource(languageLabelRes(selectedLanguage)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    AssistChip(
-                        onClick = { languageExpanded = !languageExpanded },
-                        label = { Text(stringResource(if (languageExpanded) R.string.qs_collapse else R.string.qs_change)) }
-                    )
-                }
-                if (languageExpanded) {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Language.values().forEach { language ->
-                            FilterChip(
-                                selected = selectedLanguage == language,
-                                onClick = {
-                                    onLanguageSelected(language)
-                                    languageExpanded = false
-                                },
-                                label = { Text(stringResource(languageLabelRes(language))) },
-                                leadingIcon = if (selectedLanguage == language) {
-                                    {
-                                        Icon(
-                                            Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                } else {
-                                    null
-                                }
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -1201,12 +1104,6 @@ private fun IconSurface(icon: ImageVector) {
             )
         }
     }
-}
-
-@StringRes
-private fun languageLabelRes(language: Language): Int = when (language) {
-    Language.SYSTEM -> R.string.qs_lang_system
-    Language.CHINESE -> R.string.qs_lang_chinese
 }
 
 @StringRes
