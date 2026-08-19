@@ -3352,8 +3352,6 @@
     <string name="onedrive_kdbx_sync_open_manage">前往 KeePass 数据库管理</string>
     <string name="onedrive_advanced_backup_options">高级：选择性 ZIP 备份</string>
     <string name="onedrive_advanced_backup_options_desc">按条目类型挑选后打包上传（仅推荐需要独立归档的用户）</string>
-    <string name="expand">展开</string>
-    <string name="collapse">收起</string>
     <string name="onedrive_backup_browser_title">OneDrive 文件夹浏览</string>
     <string name="onedrive_backup_no_folders">当前 OneDrive 目录下没有文件夹</string>
     <string name="onedrive_backup_use_current_folder">将当前文件夹设为备份目录</string>
