@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -135,7 +138,8 @@ private const val ONEDRIVE_BACKUP_LOG_TAG = "OneDriveBackupScreen"
 fun OneDriveBackupScreen(
     passwordRepository: PasswordRepository,
     secureItemRepository: SecureItemRepository,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenLocalKeePass: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -178,6 +182,7 @@ fun OneDriveBackupScreen(
     var trashCount by remember { mutableStateOf(0) }
     var localKeePassCount by remember { mutableStateOf(0) }
     var passkeyCount by remember { mutableStateOf(0) }
+    var showAdvancedBackupOptions by remember { mutableStateOf(false) }
     val oneDriveReady = session != null && connectionState == OneDriveBackupConnectionState.Connected
     fun currentSessionBackupConfig(): OneDriveBackupConfig? {
         val activeSession = session ?: return null
@@ -530,6 +535,287 @@ fun OneDriveBackupScreen(
                 }
             }
 
+            // 推荐主路径：直接同步 KeePass kdbx 数据库文件
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.onedrive_kdbx_sync_recommended_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(R.string.onedrive_kdbx_sync_recommended_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = { onOpenLocalKeePass() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CloudSync, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.onedrive_kdbx_sync_open_manage))
+                    }
+                }
+            }
+
+            // 高级选项：选择性 ZIP 备份（折叠）
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showAdvancedBackupOptions = !showAdvancedBackupOptions },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.onedrive_advanced_backup_options),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(R.string.onedrive_advanced_backup_options_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = if (showAdvancedBackupOptions) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = stringResource(
+                                if (showAdvancedBackupOptions) R.string.collapse else R.string.expand
+                            )
+                        )
+                    }
+
+                    AnimatedVisibility(visible = showAdvancedBackupOptions) {
+                        Column(
+                            modifier = Modifier.padding(top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            SelectiveBackupCard(
+                                preferences = backupPreferences,
+                                onPreferencesChange = {
+                                    val normalized = it.copy(includeWebDavConfig = false)
+                                    backupPreferences = normalized
+                                    webDavHelper.saveBackupPreferences(normalized)
+                                },
+                                passwordCount = passwordCount,
+                                authenticatorCount = authenticatorCount,
+                                documentCount = documentCount,
+                                bankCardCount = bankCardCount,
+                                noteCount = noteCount,
+                                trashCount = trashCount,
+                                passkeyCount = passkeyCount,
+                                localKeePassCount = localKeePassCount,
+                                isWebDavConfigured = false
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (currentSessionBackupConfig() == null) {
+                                        Log.w(
+                                            ONEDRIVE_BACKUP_LOG_TAG,
+                                            "Create backup blocked: no config for current session, " +
+                                                "state=$connectionState, session=${session.debugRef()}, savedConfig=${savedConfig.debugRef()}"
+                                        )
+                                        Toast.makeText(context, context.getString(R.string.onedrive_backup_directory_required), Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    if (!backupPreferences.hasAnyEnabled()) {
+                                        Toast.makeText(context, context.getString(R.string.backup_validation_error), Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    creatingBackup = true
+                                    coroutineScope.launch {
+                                        val backupTarget = SyncTarget.Backup(SyncBackupProvider.ONEDRIVE)
+                                        val taskId = SyncDiagnostics.nextTaskId("backup-onedrive-screen")
+                                        val targetLog = backupTarget.stableKey.value
+                                        val triggerLog = "ONEDRIVE_SCREEN_MANUAL"
+                                        try {
+                                            val syncResult = SyncTaskRunner.requestAndAwait(
+                                                request = SyncRequest(
+                                                    requestId = taskId,
+                                                    target = backupTarget,
+                                                    trigger = SyncTrigger.MANUAL,
+                                                    createdAtMillis = System.currentTimeMillis(),
+                                                    priority = SyncPriority.MANUAL,
+                                                    mode = SyncMode.FOREGROUND,
+                                                    networkPolicy = SyncNetworkPolicy.REQUIRED
+                                                )
+                                            ) {
+                                                SyncDiagnostics.queued(taskId, targetLog, triggerLog)
+                                                val startedAt = SyncDiagnostics.start(taskId, targetLog, triggerLog)
+                                                try {
+                                                    val localPasswords = passwordRepository.getAllLocalPasswordEntries()
+                                                    val securityManager = com.bastion.app.security.SecurityManager(context)
+                                                    val failedPasswordTitles = mutableListOf<String>()
+                                                    val decryptedPasswords = localPasswords.map { entry ->
+                                                        runCatchingObserved {
+                                                            entry.copy(password = securityManager.decryptData(entry.password))
+                                                        }.getOrElse { error ->
+                                                            Log.w(
+                                                                ONEDRIVE_BACKUP_LOG_TAG,
+                                                                "Failed to decrypt password for OneDrive backup: ${entry.title} (${error.message})"
+                                                            )
+                                                            failedPasswordTitles += entry.title.ifBlank { entry.website.ifBlank { entry.username } }
+                                                            entry.copy(password = "")
+                                                        }
+                                                    }
+                                                    if (failedPasswordTitles.isNotEmpty()) {
+                                                        throw IllegalStateException(
+                                                            "有 ${failedPasswordTitles.size} 条密码无法解密，已取消备份。请先用主密码解锁 Bastion 后重新备份。"
+                                                        )
+                                                    }
+                                                    val localSecureItems = secureItemRepository.getAllLocalItems()
+                                                    Log.i(
+                                                        ONEDRIVE_BACKUP_LOG_TAG,
+                                                        "Creating OneDrive backup zip: passwords=${localPasswords.size}, " +
+                                                            "secureItems=${localSecureItems.size}, scope=${BackupContentScope.MONICA_LOCAL_ONLY}"
+                                                    )
+                                                    val (file, report) = webDavHelper.createBackupZip(
+                                                        passwords = decryptedPasswords,
+                                                        secureItems = localSecureItems,
+                                                        preferences = backupPreferences,
+                                                        contentScope = BackupContentScope.MONICA_LOCAL_ONLY
+                                                    ).getOrThrow()
+
+                                                    Log.i(
+                                                        ONEDRIVE_BACKUP_LOG_TAG,
+                                                        "OneDrive backup zip ready: sizeBytes=${file.length()}, " +
+                                                            "passwords=${report.successItems.passwords}/${report.totalItems.passwords}, " +
+                                                            "totp=${report.successItems.totp}/${report.totalItems.totp}, " +
+                                                            "notes=${report.successItems.notes}/${report.totalItems.notes}, " +
+                                                            "warnings=${report.warnings.size}, failures=${report.failedItems.size}"
+                                                    )
+                                                    try {
+                                                        backupHelper.uploadBackup(file, isPermanent = true).getOrThrow()
+                                                    } finally {
+                                                        file.delete()
+                                                    }
+                                                    SyncDiagnostics.success(
+                                                        taskId = taskId,
+                                                        target = targetLog,
+                                                        trigger = triggerLog,
+                                                        startedAt = startedAt,
+                                                        detail = "passwords=${decryptedPasswords.size} secureItems=${localSecureItems.size} warnings=${report.warnings.size} failures=${report.failedItems.size}"
+                                                    )
+                                                    report
+                                                } catch (error: Exception) {
+                                                    SyncDiagnostics.failed(taskId, targetLog, triggerLog, startedAt, error)
+                                                    throw error
+                                                }
+                                            }
+
+                                            when (syncResult) {
+                                                is SyncTaskAwaitResult.Completed -> {
+                                                    Toast.makeText(
+                                                        context,
+                                                        if (syncResult.value.hasIssues()) {
+                                                            syncResult.value.getSummary()
+                                                        } else {
+                                                            context.getString(R.string.webdav_backup_success)
+                                                        },
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                                is SyncTaskAwaitResult.Merged -> {
+                                                    SyncDiagnostics.skipped(
+                                                        taskId = taskId,
+                                                        target = targetLog,
+                                                        trigger = triggerLog,
+                                                        reason = "merged_with_running_backup",
+                                                        detail = "running=${syncResult.status.runningRequestId.orEmpty()}"
+                                                    )
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.webdav_backup_in_progress),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                                is SyncTaskAwaitResult.Skipped -> {
+                                                    SyncDiagnostics.skipped(taskId, targetLog, triggerLog, syncResult.reason)
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.webdav_backup_failed, syncResult.reason),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                                is SyncTaskAwaitResult.Blocked -> {
+                                                    val reason = syncResult.error.redactedMessage ?: syncResult.error.kind.name
+                                                    SyncDiagnostics.blocked(taskId, targetLog, triggerLog, reason)
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.webdav_backup_failed, reason),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                                is SyncTaskAwaitResult.Canceled -> {
+                                                    val reason = syncResult.reason ?: "backup canceled"
+                                                    SyncDiagnostics.skipped(taskId, targetLog, triggerLog, reason)
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.webdav_backup_failed, reason),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                                is SyncTaskAwaitResult.Failed -> {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(
+                                                            R.string.webdav_backup_failed,
+                                                            syncResult.error.toOneDriveUserMessage(context.getString(R.string.webdav_create_backup_failed))
+                                                        ),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            }
+                                            if (syncResult is SyncTaskAwaitResult.Completed) {
+                                                refreshBackups()
+                                            }
+                                        } catch (error: Exception) {
+                                            Log.e(ONEDRIVE_BACKUP_LOG_TAG, "OneDrive backup creation failed", error)
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(
+                                                    R.string.webdav_backup_failed,
+                                                    error.toOneDriveUserMessage(context.getString(R.string.webdav_create_backup_failed))
+                                                ),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } finally {
+                                            creatingBackup = false
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = backupReady && !creatingBackup
+                            ) {
+                                if (creatingBackup) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                } else {
+                                    Icon(Icons.Default.CloudSync, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(if (creatingBackup) stringResource(R.string.webdav_backup_in_progress) else stringResource(R.string.webdav_backup_now))
+                            }
+                        }
+                    }
+                }
+            }
+
             if (oneDriveReady) {
                 Card {
                     Column(
@@ -737,214 +1023,6 @@ fun OneDriveBackupScreen(
                         )
                     }
                 }
-            }
-
-            SelectiveBackupCard(
-                preferences = backupPreferences,
-                onPreferencesChange = {
-                    val normalized = it.copy(includeWebDavConfig = false)
-                    backupPreferences = normalized
-                    webDavHelper.saveBackupPreferences(normalized)
-                },
-                passwordCount = passwordCount,
-                authenticatorCount = authenticatorCount,
-                documentCount = documentCount,
-                bankCardCount = bankCardCount,
-                noteCount = noteCount,
-                trashCount = trashCount,
-                passkeyCount = passkeyCount,
-                localKeePassCount = localKeePassCount,
-                isWebDavConfigured = false
-            )
-
-            Button(
-                onClick = {
-                    if (currentSessionBackupConfig() == null) {
-                        Log.w(
-                            ONEDRIVE_BACKUP_LOG_TAG,
-                            "Create backup blocked: no config for current session, " +
-                                "state=$connectionState, session=${session.debugRef()}, savedConfig=${savedConfig.debugRef()}"
-                        )
-                        Toast.makeText(context, context.getString(R.string.onedrive_backup_directory_required), Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    if (!backupPreferences.hasAnyEnabled()) {
-                        Toast.makeText(context, context.getString(R.string.backup_validation_error), Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    creatingBackup = true
-                    coroutineScope.launch {
-                        val backupTarget = SyncTarget.Backup(SyncBackupProvider.ONEDRIVE)
-                        val taskId = SyncDiagnostics.nextTaskId("backup-onedrive-screen")
-                        val targetLog = backupTarget.stableKey.value
-                        val triggerLog = "ONEDRIVE_SCREEN_MANUAL"
-                        try {
-                            val syncResult = SyncTaskRunner.requestAndAwait(
-                                request = SyncRequest(
-                                    requestId = taskId,
-                                    target = backupTarget,
-                                    trigger = SyncTrigger.MANUAL,
-                                    createdAtMillis = System.currentTimeMillis(),
-                                    priority = SyncPriority.MANUAL,
-                                    mode = SyncMode.FOREGROUND,
-                                    networkPolicy = SyncNetworkPolicy.REQUIRED
-                                )
-                            ) {
-                                SyncDiagnostics.queued(taskId, targetLog, triggerLog)
-                                val startedAt = SyncDiagnostics.start(taskId, targetLog, triggerLog)
-                                try {
-                                    val localPasswords = passwordRepository.getAllLocalPasswordEntries()
-                                    val securityManager = com.bastion.app.security.SecurityManager(context)
-                                    val failedPasswordTitles = mutableListOf<String>()
-                                    val decryptedPasswords = localPasswords.map { entry ->
-                                        runCatchingObserved {
-                                            entry.copy(password = securityManager.decryptData(entry.password))
-                                        }.getOrElse { error ->
-                                            Log.w(
-                                                ONEDRIVE_BACKUP_LOG_TAG,
-                                                "Failed to decrypt password for OneDrive backup: ${entry.title} (${error.message})"
-                                            )
-                                            failedPasswordTitles += entry.title.ifBlank { entry.website.ifBlank { entry.username } }
-                                            entry.copy(password = "")
-                                        }
-                                    }
-                                    if (failedPasswordTitles.isNotEmpty()) {
-                                        throw IllegalStateException(
-                                            "有 ${failedPasswordTitles.size} 条密码无法解密，已取消备份。请先用主密码解锁 Bastion 后重新备份。"
-                                        )
-                                    }
-                                    val localSecureItems = secureItemRepository.getAllLocalItems()
-                                    Log.i(
-                                        ONEDRIVE_BACKUP_LOG_TAG,
-                                        "Creating OneDrive backup zip: passwords=${localPasswords.size}, " +
-                                            "secureItems=${localSecureItems.size}, scope=${BackupContentScope.MONICA_LOCAL_ONLY}"
-                                    )
-                                    val (file, report) = webDavHelper.createBackupZip(
-                                        passwords = decryptedPasswords,
-                                        secureItems = localSecureItems,
-                                        preferences = backupPreferences,
-                                        contentScope = BackupContentScope.MONICA_LOCAL_ONLY
-                                    ).getOrThrow()
-
-                                    Log.i(
-                                        ONEDRIVE_BACKUP_LOG_TAG,
-                                        "OneDrive backup zip ready: sizeBytes=${file.length()}, " +
-                                            "passwords=${report.successItems.passwords}/${report.totalItems.passwords}, " +
-                                            "totp=${report.successItems.totp}/${report.totalItems.totp}, " +
-                                            "notes=${report.successItems.notes}/${report.totalItems.notes}, " +
-                                            "warnings=${report.warnings.size}, failures=${report.failedItems.size}"
-                                    )
-                                    try {
-                                        backupHelper.uploadBackup(file, isPermanent = true).getOrThrow()
-                                    } finally {
-                                        file.delete()
-                                    }
-                                    SyncDiagnostics.success(
-                                        taskId = taskId,
-                                        target = targetLog,
-                                        trigger = triggerLog,
-                                        startedAt = startedAt,
-                                        detail = "passwords=${decryptedPasswords.size} secureItems=${localSecureItems.size} warnings=${report.warnings.size} failures=${report.failedItems.size}"
-                                    )
-                                    report
-                                } catch (error: Exception) {
-                                    SyncDiagnostics.failed(taskId, targetLog, triggerLog, startedAt, error)
-                                    throw error
-                                }
-                            }
-
-                            when (syncResult) {
-                                is SyncTaskAwaitResult.Completed -> {
-                                    Toast.makeText(
-                                        context,
-                                        if (syncResult.value.hasIssues()) {
-                                            syncResult.value.getSummary()
-                                        } else {
-                                            context.getString(R.string.webdav_backup_success)
-                                        },
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                                is SyncTaskAwaitResult.Merged -> {
-                                    SyncDiagnostics.skipped(
-                                        taskId = taskId,
-                                        target = targetLog,
-                                        trigger = triggerLog,
-                                        reason = "merged_with_running_backup",
-                                        detail = "running=${syncResult.status.runningRequestId.orEmpty()}"
-                                    )
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.webdav_backup_in_progress),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                                is SyncTaskAwaitResult.Skipped -> {
-                                    SyncDiagnostics.skipped(taskId, targetLog, triggerLog, syncResult.reason)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.webdav_backup_failed, syncResult.reason),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                                is SyncTaskAwaitResult.Blocked -> {
-                                    val reason = syncResult.error.redactedMessage ?: syncResult.error.kind.name
-                                    SyncDiagnostics.blocked(taskId, targetLog, triggerLog, reason)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.webdav_backup_failed, reason),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                                is SyncTaskAwaitResult.Canceled -> {
-                                    val reason = syncResult.reason ?: "backup canceled"
-                                    SyncDiagnostics.skipped(taskId, targetLog, triggerLog, reason)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.webdav_backup_failed, reason),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                                is SyncTaskAwaitResult.Failed -> {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(
-                                            R.string.webdav_backup_failed,
-                                            syncResult.error.toOneDriveUserMessage(context.getString(R.string.webdav_create_backup_failed))
-                                        ),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                            if (syncResult is SyncTaskAwaitResult.Completed) {
-                                refreshBackups()
-                            }
-                        } catch (error: Exception) {
-                            Log.e(ONEDRIVE_BACKUP_LOG_TAG, "OneDrive backup creation failed", error)
-                            Toast.makeText(
-                                context,
-                                context.getString(
-                                    R.string.webdav_backup_failed,
-                                    error.toOneDriveUserMessage(context.getString(R.string.webdav_create_backup_failed))
-                                ),
-                                Toast.LENGTH_LONG
-                            ).show()
-                        } finally {
-                            creatingBackup = false
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = backupReady && !creatingBackup
-            ) {
-                if (creatingBackup) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                } else {
-                    Icon(Icons.Default.CloudSync, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (creatingBackup) stringResource(R.string.webdav_backup_in_progress) else stringResource(R.string.webdav_backup_now))
             }
 
             Card {

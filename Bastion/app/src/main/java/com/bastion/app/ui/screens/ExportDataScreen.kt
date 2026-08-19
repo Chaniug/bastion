@@ -393,6 +393,43 @@ fun ExportDataScreen(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
+
+            // 格式说明（随选中选项动态变化）
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.export_format_hint_title),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = when (selectedOption) {
+                                ExportOption.ZIP_BACKUP -> stringResource(R.string.export_format_hint_zip)
+                                ExportOption.KDBX -> stringResource(R.string.export_format_hint_kdbx)
+                                ExportOption.BITWARDEN_JSON -> stringResource(R.string.export_format_hint_json)
+                                ExportOption.BITWARDEN_ENCRYPTED_JSON -> stringResource(R.string.export_format_hint_encrypted_json)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
             
             // 选项卡片组
             

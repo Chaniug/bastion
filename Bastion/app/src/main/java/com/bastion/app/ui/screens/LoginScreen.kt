@@ -19,7 +19,9 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     
-    val isFirstTime = !viewModel.isMasterPasswordSet()
+    // 首次启动判定：结果在进程生命周期内不变，remember 避免每次重组都触发
+    // isMasterPasswordSet()（EncryptedSharedPreferences 读盘+解密，主线程 IO）。
+    val isFirstTime = remember(viewModel) { !viewModel.isMasterPasswordSet() }
     
     // 获取设置
     val settings = settingsViewModel?.settings?.collectAsState()?.value

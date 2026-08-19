@@ -2875,6 +2875,9 @@ fun BastionContent(
                 secureItemRepository = secureItemRepository,
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onOpenLocalKeePass = {
+                    navController.navigate(Screen.LocalKeePass.route)
                 }
             )
         }

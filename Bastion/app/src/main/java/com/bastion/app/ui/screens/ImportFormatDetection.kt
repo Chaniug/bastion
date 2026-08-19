@@ -166,5 +166,7 @@ fun keepassImportSuggestion(context: Context, code: KeePassErrorCode): String {
             context.getString(R.string.import_data_keepass_tip_format_unsupported)
         KeePassErrorCode.IO_READ_WRITE_FAILED ->
             context.getString(R.string.import_data_keepass_tip_io_failed)
+        KeePassErrorCode.AMBIGUOUS_ENTRY_MATCH ->
+            context.getString(R.string.import_data_keepass_tip_ambiguous_match)
     }
 }

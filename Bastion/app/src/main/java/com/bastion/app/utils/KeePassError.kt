@@ -12,7 +12,9 @@ enum class KeePassErrorCode {
     INVALID_CREDENTIAL,
     URI_PERMISSION_DENIED,
     KDF_MEMORY_INSUFFICIENT,
-    IO_READ_WRITE_FAILED
+    IO_READ_WRITE_FAILED,
+    /** 更新/删除时按 Title+UserName+URL 兜底匹配命中多条（外来 KeePass 条目无 UUID 标记）。 */
+    AMBIGUOUS_ENTRY_MATCH
 }
 
 class KeePassOperationException(

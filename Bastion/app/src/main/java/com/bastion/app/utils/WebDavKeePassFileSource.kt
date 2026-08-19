@@ -86,6 +86,9 @@ class WebDavKeePassFileSource(
             throw IOException("远端目录不存在: ${parentPathOf(normalizedRemotePath)}")
         }
 
+        // 并发写防护：sardine-android 0.8 不支持 If-Match 条件 PUT（lockToken 走 If header），
+        // 因此退化为"写前 stat 版本预检"（缩小 TOCTOU 窗口）+ "写后读回校验"（检测写入损坏/截断）。
+        // 多设备严格并发仍可能覆盖（stat→put 窗口），完整原子性需升级 sardine 或引入 OkHttp 条件 PUT。
         if (!expectedVersion.isNullOrBlank()) {
             val current = runCatchingObserved { stat() }.getOrNull()
             if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
@@ -94,6 +97,22 @@ class WebDavKeePassFileSource(
         }
 
         sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
+
+        // 读回校验：部分 WebDAV 供应商可能返回成功但未完整写入（截断/损坏）。
+        // 写后立即读取远端并比对 SHA-256，不一致则报错，避免本地误以为同步成功。
+        try {
+            val writtenBytes = read()
+            if (!writtenBytes.contentEquals(bytes)) {
+                throw IOException(
+                    "远端文件写入校验失败（读回内容与本地不一致），" +
+                        "可能是网络中断或服务器截断，请重新同步"
+                )
+            }
+        } catch (e: IOException) {
+            if (e.message?.contains("远端文件写入校验失败") == true) throw e
+            // 读回本身失败（网络抖动）：不阻断，交由下次同步校验
+        }
+
         val latest = runCatchingObserved { stat() }.getOrDefault(FileSourceStat())
         FileSourceWriteResult(
             versionToken = latest.versionToken,

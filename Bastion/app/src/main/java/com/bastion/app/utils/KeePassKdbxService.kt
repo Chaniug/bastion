@@ -1349,6 +1349,13 @@ class KeePassKdbxService(
                     pendingChangeSets += updateResult.changeSets
                     if (updateResult.changed) {
                         updatedDatabase = updateResult.database
+                    } else if (updateResult.ambiguousMatch) {
+                        // 同名条目无法精确定位：跳过（不新增重复条目），不计入 addedCount。
+                        android.util.Log.w(
+                            "KeePassKdbxService",
+                            "addPasswordEntries skipped ambiguous entry id=${entry.id} " +
+                                "title=${entry.title} (multiple same-key matches)"
+                        )
                     } else {
                         val newEntry = buildEntry(entry, plainPassword, customFields)
                         buildCreateEntryChangeSet(
@@ -1404,6 +1411,14 @@ class KeePassKdbxService(
                 )
                 val pendingChangeSets = updateResult.changeSets.toMutableList()
                 val updatedDatabase = if (updateResult.changed) updateResult.database else {
+                    if (updateResult.ambiguousMatch) {
+                        // 同名条目无法精确定位：放弃编辑并明确报错，绝不"删多建一"或新增重复条目。
+                        throw KeePassOperationException(
+                            code = KeePassErrorCode.AMBIGUOUS_ENTRY_MATCH,
+                            message = "数据库中存在多个同名条目（标题/用户名/网址相同），" +
+                                "无法确定要编辑的目标，已取消操作。请先在 KeePass 中重命名或标记后重试。"
+                        )
+                    }
                     val newEntry = buildEntry(entry, plainPassword, customFields)
                     buildCreateEntryChangeSet(
                         database = loaded.keePassDatabase,
@@ -2790,6 +2805,26 @@ class KeePassKdbxService(
     ): KeePassEntryUpdateResult {
         val resolutionContext = buildResolutionContext(keePassDatabase)
         val (entryContexts, _) = collectEntryContexts(keePassDatabase)
+        val rootGroup = keePassDatabase.content.group
+
+        // 预扫描：统计兜底匹配（Title+UserName+URL）命中的条目数。
+        // 外来 KeePass 条目无 UUID/BastionLocalId 标记时走 matchByKey 兜底；若命中多条
+        //（同名同用户名同 URL 的合法条目），删除全部后只重建一条会造成数据丢失（含历史/附件）。
+        // 此时必须放弃编辑，绝不"删多建一"。
+        val allEntries = mutableListOf<Entry>()
+        collectEntries(rootGroup, allEntries)
+        val matchedUuids = allEntries
+            .filter { matchesPasswordEntry(it, entry, resolutionContext) }
+            .map { it.uuid }
+        if (matchedUuids.size > 1) {
+            return KeePassEntryUpdateResult(
+                database = keePassDatabase,
+                changed = false,
+                changeSets = emptyList(),
+                ambiguousMatch = true
+            )
+        }
+
         var firstMatchedContext: EntryTraversalContext? = null
         val matcher: (Entry) -> Boolean = { existing ->
             val matches = matchesPasswordEntry(existing, entry, resolutionContext)
@@ -2798,7 +2833,6 @@ class KeePassKdbxService(
             }
             matches
         }
-        val rootGroup = keePassDatabase.content.group
         val removeResult = removeEntryInGroup(rootGroup, matcher)
         val removedCount = removeResult.second
         if (removedCount <= 0) {
@@ -3180,7 +3214,12 @@ class KeePassKdbxService(
     private data class KeePassEntryUpdateResult(
         val database: KeePassDatabase,
         val changed: Boolean,
-        val changeSets: List<KeePassChangeSet>
+        val changeSets: List<KeePassChangeSet>,
+        /**
+         * 兜底匹配（Title+UserName+URL）命中多条：无法精确定位目标条目。
+         * 为 true 时调用方必须放弃编辑/删除，绝不能"删除全部匹配后重建一条"（会丢数据）。
+         */
+        val ambiguousMatch: Boolean = false,
     )
 
     private fun <T> applyEntryStructureChanges(
