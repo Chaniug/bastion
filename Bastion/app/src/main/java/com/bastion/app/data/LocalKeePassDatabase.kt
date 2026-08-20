@@ -125,7 +125,8 @@ data class KeePassDatabaseCreationOptions(
     indices = [
         Index(value = ["storage_location"]),
         Index(value = ["source_type"]),
-        Index(value = ["source_id"])
+        Index(value = ["source_id"]),
+        Index(value = ["key_file_fingerprint"])
     ]
 )
 data class LocalKeePassDatabase(
@@ -140,7 +141,19 @@ data class LocalKeePassDatabase(
     
     /** 密钥文件 URI（可选，使用 SAF 选择或生成的密钥文件） */
     val keyFileUri: String? = null,
-    
+
+    /** 私有目录中的密钥文件副本（可选；原始 URI 始终保留，用于离线/权限失效兜底） */
+    @ColumnInfo(name = "key_file_internal_path")
+    val keyFileInternalPath: String? = null,
+
+    /** 密钥文件显示名称 */
+    @ColumnInfo(name = "key_file_name")
+    val keyFileName: String? = null,
+
+    /** 密钥文件 SHA-256 指纹，用于恢复校验与副本去重 */
+    @ColumnInfo(name = "key_file_fingerprint")
+    val keyFileFingerprint: String? = null,
+
     /** 存储位置 */
     @ColumnInfo(name = "storage_location")
     val storageLocation: KeePassStorageLocation = KeePassStorageLocation.INTERNAL,
@@ -378,5 +391,21 @@ interface LocalKeePassDatabaseDao {
         status: KeePassSyncStatus,
         error: String?,
         syncedAt: Long?
+    )
+
+    @Query(
+        """
+        UPDATE local_keepass_databases
+        SET key_file_internal_path = :internalPath,
+            key_file_name = :fileName,
+            key_file_fingerprint = :fingerprint
+        WHERE id = :id
+        """
+    )
+    suspend fun updateKeyFileCopy(
+        id: Long,
+        internalPath: String?,
+        fileName: String?,
+        fingerprint: String?
     )
 }

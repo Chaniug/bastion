@@ -8,6 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bastion.app.data.KeepassRemoteSource
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.webdav.WebDavConditionalWriter
+import com.bastion.app.webdav.WebDavCredentials
+import com.bastion.app.webdav.WebDavGateway
+import com.bastion.app.webdav.WebDavPreconditionException
+import com.bastion.app.webdav.WebDavWriteMode
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -34,6 +39,18 @@ class WebDavKeePassFileSource(
                 setCredentials(username.trim(), password)
             }
         }
+    }
+
+    /**
+     * 条件写入器：与 sardine 共享同一套拦截器链（预置式 Basic Auth / 限流 / UA），
+     * 用于 `If-Match` 原子条件 PUT，弥补 sardine-android 0.8 不支持条件头的缺口。
+     */
+    private val conditionalWriter by lazy {
+        WebDavConditionalWriter(
+            WebDavGateway.buildOkHttpClient(
+                WebDavCredentials(username.trim(), password)
+            )
+        )
     }
 
     override suspend fun stat(): FileSourceStat = withContext(Dispatchers.IO) {
@@ -86,17 +103,37 @@ class WebDavKeePassFileSource(
             throw IOException("远端目录不存在: ${parentPathOf(normalizedRemotePath)}")
         }
 
-        // 并发写防护：sardine-android 0.8 不支持 If-Match 条件 PUT（lockToken 走 If header），
-        // 因此退化为"写前 stat 版本预检"（缩小 TOCTOU 窗口）+ "写后读回校验"（检测写入损坏/截断）。
-        // 多设备严格并发仍可能覆盖（stat→put 窗口），完整原子性需升级 sardine 或引入 OkHttp 条件 PUT。
+        // 并发写防护：服务器支持 ETag 时，使用 OkHttp 条件 PUT（If-Match）让服务端
+        // 在 HTTP 边界强制前置条件，真正消除 stat→PUT 窗口内的并发覆盖（TOCTOU）。
+        // 无 ETag 的服务器退化为"写前 stat 版本预检"（缩小窗口）+ "写后读回校验"。
         if (!expectedVersion.isNullOrBlank()) {
             val current = runCatchingObserved { stat() }.getOrNull()
-            if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
-                throw IOException("远端文件已变化，请先重新同步")
+            val currentEtag = current?.etag
+            if (currentEtag != null) {
+                if (!current.matchesExpectedVersion(expectedVersion)) {
+                    throw IOException("远端文件已变化，请先重新同步")
+                }
+                try {
+                    conditionalWriter.write(
+                        targetUrl = remoteUrl,
+                        bytes = bytes,
+                        mode = WebDavWriteMode.IF_MATCH,
+                        expectedVersion = currentEtag
+                    )
+                } catch (e: WebDavPreconditionException) {
+                    // 条件 PUT 被服务端拒绝（并发写入已发生）：明确报冲突
+                    throw IOException("远端文件已变化，请先重新同步", e)
+                }
+            } else {
+                if (current != null && !current.matchesExpectedVersion(expectedVersion)) {
+                    throw IOException("远端文件已变化，请先重新同步")
+                }
+                sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
             }
+        } else {
+            // 首次上传/强制覆盖：直接写入
+            sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
         }
-
-        sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
 
         // 读回校验：部分 WebDAV 供应商可能返回成功但未完整写入（截断/损坏）。
         // 写后立即读取远端并比对 SHA-256，不一致则报错，避免本地误以为同步成功。

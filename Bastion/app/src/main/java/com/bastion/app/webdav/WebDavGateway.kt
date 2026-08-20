@@ -20,14 +20,13 @@ object WebDavGateway {
     private const val CALL_TIMEOUT_SECONDS: Long = 15L
 
     /**
-     * 构造一个已配置好 OkHttp 拦截器链的 sardine 客户端。
+     * 构造已配置好 OkHttp 拦截器链的裸 [OkHttpClient]。
      *
-     * 重要：不再调用 `sardine.setCredentials(...)`，因为凭据已由
-     * [PreemptiveBasicAuthInterceptor] 预置到每个请求中；双重设置反而会让
-     * sardine 走 challenge-response 逻辑，与 OpenList 的速率策略冲突。
+     * 供 [buildClient] 与需要直连 OkHttp 的组件（如 [WebDavConditionalWriter]）复用，
+     * 保证认证/限流/UA 行为一致。
      */
-    fun buildClient(credentials: WebDavCredentials): OkHttpSardine {
-        val okHttp = OkHttpClient.Builder()
+    fun buildOkHttpClient(credentials: WebDavCredentials): OkHttpClient {
+        return OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -36,7 +35,17 @@ object WebDavGateway {
             .addInterceptor(RateLimitInterceptor())
             .addInterceptor(UserAgentInterceptor())
             .build()
-        return OkHttpSardine(okHttp)
+    }
+
+    /**
+     * 构造一个已配置好 OkHttp 拦截器链的 sardine 客户端。
+     *
+     * 重要：不再调用 `sardine.setCredentials(...)`，因为凭据已由
+     * [PreemptiveBasicAuthInterceptor] 预置到每个请求中；双重设置反而会让
+     * sardine 走 challenge-response 逻辑，与 OpenList 的速率策略冲突。
+     */
+    fun buildClient(credentials: WebDavCredentials): OkHttpSardine {
+        return OkHttpSardine(buildOkHttpClient(credentials))
     }
 
     /** 从任意 URL 字符串中提取 host；若无法解析返回空串。 */
