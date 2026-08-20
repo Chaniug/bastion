@@ -42,7 +42,7 @@ import com.bastion.app.keepass.KeePassPendingChangeDao
         // KeePass entry-level pending changes
         KeePassPendingChange::class
     ],
-    version = 75,
+    version = 76,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -2230,6 +2230,19 @@ abstract class PasswordDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_75_76 = object : androidx.room.migration.Migration(75, 76) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // KeePass 密钥文件内部副本与 SHA-256 指纹（恢复校验与副本去重）
+                database.execSQL("ALTER TABLE `local_keepass_databases` ADD COLUMN `key_file_internal_path` TEXT")
+                database.execSQL("ALTER TABLE `local_keepass_databases` ADD COLUMN `key_file_name` TEXT")
+                database.execSQL("ALTER TABLE `local_keepass_databases` ADD COLUMN `key_file_fingerprint` TEXT")
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_local_keepass_databases_key_file_fingerprint` " +
+                        "ON `local_keepass_databases` (`key_file_fingerprint`)"
+                )
+            }
+        }
+
         /**
          * 通用表重建辅助：通过 PRAGMA 动态读取旧表结构，
          * 去掉指定列后建新表并拷贝数据（SQLite < 3.35 不支持 DROP COLUMN），
@@ -2423,7 +2436,8 @@ abstract class PasswordDatabase : RoomDatabase() {
                         MIGRATION_71_72,   // KeePass sync state updated timestamp
                         MIGRATION_72_73,   // Encrypted timeline version snapshots
                         MIGRATION_73_74,   // Remove MDBX: drop tables + drop columns
-                        MIGRATION_74_75    // 覆盖 autofill/列表查询的复合索引
+                        MIGRATION_74_75,   // 覆盖 autofill/列表查询的复合索引
+                        MIGRATION_75_76    // KeePass 密钥文件内部副本与 SHA-256 指纹
                     )
                     // 启用多进程失效通知：IME 跑在 :ime 独立进程，主进程需要
                     // 感知 IME 进程对数据库的修改（例如最近填充时间戳等）。

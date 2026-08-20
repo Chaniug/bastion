@@ -106,6 +106,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.Date
 import java.util.LinkedHashMap
@@ -304,6 +305,7 @@ class KeePassKdbxService(
 ) {
     companion object {
         private const val TAG = "KeePassKdbxService"
+        private const val KEYFILE_COPY_DIR = "keepass_keyfiles"
         // Keep unknown-source cache short, but keep known internal files effectively "always warm".
         private const val UNKNOWN_SOURCE_CACHE_TTL_MS = 60_000L
         private const val PENDING_CHANGE_UPLOAD_RETRY_DELAY_MILLIS = 30_000L
@@ -5221,7 +5223,7 @@ class KeePassKdbxService(
         return "bytes=${bytes.size}, header[$headerLength]=$headerHex"
     }
 
-    private fun buildCredentials(
+    private suspend fun buildCredentials(
         database: LocalKeePassDatabase,
         passwordOverride: String? = null,
         keyFileUriOverride: Uri? = null
@@ -5230,10 +5232,80 @@ class KeePassKdbxService(
         val kdbxPassword = passwordOverride ?: (encryptedDbPassword?.let { securityManager.decryptData(it) } ?: "")
         val keyFileBytes = keyFileUriOverride?.let { uri ->
             readKeyFileBytes(uri)
+        } ?: database.keyFileInternalPath?.takeIf { it.isNotBlank() }?.let { relPath ->
+            // 优先内部副本：避免 SAF 权限过期或外部文件被移动导致的解锁失败
+            File(context.filesDir, relPath).takeIf { it.exists() }?.readBytes()
         } ?: database.keyFileUri?.takeIf { it.isNotBlank() }?.let { uriString ->
             readKeyFileBytes(Uri.parse(uriString))
         }
+        if (keyFileBytes != null && keyFileBytes.isNotEmpty()) {
+            // 用户刚选择了新密钥文件（override），或尚没有内部副本时，补写副本与指纹
+            val needsPersist = keyFileUriOverride != null || database.keyFileInternalPath.isNullOrBlank()
+            if (needsPersist) {
+                persistKeyFileCopyIfNeeded(
+                    database = database,
+                    keyFileBytes = keyFileBytes,
+                    sourceUri = keyFileUriOverride ?: database.keyFileUri?.let(Uri::parse)
+                )
+            }
+        }
         return resolveCredentials(kdbxPassword, keyFileBytes)
+    }
+
+    /**
+     * 把密钥文件写入应用私有目录副本并记录 SHA-256 指纹（幂等）：
+     * - 指纹相同且副本已存在时不重复写入；
+     * - 仅当指纹/路径/名称变化时才更新数据库记录。
+     * 原始 URI 始终保留；副本用于离线解锁、SAF 权限失效兜底与恢复校验去重。
+     */
+    private suspend fun persistKeyFileCopyIfNeeded(
+        database: LocalKeePassDatabase,
+        keyFileBytes: ByteArray,
+        sourceUri: Uri?
+    ) {
+        if (keyFileBytes.isEmpty()) return
+        runCatchingObserved {
+            val fingerprint = sha256Hex(keyFileBytes)
+            val dir = File(context.filesDir, KEYFILE_COPY_DIR)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val target = File(dir, "$fingerprint.key")
+            if (!target.exists() || !target.readBytes().contentEquals(keyFileBytes)) {
+                val temp = File(dir, "$fingerprint.key.tmp")
+                FileOutputStream(temp).use { output ->
+                    output.write(keyFileBytes)
+                    output.flush()
+                    output.fd.sync()
+                }
+                if (!temp.renameTo(target)) {
+                    temp.copyTo(target, overwrite = true)
+                    temp.delete()
+                }
+            }
+            val internalPath = "$KEYFILE_COPY_DIR/$fingerprint.key"
+            val displayName = sourceUri?.lastPathSegment
+            val current = dao.getDatabaseById(database.id)
+            if (current != null &&
+                (current.keyFileInternalPath != internalPath ||
+                    current.keyFileName != displayName ||
+                    current.keyFileFingerprint != fingerprint)
+            ) {
+                dao.updateKeyFileCopy(
+                    id = database.id,
+                    internalPath = internalPath,
+                    fileName = displayName,
+                    fingerprint = fingerprint
+                )
+            }
+        }
+    }
+
+    private fun sha256Hex(bytes: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        return digest.joinToString(separator = "") { byte ->
+            "%02x".format(Locale.US, byte.toInt() and 0xff)
+        }
     }
 
     private fun buildCredentialsFromRaw(password: String, keyFileUri: Uri? = null): CredentialsResolution {
