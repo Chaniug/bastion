@@ -86,8 +86,6 @@ class SettingsViewModel(
 
     fun updateClipboardAutoClearSeconds(seconds: Int) = commitUpdate { updateClipboardAutoClearSeconds(seconds) }
 
-    fun updateDynamicColorEnabled(enabled: Boolean) = commitUpdate { updateDynamicColorEnabled(enabled) }
-
     fun updateBottomNavVisibility(tab: BottomNavContentTab, visible: Boolean) = commitUpdate { updateBottomNavVisibility(tab, visible) }
 
     fun updateBottomNavOrder(order: List<BottomNavContentTab>) = commitUpdate { updateBottomNavOrder(order) }
@@ -226,16 +224,4 @@ class SettingsViewModel(
 
     fun updateCategoryFilterState(scope: String, state: SavedCategoryFilterState) = commitUpdate { updateCategoryFilterState(scope, state) }
 
-    fun updateBitwardenUploadAll(enabled: Boolean) = commitUpdate { updateBitwardenUploadAll(enabled) }
-    
-    /**
-     * 更新自动填充数据源
-     */
-    fun updateAutofillSources(sources: Set<com.bastion.app.data.AutofillSource>) = commitUpdate { updateAutofillSources(sources) }
-    
-    /**
-     * 更新自动填充优先级
-     */
-    fun updateAutofillPriority(priority: List<com.bastion.app.data.AutofillSource>) = commitUpdate { updateAutofillPriority(priority) }
-    
 }

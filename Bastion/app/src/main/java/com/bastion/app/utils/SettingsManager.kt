@@ -33,11 +33,9 @@ import com.bastion.app.data.PasswordListQuickFolderStyle
 import com.bastion.app.data.PasswordSwipeSelectionMode
 import com.bastion.app.data.PasswordListTopModule
 import com.bastion.app.data.PresetCustomField
-import com.bastion.app.data.NoteCodeBlockCollapseMode
 import com.bastion.app.data.ProgressBarStyle
 import com.bastion.app.data.ThemeMode
 import com.bastion.app.data.UnifiedProgressBarMode
-import com.bastion.app.data.AutofillSource
 
 // "settings" DataStore 委托统一声明在同包的 AppDataStore.kt，此处直接复用，
 // 避免重复声明导致 "multiple DataStore active for the same file" 运行时崩溃。
@@ -178,7 +176,6 @@ class SettingsManager(private val context: Context) {
         private val SHOW_GENERATOR_TAB_KEY = booleanPreferencesKey("show_generator_tab")  // 添加生成器标签键
         private val SHOW_SEND_TAB_KEY = booleanPreferencesKey("show_send_tab")
         private val SHOW_PASSKEY_TAB_KEY = booleanPreferencesKey("show_passkey_tab")  // 添加 Passkey 标签键
-        private val DYNAMIC_COLOR_ENABLED_KEY = booleanPreferencesKey("dynamic_color_enabled")
         private val BOTTOM_NAV_ORDER_KEY = stringPreferencesKey("bottom_nav_order")
         private val USE_DRAGGABLE_BOTTOM_NAV_KEY = booleanPreferencesKey("use_draggable_bottom_nav")
         private val AUTO_HIDE_BOTTOM_NAV_WHEN_SINGLE_TAB_KEY =
@@ -236,7 +233,6 @@ class SettingsManager(private val context: Context) {
         private val PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY =
             booleanPreferencesKey("password_detail_security_analysis_enabled")
         private val NOTE_GRID_LAYOUT_KEY = booleanPreferencesKey("note_grid_layout") // 笔记网格布局
-        private val NOTE_CODE_BLOCK_COLLAPSE_MODE_KEY = stringPreferencesKey("note_code_block_collapse_mode") // 笔记代码块折叠模式
         private val AUTOFILL_AUTH_REQUIRED_KEY = booleanPreferencesKey("autofill_auth_required") // 自动填充验证
         
         // 密码页面字段可见性
@@ -258,12 +254,6 @@ class SettingsManager(private val context: Context) {
         private val LAST_PASSWORD_CATEGORY_FILTER_PRIMARY_ID_KEY = longPreferencesKey("last_password_category_filter_primary_id")
         private val LAST_PASSWORD_CATEGORY_FILTER_SECONDARY_ID_KEY = longPreferencesKey("last_password_category_filter_secondary_id")
         private val LAST_PASSWORD_CATEGORY_FILTER_TEXT_KEY = stringPreferencesKey("last_password_category_filter_text")
-
-        // Bitwarden 同步范围
-        private val BITWARDEN_UPLOAD_ALL_KEY = booleanPreferencesKey("bitwarden_upload_all")
-        
-        private val AUTOFILL_SOURCES_KEY = stringPreferencesKey("autofill_sources")
-        private val AUTOFILL_PRIORITY_KEY = stringPreferencesKey("autofill_priority")
 
         // 分类菜单展开/收缩状态
         private val CATEGORY_MENU_QUICK_FILTERS_EXPANDED_KEY = booleanPreferencesKey("category_menu_quick_filters_expanded")
@@ -511,7 +501,6 @@ class SettingsManager(private val context: Context) {
             autoLockMinutes = preferences[AUTO_LOCK_MINUTES_KEY] ?: 5,
             screenshotProtectionEnabled = preferences[SCREENSHOT_PROTECTION_KEY] ?: true,
             clipboardAutoClearSeconds = preferences[CLIPBOARD_AUTO_CLEAR_SECONDS_KEY] ?: 0,
-            dynamicColorEnabled = preferences[DYNAMIC_COLOR_ENABLED_KEY] ?: true,
             bottomNavVisibility = BottomNavVisibility(
                 vaultV2 = preferences[SHOW_VAULT_V2_TAB_KEY] ?: false,
                 passwords = preferences[SHOW_PASSWORDS_TAB_KEY] ?: true,
@@ -644,12 +633,6 @@ class SettingsManager(private val context: Context) {
                 )
             }.getOrDefault(PasswordSwipeSelectionMode.DEFAULT),
             noteGridLayout = preferences[NOTE_GRID_LAYOUT_KEY] ?: true,
-            noteCodeBlockCollapseMode = runCatchingObserved {
-                NoteCodeBlockCollapseMode.valueOf(
-                    preferences[NOTE_CODE_BLOCK_COLLAPSE_MODE_KEY]
-                        ?: NoteCodeBlockCollapseMode.BALANCED.name
-                )
-            }.getOrDefault(NoteCodeBlockCollapseMode.BALANCED),
             autofillAuthRequired = preferences[AUTOFILL_AUTH_REQUIRED_KEY] ?: true,
             passwordFieldVisibility = com.bastion.app.data.PasswordFieldVisibility(
                 securityVerification = preferences[FIELD_SECURITY_VERIFICATION_KEY] ?: true,
@@ -665,20 +648,7 @@ class SettingsManager(private val context: Context) {
             lastPasswordCategoryFilterType = preferences[LAST_PASSWORD_CATEGORY_FILTER_TYPE_KEY] ?: "all",
             lastPasswordCategoryFilterPrimaryId = preferences[LAST_PASSWORD_CATEGORY_FILTER_PRIMARY_ID_KEY],
             lastPasswordCategoryFilterSecondaryId = preferences[LAST_PASSWORD_CATEGORY_FILTER_SECONDARY_ID_KEY],
-            lastPasswordCategoryFilterText = preferences[LAST_PASSWORD_CATEGORY_FILTER_TEXT_KEY],
-            bitwardenUploadAll = preferences[BITWARDEN_UPLOAD_ALL_KEY] ?: false,
-            autofillSources = runCatchingObserved {
-                val sourcesStr = preferences[AUTOFILL_SOURCES_KEY] ?: AutofillSource.V1_LOCAL.name
-                sourcesStr.split(",").mapNotNull {
-                    runCatchingObserved { AutofillSource.valueOf(it.trim()) }.getOrNull()
-                }.toSet()
-            }.getOrDefault(setOf(AutofillSource.V1_LOCAL)),
-            autofillPriority = runCatchingObserved {
-                val priorityStr = preferences[AUTOFILL_PRIORITY_KEY] ?: AutofillSource.V1_LOCAL.name
-                priorityStr.split(",").mapNotNull {
-                    runCatchingObserved { AutofillSource.valueOf(it.trim()) }.getOrNull()
-                }
-            }.getOrDefault(listOf(AutofillSource.V1_LOCAL))
+            lastPasswordCategoryFilterText = preferences[LAST_PASSWORD_CATEGORY_FILTER_TEXT_KEY]
         )
     }
     
@@ -730,12 +700,6 @@ class SettingsManager(private val context: Context) {
         }
     }
 
-    suspend fun updateBitwardenUploadAll(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[BITWARDEN_UPLOAD_ALL_KEY] = enabled
-        }
-    }
-    
     suspend fun updateBiometricEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[BIOMETRIC_ENABLED_KEY] = enabled
@@ -763,12 +727,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updateClipboardAutoClearSeconds(seconds: Int) {
         dataStore.edit { preferences ->
             preferences[CLIPBOARD_AUTO_CLEAR_SECONDS_KEY] = seconds.coerceAtLeast(0)
-        }
-    }
-
-    suspend fun updateDynamicColorEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[DYNAMIC_COLOR_ENABLED_KEY] = enabled
         }
     }
 
@@ -1138,12 +1096,6 @@ class SettingsManager(private val context: Context) {
     suspend fun updateNoteGridLayout(isGrid: Boolean) {
         dataStore.edit { preferences ->
             preferences[NOTE_GRID_LAYOUT_KEY] = isGrid
-        }
-    }
-
-    suspend fun updateNoteCodeBlockCollapseMode(mode: NoteCodeBlockCollapseMode) {
-        dataStore.edit { preferences ->
-            preferences[NOTE_CODE_BLOCK_COLLAPSE_MODE_KEY] = mode.name
         }
     }
 
@@ -1610,24 +1562,6 @@ class SettingsManager(private val context: Context) {
         }
     }
     
-    /**
-     * 更新自动填充数据源
-     */
-    suspend fun updateAutofillSources(sources: Set<AutofillSource>) {
-        dataStore.edit { preferences ->
-            preferences[AUTOFILL_SOURCES_KEY] = sources.joinToString(",") { it.name }
-        }
-    }
-    
-    /**
-     * 更新自动填充优先级
-     */
-    suspend fun updateAutofillPriority(priority: List<AutofillSource>) {
-        dataStore.edit { preferences ->
-            preferences[AUTOFILL_PRIORITY_KEY] = priority.joinToString(",") { it.name }
-        }
-    }
-
     /** 分类菜单"快捷筛选"展开状态（跨进程持久化） */
     val categoryMenuQuickFiltersExpandedFlow: Flow<Boolean> = dataStore.data.map { preferences ->
         preferences[CATEGORY_MENU_QUICK_FILTERS_EXPANDED_KEY] ?: true
