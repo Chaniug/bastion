@@ -693,7 +693,6 @@
     
     <!-- Settings Screen -->
     <string name="settings_title">设置</string>
-    <string name="language">语言</string>
     <string name="theme">外观</string>  <!-- 将"主题"重命名为"外观" -->
     <string name="security">安全</string>
     <string name="master_password_and_locking">主密码与锁定</string>
@@ -706,12 +705,7 @@
     
     <!-- Language Options -->
     <string name="language_system">跟随系统</string>
-    <string name="language_english">English</string>
     <string name="language_chinese">中文</string>
-    <string name="language_vietnamese">Tiếng Việt</string>
-    <string name="language_japanese">日本語</string>
-    <string name="language_russian">Русский</string>
-
     <!-- Theme Options -->
     <string name="theme_system">跟随系统</string>
     <string name="theme_light">浅色</string>
@@ -1028,12 +1022,7 @@
     <string name="reset_zoom">重置缩放</string>
 
     <!-- Settings Screen -->
-    <string name="settings_general">通用</string>
-    <string name="settings_security">安全</string>
-    <string name="settings_data_management">数据管理</string>
-    <string name="settings_about">关于</string>
     <string name="settings_detail_placeholder">选择设置项以查看详情</string>
-    <string name="settings_language_description">语言</string>
     <string name="settings_auto_lock_title">自动锁定</string>
     <string name="settings_auto_lock_description">离开应用后自动锁定</string>
     <string name="settings_biometric_title">生物识别</string>
@@ -1045,7 +1034,7 @@
     <string name="settings_bottom_sheet_title">底部抽屉模式</string>
     <string name="settings_bottom_sheet_description">启用可上拉的抽屉式导航</string>
     <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_description">Export data to a local file</string>
+    <string name="settings_export_data_description">导出数据到本地文件</string>
     <string name="settings_import_data">导入数据</string>
     <string name="settings_import_data_description">从备份文件恢复</string>
     <string name="settings_version_info">版本信息</string>
@@ -1067,8 +1056,8 @@
     <string name="update_check_no_update_message">当前安装版本已经是最新 Release。</string>
     <string name="update_check_failed_message">无法检查 GitHub Releases：%1$s</string>
     <string name="update_check_failed_unknown">未知错误</string>
-    <string name="update_content_label">What’s New</string>
-    <string name="update_whats_new">- Added Bitwarden-compatible JSON export (plaintext / password-protected), importable by Bitwarden or bw2keepass\n- Added Bitwarden JSON import (plaintext + encrypted) for logins/cards/identities/notes, with folders auto-mapped to categories\n- Polished export/import copy; removed outdated CSV descriptions; plaintext JSON export warning is now shown dynamically\n- Ongoing fixes for device compatibility and UI stability</string>
+    <string name="update_content_label">更新内容</string>
+    <string name="update_whats_new">- 新增 Bitwarden 兼容 JSON 导出（明文 / 密码保护加密），可被 Bitwarden 官方或 bw2keepass 直接导入\n- 新增 Bitwarden JSON 导入（明文 + 加密），支持登录 / 卡片 / 证件 / 笔记，文件夹自动映射为分类\n- 优化导出与导入文案，移除过时的 CSV 描述，明文 JSON 导出警告改为动态提示\n- 持续修复真机兼容性与界面稳定性问题</string>
     <string name="update_check_current_version">当前版本：%1$s</string>
     <string name="update_check_latest_version">最新版本：%1$s</string>
     <string name="update_check_open_release">打开 Release</string>
@@ -1089,7 +1078,6 @@
     <string name="custom_icon_load_more">加载更多图标（剩余 %1$d 个）</string>
     <string name="custom_icon_upload_success">图标上传成功</string>
     <string name="custom_icon_upload_failed">上传失败：%1$s</string>
-    <string name="settings_version_number">V1.0.297</string>
     <string name="settings_support_author">支持作者</string>
     <string name="settings_support_author_description">感谢您的支持</string>
     <string name="settings_privacy_policy">隐私政策</string>
@@ -1112,10 +1100,6 @@
     <string name="hidden">已隐藏</string>
     
     <!-- Language Selection Dialog -->
-    <string name="dialog_select_language">选择语言</string>
-    <string name="language_simplified_chinese">简体中文</string>
-    <string name="language_english_name">English</string>
-    
     <!-- Change Password Screen -->
     <string name="change_password_title">修改主密码</string>
     <string name="change_password_warning_title">重要提示</string>
@@ -1273,7 +1257,7 @@
     <!-- Data Management in Settings -->
     <string name="data_management">数据管理</string>
     <string name="export_data">导出数据</string>
-    <string name="export_data_description">导出为备份、KeePass 或 Bitwarden 兼容格式</string>
+    <string name="export_data_description">导出数据到文件</string>
     <string name="import_data">导入数据</string>
     <string name="import_data_description">从备份、KeePass、Bitwarden 等格式导入数据</string>
     
@@ -2006,8 +1990,6 @@
     <string name="database_source_keepass">KeePass 数据库</string>
     <string name="bitwarden_vault_label">Bitwarden Vault</string>
     <string name="sync_scope_section_title">同步范围</string>
-    <string name="bitwarden_upload_all">上传所有数据到 Bitwarden</string>
-    <string name="bitwarden_upload_all_desc">忽略文件夹规则，所有数据同步到 Bitwarden</string>
     <string name="apply_upload_all">应用到所有数据</string>
     <string name="bitwarden_folder_section_title">Bitwarden 文件夹</string>
     <string name="bitwarden_not_logged_in">未登录 Bitwarden</string>
@@ -2791,7 +2773,7 @@
     <string name="sync_backup_keepass_tools">KeePass 工具</string>
     <string name="sync_backup_keepass_webdav_title">KeePass WebDAV</string>
     <string name="sync_backup_keepass_webdav_desc">通过 WebDAV 与 KeePass (.kdbx) 同步数据</string>
-    <string name="sync_backup_import_export_low_freq">导入导出（低频）</string>
+    <string name="sync_backup_import_export_low_freq">导入与导出</string>
     <string name="dedup_engine_title">去重引擎</string>
     <string name="dedup_engine_desc">用规则化方式统一扫描 Bastion、KeePass 和 Bitwarden 的重复数据</string>
     <string name="dedup_engine_entry_desc">集中查看完全重复、跨库镜像和类型级冲突，并按建议治理</string>
@@ -3276,7 +3258,6 @@
     <string name="autofill_v2_title">自动填充</string>
     <string name="autofill_v2_engine_title">引擎：Bitwarden V2</string>
     <string name="autofill_v2_engine_desc">自动填充已切换到并行重建的 Bitwarden 风格模型，旧逻辑已冻结。</string>
-    <string name="autofill_v2_engine_mode_legacy">当前为旧引擎冻结模式</string>
     <string name="autofill_v2_enable_service">启用应用内自动填充</string>
     <string name="autofill_v2_enable_service_desc">控制 Bastion 在应用内是否提供自动填充能力。</string>
     <string name="autofill_v2_strict_match">严格匹配（推荐）</string>

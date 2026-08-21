@@ -498,7 +498,6 @@ data class AppSettings(
     val autoLockMinutes: Int = 5, // Auto lock after X minutes of inactivity
     val screenshotProtectionEnabled: Boolean = false, // Prevent screenshots by default
     val clipboardAutoClearSeconds: Int = 0, // 复制账号/密码后自动清除剪切板，0=关闭
-    val dynamicColorEnabled: Boolean = true, // 动态颜色默认开启
     val quickSetupCompleted: Boolean = false, // 首次快速初始化是否已完成/跳过
     val bottomNavVisibility: BottomNavVisibility = BottomNavVisibility(),
     val bottomNavOrder: List<BottomNavContentTab> = BottomNavContentTab.DEFAULT_ORDER,
@@ -553,7 +552,6 @@ data class AppSettings(
     val passwordListTopModulesOrder: List<PasswordListTopModule> = PasswordListTopModule.DEFAULT_ORDER, // 密码列表顶部模块顺序
     val passwordSwipeSelectionMode: PasswordSwipeSelectionMode = PasswordSwipeSelectionMode.DEFAULT, // 右滑选中模式
     val noteGridLayout: Boolean = true, // 笔记列表使用网格布局 (true = 网格, false = 列表)
-    val noteCodeBlockCollapseMode: NoteCodeBlockCollapseMode = NoteCodeBlockCollapseMode.BALANCED, // 笔记代码块折叠模式
     val autofillAuthRequired: Boolean = true, // 自动填充验证 - 默认开启
     val passwordFieldVisibility: PasswordFieldVisibility = PasswordFieldVisibility(), // 添加密码页面字段定制
     val smartDeduplicationEnabled: Boolean = true, // 智能去重（在"所有"视图中合并显示相同密码）
@@ -564,10 +562,6 @@ data class AppSettings(
     val lastPasswordCategoryFilterSecondaryId: Long? = null, // 上次分类次参数（如 Bitwarden Vault ID）
     val lastPasswordCategoryFilterText: String? = null, // 上次分类文本参数（如组路径/文件夹ID）
 
-    // Bitwarden 同步范围设置
-    val bitwardenUploadAll: Boolean = false, // 一键上传所有数据到 Bitwarden
-    val autofillSources: Set<AutofillSource> = setOf(AutofillSource.V1_LOCAL), // 自动填充数据源
-    val autofillPriority: List<AutofillSource> = listOf(AutofillSource.V1_LOCAL) // 自动填充优先级
 )
 
 enum class AppLauncherIcon {
@@ -623,13 +617,4 @@ enum class UnmatchedIconHandlingStrategy {
     DEFAULT_ICON,              // 显示默认图标
     WEBSITE_OR_TITLE_INITIAL,  // 显示网站/标题首字
     HIDE                       // 不显示图标
-}
-
-/**
- * 自动填充数据源
- */
-enum class AutofillSource {
-    V1_LOCAL,    // V1 本地密码库
-    BITWARDEN,   // Bitwarden
-    KEEPASS      // KeePass（未来支持）
 }
