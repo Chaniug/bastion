@@ -532,7 +532,16 @@ class BitwardenSyncService(
             val customFields = parsePasswordCustomFieldMap(cipher.fields, symmetricKey)
             val encryptedPassword = encryptBitwardenPasswordForOfflineDisplay(password, cipher.id)
             val sshKeyData = buildSshKeyDataFromCustomFields(customFields)
-            
+            // T2: WIFI / SSO 扩展元数据还原
+            val remoteWifiMetadata = customFields["bastion_wifi_data"].orEmpty()
+            val remoteSsoProvider = customFields["bastion_sso_provider"].orEmpty()
+            val remoteLoginType = when {
+                sshKeyData.isNotBlank() -> LOGIN_TYPE_SSH_KEY
+                customFields["bastion_login_type"].equals("WIFI", ignoreCase = true) -> "WIFI"
+                customFields["bastion_login_type"].equals("SSO", ignoreCase = true) -> "SSO"
+                else -> "PASSWORD"
+            }
+
             return PasswordEntry(
                 title = name,
                 website = parsedUris.website,
@@ -564,7 +573,9 @@ class BitwardenSyncService(
                 country = customFields["bastion_country"] ?: customFields["country"] ?: "",
                 passkeyBindings = customFields["bastion_passkey_bindings"].orEmpty(),
                 sshKeyData = sshKeyData,
-                loginType = if (sshKeyData.isNotBlank()) LOGIN_TYPE_SSH_KEY else "PASSWORD",
+                loginType = remoteLoginType,
+                wifiMetadata = remoteWifiMetadata,
+                ssoProvider = remoteSsoProvider,
                 isFavorite = cipher.favorite,
                 createdAt = Date(),
                 updatedAt = Date(),
@@ -629,7 +640,16 @@ class BitwardenSyncService(
             val remoteCountry = customFields["bastion_country"] ?: customFields["country"] ?: ""
             val remotePasskeyBindings = customFields["bastion_passkey_bindings"].orEmpty()
             val remoteSshKeyData = buildSshKeyDataFromCustomFields(customFields)
-            
+            // T2: WIFI / SSO 扩展元数据还原
+            val remoteWifiMetadata = customFields["bastion_wifi_data"].orEmpty()
+            val remoteSsoProvider = customFields["bastion_sso_provider"].orEmpty()
+            val remoteLoginType = when {
+                remoteSshKeyData.isNotBlank() -> LOGIN_TYPE_SSH_KEY
+                customFields["bastion_login_type"].equals("WIFI", ignoreCase = true) -> "WIFI"
+                customFields["bastion_login_type"].equals("SSO", ignoreCase = true) -> "SSO"
+                else -> "PASSWORD"
+            }
+
             return entry.copy(
                 title = name,
                 website = parsedUris.website.ifBlank { entry.website },
@@ -648,7 +668,9 @@ class BitwardenSyncService(
                 country = remoteCountry.ifBlank { entry.country },
                 passkeyBindings = remotePasskeyBindings.ifBlank { entry.passkeyBindings },
                 sshKeyData = remoteSshKeyData.ifBlank { entry.sshKeyData },
-                loginType = if (remoteSshKeyData.isNotBlank()) LOGIN_TYPE_SSH_KEY else entry.loginType,
+                loginType = remoteLoginType,
+                wifiMetadata = remoteWifiMetadata.ifBlank { entry.wifiMetadata },
+                ssoProvider = remoteSsoProvider.ifBlank { entry.ssoProvider },
                 isFavorite = cipher.favorite,
                 updatedAt = Date(),
                 bitwardenVaultId = vaultId,
@@ -1982,6 +2004,14 @@ class BitwardenSyncService(
         addField("bastion_zip_code", entry.zipCode)
         addField("bastion_country", entry.country)
         addField("bastion_passkey_bindings", entry.passkeyBindings)
+        // T2: WIFI / SSO 扩展元数据走隐藏字段，消除 REST 同步静默丢数据
+        if (entry.loginType.equals("WIFI", ignoreCase = true)) {
+            addField("bastion_login_type", "WIFI")
+            addField("bastion_wifi_data", entry.wifiMetadata)
+        } else if (entry.loginType.equals("SSO", ignoreCase = true)) {
+            addField("bastion_login_type", "SSO")
+            addField("bastion_sso_provider", entry.ssoProvider)
+        }
         SshKeyDataCodec.decode(entry.sshKeyData)?.let { ssh ->
             addField("bastion_ssh_algorithm", ssh.algorithm)
             addField("bastion_ssh_key_size", ssh.keySize.takeIf { it > 0 }?.toString().orEmpty())

@@ -314,9 +314,15 @@ class CipherSyncProcessor(
         val remoteCountry = customFields["bastion_country"] ?: customFields["country"] ?: ""
         val remotePasskeyBindings = customFields["bastion_passkey_bindings"].orEmpty()
         val remoteSshKeyData = buildSshKeyDataFromCustomFields(customFields)
-        val remoteLoginType = if (remoteSshKeyData.isNotBlank()) LOGIN_TYPE_SSH_KEY
-            else customFields["bastion_login_type"]?.takeIf { it.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true) }
-                ?: "PASSWORD"
+        // T2: WIFI / SSO 扩展元数据还原
+        val remoteWifiMetadata = customFields["bastion_wifi_data"].orEmpty()
+        val remoteSsoProvider = customFields["bastion_sso_provider"].orEmpty()
+        val remoteLoginType = when {
+            remoteSshKeyData.isNotBlank() -> LOGIN_TYPE_SSH_KEY
+            customFields["bastion_login_type"].equals("WIFI", ignoreCase = true) -> "WIFI"
+            customFields["bastion_login_type"].equals("SSO", ignoreCase = true) -> "SSO"
+            else -> "PASSWORD"
+        }
         // 调试：记录 SSH 识别结果
         if (customFields.isNotEmpty()) {
             android.util.Log.i(TAG, "syncPasswordCipher cipherId=${cipher.id} loginType=$remoteLoginType sshDataBlank=${remoteSshKeyData.isBlank()}")
@@ -345,6 +351,8 @@ class CipherSyncProcessor(
                 passkeyBindings = remotePasskeyBindings,
                 sshKeyData = remoteSshKeyData,
                 loginType = remoteLoginType,
+                wifiMetadata = remoteWifiMetadata,
+                ssoProvider = remoteSsoProvider,
                 isFavorite = cipher.favorite == true,
                 createdAt = Date(),
                 updatedAt = Date(),
@@ -392,6 +400,8 @@ class CipherSyncProcessor(
                         passkeyBindings = remotePasskeyBindings.ifBlank { existing.passkeyBindings },
                         sshKeyData = remoteSshKeyData.ifBlank { existing.sshKeyData },
                         loginType = if (remoteSshKeyData.isNotBlank()) LOGIN_TYPE_SSH_KEY else existing.loginType,
+                        wifiMetadata = remoteWifiMetadata.ifBlank { existing.wifiMetadata },
+                        ssoProvider = remoteSsoProvider.ifBlank { existing.ssoProvider },
                         isFavorite = cipher.favorite == true,
                         isDeleted = true,
                         deletedAt = serverDeletedAt,
@@ -449,6 +459,8 @@ class CipherSyncProcessor(
                 passkeyBindings = remotePasskeyBindings.ifBlank { existing.passkeyBindings },
                 sshKeyData = remoteSshKeyData.ifBlank { existing.sshKeyData },
                 loginType = if (remoteSshKeyData.isNotBlank()) LOGIN_TYPE_SSH_KEY else existing.loginType,
+                wifiMetadata = remoteWifiMetadata.ifBlank { existing.wifiMetadata },
+                ssoProvider = remoteSsoProvider.ifBlank { existing.ssoProvider },
                 isFavorite = cipher.favorite == true,
                 isDeleted = false,
                 deletedAt = null,
@@ -1787,11 +1799,12 @@ class CipherSyncProcessor(
         return SecureCustomField(
             label = name,
             value = value,
-            type = when (type) {
-                1 -> SecureCustomFieldType.HIDDEN
-                2 -> SecureCustomFieldType.BOOLEAN
-                else -> SecureCustomFieldType.TEXT
-            }
+        type = when (type) {
+            1 -> SecureCustomFieldType.HIDDEN
+            2 -> SecureCustomFieldType.BOOLEAN
+            3 -> SecureCustomFieldType.LINKED
+            else -> SecureCustomFieldType.TEXT
+        }
         )
     }
 }

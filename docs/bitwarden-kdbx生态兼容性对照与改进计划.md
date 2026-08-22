@@ -1,6 +1,6 @@
 # Bitwarden / KDBX 生态兼容性对照与改进计划
 
-> 状态：**待执行**（文档仅供接力，改动需先确认计划）
+> 状态：**T1 / T2 / T3 / T5 / T7 已落地 `dev` 分支（2026-08-22）；T4 待单独设计（高风险，见文末）**
 > 创建：2026-08-22
 > 目的：对齐生态标准（Bitwarden 官方导出格式 / KeePassDX / Keepass2Android / KeePassXC KPH），梳理 bastion 兼容性现状与改进候选，供后续开发接力。
 
@@ -125,9 +125,27 @@ items[]: {
 
 ---
 
-## 七、决策记录
+## 七、决策记录与实施状态
 
-- [ ] T1 是否实施（等待确认）
-- [ ] T2 是否实施（等待确认）
-- [ ] T3/T4 是否排期（建议 T1/T2 验证后评估）
-- 已确认不做的：T6（.kdb 支持，收益低）；Bitwarden 图标同步（成本高收益低）
+| 项 | 状态 | 说明 |
+|---|---|---|
+| **T1** Bitwarden 多网址对称拆分 | ✅ 已落地 dev | `BitwardenJsonExport.mapPasswordEntry` 用 `PasswordWebsiteCodec.parse` 拆多 BwUri；已补 `BitwardenJsonExportTest` 守卫测试（多网址/单网址/空/中文逗号） |
+| **T2** Bitwarden WiFi/SSO 元数据通道 | ✅ 已落地 dev | REST 上传 `buildEncryptedPasswordCustomFields` 补 `bastion_login_type`/`bastion_wifi_data`/`bastion_sso_provider`；两套读回（`CipherSyncProcessor.syncPasswordCipher` + `BitwardenSyncService.convert/update`）还原 `wifiMetadata`/`ssoProvider`/`loginType(WIFI/SSO)` |
+| **T3** Bitwarden linked(3) 字段保留类型 | ✅ 已落地 dev | `SecureCustomFieldType` 加 `LINKED`；导出映射 `TEXT/HIDDEN/BOOLEAN/LINKED → 0/1/2/3`；读回 `toSecureCustomField` 的 `3 → LINKED` 对称 |
+| **T5** JSON 导出补绑定 | ✅ 已落地 dev | `BitwardenJsonExport.buildPasswordCustomFields` 补隐藏字段：`bastion_app_package`/`bastion_login_type`/`bastion_wifi_data`(WIFI)/`bastion_sso_provider`(SSO)/`bastion_passkey_bindings`/`bastion_ssh_*`(解码 `SshKeyDataCodec`) |
+| **T7** KeePassXC TOTP 位置式 | ✅ 已落地 dev | `KeePassTotpCodec.toKeePassFields` 的 `TOTP Settings` 改为位置式 `period;digits;algorithm`；独立 `Period/Digits/Algorithm` 字段保留兜底 |
+| **T4** KDBX 未匹配条目重建保真 | ⏳ 待单独设计 | 见第八章，高风险大改动，本轮未实现代码 |
+| **T6** `.kdb` 支持 | ❌ 已否 | 收益低 |
+| Bitwarden 图标同步 | ❌ 已否 | 成本高收益低 |
+
+## 八、T4 设计要点（待接力，本轮未实现）
+
+**问题**：KeePass 条目在 bastion 外部被编辑后，若未被"匹配条目 patch"路径命中（如 UUID/标题变化），bastion 会以本地模型**重建**条目，导致外来字段（第三方插件字段、自定义图标 UUID、条目历史 `History`）被"洗白"丢弃。
+
+**设计方向（供后续 agent 接力）**：
+1. 重建前对远端条目做**全字段快照**（`KeePassEntry` 的 `customFields` 中非 bastion 前缀的、`binaryPool` 引用、`History` 列表），存入变更集或临时补丁。
+2. 重建后以**叠加（overlay）**方式回填外来字段，仅覆盖 bastion 管理的标准字段，保留其余。
+3. `KeePassChangeSetApplier` / `KeePassRebase` 现有 patch 逻辑已能保留匹配条目的外来字段，可抽象出"保留外来字段"的通用策略复用到重建路径。
+4. 需配套守卫测试：构造带第三方字段 + 历史的 KeePass 条目 → 走重建路径 → 断言外来字段/历史不丢。
+
+**风险提示**：KDBX 重建涉及 `KeePassKdbxService`（数千行）与 `mdbx` 本地库，改动需真机回归 + 多轮 CI；建议单独分支、单独 PR，避免与 Bitwarden 兼容性改动耦合。

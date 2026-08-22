@@ -11,10 +11,13 @@ import com.bastion.app.data.model.CardWalletDataCodec
 import com.bastion.app.data.model.DocumentData
 import com.bastion.app.data.model.DocumentType
 import com.bastion.app.data.model.NoteData
+import com.bastion.app.data.model.SecureCustomFieldType
+import com.bastion.app.data.model.SshKeyDataCodec
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.notes.domain.NoteContentCodec
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.util.TotpDataResolver
+import com.bastion.app.utils.PasswordWebsiteCodec
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -252,7 +255,13 @@ class BitwardenJsonExporter(
         val password = entry.password.takeIf { it.isNotBlank() }?.let { safeDecrypt(it) }
         val notes = entry.notes.takeIf { it.isNotBlank() }?.let { safeDecrypt(it) }
         val totp = entry.authenticatorKey.takeIf { it.isNotBlank() }?.let { safeDecrypt(it) }
-        val uris = entry.website.takeIf { it.isNotBlank() }?.let { listOf(BwUri(uri = it)) }
+        // T1: 多网址对称拆分——与读取侧 parseLoginUris / 上传侧 buildEncryptedLoginUris 一致，
+        // 把 entry.website（逗号/中文逗号分隔）拆成多个独立 BwUri，避免导出畸形单 URI。
+        val uris = entry.website.takeIf { it.isNotBlank() }
+            ?.let { PasswordWebsiteCodec.parse(it) }
+            ?.filter { it.isNotBlank() }
+            ?.takeIf { it.isNotEmpty() }
+            ?.map { BwUri(uri = it) }
         val fields = buildPasswordCustomFields(entry)
 
         return BwExportItem(
@@ -293,6 +302,25 @@ class BitwardenJsonExporter(
         add("state", entry.state)
         add("zipCode", entry.zipCode)
         add("country", entry.country)
+        // T5: 绑定与扩展元数据走隐藏字段，消除 JSON 导出静默丢数据；
+        // 与 REST 上传侧 buildEncryptedPasswordCustomFields 同构，导入时由 CipherSyncProcessor 还原。
+        add("bastion_app_package", entry.appPackageName)
+        add("bastion_login_type", entry.loginType, 1)
+        if (entry.loginType.equals("WIFI", ignoreCase = true)) {
+            add("bastion_wifi_data", entry.wifiMetadata, 1)
+        }
+        if (entry.loginType.equals("SSO", ignoreCase = true)) {
+            add("bastion_sso_provider", entry.ssoProvider, 1)
+        }
+        add("bastion_passkey_bindings", entry.passkeyBindings, 1)
+        SshKeyDataCodec.decode(entry.sshKeyData)?.let { ssh ->
+            add("bastion_ssh_algorithm", ssh.algorithm, 1)
+            add("bastion_ssh_public_key", ssh.publicKeyOpenSsh, 1)
+            add("bastion_ssh_private_key", ssh.privateKeyOpenSsh, 1)
+            add("bastion_ssh_fingerprint", ssh.fingerprintSha256, 1)
+            add("bastion_ssh_comment", ssh.comment, 1)
+            add("bastion_ssh_format", ssh.format, 1)
+        }
         return fields
     }
 
@@ -417,7 +445,12 @@ class BitwardenJsonExporter(
                 fields += BwField(
                     name = f.label,
                     value = f.value,
-                    type = if (f.isProtected()) 1 else 0
+                    type = when (f.type) {
+                        SecureCustomFieldType.HIDDEN -> 1
+                        SecureCustomFieldType.BOOLEAN -> 2
+                        SecureCustomFieldType.LINKED -> 3
+                        else -> 0
+                    }
                 )
             }
         }

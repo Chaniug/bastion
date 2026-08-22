@@ -101,6 +101,9 @@ Android-浏览器插件功能差异排查报告.md
 bitwarden/
 !Bastion/app/src/main/java/com/bastion/app/bitwarden/
 !Bastion/app/src/main/java/com/bastion/app/bitwarden/**
+# 测试源码集中的 bitwarden 子包同样需豁免，否则 Bitwarden 相关单元测试无法纳入版本管理
+!Bastion/app/src/test/java/com/bastion/app/bitwarden/
+!Bastion/app/src/test/java/com/bastion/app/bitwarden/**
 # 桌面端共享了 bitwarden 目录名，需显式豁免（含 com/bastion/app/bitwarden 与 data/bitwarden 等所有层级）
 !desktop/**/bitwarden/
 fdroiddata/
