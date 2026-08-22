@@ -5814,7 +5814,7 @@ class KeePassKdbxService(
     }
 
     private fun bastionDatabasePassword(database: LocalKeePassDatabase): String? {
-        return database.encryptedPassword?.let { securityManager.decryptData(it) }.takeIf { it.isNotBlank() }
+        return database.encryptedPassword?.let { securityManager.decryptData(it) }?.takeIf { it.isNotBlank() }
     }
 
     private fun writeLocalBastionBytes(database: LocalKeePassDatabase, bytes: ByteArray) {
