@@ -2770,7 +2770,7 @@
     <string name="sync_backup_bitwarden_sync_title">Bitwarden 同步</string>
     <string name="sync_backup_bitwarden_sync_desc">连接 Bitwarden 服务器，同步您的密码与卡片等数据</string>
     <string name="sync_backup_database_tools">数据库工具</string>
-    <string name="sync_backup_keepass_tools">KeePass 工具</string>
+    <string name="sync_backup_keepass_tools">Bastion 工具</string>
     <string name="sync_backup_keepass_webdav_title">KeePass WebDAV</string>
     <string name="sync_backup_keepass_webdav_desc">通过 WebDAV 与 KeePass (.kdbx) 同步数据</string>
     <string name="sync_backup_import_export_low_freq">导入与导出</string>

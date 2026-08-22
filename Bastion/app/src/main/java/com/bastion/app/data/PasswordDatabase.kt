@@ -42,7 +42,7 @@ import com.bastion.app.keepass.KeePassPendingChangeDao
         // KeePass entry-level pending changes
         KeePassPendingChange::class
     ],
-    version = 76,
+    version = 77,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -2243,6 +2243,16 @@ abstract class PasswordDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_76_77 = object : androidx.room.migration.Migration(76, 77) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Bastion 工具：为 local_keepass_databases 增加 database_format 列，
+                // 支持 KDBX / JSON / CSV 多格式常驻存储（存量行默认 KDBX）。
+                database.execSQL(
+                    "ALTER TABLE `local_keepass_databases` ADD COLUMN `database_format` TEXT NOT NULL DEFAULT 'KDBX'"
+                )
+            }
+        }
+
         /**
          * 通用表重建辅助：通过 PRAGMA 动态读取旧表结构，
          * 去掉指定列后建新表并拷贝数据（SQLite < 3.35 不支持 DROP COLUMN），
@@ -2437,7 +2447,8 @@ abstract class PasswordDatabase : RoomDatabase() {
                         MIGRATION_72_73,   // Encrypted timeline version snapshots
                         MIGRATION_73_74,   // Remove MDBX: drop tables + drop columns
                         MIGRATION_74_75,   // 覆盖 autofill/列表查询的复合索引
-                        MIGRATION_75_76    // KeePass 密钥文件内部副本与 SHA-256 指纹
+                        MIGRATION_75_76,   // KeePass 密钥文件内部副本与 SHA-256 指纹
+                        MIGRATION_76_77    // Bastion 工具：database_format 多格式列
                     )
                     // 启用多进程失效通知：IME 跑在 :ime 独立进程，主进程需要
                     // 感知 IME 进程对数据库的修改（例如最近填充时间戳等）。
