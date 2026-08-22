@@ -1,20 +1,22 @@
 name: CodeQL Advanced
 
-# 在 PR 与 dev/main 推送时做静态安全分析，把漏洞拦截在合并前（而非合并后才被发现）。
+# 在 PR 与 dev 推送时做静态安全分析，把漏洞拦截在合并前（而非合并后才被发现）。
 # 说明：
 # - 本项目 Kotlin/Android，CodeQL 用 java-kotlin 提取器，必须在「编译过程中」挂上才能拿到完整分析，
 #   因此这里用 `./gradlew :app:assembleDebug`（已在 Android-Preview 流水线验证可成功）触发提取，
 #   而非依赖 autobuild（autobuild 会连带跑 lint/test，Android 项目易误失败）。
 # - 语言只写 kotlin（java-kotlin 同属一个 CodeQL 包，写两个会重复分析同一份代码）。
-# - 相比 GitHub 默认设置（仅扫默认分支 push），本工作流额外覆盖 dev 分支与所有 PR，实现「事前拦截」。
+# - 只扫 dev（push + PR），不扫 main：dev 合并到 main 后代码完全一致，扫 main 属冗余；
+#   本项目规范以 dev 为开发/测试分支，main 仅从 dev 合并，不会有绕过 dev 的直接 main 推送。
+# - 每周一定时扫描作为兜底审计（按默认分支 main 的代码跑），与事件触发不重复。
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ dev ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ dev ]
   schedule:
-    # 每周一 03:27 UTC 例行全量扫描（捕获未触发 push/PR 的潜在问题）
+    # 每周一 03:27 UTC 例行全量扫描（兜底审计，按默认分支 main 的代码运行）
     - cron: '27 3 * * 1'
 
 permissions:
