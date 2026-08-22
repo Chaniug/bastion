@@ -1,7 +1,8 @@
 # Bitwarden / KDBX 生态兼容性对照与改进计划
 
-> 状态：**T1 / T2 / T3 / T5 / T7 已落地 `dev` 分支（2026-08-22）；T4 待单独设计（高风险，见文末）**
+> 状态：**T1 / T2 / T3 / T5 / T7 已落地 `dev` 分支（2026-08-22）且 CI 全绿**（Android CI debug run 32560145716，627 单测通过，预览 APK 已发布）；**T4 待单独设计（高风险，见文末）**
 > 创建：2026-08-22
+> 更新：2026-08-22（补充落地后的 CI 修复实证与遗留观察项，见第七、九节）
 > 目的：对齐生态标准（Bitwarden 官方导出格式 / KeePassDX / Keepass2Android / KeePassXC KPH），梳理 bastion 兼容性现状与改进候选，供后续开发接力。
 
 ---
@@ -138,6 +139,18 @@ items[]: {
 | **T6** `.kdb` 支持 | ❌ 已否 | 收益低 |
 | Bitwarden 图标同步 | ❌ 已否 | 成本高收益低 |
 
+### 落地后的 CI 修复实证（2026-08-22）
+
+T 项首次推送后 CI 门禁暴露 3 个问题，均已修复并随 `dev` 通过全部检查（run 32560145716）。后续若改动相关代码，注意这几类"实现/测试不同步"错误：
+
+| 提交 | 问题 | 根因与修复 |
+|---|---|---|
+| `244af59` | `compileDebugKotlin` 失败：`when` 不穷尽 | T3 给 `SecureCustomFieldType` 加 `LINKED` 后，`CipherUploadProcessor.buildEncryptedFields`（约 1449 行）的 `when` 未处理；补 `LINKED -> 3`（与下载/导出侧映射一致） |
+| `a905479` | 单测结果 XML 缺失（基线闸门报错） | 同批引入的 `BitwardenJsonExportTest` 构造 `PasswordEntry` 漏传 `website/username/password` 必填参数，测试代码编译失败；且 `Run unit tests` 步骤 `continue-on-error` 吞掉失败信号，只留下游基线闸门暴露。**教训：单测步骤无产物 ≠ 测试通过，看基线闸门的 XML 缺失/失败名单** |
+| `7042f9e` | 2 个 `KeePassTotpCodecTest` 断言失败 | T7 实现有意改位置式 settings（`45;8;SHA256` / `30;6;HOTP;12`），同提交的守卫测试仍断言旧键值式；按 B.2.1 哲学重写断言对齐实现 |
+
+排错通道提示：本仓库 CI 日志经 `results-receiver.actions.githubusercontent.com` 下发，协作环境 DNS 会劫持到保留段导致 `gh run view --log` 拿不到数据；基线闸门步骤已把失败名单打进 checks API annotations（`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`），这是最稳定的排错入口。
+
 ## 八、T4 设计要点（待接力，本轮未实现）
 
 **问题**：KeePass 条目在 bastion 外部被编辑后，若未被"匹配条目 patch"路径命中（如 UUID/标题变化），bastion 会以本地模型**重建**条目，导致外来字段（第三方插件字段、自定义图标 UUID、条目历史 `History`）被"洗白"丢弃。
@@ -149,3 +162,13 @@ items[]: {
 4. 需配套守卫测试：构造带第三方字段 + 历史的 KeePass 条目 → 走重建路径 → 断言外来字段/历史不丢。
 
 **风险提示**：KDBX 重建涉及 `KeePassKdbxService`（数千行）与 `mdbx` 本地库，改动需真机回归 + 多轮 CI；建议单独分支、单独 PR，避免与 Bitwarden 兼容性改动耦合。
+
+---
+
+## 九、遗留观察项（2026-08-22 补充，不阻塞，供后续加固）
+
+**`KeePassTotpCodec.parseSettings` 对位置式 HOTP settings 的单独解析有歧义**：
+
+- 现象：`toKeePassFields` 输出 `"30;6;HOTP;12"` 后，若**仅凭该 settings 字符串**调用 `parse`（无独立字段），"30" 与默认值 30 无法区分 → "6" 被误读为 period、"12" 被误读为 digits，counter 丢失。
+- 实际影响：**无**。bastion 写条目时同时落独立字段 `TOTP Period`/`TOTP Digits`/`HOTP Counter`，`parseSettings` 对独立字段优先级更高（`fields.period/digits/counter` 覆盖），完整 roundtrip 正确。
+- 加固方向（如需）：位置式解析时，`HOTP` token 之后的数字视为 counter；或在 TOTP 默认值场景下改用键值式双写。属行为改动，需单独验证。
