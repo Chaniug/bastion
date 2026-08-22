@@ -692,6 +692,32 @@ class KeePassKdbxService(
             syncService.markComparing(databaseId, workingHash)
 
             val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
+
+            // 优化：远端自上次同步后未变化且本地无改动时，跳过整文件下载，直接判定为最新状态，
+            // 避免每次进入页面/切设置都全量拉取整个 kdbx 文件。仅当存在同步基线（baseHash 非空）
+            // 时才可在不下载的前提下判定本地是否改动，以防首次同步被误判为“无改动”。
+            // etag 与 versionToken 任一匹配即视为远端未变（兼容 OneDrive/WebDAV 等不同远端实现）。
+            val localHasChangesFast = if (baseHash.isNullOrBlank()) null else baseHash != workingHash
+            val remoteEtagMatches = syncState?.remoteEtag != null &&
+                remoteStat.etag != null &&
+                remoteStat.etag == syncState?.remoteEtag
+            val remoteVersionMatches = syncState?.remoteVersionToken != null &&
+                remoteStat.versionToken != null &&
+                remoteStat.versionToken == syncState?.remoteVersionToken
+            if (localHasChangesFast == false && (remoteEtagMatches || remoteVersionMatches)) {
+                syncService.markSynchronized(
+                    databaseId = databaseId,
+                    versionToken = remoteStat.versionToken,
+                    etag = remoteStat.etag,
+                    baseHash = workingHash,
+                    workingHash = workingHash
+                )
+                invalidateProcessCache(databaseId)
+                return@withContext Result.success(
+                    KeePassRemoteSyncResult(syncedDatabaseName, "远端已是最新状态")
+                )
+            }
+
             val remoteBytes = fileSource.read()
             val remoteHash = GoogleDriveKeePassSupport.sha256Hex(remoteBytes)
             val localHasChanges = if (baseHash.isNullOrBlank()) {

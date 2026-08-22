@@ -410,10 +410,10 @@ fun PasswordListContent(
             keepassDatabases.find { it.id == databaseId }
         }
     }
-    LaunchedEffect(
-        selectedKeePassDatabase?.id,
-        selectedKeePassDatabase?.lastSyncStatus
-    ) {
+    // 只在选中数据库切换（id 变化）时触发一次自动同步；
+    // 不再以 lastSyncStatus 作为 key，避免同步完成→状态变更→再次触发形成循环，
+    // 也避免切换设置导致列表重建时误触发同步。
+    LaunchedEffect(selectedKeePassDatabase?.id) {
         val database = selectedKeePassDatabase ?: return@LaunchedEffect
         if (database.isRemoteSource()) {
             localKeePassViewModel.autoSyncVisibleRemoteDatabase(database.id)
