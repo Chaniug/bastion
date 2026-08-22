@@ -2,7 +2,7 @@ name: Deploy Pages
 
 on:
   push:
-    branches: [main, dev]
+    branches: [ dev ]
     # 只有站点内容（pages/）变动才重新部署，避免每次 app 推送都重部署
     paths:
       - 'pages/**'
