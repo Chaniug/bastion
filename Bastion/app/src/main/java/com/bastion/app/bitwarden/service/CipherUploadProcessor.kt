@@ -1450,6 +1450,7 @@ class CipherUploadProcessor(
                         SecureCustomFieldType.TEXT -> 0
                         SecureCustomFieldType.HIDDEN -> 1
                         SecureCustomFieldType.BOOLEAN -> 2
+                        SecureCustomFieldType.LINKED -> 3
                     }
                 )
             }

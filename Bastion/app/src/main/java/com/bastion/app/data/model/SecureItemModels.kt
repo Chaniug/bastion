@@ -234,7 +234,8 @@ enum class CardType {
 enum class SecureCustomFieldType {
     TEXT,
     HIDDEN,
-    BOOLEAN
+    BOOLEAN,
+    LINKED
 }
 
 @Serializable

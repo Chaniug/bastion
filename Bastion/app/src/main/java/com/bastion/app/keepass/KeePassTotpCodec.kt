@@ -68,13 +68,15 @@ object KeePassTotpCodec {
         )
         if (normalized.secret.isBlank()) return emptyMap()
 
+        // T7: KeePassXC / KeePassOTP 惯用位置式 "period;digits;algorithm"（而非键值式），
+        // 独立 Period/Digits/Algorithm 字段已另写，bastion 与 KeePassDX 读取时以此兜底。
         val settings = buildList {
-            add("period=${normalized.period}")
-            add("digits=${normalized.digits}")
-            add("algorithm=${normalized.algorithm}")
+            add(normalized.period.toString())
+            add(normalized.digits.toString())
+            if (normalized.algorithm != "SHA1") add(normalized.algorithm)
             if (normalized.otpType == OtpType.HOTP) {
-                add("type=hotp")
-                add("counter=${normalized.counter}")
+                add("HOTP")
+                add(normalized.counter.toString())
             }
         }.joinToString(";")
 
