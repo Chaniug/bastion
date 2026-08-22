@@ -1094,15 +1094,12 @@ private fun CreateKeePassDatabaseBottomSheet(
                         },
                         modifier = Modifier.weight(1f)
                     )
-                    StorageCard(
-                        icon = Icons.Outlined.TableChart,
-                        title = stringResource(R.string.bastion_format_csv),
-                        selected = databaseFormat == BastionDatabaseFormat.CSV,
-                        onClick = {
-                            databaseFormat = BastionDatabaseFormat.CSV
-                            useKeyFile = false
-                        },
-                        modifier = Modifier.weight(1f)
+                }
+                if (databaseFormat == BastionDatabaseFormat.JSON) {
+                    Text(
+                        stringResource(R.string.bastion_format_json_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

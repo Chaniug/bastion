@@ -734,11 +734,12 @@ private fun CreateOneDriveDatabaseDialog(
                             label = { Text(stringResource(R.string.bastion_format_json), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             modifier = Modifier.weight(1f)
                         )
-                        FilterChip(
-                            selected = databaseFormat == BastionDatabaseFormat.CSV,
-                            onClick = { databaseFormat = BastionDatabaseFormat.CSV; useKeyFile = false },
-                            label = { Text(stringResource(R.string.bastion_format_csv), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            modifier = Modifier.weight(1f)
+                    }
+                    if (databaseFormat == BastionDatabaseFormat.JSON) {
+                        Text(
+                            stringResource(R.string.bastion_format_json_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
