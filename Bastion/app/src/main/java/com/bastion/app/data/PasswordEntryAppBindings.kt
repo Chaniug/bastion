@@ -22,8 +22,10 @@ fun parseLinkedAppBindings(
     val packages = parseLinkedAppPackageNames(appPackageName)
     if (packages.isEmpty()) return emptyList()
 
+    // 与 parseLinkedAppPackageNames 保持同一组分隔符（|,;），避免包名用逗号/分号、
+    // 应用名用竖线时名称与包名错位，提升与其他工具写入数据的兼容性与解析稳定性。
     val names = appName
-        .split(APP_BINDING_DELIMITER)
+        .split(APP_BINDING_DELIMITER, ',', ';')
         .map { it.trim() }
 
     return packages.mapIndexed { index, packageName ->

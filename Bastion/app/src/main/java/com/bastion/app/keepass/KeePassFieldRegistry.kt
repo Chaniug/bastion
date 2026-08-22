@@ -87,6 +87,9 @@ object KeePassFieldRegistry {
         "BastionConflictCopy",
         "App Package Name", "AppPackageName", "BastionAppPackageName",
         "App Name", "AppName", "BastionAppName",
+        // 旧 Monica Pass 遗留 + 与小写 bastion_* 兼容键 + keepass2android 原生绑定。
+        "monica_app_package", "monica_app_name", "MonicaAppPackageName", "MonicaAppName",
+        "bastion_app_package", "bastion_app_name", "KP2A_APP", "KP2A_APP_NAME",
         "Email", "E-mail", "Mail",
         "Phone", "Phone Number", "Telephone",
         "Address", "Address Line",

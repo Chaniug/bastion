@@ -363,6 +363,16 @@ class KeePassKdbxService(
         private const val FIELD_MONICA_LOGIN_TYPE = "BastionLoginType"
         private const val FIELD_APP_PACKAGE_NAME = "App Package Name"
         private const val FIELD_APP_NAME = "App Name"
+        // 旧 Monica Pass 遗留应用绑定字段（重品牌前写入）。读取侧兼容即可让存量数据
+        // 自动恢复应用绑定，无需改写数据库。
+        private const val FIELD_LEGACY_MONICA_APP_PACKAGE = "monica_app_package"
+        private const val FIELD_LEGACY_MONICA_APP_NAME = "monica_app_name"
+        // keepass2android / KeePass 原生应用绑定写法（KP2A_APP 写包名；绑定 URI 用 androidapp://）。
+        private const val FIELD_KP2A_APP = "KP2A_APP"
+        private const val FIELD_KP2A_APP_NAME = "KP2A_APP_NAME"
+        // Bastion 导出到 Bitwarden 时使用的兼容键（小写），导入端也会读，这里读取侧一并兼容。
+        private const val FIELD_BASTION_APP_PACKAGE = "bastion_app_package"
+        private const val FIELD_BASTION_APP_NAME = "bastion_app_name"
         private const val FIELD_EMAIL = "Email"
         private const val FIELD_PHONE = "Phone"
         private const val FIELD_ADDRESS_LINE = "Address"
@@ -3753,8 +3763,12 @@ class KeePassKdbxService(
             "AppPackageName",
             "BastionAppPackageName",
             "AndroidAppPackageName",
-            "PackageName"
-        )
+            "PackageName",
+            FIELD_LEGACY_MONICA_APP_PACKAGE,
+            "MonicaAppPackageName",
+            FIELD_BASTION_APP_PACKAGE,
+            FIELD_KP2A_APP
+        ).ifBlank { extractAndroidAppPackage(entry) }
         val appName = getFieldValueIgnoreCase(
             entry,
             resolutionContext,
@@ -3762,7 +3776,11 @@ class KeePassKdbxService(
             "AppName",
             "BastionAppName",
             "Application",
-            "Application Name"
+            "Application Name",
+            FIELD_LEGACY_MONICA_APP_NAME,
+            "MonicaAppName",
+            FIELD_BASTION_APP_NAME,
+            FIELD_KP2A_APP_NAME
         )
         val email = getFieldValueIgnoreCase(entry, resolutionContext, FIELD_EMAIL, "E-mail", "Mail")
         val phone = getFieldValueIgnoreCase(entry, resolutionContext, FIELD_PHONE, "Phone Number", "Telephone")
@@ -4376,6 +4394,20 @@ class KeePassKdbxService(
         entry: Entry,
         resolutionContext: KeePassEntryResolutionContext? = null
     ): String = getFieldValueIgnoreCase(entry, resolutionContext, "URL", "Url", "Website", "URI")
+
+    /**
+     * keepass2android / KeePass 原生把应用绑定写在 URL 字段里，形如 `androidapp://<package>`。
+     * 扫描所有字段找出该 URI，使其被识别为 appPackageName（与 KP2A_APP / App Package Name 等别名互补）。
+     */
+    private fun extractAndroidAppPackage(entry: Entry): String {
+        for (value in entry.fields.values) {
+            val content = value.content
+            if (content.startsWith("androidapp://", ignoreCase = true)) {
+                return content.removePrefix("androidapp://").trim()
+            }
+        }
+        return ""
+    }
 
     private fun getStandardNotes(
         entry: Entry,

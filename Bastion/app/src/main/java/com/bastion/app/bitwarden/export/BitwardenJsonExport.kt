@@ -257,11 +257,20 @@ class BitwardenJsonExporter(
         val totp = entry.authenticatorKey.takeIf { it.isNotBlank() }?.let { safeDecrypt(it) }
         // T1: 多网址对称拆分——与读取侧 parseLoginUris / 上传侧 buildEncryptedLoginUris 一致，
         // 把 entry.website（逗号/中文逗号分隔）拆成多个独立 BwUri，避免导出畸形单 URI。
-        val uris = entry.website.takeIf { it.isNotBlank() }
+        val websiteUris = entry.website.takeIf { it.isNotBlank() }
             ?.let { PasswordWebsiteCodec.parse(it) }
             ?.filter { it.isNotBlank() }
             ?.takeIf { it.isNotEmpty() }
             ?.map { BwUri(uri = it) }
+            ?: emptyList()
+        // T6: 应用绑定对称——把 appPackageName 以 androidapp://<pkg> 形式并入 login.uris，
+        // 与 CipherSyncProcessor 导入解析 (androidapp://) 对齐，修复“导出到 Bitwarden 再导回丢失应用绑定”的往返 bug。
+        val uris = buildList {
+            addAll(websiteUris)
+            entry.appPackageName.takeIf { it.isNotBlank() }?.let { pkg ->
+                add(BwUri(uri = "androidapp://$pkg"))
+            }
+        }.takeIf { it.isNotEmpty() }
         val fields = buildPasswordCustomFields(entry)
 
         return BwExportItem(
@@ -305,6 +314,7 @@ class BitwardenJsonExporter(
         // T5: 绑定与扩展元数据走隐藏字段，消除 JSON 导出静默丢数据；
         // 与 REST 上传侧 buildEncryptedPasswordCustomFields 同构，导入时由 CipherSyncProcessor 还原。
         add("bastion_app_package", entry.appPackageName)
+        add("bastion_app_name", entry.appName)
         add("bastion_login_type", entry.loginType, 1)
         if (entry.loginType.equals("WIFI", ignoreCase = true)) {
             add("bastion_wifi_data", entry.wifiMetadata, 1)
