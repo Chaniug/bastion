@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import com.bastion.app.data.BastionDatabaseFormat
 import com.bastion.app.logging.runCatchingObserved
 import android.app.Activity
 import android.content.Context
@@ -451,7 +452,7 @@ fun KeepassOneDriveBrowserBottomSheet(
             currentPath = currentPath,
             onDismiss = { showCreateDatabaseDialog = false },
             onGenerateKeyFile = { uri -> viewModel.generateKeyFile(uri) },
-            onCreate = { name, password, keyFileUri, options, description ->
+            onCreate = { name, password, keyFileUri, options, description, format ->
                 viewModel.createOneDriveDatabase(
                     directoryPath = currentPath,
                     name = name,
@@ -460,7 +461,8 @@ fun KeepassOneDriveBrowserBottomSheet(
                     databasePassword = password,
                     keyFileUri = keyFileUri,
                     creationOptions = options,
-                    description = description
+                    description = description,
+                    format = format
                 )
                 showCreateDatabaseDialog = false
                 onDismiss()
@@ -607,7 +609,8 @@ private fun CreateOneDriveDatabaseDialog(
         password: String,
         keyFileUri: Uri?,
         options: KeePassDatabaseCreationOptions,
-        description: String?
+        description: String?,
+        format: BastionDatabaseFormat
     ) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -628,6 +631,7 @@ private fun CreateOneDriveDatabaseDialog(
     }
     var parallelism by remember { mutableStateOf(defaultOptions.parallelism.toString()) }
     var showAdvancedCryptoOptions by remember { mutableStateOf(false) }
+    var databaseFormat by remember { mutableStateOf(BastionDatabaseFormat.KDBX) }
 
     val keyFilePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
@@ -708,6 +712,36 @@ private fun CreateOneDriveDatabaseDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                // 数据库格式选择
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.bastion_database_format),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        FilterChip(
+                            selected = databaseFormat == BastionDatabaseFormat.KDBX,
+                            onClick = { databaseFormat = BastionDatabaseFormat.KDBX },
+                            label = { Text(stringResource(R.string.bastion_format_kdbx), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = databaseFormat == BastionDatabaseFormat.JSON,
+                            onClick = { databaseFormat = BastionDatabaseFormat.JSON; useKeyFile = false },
+                            label = { Text(stringResource(R.string.bastion_format_json), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = databaseFormat == BastionDatabaseFormat.CSV,
+                            onClick = { databaseFormat = BastionDatabaseFormat.CSV; useKeyFile = false },
+                            label = { Text(stringResource(R.string.bastion_format_csv), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                AnimatedVisibility(visible = databaseFormat != BastionDatabaseFormat.CSV) {
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -725,6 +759,8 @@ private fun CreateOneDriveDatabaseDialog(
                         }
                     }
                 )
+                }
+                AnimatedVisibility(visible = databaseFormat == BastionDatabaseFormat.KDBX) {
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -734,6 +770,8 @@ private fun CreateOneDriveDatabaseDialog(
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                 )
+                }
+                AnimatedVisibility(visible = databaseFormat == BastionDatabaseFormat.KDBX) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceContainer,
@@ -876,6 +914,7 @@ private fun CreateOneDriveDatabaseDialog(
                         }
                     }
                 }
+                }
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
@@ -897,11 +936,18 @@ private fun CreateOneDriveDatabaseDialog(
                         memoryBytes = ((memoryMbValue ?: (defaultOptions.memoryBytes / 1024L / 1024L)) * 1024L * 1024L),
                         parallelism = parallelismValue ?: defaultOptions.parallelism
                     ).normalized()
-                    onCreate(name.trim(), password, if (useKeyFile) keyFileUri else null, options, description.takeIf { it.isNotBlank() })
+                    onCreate(name.trim(), password, if (useKeyFile) keyFileUri else null, options, description.takeIf { it.isNotBlank() }, databaseFormat)
                 },
                 enabled = name.isNotBlank() &&
-                    ((password.isNotBlank() && password == confirmPassword) || (useKeyFile && keyFileUri != null)) &&
-                    advancedOptionsValid
+                    run {
+                        val passwordValid = when (databaseFormat) {
+                            BastionDatabaseFormat.KDBX ->
+                                (password.isNotBlank() && password == confirmPassword) || (useKeyFile && keyFileUri != null)
+                            BastionDatabaseFormat.JSON -> password.isBlank() || password == confirmPassword
+                            BastionDatabaseFormat.CSV -> true
+                        }
+                        passwordValid && (databaseFormat != BastionDatabaseFormat.KDBX || advancedOptionsValid)
+                    }
             ) {
                 Text(stringResource(R.string.keepass_onedrive_create_confirm))
             }

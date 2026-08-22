@@ -14,7 +14,7 @@ import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.SecureItem
 import com.bastion.app.data.model.BankCardData
 import com.bastion.app.data.model.CardWalletDataCodec
-import com.bastion.app.data.model.NoteContentCodec
+import com.bastion.app.notes.domain.NoteContentCodec
 import com.bastion.app.security.SecurityManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -160,11 +160,11 @@ object BastionDatabaseFormatCodec {
                                     CardWalletDataCodec.encodeBankCardData(bankCard)
                                 }
                                 2 -> { // secure note
-                                    val (encoded) = NoteContentCodec.encode(content = item.notes ?: item.name)
+                                    val (encoded, _) = NoteContentCodec.encode(content = item.notes ?: item.name)
                                     encoded
                                 }
                                 else -> { // identity / 未知 -> 笔记
-                                    val (encoded) = NoteContentCodec.encode(content = item.notes ?: item.name)
+                                    val (encoded, _) = NoteContentCodec.encode(content = item.notes ?: item.name)
                                     encoded
                                 }
                             }
@@ -275,7 +275,7 @@ object BastionDatabaseFormatCodec {
             val notes = cols.getOrNull(notesIdx).orEmpty()
             val totp = cols.getOrNull(totpIdx).orEmpty()
             if (type == "note") {
-                val (encoded) = NoteContentCodec.encode(content = notes.ifBlank { title })
+                val (encoded, _) = NoteContentCodec.encode(content = notes.ifBlank { title })
                 secureItemDao.insertItem(
                     SecureItem(
                         id = 0,
