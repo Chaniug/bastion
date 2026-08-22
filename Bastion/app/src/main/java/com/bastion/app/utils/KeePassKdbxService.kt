@@ -45,6 +45,8 @@ import com.bastion.app.data.KeePassFormatVersion
 import com.bastion.app.data.KeePassKdfAlgorithm
 import com.bastion.app.data.LocalKeePassDatabase
 import com.bastion.app.data.LocalKeePassDatabaseDao
+import com.bastion.app.data.BastionDatabaseFormat
+import com.bastion.app.utils.BastionDatabaseFormatCodec
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.data.PasswordEntry
@@ -664,6 +666,11 @@ class KeePassKdbxService(
             val database = dao.getDatabaseById(databaseId)
                 ?: throw IOException("数据库不存在")
             val syncedDatabaseName = database.name
+            // JSON / CSV 格式的 Bastion 数据库走独立的「文件字节 <-> Room 条目」同步链路，
+            // 复用同一套来源 / 工作副本 / 远端 FileSource 抽象。
+            if (database.databaseFormat != BastionDatabaseFormat.KDBX) {
+                return@withContext syncBastionDatabaseFile(databaseId)
+            }
             if (!database.isRemoteSource() || database.sourceId == null) {
                 throw IllegalArgumentException("当前数据库不是远端来源")
             }
@@ -5706,6 +5713,133 @@ class KeePassKdbxService(
             trigger = trigger,
             startedAt = startedAt,
             detail = "worker_enqueued=true"
+        )
+    }
+
+    /**
+     * JSON / CSV 格式 Bastion 数据库的同步链路。
+     * 与 kdbx 不同：文件字节直接映射为 Room 条目（带 keepassDatabaseId 归属），
+     * 因此「拉取」=重新解析远端字节并镜像、「上传」=把 Room 条目重新序列化回文件。
+     */
+    private suspend fun syncBastionDatabaseFile(databaseId: Long): Result<KeePassRemoteSyncResult> =
+        withContext(Dispatchers.IO) {
+            try {
+                val database = dao.getDatabaseById(databaseId) ?: throw IOException("数据库不存在")
+                val syncedDatabaseName = database.name
+                val remoteDb = PasswordDatabase.getDatabase(context)
+                val syncStateDao = remoteDb.keepassRemoteSyncStateDao()
+                val syncService = RemoteKeePassSyncService(
+                    databaseDao = dao,
+                    remoteSourceDao = remoteDb.keepassRemoteSourceDao(),
+                    syncStateDao = syncStateDao
+                )
+
+                // 先把 Room 中该库的最新条目导出到工作副本，确保本地编辑被纳入比对
+                val exported = BastionDatabaseFormatCodec.exportContent(
+                    database.databaseFormat, databaseId, bastionDatabasePassword(database), context, securityManager
+                )
+                writeLocalBastionBytes(database, exported)
+                val workingHash = GoogleDriveKeePassSupport.sha256Hex(exported)
+                val syncState = syncStateDao.getState(databaseId)
+                val baseHash = syncState?.baseHash
+
+                val message = if (database.isRemoteSource() && database.sourceId != null) {
+                    val remoteSource = remoteDb.keepassRemoteSourceDao().getSourceById(database.sourceId)
+                        ?: throw IllegalStateException("远端来源不存在")
+                    val fileSource = createRemoteFileSource(database, remoteSource)
+                    val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
+                    val remoteBytes = fileSource.read()
+                    val remoteHash = GoogleDriveKeePassSupport.sha256Hex(remoteBytes)
+                    val remoteEtagMatches = syncState?.remoteEtag != null && remoteStat.etag != null &&
+                        remoteStat.etag == syncState?.remoteEtag
+                    val remoteVersionMatches = syncState?.remoteVersionToken != null && remoteStat.versionToken != null &&
+                        remoteStat.versionToken == syncState?.remoteVersionToken
+                    val localHasChanges = if (baseHash.isNullOrBlank()) (workingHash != remoteHash) else (baseHash != workingHash)
+                    val remoteHasChanges = if (baseHash.isNullOrBlank()) (workingHash != remoteHash) else (baseHash != remoteHash)
+
+                    when {
+                        remoteHasChanges && !localHasChanges -> {
+                            reimportBastionDatabase(database, databaseId, remoteBytes)
+                            writeLocalBastionBytes(database, remoteBytes)
+                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, remoteHash, remoteHash)
+                            "已拉取远端最新版本"
+                        }
+                        !remoteHasChanges && localHasChanges -> {
+                            val exported = BastionDatabaseFormatCodec.exportContent(
+                                database.databaseFormat, databaseId, bastionDatabasePassword(database), context, securityManager
+                            )
+                            fileSource.write(exported, expectedVersion = remoteStat.etag ?: remoteStat.versionToken)
+                            writeLocalBastionBytes(database, exported)
+                            val h = GoogleDriveKeePassSupport.sha256Hex(exported)
+                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, h, h)
+                            "已上传本地最新版本"
+                        }
+                        remoteHasChanges && localHasChanges -> {
+                            // 冲突：v1 采用远端优先策略，本地改动需用户手动处理
+                            reimportBastionDatabase(database, databaseId, remoteBytes)
+                            writeLocalBastionBytes(database, remoteBytes)
+                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, remoteHash, remoteHash)
+                            "远端有更新，已拉取（本地改动未自动合并）"
+                        }
+                        else -> {
+                            syncService.markSynchronized(
+                                databaseId, remoteStat.versionToken, remoteStat.etag,
+                                workingHash ?: remoteHash, workingHash ?: remoteHash
+                            )
+                            "远端已是最新状态"
+                        }
+                    }
+                } else {
+                    // 纯本地数据库：把 Room 条目重新序列化回工作副本文件
+                    val exported = BastionDatabaseFormatCodec.exportContent(
+                        database.databaseFormat, databaseId, bastionDatabasePassword(database), context, securityManager
+                    )
+                    writeLocalBastionBytes(database, exported)
+                    val h = GoogleDriveKeePassSupport.sha256Hex(exported)
+                    syncService.markSynchronized(databaseId, null, null, h, h)
+                    "已保存到本地文件"
+                }
+                invalidateProcessCache(databaseId)
+                Result.success(KeePassRemoteSyncResult(syncedDatabaseName, message))
+            } catch (e: Exception) {
+                Result.failure(normalizeError(e))
+            }
+        }
+
+    /**
+     * 把 Room 中该 keepassDatabaseId 下的条目重新导出并上传到远端（供编辑后手动触发）。
+     */
+    suspend fun saveBastionDatabaseFile(databaseId: Long): Result<KeePassRemoteSyncResult> {
+        return syncBastionDatabaseFile(databaseId)
+    }
+
+    private fun bastionDatabasePassword(database: LocalKeePassDatabase): String? {
+        return database.encryptedPassword?.let { securityManager.decryptData(it) }.takeIf { it.isNotBlank() }
+    }
+
+    private fun writeLocalBastionBytes(database: LocalKeePassDatabase, bytes: ByteArray) {
+        val rel = database.workingCopyPath ?: database.filePath
+        if (rel.isNullOrBlank()) return
+        val f = File(context.filesDir, rel)
+        f.parentFile?.mkdirs()
+        f.writeBytes(bytes)
+    }
+
+    private suspend fun reimportBastionDatabase(
+        database: LocalKeePassDatabase,
+        databaseId: Long,
+        bytes: ByteArray
+    ) {
+        val db = PasswordDatabase.getDatabase(context)
+        db.passwordEntryDao().deleteByKeePassDatabaseId(databaseId)
+        db.secureItemDao().deleteByKeePassDatabaseId(databaseId)
+        db.passkeyDao().deleteByKeePassDatabaseId(databaseId)
+        BastionDatabaseFormatCodec.importContent(
+            format = database.databaseFormat,
+            bytes = bytes,
+            password = bastionDatabasePassword(database),
+            keepassDatabaseId = databaseId,
+            context = context
         )
     }
 
