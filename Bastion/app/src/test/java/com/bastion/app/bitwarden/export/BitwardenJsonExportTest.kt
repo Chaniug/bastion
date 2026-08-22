@@ -22,7 +22,12 @@ class BitwardenJsonExportTest {
 
     @Test
     fun multipleWebsitesSplitIntoSeparateBwUris() {
-        val entry = PasswordEntry(title = "Multi", website = "https://a.com, https://b.com")
+        val entry = PasswordEntry(
+            title = "Multi",
+            website = "https://a.com, https://b.com",
+            username = "",
+            password = ""
+        )
         val export = newExporter().buildPlainExport(listOf(entry), emptyList())
         val uris = export.items.first().login?.uris
         assertEquals(2, uris?.size)
@@ -32,7 +37,12 @@ class BitwardenJsonExportTest {
 
     @Test
     fun singleWebsiteStaysOneUri() {
-        val entry = PasswordEntry(title = "Single", website = "https://a.com")
+        val entry = PasswordEntry(
+            title = "Single",
+            website = "https://a.com",
+            username = "",
+            password = ""
+        )
         val export = newExporter().buildPlainExport(listOf(entry), emptyList())
         val uris = export.items.first().login?.uris
         assertEquals(1, uris?.size)
@@ -41,14 +51,19 @@ class BitwardenJsonExportTest {
 
     @Test
     fun blankWebsiteYieldsNoUris() {
-        val entry = PasswordEntry(title = "Blank")
+        val entry = PasswordEntry(title = "Blank", website = "", username = "", password = "")
         val export = newExporter().buildPlainExport(listOf(entry), emptyList())
         assertEquals(null, export.items.first().login?.uris)
     }
 
     @Test
     fun chineseCommaIsTreatedAsSeparator() {
-        val entry = PasswordEntry(title = "Cn", website = "https://a.com，https://b.com")
+        val entry = PasswordEntry(
+            title = "Cn",
+            website = "https://a.com，https://b.com",
+            username = "",
+            password = ""
+        )
         val export = newExporter().buildPlainExport(listOf(entry), emptyList())
         val uris = export.items.first().login?.uris
         assertEquals(2, uris?.size)
