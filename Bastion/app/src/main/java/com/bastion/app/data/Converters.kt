@@ -68,6 +68,16 @@ class Converters {
         return enumValueOrDefault(value, KeePassSyncStatus.LOCAL_ONLY)
     }
 
+    @TypeConverter
+    fun fromBastionDatabaseFormat(value: BastionDatabaseFormat?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toBastionDatabaseFormat(value: String?): BastionDatabaseFormat {
+        return enumValueOrDefault(value, BastionDatabaseFormat.KDBX)
+    }
+
     private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String?, defaultValue: T): T {
         val normalized = value?.trim().orEmpty()
         if (normalized.isBlank()) return defaultValue

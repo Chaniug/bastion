@@ -26,6 +26,17 @@ enum class KeePassOpenMode {
     WORKING_COPY
 }
 
+/**
+ * Bastion 工具支持的数据库存储格式。
+ * 复用同一套 LocalKeePassDatabase 抽象（来源 / 工作副本 / 远端同步），
+ * 仅以该字段区分底层字节流的编解码方式。
+ */
+enum class BastionDatabaseFormat {
+    KDBX,   // KeePass 原生 kdbx 文件（本地 / OneDrive / WebDAV）
+    JSON,   // Bitwarden 兼容的离线 JSON（明文或密码加密，本地 / OneDrive / WebDAV）
+    CSV     // 浏览器导出的 CSV（仅本地常驻，扁平字段、明文）
+}
+
 enum class KeePassSyncStatus {
     LOCAL_ONLY,
     IN_SYNC,
@@ -165,6 +176,14 @@ data class LocalKeePassDatabase(
     /** 远端/附加数据源引用 */
     @ColumnInfo(name = "source_id")
     val sourceId: Long? = null,
+
+    /**
+     * 数据库存储格式（KDBX / JSON / CSV）。
+     * 默认 KDBX 以兼容存量数据；kdbx 专属字段（cipher/kdf 等）仅 KDBX 格式生效，
+     * JSON/CSV 忽略。
+     */
+    @ColumnInfo(name = "database_format", defaultValue = "KDBX")
+    val databaseFormat: BastionDatabaseFormat = BastionDatabaseFormat.KDBX,
 
     /** 打开方式 */
     @ColumnInfo(name = "open_mode")

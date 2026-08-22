@@ -40,6 +40,7 @@ import com.bastion.app.data.KeePassDatabaseSourceType
 import com.bastion.app.data.KeePassFormatVersion
 import com.bastion.app.data.KeePassKdfAlgorithm
 import com.bastion.app.data.KeePassStorageLocation
+import com.bastion.app.data.BastionDatabaseFormat
 import com.bastion.app.data.KeePassSyncStatus
 import com.bastion.app.data.LocalKeePassDatabase
 import com.bastion.app.data.toCreationOptions
@@ -300,8 +301,8 @@ fun LocalKeePassScreen(
         CreateKeePassDatabaseBottomSheet(
             onDismiss = { showCreateDialog = false },
             onGenerateKeyFile = { uri -> viewModel.generateKeyFile(uri) },
-            onCreate = { name, password, location, externalUri, keyFileUri, options ->
-                viewModel.createDatabase(name, password, location, externalUri, keyFileUri, options, null)
+            onCreate = { name, password, location, externalUri, keyFileUri, options, format ->
+                viewModel.createDatabase(name, password, location, externalUri, keyFileUri, options, null, format)
                 showCreateDialog = false
             }
         )
@@ -931,7 +932,8 @@ private fun CreateKeePassDatabaseBottomSheet(
         location: KeePassStorageLocation,
         externalUri: Uri?,
         keyFileUri: Uri?,
-        options: KeePassDatabaseCreationOptions
+        options: KeePassDatabaseCreationOptions,
+        format: BastionDatabaseFormat
     ) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -940,6 +942,7 @@ private fun CreateKeePassDatabaseBottomSheet(
     var storageLocation by remember { mutableStateOf(KeePassStorageLocation.INTERNAL) }
     var showPassword by remember { mutableStateOf(false) }
     var externalUri by remember { mutableStateOf<Uri?>(null) }
+    var databaseFormat by remember { mutableStateOf(BastionDatabaseFormat.KDBX) }
 
     var formatVersion by remember { mutableStateOf(KeePassFormatVersion.KDBX4) }
     var cipherAlgorithm by remember { mutableStateOf(KeePassCipherAlgorithm.AES) }
@@ -1027,13 +1030,16 @@ private fun CreateKeePassDatabaseBottomSheet(
                     (parallelismValue != null && parallelismValue > 0))
             )
 
+    val passwordValid = when (databaseFormat) {
+        BastionDatabaseFormat.KDBX ->
+            (password.isNotBlank() && password == confirmPassword) || (useKeyFile && keyFileUri != null)
+        BastionDatabaseFormat.JSON -> password.isBlank() || password == confirmPassword
+        BastionDatabaseFormat.CSV -> true
+    }
     val isValid = name.isNotBlank() &&
                   (storageLocation == KeePassStorageLocation.INTERNAL || externalUri != null) &&
-                  (
-                    (password.isNotBlank() && password == confirmPassword) ||
-                    (useKeyFile && keyFileUri != null)
-                  ) &&
-                  advancedOptionsValid
+                  passwordValid &&
+                  (databaseFormat != BastionDatabaseFormat.KDBX || advancedOptionsValid)
     
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1057,7 +1063,47 @@ private fun CreateKeePassDatabaseBottomSheet(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
+            // 数据库格式选择
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.bastion_database_format),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StorageCard(
+                        icon = Icons.Outlined.FilePresent,
+                        title = stringResource(R.string.bastion_format_kdbx),
+                        selected = databaseFormat == BastionDatabaseFormat.KDBX,
+                        onClick = { databaseFormat = BastionDatabaseFormat.KDBX },
+                        modifier = Modifier.weight(1f)
+                    )
+                    StorageCard(
+                        icon = Icons.Outlined.Description,
+                        title = stringResource(R.string.bastion_format_json),
+                        selected = databaseFormat == BastionDatabaseFormat.JSON,
+                        onClick = {
+                            databaseFormat = BastionDatabaseFormat.JSON
+                            useKeyFile = false
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (databaseFormat == BastionDatabaseFormat.JSON) {
+                    Text(
+                        stringResource(R.string.bastion_format_json_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // 表单区域
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // 数据库名称
@@ -1072,16 +1118,17 @@ private fun CreateKeePassDatabaseBottomSheet(
                     leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) }
                 )
                 
-                // 密码
+                // 密码（CSV 为明文格式，无需密码）
+                AnimatedVisibility(visible = databaseFormat != BastionDatabaseFormat.CSV) {
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text(stringResource(R.string.database_password)) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    visualTransformation = if (showPassword) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (showPassword)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     leadingIcon = { Icon(Icons.Default.Password, contentDescription = null) },
@@ -1095,17 +1142,19 @@ private fun CreateKeePassDatabaseBottomSheet(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+                }
                 
-                // 确认密码
+                // 确认密码（仅 KDBX 需要密钥文件/密码确认）
+                AnimatedVisibility(visible = databaseFormat == BastionDatabaseFormat.KDBX) {
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = { Text(stringResource(R.string.confirm_password)) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    visualTransformation = if (showPassword) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (showPassword)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
@@ -1115,8 +1164,12 @@ private fun CreateKeePassDatabaseBottomSheet(
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
+                }
             }
             
+            // KDBX 才需要密钥文件与加密参数；JSON/CSV 不展示这些选项
+            AnimatedVisibility(visible = databaseFormat == BastionDatabaseFormat.KDBX) {
+            Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             // 安全设置区
@@ -1316,6 +1369,8 @@ private fun CreateKeePassDatabaseBottomSheet(
                     }
                 }
             }
+            }
+            }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             
@@ -1413,7 +1468,8 @@ private fun CreateKeePassDatabaseBottomSheet(
                         storageLocation,
                         externalUri,
                         if (useKeyFile) keyFileUri else null,
-                        options
+                        options,
+                        databaseFormat
                     )
                 },
                 enabled = isValid,

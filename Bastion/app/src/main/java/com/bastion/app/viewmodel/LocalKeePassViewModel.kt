@@ -39,6 +39,8 @@ import com.bastion.app.data.isRemoteSource
 import com.bastion.app.data.toSourceType
 import com.bastion.app.data.LocalKeePassDatabase
 import com.bastion.app.data.LocalKeePassDatabaseDao
+import com.bastion.app.data.BastionDatabaseFormat
+import com.bastion.app.utils.BastionDatabaseFormatCodec
 import com.bastion.app.data.OperationLogItemType
 import com.bastion.app.data.PasswordDatabase
 import com.bastion.app.data.PasswordEntry
@@ -471,7 +473,8 @@ class LocalKeePassViewModel(
         externalUri: Uri? = null,
         keyFileUri: Uri? = null,
         creationOptions: KeePassDatabaseCreationOptions = KeePassDatabaseCreationOptions(),
-        description: String? = null
+        description: String? = null,
+        format: BastionDatabaseFormat = BastionDatabaseFormat.KDBX
     ) {
         viewModelScope.launch {
             _operationState.value = OperationState.Loading("正在创建数据库...")
@@ -497,53 +500,90 @@ class LocalKeePassViewModel(
                         }
                     }
                     
-                    // 生成文件名
-                    val fileName = "${name.replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5]"), "_")}.kdbx"
+                    // 生成文件名（按格式确定扩展名）
+                    val baseName = name.replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5]"), "_")
+                        .replace(Regex("\\.(kdbx|json|csv)$", RegexOption.IGNORE_CASE), "")
+                    val fileName = "$baseName.${BastionDatabaseFormatCodec.fileExtension(format)}"
                     
                     val filePath: String
+                    var workingCopyPath: String? = null
                     
-                    if (storageLocation == KeePassStorageLocation.INTERNAL) {
-                        // 创建内部存储目录
-                        val keepassDir = File(context.filesDir, "keepass")
-                        if (!keepassDir.exists()) {
-                            keepassDir.mkdirs()
-                        }
-                        
-                        // 创建空的 kdbx 文件（实际应该用 KeePass 库创建）
-                        val dbFile = File(keepassDir, fileName)
-                        createEmptyKdbxFile(
-                            file = dbFile,
-                            password = password,
-                            keyFileBytes = keyFileBytes,
-                            options = creationOptions,
-                            databaseName = name
-                        )
-                        
-                        filePath = "keepass/$fileName"
-                    } else {
-                        // 外部存储
-                        if (externalUri == null) {
-                            throw IllegalArgumentException("外部存储需要指定保存位置")
-                        }
-                        
-                        // 使用 DocumentFile 创建文件
-                        val docFile = DocumentFile.fromTreeUri(context, externalUri)
-                        val newFile = docFile?.createFile("application/octet-stream", fileName)
-                        
-                        if (newFile?.uri != null) {
-                            context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
-                                createEmptyKdbxContent(
-                                    password = password,
-                                    keyFileBytes = keyFileBytes,
-                                    options = creationOptions,
-                                    databaseName = name
-                                ).let { content ->
-                                    output.write(content)
-                                }
+                    if (format == BastionDatabaseFormat.KDBX) {
+                        if (storageLocation == KeePassStorageLocation.INTERNAL) {
+                            // 创建内部存储目录
+                            val keepassDir = File(context.filesDir, "keepass")
+                            if (!keepassDir.exists()) {
+                                keepassDir.mkdirs()
                             }
-                            filePath = newFile.uri.toString()
+                            
+                            // 创建空的 kdbx 文件（实际应该用 KeePass 库创建）
+                            val dbFile = File(keepassDir, fileName)
+                            createEmptyKdbxFile(
+                                file = dbFile,
+                                password = password,
+                                keyFileBytes = keyFileBytes,
+                                options = creationOptions,
+                                databaseName = name
+                            )
+                            
+                            filePath = "keepass/$fileName"
                         } else {
-                            throw Exception("无法在指定位置创建文件")
+                            // 外部存储
+                            if (externalUri == null) {
+                                throw IllegalArgumentException("外部存储需要指定保存位置")
+                            }
+                            
+                            // 使用 DocumentFile 创建文件
+                            val docFile = DocumentFile.fromTreeUri(context, externalUri)
+                            val newFile = docFile?.createFile("application/octet-stream", fileName)
+                            
+                            if (newFile?.uri != null) {
+                                context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
+                                    createEmptyKdbxContent(
+                                        password = password,
+                                        keyFileBytes = keyFileBytes,
+                                        options = creationOptions,
+                                        databaseName = name
+                                    ).let { content ->
+                                        output.write(content)
+                                    }
+                                }
+                                filePath = newFile.uri.toString()
+                            } else {
+                                throw Exception("无法在指定位置创建文件")
+                            }
+                        }
+                    } else {
+                        // JSON / CSV：生成本地/外部文件字节（明文或加密）
+                        val initialBytes = BastionDatabaseFormatCodec.createInitialContent(
+                            format = format,
+                            name = name,
+                            password = password,
+                            securityManager = securityManager
+                        )
+                        if (storageLocation == KeePassStorageLocation.INTERNAL) {
+                            val keepassDir = File(context.filesDir, "keepass")
+                            if (!keepassDir.exists()) {
+                                keepassDir.mkdirs()
+                            }
+                            val dbFile = File(keepassDir, fileName)
+                            dbFile.writeBytes(initialBytes)
+                            filePath = "keepass/$fileName"
+                            workingCopyPath = filePath
+                        } else {
+                            if (externalUri == null) {
+                                throw IllegalArgumentException("外部存储需要指定保存位置")
+                            }
+                            val docFile = DocumentFile.fromTreeUri(context, externalUri)
+                            val newFile = docFile?.createFile("application/octet-stream", fileName)
+                            if (newFile?.uri != null) {
+                                context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
+                                    output.write(initialBytes)
+                                }
+                                filePath = newFile.uri.toString()
+                            } else {
+                                throw Exception("无法在指定位置创建文件")
+                            }
                         }
                     }
 
@@ -557,6 +597,8 @@ class LocalKeePassViewModel(
                         encryptedPassword = encryptedPassword,
                         description = description,
                         isDefault = allDatabases.value.isEmpty(),
+                        databaseFormat = format,
+                        workingCopyPath = workingCopyPath,
                         kdbxMajorVersion = normalizedOptions.formatVersion.majorVersion,
                         cipherAlgorithm = normalizedOptions.cipherAlgorithm.name,
                         kdfAlgorithm = normalizedOptions.kdfAlgorithm.name,
@@ -818,7 +860,8 @@ class LocalKeePassViewModel(
                         remotePath = remotePath,
                         databasePassword = databasePassword,
                         keyFileUri = keyFileUri,
-                        description = description
+                        description = description,
+                        format = detectFormatFromPath(remotePath)
                     )
                 }
 
@@ -847,7 +890,8 @@ class LocalKeePassViewModel(
         databasePassword: String,
         keyFileUri: Uri? = null,
         creationOptions: KeePassDatabaseCreationOptions = KeePassDatabaseCreationOptions(),
-        description: String? = null
+        description: String? = null,
+        format: BastionDatabaseFormat = BastionDatabaseFormat.KDBX
     ) {
         viewModelScope.launch {
             _operationState.value = OperationState.Loading("正在创建远端数据库...")
@@ -864,19 +908,33 @@ class LocalKeePassViewModel(
 
                     val displayName = name.trim()
                         .removeSuffix(".kdbx")
+                        .removeSuffix(".json")
+                        .removeSuffix(".csv")
                         .ifBlank { throw IllegalArgumentException("数据库名称不能为空") }
-                    val remoteFileName = if (name.trim().endsWith(".kdbx", ignoreCase = true)) {
+                    val remoteFileName = if (name.trim().endsWith(".kdbx", ignoreCase = true) ||
+                        name.trim().endsWith(".json", ignoreCase = true) ||
+                        name.trim().endsWith(".csv", ignoreCase = true)
+                    ) {
                         name.trim()
                     } else {
-                        "$displayName.kdbx"
+                        "$displayName.${BastionDatabaseFormatCodec.fileExtension(format)}"
                     }
                     val keyFileBytes = readKeyFileBytes(keyFileUri)
-                    val bytes = createEmptyKdbxContent(
-                        password = databasePassword,
-                        keyFileBytes = keyFileBytes,
-                        options = creationOptions,
-                        databaseName = displayName
-                    )
+                    val bytes = if (format == BastionDatabaseFormat.KDBX) {
+                        createEmptyKdbxContent(
+                            password = databasePassword,
+                            keyFileBytes = keyFileBytes,
+                            options = creationOptions,
+                            databaseName = displayName
+                        )
+                    } else {
+                        BastionDatabaseFormatCodec.createInitialContent(
+                            format = format,
+                            name = displayName,
+                            password = databasePassword,
+                            securityManager = securityManager
+                        )
+                    }
                     val createdFile = fileSource.createFileInDirectory(
                         parentPath = normalizedDirectoryPath,
                         name = remoteFileName,
@@ -890,7 +948,8 @@ class LocalKeePassViewModel(
                         remotePath = createdFile.path,
                         databasePassword = databasePassword,
                         keyFileUri = keyFileUri,
-                        description = description
+                        description = description,
+                        format = format
                     )
                 }
 
@@ -931,7 +990,8 @@ class LocalKeePassViewModel(
                         remotePath = remotePath,
                         databasePassword = databasePassword,
                         keyFileUri = keyFileUri,
-                        description = description
+                        description = description,
+                        format = detectFormatFromPath(remotePath)
                     )
                 }
 
@@ -959,7 +1019,8 @@ class LocalKeePassViewModel(
         databasePassword: String,
         keyFileUri: Uri? = null,
         creationOptions: KeePassDatabaseCreationOptions = KeePassDatabaseCreationOptions(),
-        description: String? = null
+        description: String? = null,
+        format: BastionDatabaseFormat = BastionDatabaseFormat.KDBX
     ) {
         viewModelScope.launch {
             _operationState.value = OperationState.Loading("正在创建 OneDrive 远端数据库...")
@@ -975,19 +1036,33 @@ class LocalKeePassViewModel(
 
                     val displayName = name.trim()
                         .removeSuffix(".kdbx")
+                        .removeSuffix(".json")
+                        .removeSuffix(".csv")
                         .ifBlank { throw IllegalArgumentException("数据库名称不能为空") }
-                    val remoteFileName = if (name.trim().endsWith(".kdbx", ignoreCase = true)) {
+                    val remoteFileName = if (name.trim().endsWith(".kdbx", ignoreCase = true) ||
+                        name.trim().endsWith(".json", ignoreCase = true) ||
+                        name.trim().endsWith(".csv", ignoreCase = true)
+                    ) {
                         name.trim()
                     } else {
-                        "$displayName.kdbx"
+                        "$displayName.${BastionDatabaseFormatCodec.fileExtension(format)}"
                     }
                     val keyFileBytes = readKeyFileBytes(keyFileUri)
-                    val bytes = createEmptyKdbxContent(
-                        password = databasePassword,
-                        keyFileBytes = keyFileBytes,
-                        options = creationOptions,
-                        databaseName = displayName
-                    )
+                    val bytes = if (format == BastionDatabaseFormat.KDBX) {
+                        createEmptyKdbxContent(
+                            password = databasePassword,
+                            keyFileBytes = keyFileBytes,
+                            options = creationOptions,
+                            databaseName = displayName
+                        )
+                    } else {
+                        BastionDatabaseFormatCodec.createInitialContent(
+                            format = format,
+                            name = displayName,
+                            password = databasePassword,
+                            securityManager = securityManager
+                        )
+                    }
                     val createdFile = fileSource.createFileInDirectory(
                         parentPath = normalizedDirectoryPath,
                         name = remoteFileName,
@@ -1000,7 +1075,8 @@ class LocalKeePassViewModel(
                         remotePath = createdFile.path,
                         databasePassword = databasePassword,
                         keyFileUri = keyFileUri,
-                        description = description
+                        description = description,
+                        format = format
                     )
                 }
 
@@ -2388,6 +2464,15 @@ class LocalKeePassViewModel(
         )
     }
 
+    /** 根据文件扩展名推断 Bastion 数据库格式（默认 KDBX）。 */
+    private fun detectFormatFromPath(path: String): BastionDatabaseFormat {
+        return when (path.substringAfterLast('.').lowercase()) {
+            "json" -> BastionDatabaseFormat.JSON
+            "csv" -> BastionDatabaseFormat.CSV
+            else -> BastionDatabaseFormat.KDBX
+        }
+    }
+
     private suspend fun readKeyFileBytes(keyFileUri: Uri?): ByteArray? {
         if (keyFileUri == null) {
             return null
@@ -2410,7 +2495,8 @@ class LocalKeePassViewModel(
         remotePath: String,
         databasePassword: String,
         keyFileUri: Uri?,
-        description: String?
+        description: String?,
+        format: BastionDatabaseFormat = BastionDatabaseFormat.KDBX
     ): OneDriveAttachResult {
         val normalizedRemotePath = OneDriveKeePassFileSource.normalizeRemotePath(remotePath)
         val displayName = name.ifBlank {
@@ -2514,34 +2600,59 @@ class LocalKeePassViewModel(
                 isOfflineAvailable = true,
                 encryptedPassword = encryptedPassword,
                 description = description,
+                databaseFormat = format,
                 isDefault = allDatabases.value.isEmpty(),
                 lastSyncStatus = KeePassSyncStatus.SYNCING
             )
             val databaseId = dao.insertDatabase(localDatabase)
 
             try {
-                val diagnostics = workspaceRepository.inspectDatabase(
-                    databaseId = databaseId,
-                    passwordOverride = databasePassword,
-                    keyFileUriOverride = keyFileUri
-                ).getOrElse { throw it }
-                val now = System.currentTimeMillis()
-                dao.updateDatabase(
-                    localDatabase.copy(
-                        id = databaseId,
-                        entryCount = diagnostics.entryCount,
-                        kdbxMajorVersion = diagnostics.creationOptions.formatVersion.majorVersion,
-                        cipherAlgorithm = diagnostics.creationOptions.cipherAlgorithm.name,
-                        kdfAlgorithm = diagnostics.creationOptions.kdfAlgorithm.name,
-                        kdfTransformRounds = diagnostics.creationOptions.transformRounds,
-                        kdfMemoryBytes = diagnostics.creationOptions.memoryBytes,
-                        kdfParallelism = diagnostics.creationOptions.parallelism,
-                        lastAccessedAt = now,
-                        lastSyncedAt = now,
-                        lastSyncStatus = KeePassSyncStatus.IN_SYNC,
-                        lastSyncError = null
+                val entryCount: Int
+                if (format == BastionDatabaseFormat.KDBX) {
+                    val diagnostics = workspaceRepository.inspectDatabase(
+                        databaseId = databaseId,
+                        passwordOverride = databasePassword,
+                        keyFileUriOverride = keyFileUri
+                    ).getOrElse { throw it }
+                    val now = System.currentTimeMillis()
+                    dao.updateDatabase(
+                        localDatabase.copy(
+                            id = databaseId,
+                            entryCount = diagnostics.entryCount,
+                            kdbxMajorVersion = diagnostics.creationOptions.formatVersion.majorVersion,
+                            cipherAlgorithm = diagnostics.creationOptions.cipherAlgorithm.name,
+                            kdfAlgorithm = diagnostics.creationOptions.kdfAlgorithm.name,
+                            kdfTransformRounds = diagnostics.creationOptions.transformRounds,
+                            kdfMemoryBytes = diagnostics.creationOptions.memoryBytes,
+                            kdfParallelism = diagnostics.creationOptions.parallelism,
+                            lastAccessedAt = now,
+                            lastSyncedAt = now,
+                            lastSyncStatus = KeePassSyncStatus.IN_SYNC,
+                            lastSyncError = null
+                        )
                     )
-                )
+                    entryCount = diagnostics.entryCount
+                } else {
+                    val now = System.currentTimeMillis()
+                    val imported = BastionDatabaseFormatCodec.importContent(
+                        format = format,
+                        bytes = remoteBytes,
+                        password = databasePassword.ifBlank { null },
+                        keepassDatabaseId = databaseId,
+                        context = context
+                    )
+                    dao.updateDatabase(
+                        localDatabase.copy(
+                            id = databaseId,
+                            entryCount = imported,
+                            lastAccessedAt = now,
+                            lastSyncedAt = now,
+                            lastSyncStatus = KeePassSyncStatus.IN_SYNC,
+                            lastSyncError = null
+                        )
+                    )
+                    entryCount = imported
+                }
                 remoteSyncService.markSynchronized(
                     databaseId = databaseId,
                     versionToken = remoteStat.versionToken,
@@ -2553,7 +2664,7 @@ class LocalKeePassViewModel(
                 return OneDriveAttachResult(
                     databaseId = databaseId,
                     databaseName = displayName,
-                    entryCount = diagnostics.entryCount
+                    entryCount = entryCount
                 )
             } catch (error: Exception) {
                 dao.deleteDatabaseById(databaseId)
@@ -2746,7 +2857,8 @@ class LocalKeePassViewModel(
         remotePath: String,
         databasePassword: String,
         keyFileUri: Uri?,
-        description: String?
+        description: String?,
+        format: BastionDatabaseFormat = BastionDatabaseFormat.KDBX
     ): WebDavAttachResult {
         val normalizedBaseUrl = serverUrl.trim().trimEnd('/')
         val normalizedRemotePath = WebDavKeePassFileSource.normalizeRemotePath(remotePath)
@@ -2842,34 +2954,59 @@ class LocalKeePassViewModel(
                 isOfflineAvailable = true,
                 encryptedPassword = encryptedPassword,
                 description = description,
+                databaseFormat = format,
                 isDefault = allDatabases.value.isEmpty(),
                 lastSyncStatus = KeePassSyncStatus.SYNCING
             )
             val databaseId = dao.insertDatabase(localDatabase)
 
             try {
-                val diagnostics = workspaceRepository.inspectDatabase(
-                    databaseId = databaseId,
-                    passwordOverride = databasePassword,
-                    keyFileUriOverride = keyFileUri
-                ).getOrElse { throw it }
-                val now = System.currentTimeMillis()
-                dao.updateDatabase(
-                    localDatabase.copy(
-                        id = databaseId,
-                        entryCount = diagnostics.entryCount,
-                        kdbxMajorVersion = diagnostics.creationOptions.formatVersion.majorVersion,
-                        cipherAlgorithm = diagnostics.creationOptions.cipherAlgorithm.name,
-                        kdfAlgorithm = diagnostics.creationOptions.kdfAlgorithm.name,
-                        kdfTransformRounds = diagnostics.creationOptions.transformRounds,
-                        kdfMemoryBytes = diagnostics.creationOptions.memoryBytes,
-                        kdfParallelism = diagnostics.creationOptions.parallelism,
-                        lastAccessedAt = now,
-                        lastSyncedAt = now,
-                        lastSyncStatus = KeePassSyncStatus.IN_SYNC,
-                        lastSyncError = null
+                val entryCount: Int
+                if (format == BastionDatabaseFormat.KDBX) {
+                    val diagnostics = workspaceRepository.inspectDatabase(
+                        databaseId = databaseId,
+                        passwordOverride = databasePassword,
+                        keyFileUriOverride = keyFileUri
+                    ).getOrElse { throw it }
+                    val now = System.currentTimeMillis()
+                    dao.updateDatabase(
+                        localDatabase.copy(
+                            id = databaseId,
+                            entryCount = diagnostics.entryCount,
+                            kdbxMajorVersion = diagnostics.creationOptions.formatVersion.majorVersion,
+                            cipherAlgorithm = diagnostics.creationOptions.cipherAlgorithm.name,
+                            kdfAlgorithm = diagnostics.creationOptions.kdfAlgorithm.name,
+                            kdfTransformRounds = diagnostics.creationOptions.transformRounds,
+                            kdfMemoryBytes = diagnostics.creationOptions.memoryBytes,
+                            kdfParallelism = diagnostics.creationOptions.parallelism,
+                            lastAccessedAt = now,
+                            lastSyncedAt = now,
+                            lastSyncStatus = KeePassSyncStatus.IN_SYNC,
+                            lastSyncError = null
+                        )
                     )
-                )
+                    entryCount = diagnostics.entryCount
+                } else {
+                    val now = System.currentTimeMillis()
+                    val imported = BastionDatabaseFormatCodec.importContent(
+                        format = format,
+                        bytes = remoteBytes,
+                        password = databasePassword.ifBlank { null },
+                        keepassDatabaseId = databaseId,
+                        context = context
+                    )
+                    dao.updateDatabase(
+                        localDatabase.copy(
+                            id = databaseId,
+                            entryCount = imported,
+                            lastAccessedAt = now,
+                            lastSyncedAt = now,
+                            lastSyncStatus = KeePassSyncStatus.IN_SYNC,
+                            lastSyncError = null
+                        )
+                    )
+                    entryCount = imported
+                }
                 remoteSyncService.markSynchronized(
                     databaseId = databaseId,
                     versionToken = remoteStat.versionToken,
@@ -2881,7 +3018,7 @@ class LocalKeePassViewModel(
                 return WebDavAttachResult(
                     databaseId = databaseId,
                     databaseName = displayName,
-                    entryCount = diagnostics.entryCount
+                    entryCount = entryCount
                 )
             } catch (error: Exception) {
                 dao.deleteDatabaseById(databaseId)

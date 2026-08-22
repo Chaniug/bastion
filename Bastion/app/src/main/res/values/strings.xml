@@ -2770,7 +2770,13 @@
     <string name="sync_backup_bitwarden_sync_title">Bitwarden 同步</string>
     <string name="sync_backup_bitwarden_sync_desc">连接 Bitwarden 服务器，同步您的密码与卡片等数据</string>
     <string name="sync_backup_database_tools">数据库工具</string>
-    <string name="sync_backup_keepass_tools">KeePass 工具</string>
+    <string name="sync_backup_keepass_tools">Bastion 工具</string>
+    <string name="bastion_database_format">数据库格式</string>
+    <string name="bastion_format_kdbx">KDBX（Keepass）</string>
+    <string name="bastion_format_json">JSON（Bitwarden 兼容，可加密）</string>
+    <string name="bastion_format_csv">CSV（浏览器/扁平明文）</string>
+    <string name="bastion_format_json_desc">独立云端库：可同步到 OneDrive/WebDAV，与 Bastion 原生库分开管理。若只想把数据并入本地库，请用「设置 → 导入数据」。</string>
+    <string name="bastion_format_kdbx_desc">KeePass 标准格式，安全性最高，支持密钥文件与高级加密，可作为独立库在设备间同步。</string>
     <string name="sync_backup_keepass_webdav_title">KeePass WebDAV</string>
     <string name="sync_backup_keepass_webdav_desc">通过 WebDAV 与 KeePass (.kdbx) 同步数据</string>
     <string name="sync_backup_import_export_low_freq">导入与导出</string>
