@@ -130,7 +130,8 @@ class KeePassTotpCodecTest {
         assertEquals("8", fields.getValue(KeePassTotpCodec.FIELD_TOTP_DIGITS))
         assertEquals("SHA256", fields.getValue(KeePassTotpCodec.FIELD_TOTP_ALGORITHM))
         assertEquals("TOTP", fields.getValue(KeePassTotpCodec.FIELD_OTP_TYPE))
-        assertEquals("period=45;digits=8;algorithm=SHA256", fields.getValue(KeePassTotpCodec.FIELD_TOTP_SETTINGS))
+        // T7: KeePassXC/KeePassOTP 惯用位置式 "period;digits;algorithm"（SHA1 省略）
+        assertEquals("45;8;SHA256", fields.getValue(KeePassTotpCodec.FIELD_TOTP_SETTINGS))
         assertEquals(
             "otpauth://totp/GitHub%3Auser%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub&algorithm=SHA256&digits=8&period=45",
             fields.getValue(KeePassTotpCodec.FIELD_OTP)
@@ -152,7 +153,8 @@ class KeePassTotpCodecTest {
 
         assertEquals("HOTP", fields.getValue(KeePassTotpCodec.FIELD_OTP_TYPE))
         assertEquals("12", fields.getValue(KeePassTotpCodec.FIELD_HOTP_COUNTER))
-        assertEquals("period=30;digits=6;algorithm=SHA1;type=hotp;counter=12", fields.getValue(KeePassTotpCodec.FIELD_TOTP_SETTINGS))
+        // T7: 位置式，SHA1 与默认值省略，HOTP 时追加 "HOTP" 与 counter
+        assertEquals("30;6;HOTP;12", fields.getValue(KeePassTotpCodec.FIELD_TOTP_SETTINGS))
         assertEquals(
             "otpauth://hotp/Example%3Aalice?secret=JBSWY3DPEHPK3PXP&issuer=Example&counter=12",
             fields.getValue(KeePassTotpCodec.FIELD_OTP)
