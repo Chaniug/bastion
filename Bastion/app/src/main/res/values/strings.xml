@@ -886,14 +886,14 @@
     <string name="passkey_feature_2">使用简便 - 只需指纹或面容</string>
     <string name="passkey_feature_3">跨设备同步</string>
     <string name="passkey_create_title">创建通行密钥</string>
-    <string name="passkey_create_message">为 %1$s 创建通行密钥，无需密码即可登录</string>
+    <string name="passkey_create_message">为 %1$s 创建通行密钥，以后无需密码即可登录。</string>
     <string name="passkey_create_confirm">创建通行密钥</string>
-    <string name="passkey_auth_title">使用通行密钥登录</string>
-    <string name="passkey_auth_message">正在通过 Bastion 中的通行密钥登录 %1$s</string>
+    <string name="passkey_auth_title">确认用通行密钥登录</string>
+    <string name="passkey_auth_message">Bastion 将使用你的通行密钥登录 %1$s</string>
     <string name="passkey_auth_confirm">登录</string>
     <string name="passkey_auth_site_label">服务</string>
     <string name="passkey_auth_account_label">账号</string>
-    <string name="passkey_auth_security_note">需通过指纹、面容或主密码验证后，才会把通行密钥发送给该应用。</string>
+    <string name="passkey_auth_security_note">通过指纹、面容或主密码验证后，才会将通行密钥用于登录 %1$s。</string>
     <string name="passkey_scan_qr_menu_title">扫描通行密钥二维码</string>
     <string name="passkey_qr_invalid">无效的通行密钥二维码</string>
     <string name="passkey_qr_open_failed">当前系统无法处理此通行密钥二维码</string>
@@ -2114,7 +2114,7 @@
     <string name="associated_app">关联应用</string>
     <string name="bind_password">绑定密码</string>
     <string name="bound_password_change">更换绑定</string>
-    <string name="passkey_bound_label">已绑定通行秘钥</string>
+    <string name="passkey_bound_label">已绑定通行密钥</string>
     <string name="unbind">解除绑定</string>
     <string name="select_password_to_bind">选择要绑定的密码</string>
     <string name="link_example">https://example.com</string>
@@ -3220,7 +3220,7 @@
     <string name="icon_settings_password_page_subtitle">密码列表卡片显示站点/应用图标</string>
     <string name="icon_settings_authenticator_page_title">验证器页面</string>
     <string name="icon_settings_authenticator_page_subtitle">验证器卡片显示站点/应用图标</string>
-    <string name="icon_settings_passkey_page_title">通行秘钥页面</string>
+    <string name="icon_settings_passkey_page_title">通行密钥页面</string>
     <string name="icon_settings_passkey_page_subtitle">通行秘钥列表卡片显示图标</string>
     <string name="icon_settings_unmatched_strategy_title">无匹配图标处理策略</string>
     <string name="icon_settings_unmatched_strategy_desc">当图标源都未命中时，控制卡片图标区域的显示方式。</string>
