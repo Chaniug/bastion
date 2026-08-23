@@ -212,7 +212,7 @@ class BastionCredentialProviderService : CredentialProviderService() {
                 "Bastion - $rpName",
                 pendingIntent
             )
-                .setDescription("为 $userName 创建通行密钥")
+                .setDescription("为 ${userName.ifBlank { rpName.ifBlank { "本账号" } }} 创建通行密钥")
                 .build()
             
             val response = BeginCreateCredentialResponse.Builder()
