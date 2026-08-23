@@ -292,9 +292,11 @@ class CipherSyncProcessor(
         val userCustomFields = buildLocalCustomFields(cipher.fields, symmetricKey)
         val remoteAppPackage = customFields["bastion_app_package"]
             ?: customFields["appPackageName"]
+            ?: customFields["monica_app_package"]
             ?: parsedUris.appPackageName
         val remoteAppName = customFields["bastion_app_name"]
             ?: customFields["appName"]
+            ?: customFields["monica_app_name"]
             ?: ""
         val remoteEmail = customFields["bastion_email"]
             ?: customFields["email"]

@@ -111,6 +111,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.FragmentActivity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -372,6 +375,12 @@ fun PasswordListContent(
     var backgroundedDeleteOperationId by remember { mutableStateOf<Long?>(null) }
     var backgroundedKeePassSyncKey by remember { mutableStateOf<String?>(null) }
 
+    // 收集 VM 暴露的"手动 sync 进行中"数据库 id 集合，用于区分自动 / 手动 sync 的弹窗策略。
+    // 自动 sync（PAGE_VISIBLE / PENDING_UPLOAD 触发的）静默不弹"正在同步"对话框，
+    // 手动 sync（用户主动点"立即同步"或在 KeePass 工具页点同步）才弹。
+    // CONFLICT 状态除外（见下方 quickStatusKeePassSyncState 的 shouldShow 计算）。
+    val activeManualSyncDatabaseIds by localKeePassViewModel.activeManualSyncDatabaseIds.collectAsState()
+
     // "仅本地" 的核心目标是给用户看待上传清单，不应该出现堆叠容器。
     // 因此这里强制扁平展示，仅在该筛选下生效，不影响其他页面。
     val isLocalOnlyView = currentFilter is CategoryFilter.LocalOnly
@@ -475,6 +484,7 @@ fun PasswordListContent(
         selectedKeePassDatabase,
         selectedKeePassRemoteSyncState,
         selectedKeePassCoordinatorStatus,
+        activeManualSyncDatabaseIds,
         localKeePassViewModel
     ) {
         val database = selectedKeePassDatabase
@@ -488,16 +498,21 @@ fun PasswordListContent(
                 SyncPhase.BLOCKED,
                 SyncPhase.CONFLICT
             )
-            val shouldShow = database.lastSyncStatus in setOf(
-                KeePassSyncStatus.PENDING_UPLOAD,
-                KeePassSyncStatus.SYNCING,
-                KeePassSyncStatus.REMOTE_CHANGED,
-                KeePassSyncStatus.CONFLICT
-            ) || phase in setOf(
-                KeePassSyncPhase.COMPARING,
-                KeePassSyncPhase.DOWNLOADING,
-                KeePassSyncPhase.UPLOADING
-            ) || coordinatorShouldShow
+            val isConflict = database.lastSyncStatus == KeePassSyncStatus.CONFLICT ||
+                coordinatorPhase == SyncPhase.CONFLICT
+            // 仅"手动 sync"才弹"正在同步"对话框；CONFLICT 状态无论自动 / 手动都必须弹（用户需要解决冲突）。
+            val triggerIsManual = database.id in activeManualSyncDatabaseIds
+            val shouldShow = isConflict || (triggerIsManual && (
+                database.lastSyncStatus in setOf(
+                    KeePassSyncStatus.PENDING_UPLOAD,
+                    KeePassSyncStatus.SYNCING,
+                    KeePassSyncStatus.REMOTE_CHANGED
+                ) || phase in setOf(
+                    KeePassSyncPhase.COMPARING,
+                    KeePassSyncPhase.DOWNLOADING,
+                    KeePassSyncPhase.UPLOADING
+                ) || coordinatorShouldShow
+            ))
             if (!shouldShow) {
                 null
             } else {
@@ -515,6 +530,22 @@ fun PasswordListContent(
             }
         }
     }
+
+    // 切后台时自动抑制"正在同步"对话框（等价于用户点"后台继续"）。
+    // CONFLICT 状态时仍可绕过该抑制重新弹起（见下方 LaunchedEffect mustShow 路径）。
+    val suppressLifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(suppressLifecycleOwner, quickStatusKeePassSyncState?.dialogSuppressionKey()) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                quickStatusKeePassSyncState?.let { state ->
+                    backgroundedKeePassSyncKey = state.dialogSuppressionKey()
+                }
+            }
+        }
+        suppressLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { suppressLifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val isArchiveView = currentFilter is CategoryFilter.Archived
     val effectiveGroupMode = if (isLocalOnlyView) "none" else groupMode
     val effectiveStackCardMode = if (isLocalOnlyView) {
@@ -563,7 +594,10 @@ fun PasswordListContent(
             return@LaunchedEffect
         }
         val stateKey = state.dialogSuppressionKey()
-        if (!quickStatusBannerEnabled && stateKey != backgroundedKeePassSyncKey) {
+        // CONFLICT 状态必须弹（绕过 onPause 自动抑制与 backgroundedKey 检查），用户需要解决冲突。
+        val mustShow = state.status == KeePassSyncStatus.CONFLICT ||
+            state.coordinatorPhase == SyncPhase.CONFLICT
+        if (mustShow || (!quickStatusBannerEnabled && stateKey != backgroundedKeePassSyncKey)) {
             showQuickStatusKeePassSyncDialog = true
         }
     }

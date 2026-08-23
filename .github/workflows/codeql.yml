@@ -1,0 +1,79 @@
+name: CodeQL Advanced
+
+# 在 PR 与 dev 推送时做静态安全分析，把漏洞拦截在合并前（而非合并后才被发现）。
+# 说明：
+# - 本项目 Kotlin/Android，CodeQL 用 java-kotlin 提取器，必须在「编译过程中」挂上才能拿到完整分析，
+#   因此这里用 `./gradlew :app:assembleDebug`（已在 Android-Preview 流水线验证可成功）触发提取，
+#   而非依赖 autobuild（autobuild 会连带跑 lint/test，Android 项目易误失败）。
+# - 语言只写 kotlin（java-kotlin 同属一个 CodeQL 包，写两个会重复分析同一份代码）。
+# - 只扫 dev（push + PR），不扫 main：dev 合并到 main 后代码完全一致，扫 main 属冗余；
+#   本项目规范以 dev 为开发/测试分支，main 仅从 dev 合并，不会有绕过 dev 的直接 main 推送。
+# - 每周一定时扫描作为兜底审计（按默认分支 main 的代码跑），与事件触发不重复。
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+  schedule:
+    # 每周一 03:27 UTC 例行全量扫描（兜底审计，按默认分支 main 的代码运行）
+    - cron: '27 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze (Kotlin/Java)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: "Bastion"
+    env:
+      # 与 Android-Preview 流水线一致：明确 Android SDK 路径（GitHub runner 已预装）
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      # 启用 Gradle 构建缓存与并行，缩短重复构建耗时
+      GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: kotlin
+          # security-extended：在默认查询包基础上扩展更多安全查询，
+          # 适合密码管理器这类高安全敏感度的项目（能覆盖证书固定/弱加密/隐式 PendingIntent 等）。
+          queries: security-extended
+
+      # 手动触发编译 —— 让 CodeQL Java 提取器挂上构建过程收集源码模型。
+      # 仅跑 assembleDebug（不跑 lint/test，避免无关步骤失败导致整条流水线挂掉）。
+      - name: Build for CodeQL extraction
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Stop Gradle Daemon
+        if: always()
+        run: ./gradlew --stop || true
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:kotlin"
