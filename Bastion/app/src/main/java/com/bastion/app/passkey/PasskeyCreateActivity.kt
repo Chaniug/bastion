@@ -1466,13 +1466,14 @@ private fun PasskeyCreateScreen(
                 }
             }
 
-            ElevatedCard(
+            Surface(
                 onClick = { showStoragePicker = true },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 72.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                )
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 1.dp
             ) {
                 Row(
                     modifier = Modifier
