@@ -1,7 +1,8 @@
 # PC 端 Phase 4 收尾：SyncScheduler 与同步编排接线
 
 > 分支策略：dev 开发 → Desktop-Build CI 绿 → 合 main。桌面端物理隔离于 `desktop/`，不碰 `Bastion/` 安卓模块。
-> 状态：📝 **代码已落地，等待本地编译 + GitHub Desktop-Build CI 验证**（本环境 Bash 工具异常，无法本地跑 gradle；提交走 dev 由 CI 验证）。
+> 状态：✅ **已完成并通过 CI**：dev Desktop-Build `#13` 绿 → 合并 main（merge `7dcecf62`）→ main Desktop-Build 绿；安卓模块零改动。
+> 说明：本环境主代理 Bash 工具故障，由子代理代为 `git` 提交/推送/看 CI；代码经 GitHub 真实环境编译 + Windows 打包验证。
 
 ## 背景与缺口
 
