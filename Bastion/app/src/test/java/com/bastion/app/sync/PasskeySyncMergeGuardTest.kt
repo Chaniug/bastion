@@ -93,11 +93,17 @@ class PasskeySyncMergeGuardTest {
             .substringAfter("suspend fun sync(vaultId: Long)")
             .substringBefore("suspend fun getVaultCacheRiskSummary(")
 
+        // 注意：不能用 indexOf("uploadLocalEntries")，注释里可能出现该字样；
+        // 用调用点 "syncService.uploadLocalEntries" 定位实际上传位置。
+        val mergeIndex = syncBody.indexOf("mergeHistoricalStandalonePasskeys(")
+        val uploadIndex = syncBody.indexOf("syncService.uploadLocalEntries")
+
         assertTrue(
             "同步流程必须在 uploadLocalEntries 之前执行历史独立 passkey cipher 迁移。",
-            syncBody.contains("mergeHistoricalStandalonePasskeys(") &&
+            mergeIndex >= 0 &&
+                uploadIndex >= 0 &&
                 syncBody.contains("processPendingOperations") &&
-                syncBody.indexOf("mergeHistoricalStandalonePasskeys") < syncBody.indexOf("uploadLocalEntries")
+                mergeIndex < uploadIndex
         )
     }
 
