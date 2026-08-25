@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import android.util.Base64
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.ConnectionPool
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -82,9 +83,13 @@ object BitwardenApiFactory {
     ): OkHttpClient {
         val headerSpec = getHeaderSpec(headerProfile)
         val builder = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
+            // 显式连接池：自建服务器高 RTT 下避免每次 sync 重建 TCP/TLS；
+            // pingInterval 启用 HTTP/2 keepalive，VPN/自签 CA 抖动时快速发现死连接
+            .connectionPool(ConnectionPool(8, 5, TimeUnit.MINUTES))
+            .pingInterval(30, TimeUnit.SECONDS)
             // 添加 Keyguard 使用的 Cloudflare 绕过 headers
             .addInterceptor { chain ->
                 val original = chain.request()

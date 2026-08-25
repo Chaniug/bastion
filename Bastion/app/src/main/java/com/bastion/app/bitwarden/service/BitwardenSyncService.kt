@@ -4,6 +4,7 @@ import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.room.withTransaction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -249,166 +250,170 @@ class BitwardenSyncService(
             .map { it.id }
             .toList()
 
-        try {
-            // 1. 同步文件夹
-            response.folders.forEach { folderApi ->
-                try {
-                    val existingFolder = folderDao.getFolderByBitwardenId(folderApi.id)
-                    if (existingFolder != null &&
-                        existingFolder.revisionDate == folderApi.revisionDate &&
-                        existingFolder.encryptedName == folderApi.name
-                    ) {
-                        return@forEach
-                    }
+        // 整段 DB 写库包进单事务：千条 cipher 不会变成千次 fsync，
+        // 自建服务器/手机闪存下大 vault 同步显著加速
+        val successResult: SyncResult = try {
+            database.withTransaction {
+                // 1. 同步文件夹
+                response.folders.forEach { folderApi ->
+                    try {
+                        val existingFolder = folderDao.getFolderByBitwardenId(folderApi.id)
+                        if (existingFolder != null &&
+                            existingFolder.revisionDate == folderApi.revisionDate &&
+                            existingFolder.encryptedName == folderApi.name
+                        ) {
+                            return@forEach
+                        }
 
-                    val decryptedName = decryptFolderName(folderApi.name, symmetricKey)
+                        val decryptedName = decryptFolderName(folderApi.name, symmetricKey)
 
-                    if (existingFolder == null) {
-                        // 新文件夹
-                        folderDao.upsert(
-                            BitwardenFolder(
-                                vaultId = vault.id,
-                                bitwardenFolderId = folderApi.id,
-                                name = decryptedName,
-                                encryptedName = folderApi.name,
-                                revisionDate = folderApi.revisionDate
+                        if (existingFolder == null) {
+                            // 新文件夹
+                            folderDao.upsert(
+                                BitwardenFolder(
+                                    vaultId = vault.id,
+                                    bitwardenFolderId = folderApi.id,
+                                    name = decryptedName,
+                                    encryptedName = folderApi.name,
+                                    revisionDate = folderApi.revisionDate
+                                )
                             )
-                        )
-                        foldersAdded++
-                    } else {
-                        // 更新文件夹
-                        folderDao.update(
-                            existingFolder.copy(
-                                name = decryptedName,
-                                encryptedName = folderApi.name,
-                                revisionDate = folderApi.revisionDate,
-                                lastSyncedAt = System.currentTimeMillis()
+                            foldersAdded++
+                        } else {
+                            // 更新文件夹
+                            folderDao.update(
+                                existingFolder.copy(
+                                    name = decryptedName,
+                                    encryptedName = folderApi.name,
+                                    revisionDate = folderApi.revisionDate,
+                                    lastSyncedAt = System.currentTimeMillis()
+                                )
                             )
-                        )
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w(TAG, "Failed to sync folder ${folderApi.id}: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    android.util.Log.w(TAG, "Failed to sync folder ${folderApi.id}: ${e.message}")
                 }
-            }
 
-            // 2. 同步 Ciphers (使用新的多类型处理器)
-            response.ciphers.forEach { cipherApi ->
-                try {
-                    // 使用 CipherSyncProcessor 处理所有类型
-                    val result = cipherSyncProcessor.syncCipherFromServer(
-                        vault = vault,
-                        cipher = cipherApi,
-                        symmetricKey = symmetricKey
-                    )
-                    when (result) {
-                        is CipherSyncResult.Added -> ciphersAdded++
-                        is CipherSyncResult.Updated -> ciphersUpdated++
-                        is CipherSyncResult.Conflict -> {
-                            conflictsDetected++
-                            // BUG-4 修复：让真正的并发冲突落盘备份，避免服务器侧编辑在下次整体上传时被静默覆盖丢失。
+                // 2. 同步 Ciphers (使用新的多类型处理器)
+                response.ciphers.forEach { cipherApi ->
+                    try {
+                        // 使用 CipherSyncProcessor 处理所有类型
+                        val result = cipherSyncProcessor.syncCipherFromServer(
+                            vault = vault,
+                            cipher = cipherApi,
+                            symmetricKey = symmetricKey
+                        )
+                        when (result) {
+                            is CipherSyncResult.Added -> ciphersAdded++
+                            is CipherSyncResult.Updated -> ciphersUpdated++
+                            is CipherSyncResult.Conflict -> {
+                                conflictsDetected++
+                                // BUG-4 修复：让真正的并发冲突落盘备份，避免服务器侧编辑在下次整体上传时被静默覆盖丢失。
+                                runCatchingObserved {
+                                    val localEntry = passwordEntryDao.getByBitwardenCipherIdInVault(
+                                        vaultId = vault.id,
+                                        cipherId = cipherApi.id
+                                    )
+                                    if (localEntry != null) {
+                                        createConflictBackup(
+                                            vault = vault,
+                                            entry = localEntry,
+                                            serverCipher = cipherApi,
+                                            conflictType = BitwardenConflictBackup.TYPE_CONCURRENT_EDIT
+                                        )
+                                    }
+                                }
+                            }
+                            is CipherSyncResult.Skipped -> {
+                                if (result.reason == "Local changes pending upload") {
+                                    skippedDueToLocalDirty++
+                                }
+                            }
+                            is CipherSyncResult.Error -> {
+                                android.util.Log.w(TAG, "Cipher sync error: ${result.message}")
+                            }
+                        }
+                        // 附件元数据对齐：仅对已有本地 PasswordEntry 的 cipher 执行
+                        val remoteUnchanged =
+                            result is CipherSyncResult.Skipped &&
+                                result.reason == CipherSyncProcessor.SKIP_REMOTE_UNCHANGED
+                        val shouldReconcileAttachments =
+                            cipherApi.attachments != null &&
+                                (!remoteUnchanged || cipherApi.attachments.isNotEmpty())
+                        if (shouldReconcileAttachments) {
                             runCatchingObserved {
                                 val localEntry = passwordEntryDao.getByBitwardenCipherIdInVault(
                                     vaultId = vault.id,
                                     cipherId = cipherApi.id
                                 )
                                 if (localEntry != null) {
-                                    createConflictBackup(
-                                        vault = vault,
-                                        entry = localEntry,
-                                        serverCipher = cipherApi,
-                                        conflictType = BitwardenConflictBackup.TYPE_CONCURRENT_EDIT
+                                    attachmentReconciler.reconcile(
+                                        passwordId = localEntry.id,
+                                        remoteAttachments = cipherApi.attachments
                                     )
                                 }
+                            }.onFailure { err ->
+                                android.util.Log.w(TAG, "Attachment reconcile failed for ${cipherApi.id}: ${err.message}")
                             }
                         }
-                        is CipherSyncResult.Skipped -> {
-                            if (result.reason == "Local changes pending upload") {
-                                skippedDueToLocalDirty++
-                            }
-                        }
-                        is CipherSyncResult.Error -> {
-                            android.util.Log.w(TAG, "Cipher sync error: ${result.message}")
-                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w(TAG, "Failed to sync cipher ${cipherApi.id}: ${e.message}")
                     }
-                    // 附件元数据对齐：仅对已有本地 PasswordEntry 的 cipher 执行
-                    val remoteUnchanged =
-                        result is CipherSyncResult.Skipped &&
-                            result.reason == CipherSyncProcessor.SKIP_REMOTE_UNCHANGED
-                    val shouldReconcileAttachments =
-                        cipherApi.attachments != null &&
-                            (!remoteUnchanged || cipherApi.attachments.isNotEmpty())
-                    if (shouldReconcileAttachments) {
-                        runCatchingObserved {
-                            val localEntry = passwordEntryDao.getByBitwardenCipherIdInVault(
-                                vaultId = vault.id,
-                                cipherId = cipherApi.id
-                            )
-                            if (localEntry != null) {
-                                attachmentReconciler.reconcile(
-                                    passwordId = localEntry.id,
-                                    remoteAttachments = cipherApi.attachments
-                                )
-                            }
-                        }.onFailure { err ->
-                            android.util.Log.w(TAG, "Attachment reconcile failed for ${cipherApi.id}: ${err.message}")
-                        }
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w(TAG, "Failed to sync cipher ${cipherApi.id}: ${e.message}")
                 }
-            }
 
-            // 2.1 清理服务器已不存在的本地 Cipher（delete-wins）
-            if (activeServerCipherIds.isEmpty()) {
-                passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
-                secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
-                passkeyDao.deleteAllByBitwardenVaultId(vault.id)
-            } else {
-                passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-                secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-                passkeyDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-            }
-
-            // 3. 清理已删除的文件夹 (服务器上不存在的)
-            val serverFolderIds = response.folders.map { it.id }
-            folderDao.deleteNotIn(vault.id, serverFolderIds)
-
-            // 4. 同步 Sends
-            response.sends?.forEach { sendApi ->
-                try {
-                    val synced = syncSend(vault, sendApi, symmetricKey)
-                    if (synced) {
-                        sendsSynced++
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w(TAG, "Failed to sync send ${sendApi.id}: ${e.message}")
-                }
-            }
-            response.sends?.let { sends ->
-                val serverSendIds = sends.map { it.id }
-                // 双重保护：保留 is_dirty=1 行（写后读不一致）+ 本次 sync 之后落地的行（兜底）
-                if (serverSendIds.isEmpty()) {
-                    sendDao.deleteByVaultProtectingDirty(vault.id, syncStartedAtMs)
+                // 2.1 清理服务器已不存在的本地 Cipher（delete-wins）
+                if (activeServerCipherIds.isEmpty()) {
+                    passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
+                    secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
+                    passkeyDao.deleteAllByByBitwardenVaultId(vault.id)
                 } else {
-                    sendDao.deleteNotInProtectingDirty(vault.id, serverSendIds, syncStartedAtMs)
+                    passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
+                    secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
+                    passkeyDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
                 }
-            }
 
-            if (sendsSynced > 0) {
-                android.util.Log.i(TAG, "Sends synced: $sendsSynced")
-            }
+                // 3. 清理已删除的文件夹 (服务器上不存在的)
+                val serverFolderIds = response.folders.map { it.id }
+                folderDao.deleteNotIn(vault.id, serverFolderIds)
 
-            val successResult = SyncResult.Success(
-                foldersAdded = foldersAdded,
-                ciphersAdded = ciphersAdded,
-                ciphersUpdated = ciphersUpdated,
-                conflictsDetected = conflictsDetected,
-                skippedDueToLocalDirty = skippedDueToLocalDirty
-            )
-            return successResult
+                // 4. 同步 Sends
+                response.sends?.forEach { sendApi ->
+                    try {
+                        val synced = syncSend(vault, sendApi, symmetricKey)
+                        if (synced) {
+                            sendsSynced++
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w(TAG, "Failed to sync send ${sendApi.id}: ${e.message}")
+                    }
+                }
+                response.sends?.let { sends ->
+                    val serverSendIds = sends.map { it.id }
+                    // 双重保护：保留 is_dirty=1 行（写后读不一致）+ 本次 sync 之后落地的行（兜底）
+                    if (serverSendIds.isEmpty()) {
+                        sendDao.deleteByVaultProtectingDirty(vault.id, syncStartedAtMs)
+                    } else {
+                        sendDao.deleteNotInProtectingDirty(vault.id, serverSendIds, syncStartedAtMs)
+                    }
+                }
+
+                if (sendsSynced > 0) {
+                    android.util.Log.i(TAG, "Sends synced: $sendsSynced")
+                }
+
+                SyncResult.Success(
+                    foldersAdded = foldersAdded,
+                    ciphersAdded = ciphersAdded,
+                    ciphersUpdated = ciphersUpdated,
+                    conflictsDetected = conflictsDetected,
+                    skippedDueToLocalDirty = skippedDueToLocalDirty
+                )
+            }
         } catch (e: Exception) {
             throw e
         }
+        return successResult
     }
 
     private suspend fun syncSend(
