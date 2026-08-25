@@ -107,7 +107,6 @@ import kotlinx.serialization.json.Json
 import com.bastion.app.R
 import com.bastion.app.bitwarden.repository.BitwardenRepository
 import com.bastion.app.bitwarden.sync.isUserVisibleSyncInProgress
-import com.bastion.app.bitwarden.ui.UnlockVaultDialog
 import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 import com.bastion.app.data.AppSettings
 import com.bastion.app.data.CategorySelectionUiMode
@@ -172,8 +171,6 @@ import com.bastion.app.ui.components.UnifiedMoveAction
 import com.bastion.app.ui.gestures.SwipeActions
 import com.bastion.app.ui.password.PasswordAuthenticatorDisplayState
 import com.bastion.app.ui.password.BitwardenClearCacheTopActionsMenuItem
-import com.bastion.app.ui.password.BitwardenLockTopActionsMenuItem
-import com.bastion.app.ui.password.BitwardenReunlockTopActionsMenuItem
 import com.bastion.app.ui.password.BitwardenSyncTopActionsMenuItem
 import com.bastion.app.ui.password.CommonPasswordTopActionsMenuItems
 import com.bastion.app.ui.password.KeepassRefreshTopActionsMenuItem
@@ -1246,7 +1243,6 @@ fun VaultV2Pane(
 	var isSearchExpanded by rememberSaveable { mutableStateOf(false) }
 	var isStorageFilterSheetVisible by rememberSaveable { mutableStateOf(false) }
 	var isTopActionsMenuExpanded by rememberSaveable { mutableStateOf(false) }
-	var showBitwardenUnlockDialog by rememberSaveable { mutableStateOf(false) }
 	var showClearBitwardenCacheDialog by rememberSaveable { mutableStateOf(false) }
 	var quickFilterFavorite by rememberSaveable { mutableStateOf(false) }
 	var quickFilter2fa by rememberSaveable { mutableStateOf(false) }
@@ -1382,14 +1378,12 @@ fun VaultV2Pane(
 		if (!isAuthenticated) {
 			isTopActionsMenuExpanded = false
 			isStorageFilterSheetVisible = false
-			showBitwardenUnlockDialog = false
 			showClearBitwardenCacheDialog = false
 		}
 	}
 	LaunchedEffect(selectedBitwardenVaultId) {
 		if (selectedBitwardenVaultId == null) {
 			isTopActionsMenuExpanded = false
-			showBitwardenUnlockDialog = false
 			showClearBitwardenCacheDialog = false
 		}
 	}
@@ -1397,7 +1391,6 @@ fun VaultV2Pane(
 		onDispose {
 			isTopActionsMenuExpanded = false
 			isStorageFilterSheetVisible = false
-			showBitwardenUnlockDialog = false
 			showClearBitwardenCacheDialog = false
 		}
 	}
@@ -2559,37 +2552,7 @@ fun VaultV2Pane(
 										}
 									}
 								)
-								BitwardenReunlockTopActionsMenuItem(
-									onClick = {
-										isTopActionsMenuExpanded = false
-										showBitwardenUnlockDialog = true
-									}
-								)
-								BitwardenLockTopActionsMenuItem(
-									onClick = {
-										isTopActionsMenuExpanded = false
-										scope.launch {
-											runCatchingObserved {
-												bitwardenRepository.forceLock(selectedVaultId)
-											}.onSuccess {
-												Toast.makeText(
-													context,
-													context.getString(R.string.current_database_locked),
-													Toast.LENGTH_SHORT
-												).show()
-											}.onFailure { error ->
-												Toast.makeText(
-													context,
-													context.getString(
-														R.string.save_failed_with_error,
-														error.message ?: ""
-													),
-													Toast.LENGTH_SHORT
-												).show()
-											}
-										}
-									}
-								)
+								// A1：Bitwarden 锁/解锁入口已移除（统一依赖 Bastion app 锁）
 								BitwardenClearCacheTopActionsMenuItem(
 									enabled = !isBitwardenMaintenanceActionRunning,
 									onClick = {
@@ -2738,38 +2701,6 @@ fun VaultV2Pane(
 						chipCallbacks = quickFilterBindings.callbacks,
 					)
 				},
-			)
-		}
-
-		if (showBitwardenUnlockDialog && selectedBitwardenVault != null) {
-			UnlockVaultDialog(
-				email = selectedBitwardenVault.email,
-				onUnlock = { masterPassword ->
-					showBitwardenUnlockDialog = false
-					scope.launch {
-						when (val result = bitwardenRepository.unlock(
-							selectedBitwardenVault.id,
-							masterPassword
-						)) {
-							is BitwardenRepository.UnlockResult.Success -> {
-								Toast.makeText(
-									context,
-									context.getString(R.string.current_database_unlocked),
-									Toast.LENGTH_SHORT
-								).show()
-							}
-
-							is BitwardenRepository.UnlockResult.Error -> {
-								Toast.makeText(
-									context,
-									result.message,
-									Toast.LENGTH_SHORT
-								).show()
-							}
-						}
-					}
-				},
-				onDismiss = { showBitwardenUnlockDialog = false }
 			)
 		}
 

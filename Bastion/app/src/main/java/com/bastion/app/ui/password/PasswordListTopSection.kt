@@ -39,7 +39,6 @@ import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.bastion.app.R
-import com.bastion.app.bitwarden.ui.UnlockVaultDialog
 import com.bastion.app.bitwarden.repository.BitwardenRepository
 import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 import com.bastion.app.data.Category
@@ -65,8 +64,6 @@ import com.bastion.app.viewmodel.PasswordViewModel
 import com.bastion.app.viewmodel.SettingsViewModel
 import com.bastion.app.ui.password.StackCardMode
 import com.bastion.app.ui.password.BitwardenClearCacheTopActionsMenuItem
-import com.bastion.app.ui.password.BitwardenLockTopActionsMenuItem
-import com.bastion.app.ui.password.BitwardenReunlockTopActionsMenuItem
 import com.bastion.app.ui.password.BitwardenSyncTopActionsMenuItem
 import com.bastion.app.ui.password.CommonPasswordTopActionsMenuItems
 import com.bastion.app.ui.password.KeepassRefreshTopActionsMenuItem
@@ -151,7 +148,6 @@ internal fun PasswordListTopSection(
     var showReunlockDialog by remember { mutableStateOf(false) }
     var reunlockPassword by remember { mutableStateOf("") }
     var reunlockPasswordError by remember { mutableStateOf(false) }
-    var showBitwardenUnlockDialog by remember { mutableStateOf(false) }
     var showClearBitwardenCacheDialog by remember { mutableStateOf(false) }
     var clearCacheRiskSummary by remember { mutableStateOf<BitwardenRepository.VaultCacheRiskSummary?>(null) }
     var isBitwardenMaintenanceActionRunning by remember { mutableStateOf(false) }
@@ -370,37 +366,7 @@ internal fun PasswordListTopSection(
                                 )
                             }
                             if (selectedBitwardenVaultId != null) {
-                                BitwardenReunlockTopActionsMenuItem(
-                                    onClick = {
-                                        onTopActionsMenuExpandedChange(false)
-                                        showBitwardenUnlockDialog = true
-                                    },
-                                )
-                                BitwardenLockTopActionsMenuItem(
-                                    onClick = {
-                                        onTopActionsMenuExpandedChange(false)
-                                        coroutineScope.launch {
-                                            runCatchingObserved {
-                                                bitwardenRepository.forceLock(selectedBitwardenVaultId)
-                                            }.onSuccess {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.current_database_locked),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }.onFailure { error ->
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(
-                                                        R.string.save_failed_with_error,
-                                                        error.message ?: ""
-                                                    ),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    },
-                                )
+                                // A1：Bitwarden 锁/解锁入口已移除（统一依赖 Bastion app 锁）
                                 BitwardenClearCacheTopActionsMenuItem(
                                     enabled = !isBitwardenMaintenanceActionRunning,
                                     onClick = {
@@ -444,37 +410,6 @@ internal fun PasswordListTopSection(
             }
         )
 
-        if (showBitwardenUnlockDialog && selectedBitwardenVault != null) {
-            UnlockVaultDialog(
-                email = selectedBitwardenVault.email,
-                onUnlock = { masterPassword ->
-                    showBitwardenUnlockDialog = false
-                    coroutineScope.launch {
-                        when (val result = bitwardenRepository.unlock(
-                            selectedBitwardenVault.id,
-                            masterPassword
-                        )) {
-                            is BitwardenRepository.UnlockResult.Success -> {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.current_database_unlocked),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
-                            is BitwardenRepository.UnlockResult.Error -> {
-                                Toast.makeText(
-                                    context,
-                                    result.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                },
-                onDismiss = { showBitwardenUnlockDialog = false }
-            )
-        }
         if (showClearBitwardenCacheDialog && selectedBitwardenVaultId != null && clearCacheRiskSummary != null) {
             val vaultId = selectedBitwardenVaultId
             val riskSummary = clearCacheRiskSummary!!

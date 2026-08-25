@@ -5309,7 +5309,10 @@ class WebDavHelper(
                     )
                 }
 
-                bitwardenRepository.forceLock(restoredId)
+                // 注意：A1 移除 Bitwarden 锁/解锁 UI 后，不再调用 forceLock——
+                // 恢复出来的 vault 保留 DB is_locked=true（由 BitwardenVault 构造 isLocked=true 设定），
+                // 内存缓存若残留旧 key/token 也被 is_locked 闸住不会被使用。
+                // 后续如需"恢复即用"，需单独让 WebDAV 恢复流程自动 populate 对称密钥。
                 if (firstRestoredId == null) {
                     firstRestoredId = restoredId
                 }
