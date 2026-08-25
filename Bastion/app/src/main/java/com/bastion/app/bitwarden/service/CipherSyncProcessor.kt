@@ -19,6 +19,8 @@ import com.bastion.app.data.model.NoteData
 import com.bastion.app.data.model.SecureCustomField
 import com.bastion.app.data.model.SecureCustomFieldType
 import com.bastion.app.data.model.LOGIN_TYPE_SSH_KEY
+import com.bastion.app.data.model.PasskeyBinding
+import com.bastion.app.data.model.PasskeyBindingCodec
 import com.bastion.app.data.model.SshKeyData
 import com.bastion.app.data.model.SshKeyDataCodec
 import com.bastion.app.data.model.TotpData
@@ -224,7 +226,11 @@ class CipherSyncProcessor(
             passwordResult is CipherSyncResult.Skipped && passwordResult.reason == SKIP_REMOTE_UNCHANGED
         val supplementalResult = when {
             PasskeyMapper.isPasskeyCipher(cipher) -> {
-                syncPasskeyCipher(vault, cipher, symmetricKey, passwordRemoteUnchanged)
+                val passkeyResult = syncPasskeyCipher(vault, cipher, symmetricKey, passwordRemoteUnchanged)
+                // 重建密码条目的 passkey_bindings 列：绑定关系以本地 passkeys 表为准
+                // （boundPasswordId 已回填），不再依赖服务器 bastion_passkey_bindings 自定义字段。
+                rebuildPasswordPasskeyBindings(vault, cipher)
+                passkeyResult
             }
             TotpMapper.isStandaloneTotpCipher(cipher) -> {
                 syncTotpCipher(vault, cipher, symmetricKey, serverDeletedAt)
@@ -1278,6 +1284,11 @@ class CipherSyncProcessor(
         val notes = extractPasskeyUserNotes(decryptString(cipher.notes, symmetricKey))
         val fallbackUserName = decryptString(login?.username, symmetricKey) ?: ""
 
+        // 回填本地绑定关系：密码 cipher 带 fido2Credentials 时，passkey 关联到本地密码条目
+        // （syncLoginCipher 先 syncPasswordCipher 再 syncPasskeyCipher，密码条目此时已存在）
+        val boundPasswordEntry = passwordEntryDao.getByBitwardenCipherIdInVault(vault.id, cipher.id)
+        val boundPasswordId = boundPasswordEntry?.id
+
         val fallbackRpId = login?.uris
             ?.asSequence()
             ?.mapNotNull { uri ->
@@ -1323,6 +1334,7 @@ class CipherSyncProcessor(
                         signCount = 0,
                         isBackedUp = false,
                         notes = notes,
+                        boundPasswordId = boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = "REFERENCE",
@@ -1402,6 +1414,7 @@ class CipherSyncProcessor(
                         signCount = decoded.counter,
                         isBackedUp = false,
                         notes = notes,
+                        boundPasswordId = boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = syncStatus,
@@ -1425,6 +1438,7 @@ class CipherSyncProcessor(
                         isDiscoverable = decoded.discoverable,
                         signCount = maxOf(existing.signCount, decoded.counter),
                         notes = notes.ifBlank { existing.notes },
+                        boundPasswordId = boundPasswordId ?: existing.boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = syncStatus,
@@ -1448,60 +1462,41 @@ class CipherSyncProcessor(
     
     // ========== 辅助方法 ==========
 
-    private data class DecodedPasskeyCredential(
-        val credentialId: String,
-        val keyValue: String,
-        val rpId: String,
-        val rpName: String,
-        val userHandle: String,
-        val userName: String,
-        val userDisplayName: String,
-        val counter: Long,
-        val discoverable: Boolean,
-        val creationDateMillis: Long?,
-        val publicKeyAlgorithm: Int
-    )
+    private typealias DecodedPasskeyCredential = Fido2CredentialCodec.DecodedFido2Credential
+
+    /**
+     * 重建密码条目的 passkey_bindings 列（以本地 passkeys 表的 boundPasswordId 关联为准）。
+     *
+     * passkey 与密码的绑定关系已由官方 login.fido2Credentials 承载（syncPasskeyCipher 已回填
+     * boundPasswordId），本地 passkey_bindings 列不再依赖服务器 bastion_passkey_bindings 自定义字段，
+     * 改为从本地 passkeys 表反查生成，保证 UI 展示/安全分析/备份恢复的绑定信息一致。
+     */
+    private suspend fun rebuildPasswordPasskeyBindings(
+        vault: BitwardenVault,
+        cipher: CipherApiResponse
+    ) {
+        val passwordEntry = resolveCanonicalPasswordEntry(vault.id, cipher.id) ?: return
+        val boundPasskeys = passkeyDao.getByBoundPasswordIds(listOf(passwordEntry.id))
+        val bindings = boundPasskeys.map { passkey ->
+            PasskeyBinding(
+                credentialId = passkey.credentialId,
+                rpId = passkey.rpId,
+                rpName = passkey.rpName,
+                userName = passkey.userName,
+                userDisplayName = passkey.userDisplayName
+            )
+        }
+        val encoded = PasskeyBindingCodec.encodeList(bindings)
+        if (encoded != passwordEntry.passkeyBindings) {
+            passwordEntryDao.updatePasskeyBindings(passwordEntry.id, encoded)
+        }
+    }
 
     private fun decodeFido2Credentials(
         credentials: List<CipherLoginFido2CredentialApiData>?,
         key: SymmetricCryptoKey
     ): List<DecodedPasskeyCredential> {
-        if (credentials.isNullOrEmpty()) return emptyList()
-
-        return credentials.mapNotNull { credential ->
-            val credentialId = decryptOrPlain(credential.credentialId, key).orEmpty()
-            val keyValue = decryptOrPlain(credential.keyValue, key).orEmpty()
-            val rpId = decryptOrPlain(credential.rpId, key).orEmpty()
-            val rpName = decryptOrPlain(credential.rpName, key).orEmpty()
-            val userHandle = decryptOrPlain(credential.userHandle, key).orEmpty()
-            val userName = decryptOrPlain(credential.userName, key).orEmpty()
-            val userDisplayName = decryptOrPlain(credential.userDisplayName, key).orEmpty()
-            val counter = decryptOrPlain(credential.counter, key)?.toLongOrNull() ?: 0L
-            val discoverable = parseBooleanText(decryptOrPlain(credential.discoverable, key))
-            val creationDate = parseCreationDateMillis(decryptOrPlain(credential.creationDate, key))
-            val keyAlgorithm = decryptOrPlain(credential.keyAlgorithm, key)
-            val publicKeyAlgorithm = parseAlgorithm(keyAlgorithm)
-
-            val hasAnySignal = credentialId.isNotBlank() ||
-                keyValue.isNotBlank() ||
-                rpId.isNotBlank() ||
-                userName.isNotBlank()
-            if (!hasAnySignal) return@mapNotNull null
-
-            DecodedPasskeyCredential(
-                credentialId = credentialId,
-                keyValue = keyValue,
-                rpId = rpId,
-                rpName = rpName,
-                userHandle = userHandle,
-                userName = userName,
-                userDisplayName = userDisplayName,
-                counter = counter,
-                discoverable = discoverable,
-                creationDateMillis = creationDate,
-                publicKeyAlgorithm = publicKeyAlgorithm
-            )
-        }
+        return Fido2CredentialCodec.decodeFido2Credentials(credentials, key)
     }
 
     private fun decryptOrPlain(value: String?, key: SymmetricCryptoKey): String? {

@@ -47,6 +47,8 @@ import com.bastion.app.bitwarden.crypto.BitwardenKdfMemoryException
 import com.bastion.app.bitwarden.mapper.BitwardenSendMapper
 import com.bastion.app.bitwarden.service.BitwardenAuthService
 import com.bastion.app.bitwarden.service.BitwardenDiagLogger
+import com.bastion.app.logging.runCatchingObserved
+import com.bastion.app.bitwarden.service.BitwardenHistoricalPasskeyMergeService
 import com.bastion.app.bitwarden.service.BitwardenHistoricalTotpRepairResult
 import com.bastion.app.bitwarden.service.BitwardenHistoricalTotpRepairService
 import com.bastion.app.bitwarden.service.BitwardenSyncService
@@ -189,6 +191,7 @@ class BitwardenRepository(private val context: Context) {
     private val authService = BitwardenAuthService(context)
     private val syncService = BitwardenSyncService(context)
     private val historicalTotpRepairService = BitwardenHistoricalTotpRepairService(context)
+    private val historicalPasskeyMergeService = BitwardenHistoricalPasskeyMergeService(context)
     
     // 加密的 SharedPreferences
     private val securePrefs by lazy {
@@ -776,6 +779,28 @@ class BitwardenRepository(private val context: Context) {
 
                 // 1. 先处理本地待删除操作（delete）
                 val processedDeleteCount = syncService.processPendingOperations(vault, accessToken, symmetricKey)
+
+                // 1.5 迁移历史独立 [Passkey] cipher 到密码 cipher（在 uploadLocalEntries 之前，避免待迁移 passkey 被当独立条目上传）
+                val passkeyMergeResult = runCatchingObserved {
+                    historicalPasskeyMergeService.mergeHistoricalStandalonePasskeys(
+                        vault = vault,
+                        accessToken = accessToken,
+                        symmetricKey = symmetricKey
+                    )
+                }.getOrNull()
+                if (passkeyMergeResult != null && (
+                        passkeyMergeResult.mergedPasskeys > 0 ||
+                            passkeyMergeResult.deletedStandaloneCiphers > 0 ||
+                            passkeyMergeResult.failedPasskeys > 0
+                        )
+                ) {
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository passkeyMerge: vaultId=$vaultId, merged=${passkeyMergeResult.mergedPasskeys}, " +
+                            "deletedStandalone=${passkeyMergeResult.deletedStandaloneCiphers}, " +
+                            "cleanedEmpty=${passkeyMergeResult.cleanedUpEmptyPasswordEntries}, " +
+                            "failed=${passkeyMergeResult.failedPasskeys}, skipped=${passkeyMergeResult.skippedPasskeys}"
+                    )
+                }
 
                 // 2. 再上传本地创建的条目到服务器（create）
                 val uploadResult = syncService.uploadLocalEntries(vault, accessToken, symmetricKey)

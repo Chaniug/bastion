@@ -881,7 +881,21 @@ fun PasskeyListScreen(
         if (!isReferenceOnly) {
             val vaultId = passkey.bitwardenVaultId
             val cipherId = passkey.bitwardenCipherId
+            val isBoundToSyncedPassword = boundPassword != null &&
+                !boundPassword.bitwardenCipherId.isNullOrBlank()
+            if (isBoundToSyncedPassword) {
+                // 绑定型 passkey：passkey 的 cipherId 指向密码 cipher，绝不能 queueCipherDelete（会误删整个密码 cipher）。
+                // 标记 DELETE_PENDING，由 uploadModifiedPasskeys 从密码 cipher 的 fido2Credentials 移除该 credential 后再删本地。
+                val updated = passkey.copy(
+                    syncStatus = PasskeyEntry.SYNC_STATUS_DELETE_PENDING
+                )
+                if (viewModel.updatePasskey(updated).isFailure) {
+                    return false
+                }
+                return true
+            }
             if (vaultId != null && !cipherId.isNullOrBlank()) {
+                // 未绑定/独立 passkey cipher：软删独立 cipher（现状）
                 val queueResult = bitwardenRepository.queueCipherDelete(
                     vaultId = vaultId,
                     cipherId = cipherId,

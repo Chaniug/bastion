@@ -203,6 +203,11 @@ data class PasskeyEntry(
         const val TRANSPORT_NFC = "nfc"
         const val TRANSPORT_BLE = "ble"
         const val TRANSPORT_HYBRID = "hybrid"
+
+        // 同步状态（syncStatus 取值）
+        // NONE / PENDING / SYNCING / SYNCED / FAILED / REFERENCE 沿用历史字符串字面量
+        /** 绑定型 passkey 删除待同步：等待从密码 cipher 的 fido2Credentials 中移除后删除本地记录 */
+        const val SYNC_STATUS_DELETE_PENDING = "DELETE_PENDING"
     }
 
     fun isBitwardenCompatible(): Boolean = passkeyMode == MODE_BW_COMPAT

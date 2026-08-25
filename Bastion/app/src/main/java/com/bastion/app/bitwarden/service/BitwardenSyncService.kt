@@ -2003,7 +2003,9 @@ class BitwardenSyncService(
         addField("bastion_state", entry.state)
         addField("bastion_zip_code", entry.zipCode)
         addField("bastion_country", entry.country)
-        addField("bastion_passkey_bindings", entry.passkeyBindings)
+        // passkey 绑定关系已由官方 login.fido2Credentials 承载（见 PasskeyMapper / Fido2CredentialCodec），
+        // 不再写入 bastion_passkey_bindings 私有自定义字段（避免服务器端冗余脏数据）。
+        // 下载侧改为从本地 passkeys 表重建 passkey_bindings 列。
         // T2: WIFI / SSO 扩展元数据走隐藏字段，消除 REST 同步静默丢数据
         if (entry.loginType.equals("WIFI", ignoreCase = true)) {
             addField("bastion_login_type", "WIFI")

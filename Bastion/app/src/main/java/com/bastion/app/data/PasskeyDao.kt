@@ -315,6 +315,66 @@ interface PasskeyDao {
     @Query("SELECT * FROM passkeys WHERE bound_password_id IN (:passwordIds)")
     suspend fun getByBoundPasswordIds(passwordIds: List<Long>): List<PasskeyEntry>
 
+    /**
+     * 绑定型待上传 Passkeys：密码条目已有服务器 cipherId，但 passkey 尚未上传（bitwarden_cipher_id IS NULL）。
+     * 这类 passkey 应合并进密码 cipher 的 login.fido2Credentials（而非创建独立 cipher）。
+     */
+    @Query(
+        """
+        SELECT p.* FROM passkeys p
+        INNER JOIN password_entries pe ON p.bound_password_id = pe.id
+        WHERE p.bitwarden_vault_id = :vaultId
+          AND p.bitwarden_cipher_id IS NULL
+          AND pe.bitwarden_cipher_id IS NOT NULL AND pe.bitwarden_cipher_id != ''
+          AND p.passkey_mode = :passkeyMode
+        """
+    )
+    suspend fun getBoundPasskeysPendingUpload(
+        vaultId: Long,
+        passkeyMode: String = PasskeyEntry.MODE_BW_COMPAT
+    ): List<PasskeyEntry>
+
+    /**
+     * 绑定型但仍在独立 cipher 上的 Passkeys（迁移候选）：
+     * passkey.bitwarden_cipher_id 非空且不等于密码条目的 bitwarden_cipher_id。
+     * 历史版本把绑定型 passkey 上传成了独立 [Passkey] cipher，需迁移合并进密码 cipher 并软删独立 cipher。
+     */
+    @Query(
+        """
+        SELECT p.* FROM passkeys p
+        INNER JOIN password_entries pe ON p.bound_password_id = pe.id
+        WHERE p.bitwarden_vault_id = :vaultId
+          AND p.bitwarden_cipher_id IS NOT NULL AND p.bitwarden_cipher_id != ''
+          AND p.bitwarden_cipher_id != pe.bitwarden_cipher_id
+          AND pe.bitwarden_cipher_id IS NOT NULL AND pe.bitwarden_cipher_id != ''
+          AND p.passkey_mode = :passkeyMode
+        """
+    )
+    suspend fun getBoundPasskeysOnStandaloneCipher(
+        vaultId: Long,
+        passkeyMode: String = PasskeyEntry.MODE_BW_COMPAT
+    ): List<PasskeyEntry>
+
+    /**
+     * 待从密码 cipher 的 fido2Credentials 中移除的绑定型 Passkeys（删除语义）：
+     * sync_status = DELETE_PENDING 且密码条目已有服务器 cipherId。
+     */
+    @Query(
+        """
+        SELECT p.* FROM passkeys p
+        INNER JOIN password_entries pe ON p.bound_password_id = pe.id
+        WHERE p.bitwarden_vault_id = :vaultId
+          AND p.sync_status = :deletePendingStatus
+          AND pe.bitwarden_cipher_id IS NOT NULL AND pe.bitwarden_cipher_id != ''
+          AND p.passkey_mode = :passkeyMode
+        """
+    )
+    suspend fun getPasskeysPendingFido2Removal(
+        vaultId: Long,
+        deletePendingStatus: String = PasskeyEntry.SYNC_STATUS_DELETE_PENDING,
+        passkeyMode: String = PasskeyEntry.MODE_BW_COMPAT
+    ): List<PasskeyEntry>
+
     @Query(
         """
         SELECT * FROM passkeys
