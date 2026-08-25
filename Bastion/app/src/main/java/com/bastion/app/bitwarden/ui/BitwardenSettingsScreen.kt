@@ -70,8 +70,7 @@ fun BitwardenSettingsScreen(
     // 对话框状态
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var vaultToLogout by remember { mutableStateOf<BitwardenVault?>(null) }
-    var showUnlockDialog by remember { mutableStateOf(false) }
-    var vaultToUnlock by remember { mutableStateOf<BitwardenVault?>(null) }
+    // A1：Bitwarden 通用解锁对话框已移除；下方 showNeverLockUnlockDialog 保留（"永不锁定"安全校验）
     var showNeverLockUnlockDialog by remember { mutableStateOf(false) }
     var pendingEnableNeverLock by remember { mutableStateOf(false) }
     
@@ -185,11 +184,7 @@ fun BitwardenSettingsScreen(
                             viewModel.setActiveVault(vault)
                             onNavigateToVault(vault.id)
                         },
-                        onLock = { viewModel.lock(vault.id) },
-                        onUnlock = {
-                            vaultToUnlock = vault
-                            showUnlockDialog = true
-                        },
+                        // A1：Bitwarden 锁/解锁入口已移除（统一依赖 Bastion app 锁）
                         onSync = { viewModel.requestManualSync(vault.id) },
                         onLogout = {
                             vaultToLogout = vault
@@ -321,22 +316,7 @@ fun BitwardenSettingsScreen(
         )
     }
     
-    // 解锁对话框
-    if (showUnlockDialog && vaultToUnlock != null) {
-        UnlockVaultDialog(
-            email = vaultToUnlock!!.email,
-            onUnlock = { password ->
-                viewModel.unlock(vaultToUnlock!!.id, password)
-                showUnlockDialog = false
-                vaultToUnlock = null
-            },
-            onDismiss = {
-                showUnlockDialog = false
-                vaultToUnlock = null
-            }
-        )
-    }
-
+    // 永不锁定设置的安全校验解锁对话框（A1 保留）
     if (showNeverLockUnlockDialog) {
         val vault = activeVault
         UnlockVaultDialog(
@@ -363,8 +343,6 @@ fun VaultCard(
     unlockState: BitwardenViewModel.UnlockState,
     syncStatus: VaultSyncStatus?,
     onSelect: () -> Unit,
-    onLock: () -> Unit,
-    onUnlock: () -> Unit,
     onSync: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -483,35 +461,6 @@ fun VaultCard(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (isUnlocked) {
-                        OutlinedButton(
-                            onClick = onLock,
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 52.dp)
-                                .defaultMinSize(minWidth = 0.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-                        ) {
-                            Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("锁定", maxLines = 1, overflow = TextOverflow.Clip)
-                        }
-                    } else {
-                        Button(
-                            onClick = onUnlock,
-                            enabled = !isUnlocking,
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 52.dp)
-                                .defaultMinSize(minWidth = 0.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-                        ) {
-                            Icon(Icons.Outlined.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(if (isUnlocking) "解锁中" else "解锁", maxLines = 1, overflow = TextOverflow.Clip)
-                        }
-                    }
-
                     if (isUnlocked) {
                         OutlinedButton(
                             onClick = {

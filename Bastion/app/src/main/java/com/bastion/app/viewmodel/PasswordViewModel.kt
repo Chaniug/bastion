@@ -682,7 +682,10 @@ class PasswordViewModel(
 
             val knownPasswordBuckets = decrypted
                 .filter { (_, password) -> password != null }
-                .groupBy({ (_, password) -> password!! }, { (entry, _) -> entry })
+                .groupBy(
+                    keySelector = { (entry, password) -> "${password.orEmpty()}|totp:${entry.authenticatorKey.isNotBlank()}" },
+                    valueTransform = { (entry, _) -> entry }
+                )
 
             for ((_, candidates) in knownPasswordBuckets) {
                 pickBestEntry(candidates)?.let { deduped.add(it) }
@@ -710,7 +713,9 @@ class PasswordViewModel(
             group.forEach { entry ->
                 val isPasswordMode = entry.loginType.equals("PASSWORD", ignoreCase = true)
                 val shouldFilterGhost = !entry.isLocalOnlyEntry() || entry.hasOwnershipConflict()
-                if (isPasswordMode && entry.password.isBlank() && shouldFilterGhost) {
+                // 仅当密码为空「且」没有任何 TOTP 绑定时才视为幽灵条目过滤；
+                // 只绑定了 TOTP 验证器（密码为空）的条目必须保留，否则 TOTP 会消失。
+                if (isPasswordMode && entry.password.isBlank() && entry.authenticatorKey.isBlank() && shouldFilterGhost) {
                     ghostIds += entry.id
                 }
             }

@@ -202,28 +202,6 @@ internal fun BitwardenSyncTopActionsMenuItem(
 }
 
 @Composable
-internal fun BitwardenReunlockTopActionsMenuItem(
-    onClick: () -> Unit,
-) {
-    DropdownMenuItem(
-        text = { Text(stringResource(R.string.reunlock_current_database_menu)) },
-        leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) },
-        onClick = onClick
-    )
-}
-
-@Composable
-internal fun BitwardenLockTopActionsMenuItem(
-    onClick: () -> Unit,
-) {
-    DropdownMenuItem(
-        text = { Text(stringResource(R.string.lock_current_database_menu)) },
-        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-        onClick = onClick
-    )
-}
-
-@Composable
 internal fun BitwardenClearCacheTopActionsMenuItem(
     enabled: Boolean,
     onClick: () -> Unit,

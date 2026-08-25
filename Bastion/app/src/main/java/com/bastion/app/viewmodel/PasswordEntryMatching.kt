@@ -97,7 +97,8 @@ internal object PasswordEntryMatching {
      */
     fun pickBestEntry(candidates: List<PasswordEntry>): PasswordEntry? {
         return candidates.maxWithOrNull(
-            compareBy<PasswordEntry> { it.notes.length }
+            compareByDescending<PasswordEntry> { if (it.authenticatorKey.isNotBlank()) 1 else 0 }
+                .thenBy { it.notes.length }
                 .thenBy { it.website.length }
                 .thenBy { it.username.length }
                 .thenBy { if (it.isFavorite) 1 else 0 }
