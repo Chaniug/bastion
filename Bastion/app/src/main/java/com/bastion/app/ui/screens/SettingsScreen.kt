@@ -82,6 +82,25 @@ import com.bastion.app.ui.components.OutlinedTextField
 import java.io.File
 import java.util.Locale
 
+/**
+ * 「清空所有数据」的多通道密码验证：
+ * 1) 优先验证本地主密码（SecurityManager）；
+ * 2) 若本地密码不匹配但已连接 Bitwarden，则用 Bitwarden 主密码验证（走 KDF 派生对比）。
+ * 这样在纯 Bitwarden 模式下，用户用 Bitwarden 主密码也能通过清空校验。
+ */
+private suspend fun verifyClearDataPassword(context: android.content.Context, password: String): Boolean {
+    val sm = com.bastion.app.security.SecurityManager.instance(context)
+    if (sm.verifyMasterPassword(password)) return true
+    return try {
+        val bw = com.bastion.app.bitwarden.repository.BitwardenRepository.getInstance(context)
+        bw.getAllVaults().any { vault ->
+            bw.unlock(vault.id, password) is com.bastion.app.bitwarden.repository.BitwardenRepository.UnlockResult.Success
+        }
+    } catch (e: Exception) {
+        false
+    }
+}
+
 private const val UPDATE_APK_DIR = "update_apk"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -102,7 +121,6 @@ fun SettingsScreen(
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToPageCustomization: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { _, _, _, _, _, _ -> },
-    onVerifyClearDataPassword: suspend (String) -> Boolean = { false },
     showTopBar: Boolean = true,  // 添加参数控制是否显示顶栏
     onSectionSelected: ((String) -> Unit)? = null  // 宽屏模式下 section 被选中时回调
 ) {
@@ -1745,7 +1763,7 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                if (onVerifyClearDataPassword(clearDataPasswordInput)) {
+                                if (verifyClearDataPassword(context, clearDataPasswordInput)) {
                                     dismissClearDataSheet {
                                         onClearAllData(
                                             clearPasswords,

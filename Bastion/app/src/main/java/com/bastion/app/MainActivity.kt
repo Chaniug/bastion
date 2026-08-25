@@ -95,8 +95,6 @@ import com.bastion.app.security.lock.MainAppLockPolicy
 import com.bastion.app.ui.SimpleMainScreen
 import androidx.work.WorkManager
 import com.bastion.app.bitwarden.repository.BitwardenRepository
-import com.bastion.app.bitwarden.repository.CacheClearMode
-import com.bastion.app.bitwarden.repository.UnlockResult
 import com.bastion.app.bitwarden.sync.BitwardenSyncWorker
 import com.bastion.app.ui.screens.AddEditBankCardScreen
 import com.bastion.app.ui.screens.AddEditBillingAddressScreen
@@ -1182,24 +1180,6 @@ fun BastionContent(
                 onManageKeePassDatabase = {
                     navController.navigate(Screen.LocalKeePass.route)
                 },
-                onVerifyClearDataPassword = { password ->
-                    val sm = com.bastion.app.security.SecurityManager.instance(this@MainActivity)
-                    if (sm.verifyMasterPassword(password)) {
-                        true
-                    } else {
-                        try {
-                            val bw = BitwardenRepository.getInstance(this@MainActivity)
-                            for (vault in bw.getAllVaults()) {
-                                if (bw.unlock(vault.id, password) is UnlockResult.Success) {
-                                    return@onVerifyClearDataPassword true
-                                }
-                            }
-                            false
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(
@@ -1244,7 +1224,7 @@ fun BastionContent(
                                     val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
                                     for (vault in bwRepo.getAllVaults()) {
                                         try {
-                                            bwRepo.clearVaultLocalCache(vault.id, CacheClearMode.FULL_FORCE)
+                                            bwRepo.clearVaultLocalCache(vault.id, BitwardenRepository.CacheClearMode.FULL_FORCE)
                                         } catch (e: Exception) {
                                             android.util.Log.w("MainActivity", "clearVaultLocalCache failed vault=${vault.id}", e)
                                         }
@@ -2673,24 +2653,6 @@ fun BastionContent(
                 onNavigateToThemeAndColorScheme = {
                     navController.navigate(Screen.ThemeAndColorScheme.route)
                 },
-                onVerifyClearDataPassword = { password ->
-                    val sm = com.bastion.app.security.SecurityManager.instance(this@MainActivity)
-                    if (sm.verifyMasterPassword(password)) {
-                        true
-                    } else {
-                        try {
-                            val bw = BitwardenRepository.getInstance(this@MainActivity)
-                            for (vault in bw.getAllVaults()) {
-                                if (bw.unlock(vault.id, password) is UnlockResult.Success) {
-                                    return@onVerifyClearDataPassword true
-                                }
-                            }
-                            false
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(
@@ -2735,7 +2697,7 @@ fun BastionContent(
                                     val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
                                     for (vault in bwRepo.getAllVaults()) {
                                         try {
-                                            bwRepo.clearVaultLocalCache(vault.id, CacheClearMode.FULL_FORCE)
+                                            bwRepo.clearVaultLocalCache(vault.id, BitwardenRepository.CacheClearMode.FULL_FORCE)
                                         } catch (e: Exception) {
                                             android.util.Log.w("MainActivity", "clearVaultLocalCache failed vault=${vault.id}", e)
                                         }
