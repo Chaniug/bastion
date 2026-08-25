@@ -366,7 +366,7 @@ class BitwardenSyncService(
                 if (activeServerCipherIds.isEmpty()) {
                     passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
                     secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
-                    passkeyDao.deleteAllByByBitwardenVaultId(vault.id)
+                    passkeyDao.deleteAllByBitwardenVaultId(vault.id)
                 } else {
                     passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
                     secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
