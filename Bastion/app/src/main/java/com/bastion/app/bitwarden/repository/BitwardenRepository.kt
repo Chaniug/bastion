@@ -824,8 +824,13 @@ class BitwardenRepository(private val context: Context) {
                     else -> 0
                 }
 
-                // 4. 执行同步（pull）
-                val result = syncService.fullSync(vault, accessToken, symmetricKey)
+                // 4. 执行同步（pull）：带上次 revisionDate 则走增量（只拉变更），无则全量
+                val result = syncService.fullSync(
+                    vault = vault,
+                    accessToken = accessToken,
+                    symmetricKey = symmetricKey,
+                    sinceRevisionDate = vault.revisionDate
+                )
 
                 // 更新最后同步时间
                 securePrefs.edit().putLong(KEY_LAST_SYNC_TIME, System.currentTimeMillis()).apply()

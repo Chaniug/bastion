@@ -52,8 +52,9 @@ enum class NetworkGateResult {
 }
 
 data class SyncManagerConfig(
-    val pageEnterThrottleMs: Long = 45_000L,
-    val appResumeThrottleMs: Long = 60_000L,
+    // P2 节流拉长：自建服务器高 RTT 场景下，减少"切页/回前台反复全量同步"的观感
+    val pageEnterThrottleMs: Long = 90_000L,
+    val appResumeThrottleMs: Long = 180_000L,
     val localMutationDebounceMs: Long = 700L,
     val retryBaseDelayMs: Long = 5_000L,
     val retryMaxDelayMs: Long = 15 * 60 * 1000L,

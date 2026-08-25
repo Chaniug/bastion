@@ -128,14 +128,17 @@ interface BitwardenVaultApi {
     ): Response<Unit>
 
     /**
-     * 同步全部数据
+     * 同步数据
      * 
-     * 返回所有 ciphers, folders, collections, policies 等
+     * sinceRevisionDate 非空时为增量同步：服务器只返回该时间点之后变更的
+     * ciphers/folders/collections/sends（删除的条目带 deletedDate），
+     * 显著降低大 vault 在高 RTT 场景下的同步耗时。
      */
     @GET("sync")
     suspend fun sync(
         @Header("Authorization") authorization: String,
-        @Query("excludeDomains") excludeDomains: Boolean = true
+        @Query("excludeDomains") excludeDomains: Boolean = true,
+        @Query("sinceRevisionDate") sinceRevisionDate: String? = null
     ): Response<SyncResponse>
     
     /**
@@ -455,6 +458,9 @@ data class ErrorModel(
 
 @Serializable
 data class SyncResponse(
+    @JsonNames("revisionDate")
+    @SerialName("RevisionDate")
+    val revisionDate: String? = null,
     @JsonNames("profile")
     @SerialName("Profile")
     val profile: ProfileResponse,

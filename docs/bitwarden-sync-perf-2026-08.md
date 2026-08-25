@@ -38,3 +38,27 @@
 ## 排错指引
 - 若 `withTransaction` 报 `IllegalStateException`，检查是否有其它后台协程在事务外并发写同一 vault 的 cipher 表
 - `connectTimeout=10s` 在极慢网络下可能误杀；若真机反馈"切到 2G 同步直接失败"，可酌情调回 15-20s
+
+## 2026-08-26 追加：P1 增量同步 + P2 节流（基于真机 diag 日志）
+
+真机 diag 日志证实：自建服务器（bit.valk.ccwu.cc）单次 HTTP 请求 RTT 2.4~6.5 秒（prelogin 2448ms / token 6546ms / 2FA 2935ms），"一直在连接"= 切页频繁触发全量同步 × 高 RTT。为此实施：
+
+### P1 增量同步（核心）
+- `BitwardenApi.kt`：`GET /api/sync` 加 `sinceRevisionDate` 查询参数（空=全量）；`SyncResponse` 加顶层 `revisionDate` 字段
+- `BitwardenSyncService.fullSync`：加 `sinceRevisionDate` 参数，非空即增量；**增量模式下跳过空 Vault 保护**（响应里 cipher 数只是变更数，会误判）
+- `processSyncResponse`：加 `isIncremental` 参数；增量模式下：
+  - 跳过全量 delete-wins 清理（`deleteBitwardenEntriesNotIn`）与文件夹 `deleteNotIn`——增量响应只含变更，not-in 会把未返回条目误删
+  - 删除语义交给 `syncCipherFromServer`（对 `deletedDate` 非空的 cipher 软删）
+  - send 改为按 `deletedDate` 删除（`sendDao.deleteBySendId`），不做 not-in 清理
+- `BitwardenRepository.sync`：fullSync 传 `sinceRevisionDate = vault.revisionDate`（首次同步 vault.revisionDate 为 null → 全量，之后自动增量）
+- vault 的 revisionDate 游标：优先用 sync 响应顶层 RevisionDate，回退 `profile.securityStamp`
+
+### P2 节流
+- `BitwardenSyncOrchestrator.SyncManagerConfig`：`pageEnterThrottleMs` 45s→90s、`appResumeThrottleMs` 60s→180s
+
+### 验证点（真机）
+- 首次同步后再次切页：应只拉变更（快），不再整包全量
+- 日志出现 `Starting incremental sync for vault`（非 full）即生效
+- 删除一个 Bitwarden 条目后再同步：本地应正确移除（增量删除语义）
+- 若增量同步后列表异常（条目凭空消失），说明服务端不兼容 sinceRevisionDate 或语义处理有误，回退方案：把 `BitwardenRepository.sync` 的 sinceRevisionDate 传参去掉即回到全量
+
