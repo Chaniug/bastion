@@ -341,12 +341,14 @@ class TotpViewModel(
             val boundPasswordId = data.boundPasswordId
             if (boundPasswordId != null) {
                 // 绑定型：按 (boundPasswordId|identityKey) 去重（保持原行为，避免同一 TOTP 绑定不同密码时被误并）
-                if (seenBoundKeys.add("$boundPasswordId|${buildTotpIdentityKey(data)}")) {
+                val key = "$boundPasswordId|${buildTotpIdentityKey(data)}"
+                if (seenBoundKeys.add(key)) {
                     result.add(item)
                 }
             } else {
                 // 独立型：按 identityKey 去重，云端优先已由排序保证，避免云端/本地相同 TOTP 双显示
-                if (seenStandaloneKeys.add(buildTotpIdentityKey(data))) {
+                val key = buildTotpIdentityKey(data)
+                if (seenStandaloneKeys.add(key)) {
                     result.add(item)
                 }
             }
