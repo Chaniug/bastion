@@ -19,6 +19,8 @@ import com.bastion.app.data.model.NoteData
 import com.bastion.app.data.model.SecureCustomField
 import com.bastion.app.data.model.SecureCustomFieldType
 import com.bastion.app.data.model.LOGIN_TYPE_SSH_KEY
+import com.bastion.app.data.model.PasskeyBinding
+import com.bastion.app.data.model.PasskeyBindingCodec
 import com.bastion.app.data.model.SshKeyData
 import com.bastion.app.data.model.SshKeyDataCodec
 import com.bastion.app.data.model.TotpData
@@ -224,7 +226,11 @@ class CipherSyncProcessor(
             passwordResult is CipherSyncResult.Skipped && passwordResult.reason == SKIP_REMOTE_UNCHANGED
         val supplementalResult = when {
             PasskeyMapper.isPasskeyCipher(cipher) -> {
-                syncPasskeyCipher(vault, cipher, symmetricKey, passwordRemoteUnchanged)
+                val passkeyResult = syncPasskeyCipher(vault, cipher, symmetricKey, passwordRemoteUnchanged)
+                // 重建密码条目的 passkey_bindings 列：绑定关系以本地 passkeys 表为准
+                // （boundPasswordId 已回填），不再依赖服务器 bastion_passkey_bindings 自定义字段。
+                rebuildPasswordPasskeyBindings(vault, cipher)
+                passkeyResult
             }
             TotpMapper.isStandaloneTotpCipher(cipher) -> {
                 syncTotpCipher(vault, cipher, symmetricKey, serverDeletedAt)
@@ -1457,6 +1463,34 @@ class CipherSyncProcessor(
     // ========== 辅助方法 ==========
 
     private typealias DecodedPasskeyCredential = Fido2CredentialCodec.DecodedFido2Credential
+
+    /**
+     * 重建密码条目的 passkey_bindings 列（以本地 passkeys 表的 boundPasswordId 关联为准）。
+     *
+     * passkey 与密码的绑定关系已由官方 login.fido2Credentials 承载（syncPasskeyCipher 已回填
+     * boundPasswordId），本地 passkey_bindings 列不再依赖服务器 bastion_passkey_bindings 自定义字段，
+     * 改为从本地 passkeys 表反查生成，保证 UI 展示/安全分析/备份恢复的绑定信息一致。
+     */
+    private suspend fun rebuildPasswordPasskeyBindings(
+        vault: BitwardenVault,
+        cipher: CipherApiResponse
+    ) {
+        val passwordEntry = resolveCanonicalPasswordEntry(vault.id, cipher.id) ?: return
+        val boundPasskeys = passkeyDao.getByBoundPasswordIds(listOf(passwordEntry.id))
+        val bindings = boundPasskeys.map { passkey ->
+            PasskeyBinding(
+                credentialId = passkey.credentialId,
+                rpId = passkey.rpId,
+                rpName = passkey.rpName,
+                userName = passkey.userName,
+                userDisplayName = passkey.userDisplayName
+            )
+        }
+        val encoded = PasskeyBindingCodec.encodeList(bindings)
+        if (encoded != passwordEntry.passkeyBindings) {
+            passwordEntryDao.updatePasskeyBindings(passwordEntry.id, encoded)
+        }
+    }
 
     private fun decodeFido2Credentials(
         credentials: List<CipherLoginFido2CredentialApiData>?,

@@ -322,7 +322,8 @@ class BitwardenJsonExporter(
         if (entry.loginType.equals("SSO", ignoreCase = true)) {
             add("bastion_sso_provider", entry.ssoProvider, 1)
         }
-        add("bastion_passkey_bindings", entry.passkeyBindings, 1)
+        // passkey 绑定关系由官方 fido2Credentials 承载，导出不再写入 bastion_passkey_bindings；
+        // 导入仍兼容读取旧格式（见 CipherSyncProcessor）。
         SshKeyDataCodec.decode(entry.sshKeyData)?.let { ssh ->
             add("bastion_ssh_algorithm", ssh.algorithm, 1)
             add("bastion_ssh_public_key", ssh.publicKeyOpenSsh, 1)

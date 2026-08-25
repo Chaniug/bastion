@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bastion.app.bitwarden.api.BitwardenApiManager
 import com.bastion.app.bitwarden.api.BitwardenVaultApi
+import com.bastion.app.bitwarden.api.CipherUpdateRequest
 import com.bastion.app.bitwarden.crypto.BitwardenCrypto.SymmetricCryptoKey
 import com.bastion.app.bitwarden.mapper.Fido2CredentialCodec
 import com.bastion.app.bitwarden.mapper.PasskeyMapper
@@ -51,6 +52,14 @@ class BitwardenHistoricalPasskeyMergeService(
         symmetricKey: SymmetricCryptoKey
     ): BitwardenHistoricalPasskeyMergeResult = withContext(Dispatchers.IO) {
         val vaultApi = apiManager.getVaultApi(vault)
+
+        // 0) 先清理历史冗余自定义字段 bastion_passkey_bindings（passkey 绑定已由官方 fido2Credentials 承载）
+        val legacyFieldsCleaned = cleanupLegacyPasskeyBindingsField(
+            vault = vault,
+            vaultApi = vaultApi,
+            accessToken = accessToken,
+            symmetricKey = symmetricKey
+        )
 
         var mergedPasskeys = 0
         var deletedStandaloneCiphers = 0
@@ -160,6 +169,10 @@ class BitwardenHistoricalPasskeyMergeService(
             }
         }
 
+        if (legacyFieldsCleaned > 0) {
+            Log.i(TAG, "Cleaned $legacyFieldsCleaned legacy bastion_passkey_bindings fields")
+        }
+
         BitwardenHistoricalPasskeyMergeResult(
             mergedPasskeys = mergedPasskeys,
             deletedStandaloneCiphers = deletedStandaloneCiphers,
@@ -167,6 +180,85 @@ class BitwardenHistoricalPasskeyMergeService(
             failedPasskeys = failedPasskeys,
             skippedPasskeys = skippedPasskeys
         )
+    }
+
+    /**
+     * 清理历史冗余自定义字段 bastion_passkey_bindings（passkey 绑定已由官方 login.fido2Credentials 承载）。
+     *
+     * 扫描本 vault 所有已同步的密码 cipher，若 fields 中含 bastion_passkey_bindings 则剔除后 PUT。
+     * - 幂等：剔除后服务器不再含该字段，下轮扫描自动跳过
+     * - 安全：其余字段（含 login/fido2Credentials/其他自定义字段）基于 GET baseline 原样回传，不动内容
+     * - 失败：单条 try/catch，失败仅记日志，下轮同步自动重试
+     */
+    private suspend fun cleanupLegacyPasskeyBindingsField(
+        vault: BitwardenVault,
+        vaultApi: BitwardenVaultApi,
+        accessToken: String,
+        symmetricKey: SymmetricCryptoKey
+    ): Int {
+        val candidates = passwordEntryDao.getByBitwardenVaultId(vault.id)
+            .filter { !it.isDeleted && !it.bitwardenCipherId.isNullOrBlank() }
+        if (candidates.isEmpty()) return 0
+
+        var cleaned = 0
+        candidates.forEach { entry ->
+            try {
+                val cipherId = entry.bitwardenCipherId ?: return@forEach
+                val cipher = fetchStandaloneCipher(vaultApi, accessToken, cipherId) ?: return@forEach
+                val fields = cipher.fields ?: return@forEach
+
+                val hasLegacyField = fields.any { field ->
+                    isLegacyPasskeyBindingsField(field.name, symmetricKey)
+                }
+                if (!hasLegacyField) return@forEach
+
+                val cleanedFields = fields.filterNot { field ->
+                    isLegacyPasskeyBindingsField(field.name, symmetricKey)
+                }
+                val updateRequest = CipherUpdateRequest(
+                    type = cipher.type,
+                    folderId = cipher.folderId,
+                    name = cipher.name ?: return@forEach,
+                    notes = cipher.notes,
+                    login = cipher.login,
+                    card = cipher.card,
+                    identity = cipher.identity,
+                    secureNote = cipher.secureNote,
+                    sshKey = cipher.sshKey,
+                    fields = cleanedFields.ifEmpty { null },
+                    favorite = cipher.favorite,
+                    reprompt = cipher.reprompt,
+                    archivedDate = cipher.archivedDate
+                )
+
+                val response = runCatchingObserved {
+                    vaultApi.updateCipher(
+                        authorization = "Bearer $accessToken",
+                        cipherId = cipherId,
+                        cipher = updateRequest
+                    )
+                }.getOrNull()
+                if (response != null && response.isSuccessful) {
+                    cleaned++
+                    Log.i(TAG, "Cleaned bastion_passkey_bindings from cipher $cipherId")
+                } else {
+                    Log.w(TAG, "Clean legacy field failed for cipher $cipherId: ${response?.code()}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Clean legacy field exception for entry ${entry.id}: ${e.message}")
+            }
+        }
+        return cleaned
+    }
+
+    private fun isLegacyPasskeyBindingsField(
+        encryptedName: String?,
+        symmetricKey: SymmetricCryptoKey
+    ): Boolean {
+        val name = Fido2CredentialCodec.decryptOrPlain(encryptedName, symmetricKey)
+            ?.trim()
+            .orEmpty()
+        return name.equals("bastion_passkey_bindings", ignoreCase = true)
     }
 
     private suspend fun fetchStandaloneCipher(

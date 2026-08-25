@@ -30,6 +30,15 @@ class PasskeySyncMergeGuardTest {
     private val codecSource = projectFile(
         "app/src/main/java/com/bastion/app/bitwarden/mapper/Fido2CredentialCodec.kt"
     ).readText()
+    private val syncServiceSource = projectFile(
+        "app/src/main/java/com/bastion/app/bitwarden/service/BitwardenSyncService.kt"
+    ).readText()
+    private val exportSource = projectFile(
+        "app/src/main/java/com/bastion/app/bitwarden/export/BitwardenJsonExport.kt"
+    ).readText()
+    private val mergeServiceSource = projectFile(
+        "app/src/main/java/com/bastion/app/bitwarden/service/BitwardenHistoricalPasskeyMergeService.kt"
+    ).readText()
 
     @Test
     fun boundPasskeyUploadMustMergeIntoPasswordCipherInsteadOfCreatingStandaloneCipher() {
@@ -115,6 +124,43 @@ class PasskeySyncMergeGuardTest {
                 codecSource.contains("fun decryptCredentialsToPlainApiData(") &&
                 codecSource.contains("fun encryptCredential(") &&
                 codecSource.contains("fun mergeByCredentialId(")
+        )
+    }
+
+    @Test
+    fun uploadAndExportMustNotWriteLegacyPasskeyBindingsField() {
+        assertTrue(
+            "passkey 绑定关系已由官方 fido2Credentials 承载，上传侧不得再写入 bastion_passkey_bindings 私有自定义字段。",
+            !syncServiceSource.contains("addField(\"bastion_passkey_bindings\"") &&
+                !syncServiceSource.contains("add(\"bastion_passkey_bindings\"")
+        )
+        assertTrue(
+            "JSON 导出同样不应写入 bastion_passkey_bindings（避免服务器端冗余脏数据）。",
+            !exportSource.contains("add(\"bastion_passkey_bindings\"")
+        )
+    }
+
+    @Test
+    fun downloadMustRebuildPasskeyBindingsFromLocalPasskeys() {
+        val syncLoginBody = syncProcessorSource
+            .substringAfter("private suspend fun syncLoginCipher(")
+            .substringBefore("private suspend fun syncPasswordCipher(")
+
+        assertTrue(
+            "下载侧必须在 passkey 同步后重建密码条目的 passkey_bindings 列（以本地 passkeys 表为准）。",
+            syncLoginBody.contains("rebuildPasswordPasskeyBindings(") &&
+                syncProcessorSource.contains("fun rebuildPasswordPasskeyBindings(") &&
+                syncProcessorSource.contains("PasskeyBindingCodec.encodeList(")
+        )
+    }
+
+    @Test
+    fun syncMustCleanupLegacyPasskeyBindingsField() {
+        assertTrue(
+            "同步时必须清理历史冗余自定义字段 bastion_passkey_bindings（从服务器 cipher 的 fields 剔除后 PUT）。",
+            mergeServiceSource.contains("cleanupLegacyPasskeyBindingsField(") &&
+                mergeServiceSource.contains("isLegacyPasskeyBindingsField(") &&
+                mergeServiceSource.contains("CipherUpdateRequest(")
         )
     }
 
