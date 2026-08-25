@@ -1221,7 +1221,7 @@ fun BastionContent(
                             val anyClearSelected = clearPasswords || clearTotp || clearNotes || clearDocuments || clearBankCards || clearGeneratorHistory
                             if (anyClearSelected) {
                                 try {
-                                    val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
+                                    val bwRepo = BitwardenRepository.getInstance(navController.context)
                                     for (vault in bwRepo.getAllVaults()) {
                                         try {
                                             bwRepo.clearVaultLocalCache(vault.id, BitwardenRepository.CacheClearMode.FULL_FORCE)
@@ -1232,7 +1232,7 @@ fun BastionContent(
                                     // 清理非 Bitwarden 的本地 Passkey（Bitwarden 部分已由 clearVaultLocalCache 处理）
                                     database.passkeyDao().deleteAllLocalPasskeys()
                                     // 取消周期同步，避免清空后立即被云端拉回
-                                    WorkManager.getInstance(this@MainActivity)
+                                    WorkManager.getInstance(navController.context)
                                         .cancelUniqueWork(BitwardenSyncWorker.WORK_NAME_PERIODIC)
                                 } catch (e: Exception) {
                                     android.util.Log.w("MainActivity", "clear bitwarden local cache failed", e)
@@ -2694,7 +2694,7 @@ fun BastionContent(
                             val anyClearSelected = clearPasswords || clearTotp || clearNotes || clearDocuments || clearBankCards || clearGeneratorHistory
                             if (anyClearSelected) {
                                 try {
-                                    val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
+                                    val bwRepo = BitwardenRepository.getInstance(navController.context)
                                     for (vault in bwRepo.getAllVaults()) {
                                         try {
                                             bwRepo.clearVaultLocalCache(vault.id, BitwardenRepository.CacheClearMode.FULL_FORCE)
@@ -2705,7 +2705,7 @@ fun BastionContent(
                                     // 清理非 Bitwarden 的本地 Passkey（Bitwarden 部分已由 clearVaultLocalCache 处理）
                                     database.passkeyDao().deleteAllLocalPasskeys()
                                     // 取消周期同步，避免清空后立即被云端拉回
-                                    WorkManager.getInstance(this@MainActivity)
+                                    WorkManager.getInstance(navController.context)
                                         .cancelUniqueWork(BitwardenSyncWorker.WORK_NAME_PERIODIC)
                                 } catch (e: Exception) {
                                     android.util.Log.w("MainActivity", "clear bitwarden local cache failed", e)
