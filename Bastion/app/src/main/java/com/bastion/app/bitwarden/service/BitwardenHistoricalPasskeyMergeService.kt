@@ -119,7 +119,8 @@ class BitwardenHistoricalPasskeyMergeService(
                     symmetricKey = symmetricKey
                 )
                 if (mergeResult !is UploadItemResult.Success) {
-                    Log.w(TAG, "Merge failed for passkey ${passkey.id}: ${mergeResult.message}")
+                    val mergeError = (mergeResult as? UploadItemResult.Error)?.message ?: "unknown"
+                    Log.w(TAG, "Merge failed for passkey ${passkey.id}: $mergeError")
                     failedPasskeys++
                     return@forEach
                 }
