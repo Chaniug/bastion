@@ -93,6 +93,11 @@ import com.bastion.app.security.SensitiveFieldMigrationManager
 import com.bastion.app.security.lock.MainAppAccessState
 import com.bastion.app.security.lock.MainAppLockPolicy
 import com.bastion.app.ui.SimpleMainScreen
+import androidx.work.WorkManager
+import com.bastion.app.bitwarden.repository.BitwardenRepository
+import com.bastion.app.bitwarden.repository.CacheClearMode
+import com.bastion.app.bitwarden.repository.UnlockResult
+import com.bastion.app.bitwarden.sync.BitwardenSyncWorker
 import com.bastion.app.ui.screens.AddEditBankCardScreen
 import com.bastion.app.ui.screens.AddEditBillingAddressScreen
 import com.bastion.app.ui.screens.AddEditDocumentScreen
@@ -1177,6 +1182,24 @@ fun BastionContent(
                 onManageKeePassDatabase = {
                     navController.navigate(Screen.LocalKeePass.route)
                 },
+                onVerifyClearDataPassword = { password ->
+                    val sm = com.bastion.app.security.SecurityManager.instance(this@MainActivity)
+                    if (sm.verifyMasterPassword(password)) {
+                        true
+                    } else {
+                        try {
+                            val bw = BitwardenRepository.getInstance(this@MainActivity)
+                            for (vault in bw.getAllVaults()) {
+                                if (bw.unlock(vault.id, password) is UnlockResult.Success) {
+                                    return@onVerifyClearDataPassword true
+                                }
+                            }
+                            false
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(
@@ -1212,6 +1235,28 @@ fun BastionContent(
 
                             if (clearGeneratorHistory) {
                                 passwordHistoryManager.clearHistory()
+                            }
+
+                            // 彻底清空：Bitwarden 本地缓存、本地 Passkey，并暂停自动同步拉回
+                            val anyClearSelected = clearPasswords || clearTotp || clearNotes || clearDocuments || clearBankCards || clearGeneratorHistory
+                            if (anyClearSelected) {
+                                try {
+                                    val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
+                                    for (vault in bwRepo.getAllVaults()) {
+                                        try {
+                                            bwRepo.clearVaultLocalCache(vault.id, CacheClearMode.FULL_FORCE)
+                                        } catch (e: Exception) {
+                                            android.util.Log.w("MainActivity", "clearVaultLocalCache failed vault=${vault.id}", e)
+                                        }
+                                    }
+                                    // 清理非 Bitwarden 的本地 Passkey（Bitwarden 部分已由 clearVaultLocalCache 处理）
+                                    database.passkeyDao().deleteAllLocalPasskeys()
+                                    // 取消周期同步，避免清空后立即被云端拉回
+                                    WorkManager.getInstance(this@MainActivity)
+                                        .cancelUniqueWork(BitwardenSyncWorker.WORK_NAME_PERIODIC)
+                                } catch (e: Exception) {
+                                    android.util.Log.w("MainActivity", "clear bitwarden local cache failed", e)
+                                }
                             }
                             
                             // 显示成功消息
@@ -2628,6 +2673,24 @@ fun BastionContent(
                 onNavigateToThemeAndColorScheme = {
                     navController.navigate(Screen.ThemeAndColorScheme.route)
                 },
+                onVerifyClearDataPassword = { password ->
+                    val sm = com.bastion.app.security.SecurityManager.instance(this@MainActivity)
+                    if (sm.verifyMasterPassword(password)) {
+                        true
+                    } else {
+                        try {
+                            val bw = BitwardenRepository.getInstance(this@MainActivity)
+                            for (vault in bw.getAllVaults()) {
+                                if (bw.unlock(vault.id, password) is UnlockResult.Success) {
+                                    return@onVerifyClearDataPassword true
+                                }
+                            }
+                            false
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                },
                 onClearAllData = { clearPasswords: Boolean, clearTotp: Boolean, clearNotes: Boolean, clearDocuments: Boolean, clearBankCards: Boolean, clearGeneratorHistory: Boolean ->
                     // 清空所有数据
                     android.util.Log.d(
@@ -2663,6 +2726,28 @@ fun BastionContent(
 
                             if (clearGeneratorHistory) {
                                 passwordHistoryManager.clearHistory()
+                            }
+
+                            // 彻底清空：Bitwarden 本地缓存、本地 Passkey，并暂停自动同步拉回
+                            val anyClearSelected = clearPasswords || clearTotp || clearNotes || clearDocuments || clearBankCards || clearGeneratorHistory
+                            if (anyClearSelected) {
+                                try {
+                                    val bwRepo = BitwardenRepository.getInstance(this@MainActivity)
+                                    for (vault in bwRepo.getAllVaults()) {
+                                        try {
+                                            bwRepo.clearVaultLocalCache(vault.id, CacheClearMode.FULL_FORCE)
+                                        } catch (e: Exception) {
+                                            android.util.Log.w("MainActivity", "clearVaultLocalCache failed vault=${vault.id}", e)
+                                        }
+                                    }
+                                    // 清理非 Bitwarden 的本地 Passkey（Bitwarden 部分已由 clearVaultLocalCache 处理）
+                                    database.passkeyDao().deleteAllLocalPasskeys()
+                                    // 取消周期同步，避免清空后立即被云端拉回
+                                    WorkManager.getInstance(this@MainActivity)
+                                        .cancelUniqueWork(BitwardenSyncWorker.WORK_NAME_PERIODIC)
+                                } catch (e: Exception) {
+                                    android.util.Log.w("MainActivity", "clear bitwarden local cache failed", e)
+                                }
                             }
                             
                             // 显示成功消息

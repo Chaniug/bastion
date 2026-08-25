@@ -102,6 +102,7 @@ fun SettingsScreen(
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToPageCustomization: () -> Unit = {},
     onClearAllData: (Boolean, Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit = { _, _, _, _, _, _ -> },
+    onVerifyClearDataPassword: suspend (String) -> Boolean = { false },
     showTopBar: Boolean = true,  // 添加参数控制是否显示顶栏
     onSectionSelected: ((String) -> Unit)? = null  // 宽屏模式下 section 被选中时回调
 ) {
@@ -1744,8 +1745,7 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                val securityManager = com.bastion.app.security.SecurityManager(context)
-                                if (securityManager.verifyMasterPassword(clearDataPasswordInput)) {
+                                if (onVerifyClearDataPassword(clearDataPasswordInput)) {
                                     dismissClearDataSheet {
                                         onClearAllData(
                                             clearPasswords,

@@ -321,14 +321,37 @@ class TotpViewModel(
     }
 
     private fun collapseDuplicateBoundStoredTotps(storedTotps: List<SecureItem>): List<SecureItem> {
+        // 同一 TOTP 身份可能在云端（bitwardenCipherId 非空）与本地各存一条，
+        // 显示层只应保留一条。先按「云端优先、其次更新时间较新」排序，去重时云端项先胜出，
+        // 避免云端 TOTP 与本地重复 TOTP 在列表中双显示。
+        val ordered = storedTotps.sortedWith(
+            compareByDescending<SecureItem> { if (it.bitwardenCipherId.isNullOrBlank()) 0 else 1 }
+                .thenByDescending { it.updatedAt.time }
+        )
+
         val seenBoundKeys = mutableSetOf<String>()
-        return storedTotps.filter { item ->
-            val data = parseStoredTotpData(item)
-                ?: return@filter true
-            val boundPasswordId = data.boundPasswordId ?: return@filter true
-            val key = "$boundPasswordId|${buildTotpIdentityKey(data)}"
-            seenBoundKeys.add(key)
+        val seenStandaloneKeys = mutableSetOf<String>()
+        val result = mutableListOf<SecureItem>()
+
+        for (item in ordered) {
+            val data = parseStoredTotpData(item) ?: run {
+                result.add(item) // 无法解析的条目原样保留
+                continue
+            }
+            val boundPasswordId = data.boundPasswordId
+            if (boundPasswordId != null) {
+                // 绑定型：按 (boundPasswordId|identityKey) 去重（保持原行为，避免同一 TOTP 绑定不同密码时被误并）
+                if (seenBoundKeys.add("$boundPasswordId|${buildTotpIdentityKey(data)}")) {
+                    result.add(item)
+                }
+            } else {
+                // 独立型：按 identityKey 去重，云端优先已由排序保证，避免云端/本地相同 TOTP 双显示
+                if (seenStandaloneKeys.add(buildTotpIdentityKey(data))) {
+                    result.add(item)
+                }
+            }
         }
+        return result
     }
 
     private val allTotpItemsSource: Flow<List<SecureItem>> = combine(
