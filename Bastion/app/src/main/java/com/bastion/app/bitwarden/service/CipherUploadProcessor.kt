@@ -25,6 +25,7 @@ import com.bastion.app.data.model.TotpData
 import com.bastion.app.data.model.formatForDisplay
 import com.bastion.app.data.OperationLogItemType
 import com.bastion.app.notes.domain.NoteContentCodec
+import com.bastion.app.passkey.PasskeyCredentialIdCodec
 import com.bastion.app.passkey.PasskeyPrivateKeyStore
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.utils.FieldChange
@@ -536,6 +537,293 @@ class CipherUploadProcessor(
         }
     }
 
+    /**
+     * 把绑定型 passkey 合并进密码 cipher 的 login.fido2Credentials（PUT 更新密码 cipher）。
+     *
+     * 合并安全策略（避免覆盖服务器上其他 passkey / 其他字段）：
+     * 1. 先 GET 密码 cipher 最新数据（baseline），拿不到则返回 Error 可重试，绝不允许盲 PUT
+     * 2. 解密 baseline 已有 fido2Credentials（明文）
+     * 3. 按 credentialId（规范化后）去重合并：同名本地覆盖、不同名追加、其余保留
+     * 4. 重加密后仅替换 login.fido2Credentials，其余字段（name/notes/username/password/uris/fields 等）基于 baseline 原样回传
+     * 5. 成功后本地 PasskeyEntry.bitwardenCipherId 指向密码 cipher
+     *
+     * 若密码条目尚未同步（无 cipherId），退化为独立 passkey cipher 上传（uploadPasskey）。
+     */
+    internal suspend fun mergePasskeyIntoPasswordCipher(
+        vault: BitwardenVault,
+        passwordEntry: PasswordEntry,
+        passkey: PasskeyEntry,
+        accessToken: String,
+        symmetricKey: SymmetricCryptoKey
+    ): UploadItemResult {
+        return try {
+            suspend fun fail(message: String): UploadItemResult {
+                passkeyDao.markFailedByRecordId(passkey.id)
+                return UploadItemResult.Error(message)
+            }
+
+            if (!canSyncPasskeyToBitwarden(passkey)) {
+                return fail("Legacy passkey cannot be synced to Bitwarden")
+            }
+            val passwordCipherId = passwordEntry.bitwardenCipherId
+            if (passwordCipherId.isNullOrBlank()) {
+                // 密码尚未同步到 Bitwarden：退化为独立 passkey cipher 上传，不阻塞
+                return uploadPasskey(vault, passkey, accessToken, symmetricKey)
+            }
+
+            val normalizedPasskey = normalizePasskeyForUpload(passkey)
+            val mapper = PasskeyMapper()
+            val createRequest = mapper.toCreateRequest(normalizedPasskey, normalizedPasskey.bitwardenFolderId)
+            val localPlainFido2 = createRequest.login?.fido2Credentials.orEmpty()
+            if (localPlainFido2.isEmpty()) {
+                return fail("Passkey key material is missing or invalid; cannot sync as FIDO2 credential")
+            }
+
+            val vaultApi = apiManager.getVaultApi(vault)
+
+            // 1) GET baseline：必须有，否则不盲 PUT（防止清空服务器已有 passkey）
+            val baseline = fetchCipherForFieldMerge(vaultApi, accessToken, passwordCipherId)
+                ?: return fail("Failed to fetch password cipher baseline for passkey merge")
+
+            // 2) 解密服务器已有 fido2 credentials（明文）
+            val existingPlain = Fido2CredentialCodec.decryptCredentialsToPlainApiData(
+                baseline.login?.fido2Credentials,
+                symmetricKey
+            )
+
+            // 3) 明文合并去重（本地覆盖同名、保留其余）
+            val mergedPlain = Fido2CredentialCodec.mergeByCredentialId(
+                localPlain = localPlainFido2.first(),
+                existingPlain = existingPlain
+            )
+
+            // 4) 重加密，仅替换 fido2Credentials；其余字段基于 baseline 原样回传
+            val mergedEncrypted = Fido2CredentialCodec.encryptCredentials(mergedPlain, symmetricKey)
+            val login = (baseline.login ?: CipherLoginApiData()).copy(
+                fido2Credentials = mergedEncrypted
+            )
+            val updateRequest = CipherUpdateRequest(
+                type = baseline.type,
+                folderId = baseline.folderId ?: passwordEntry.bitwardenFolderId,
+                name = baseline.name ?: BitwardenCrypto.encryptString(passwordEntry.title, symmetricKey),
+                notes = baseline.notes,
+                login = login,
+                card = baseline.card,
+                identity = baseline.identity,
+                secureNote = baseline.secureNote,
+                sshKey = baseline.sshKey,
+                fields = baseline.fields,
+                favorite = baseline.favorite,
+                reprompt = baseline.reprompt,
+                archivedDate = baseline.archivedDate
+            )
+            val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
+
+            val response = vaultApi.updateCipher(
+                authorization = "Bearer $accessToken",
+                cipherId = passwordCipherId,
+                cipher = updateRequest
+            )
+
+            if (!response.isSuccessful) {
+                captureRawExchange(
+                    vaultId = vault.id,
+                    operation = "merge_passkey_into_password_cipher",
+                    method = "PUT",
+                    endpoint = "/ciphers/$passwordCipherId",
+                    requestBody = requestPayload,
+                    responseCode = response.code(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
+                    success = false,
+                    error = "update password cipher failed: ${response.code()}"
+                )
+                return fail("Update password cipher failed: ${response.code()}")
+            }
+
+            val updatedCipher = response.body()
+            if (updatedCipher == null) {
+                captureRawExchange(
+                    vaultId = vault.id,
+                    operation = "merge_passkey_into_password_cipher",
+                    method = "PUT",
+                    endpoint = "/ciphers/$passwordCipherId",
+                    requestBody = requestPayload,
+                    responseCode = response.code(),
+                    responseBody = null,
+                    success = false,
+                    error = "update password cipher returned empty body"
+                )
+                return fail("Empty response")
+            }
+
+            captureRawExchange(
+                vaultId = vault.id,
+                operation = "merge_passkey_into_password_cipher",
+                method = "PUT",
+                endpoint = "/ciphers/$passwordCipherId",
+                requestBody = requestPayload,
+                responseCode = response.code(),
+                responseBody = runCatchingObserved { json.encodeToString(updatedCipher) }.getOrNull(),
+                success = true
+            )
+            if (updatedCipher.login?.fido2Credentials.isNullOrEmpty()) {
+                return fail("Server updated password cipher without FIDO2 credential")
+            }
+
+            // 5) 本地 Passkey 指向密码 cipher
+            passkeyDao.markSyncedByRecordId(passkey.id, passwordCipherId)
+
+            android.util.Log.d(TAG, "Merged passkey ${passkey.id} into password cipher $passwordCipherId")
+            UploadItemResult.Success(passwordCipherId)
+        } catch (e: Exception) {
+            runCatchingObserved { passkeyDao.markFailedByRecordId(passkey.id) }
+            captureRawExchange(
+                vaultId = vault.id,
+                operation = "merge_passkey_into_password_cipher",
+                method = "PUT",
+                endpoint = "/ciphers/${passwordEntry.bitwardenCipherId.orEmpty()}",
+                requestBody = null,
+                responseCode = null,
+                responseBody = null,
+                success = false,
+                error = e.message ?: "unknown"
+            )
+            android.util.Log.e(TAG, "Merge Passkey into password cipher failed: ${e.message}", e)
+            UploadItemResult.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    /**
+     * 从密码 cipher 的 login.fido2Credentials 移除指定 passkey 的 credential 后 PUT（删除语义）。
+     *
+     * 同样基于 GET baseline 合并，避免覆盖其他 passkey；成功后删除本地 passkey 记录。
+     * 若密码条目无服务器 cipher，直接删除本地记录（无远端可清理）。
+     */
+    internal suspend fun removeFido2CredentialFromPasswordCipher(
+        vault: BitwardenVault,
+        passwordEntry: PasswordEntry,
+        passkey: PasskeyEntry,
+        accessToken: String,
+        symmetricKey: SymmetricCryptoKey
+    ): UploadItemResult {
+        return try {
+            suspend fun fail(message: String): UploadItemResult {
+                passkeyDao.markFailedByRecordId(passkey.id)
+                return UploadItemResult.Error(message)
+            }
+
+            val passwordCipherId = passwordEntry.bitwardenCipherId
+            if (passwordCipherId.isNullOrBlank()) {
+                // 密码从未同步：无远端可清理，直接删除本地记录
+                passkeyDao.delete(passkey)
+                return UploadItemResult.Success("local-only delete")
+            }
+
+            val vaultApi = apiManager.getVaultApi(vault)
+            val baseline = fetchCipherForFieldMerge(vaultApi, accessToken, passwordCipherId)
+                ?: return fail("Failed to fetch password cipher baseline for passkey removal")
+
+            val targetKey = Fido2CredentialCodec.normalizeCredentialId(passkey.credentialId)
+            val existingPlain = Fido2CredentialCodec.decryptCredentialsToPlainApiData(
+                baseline.login?.fido2Credentials,
+                symmetricKey
+            )
+            val remainingPlain = existingPlain.filterNot { credential ->
+                targetKey != null &&
+                    Fido2CredentialCodec.normalizeCredentialId(credential.credentialId) == targetKey
+            }
+
+            val remainingEncrypted = Fido2CredentialCodec.encryptCredentials(remainingPlain, symmetricKey)
+            val login = (baseline.login ?: CipherLoginApiData()).copy(
+                fido2Credentials = remainingEncrypted
+            )
+            val updateRequest = CipherUpdateRequest(
+                type = baseline.type,
+                folderId = baseline.folderId ?: passwordEntry.bitwardenFolderId,
+                name = baseline.name ?: BitwardenCrypto.encryptString(passwordEntry.title, symmetricKey),
+                notes = baseline.notes,
+                login = login,
+                card = baseline.card,
+                identity = baseline.identity,
+                secureNote = baseline.secureNote,
+                sshKey = baseline.sshKey,
+                fields = baseline.fields,
+                favorite = baseline.favorite,
+                reprompt = baseline.reprompt,
+                archivedDate = baseline.archivedDate
+            )
+            val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
+
+            val response = vaultApi.updateCipher(
+                authorization = "Bearer $accessToken",
+                cipherId = passwordCipherId,
+                cipher = updateRequest
+            )
+
+            if (!response.isSuccessful) {
+                captureRawExchange(
+                    vaultId = vault.id,
+                    operation = "remove_passkey_from_password_cipher",
+                    method = "PUT",
+                    endpoint = "/ciphers/$passwordCipherId",
+                    requestBody = requestPayload,
+                    responseCode = response.code(),
+                    responseBody = runCatchingObserved { response.errorBody()?.string() }.getOrNull(),
+                    success = false,
+                    error = "update password cipher failed: ${response.code()}"
+                )
+                return fail("Update password cipher failed: ${response.code()}")
+            }
+
+            val updatedCipher = response.body()
+            if (updatedCipher == null) {
+                captureRawExchange(
+                    vaultId = vault.id,
+                    operation = "remove_passkey_from_password_cipher",
+                    method = "PUT",
+                    endpoint = "/ciphers/$passwordCipherId",
+                    requestBody = requestPayload,
+                    responseCode = response.code(),
+                    responseBody = null,
+                    success = false,
+                    error = "update password cipher returned empty body"
+                )
+                return fail("Empty response")
+            }
+
+            captureRawExchange(
+                vaultId = vault.id,
+                operation = "remove_passkey_from_password_cipher",
+                method = "PUT",
+                endpoint = "/ciphers/$passwordCipherId",
+                requestBody = requestPayload,
+                responseCode = response.code(),
+                responseBody = runCatchingObserved { json.encodeToString(updatedCipher) }.getOrNull(),
+                success = true
+            )
+
+            // 成功后删除本地 passkey 记录
+            passkeyDao.delete(passkey)
+            android.util.Log.d(TAG, "Removed passkey ${passkey.id} from password cipher $passwordCipherId")
+            UploadItemResult.Success(passwordCipherId)
+        } catch (e: Exception) {
+            runCatchingObserved { passkeyDao.markFailedByRecordId(passkey.id) }
+            captureRawExchange(
+                vaultId = vault.id,
+                operation = "remove_passkey_from_password_cipher",
+                method = "PUT",
+                endpoint = "/ciphers/${passwordEntry.bitwardenCipherId.orEmpty()}",
+                requestBody = null,
+                responseCode = null,
+                responseBody = null,
+                success = false,
+                error = e.message ?: "unknown"
+            )
+            android.util.Log.e(TAG, "Remove passkey from password cipher failed: ${e.message}", e)
+            UploadItemResult.Error(e.message ?: "Unknown error")
+        }
+    }
+
     private fun normalizePasskeyForUpload(passkey: PasskeyEntry): PasskeyEntry {
         val normalizedKey = PasskeyPrivateKeyStore.normalizeForBitwardenUpload(
             context = context,
@@ -613,6 +901,10 @@ class CipherUploadProcessor(
     
     /**
      * 批量上传待同步的 Passkeys
+     *
+     * 分流策略：
+     * - 绑定型 passkey 且密码条目已有服务器 cipherId → 合并进密码 cipher 的 login.fido2Credentials（PUT 更新密码 cipher）
+     * - 否则（未绑定 / 密码尚未上传 Bitwarden）→ 维持独立 login cipher 创建（与 Bitwarden 官方"新建条目"一致）
      */
     suspend fun uploadPendingPasskeys(
         vault: BitwardenVault,
@@ -658,12 +950,27 @@ class CipherUploadProcessor(
         if (uniquePending.isEmpty()) {
             return BatchUploadResult(uploaded = 0, failed = 0, total = 0)
         }
-        
+
+        // boundPasswordId -> PasswordEntry（用于绑定型 passkey 的合并分流）
+        val passwordMap = passwordEntryDao.getEntriesByVaultId(vault.id)
+            .associateBy { it.id }
+
         var uploaded = 0
         var failed = 0
-        
+
         for (passkey in uniquePending) {
-            val result = uploadPasskey(vault, passkey, accessToken, symmetricKey)
+            val boundPassword = passkey.boundPasswordId?.let { passwordMap[it] }
+            val result = if (boundPassword != null && !boundPassword.bitwardenCipherId.isNullOrBlank()) {
+                mergePasskeyIntoPasswordCipher(
+                    vault = vault,
+                    passwordEntry = boundPassword,
+                    passkey = passkey,
+                    accessToken = accessToken,
+                    symmetricKey = symmetricKey
+                )
+            } else {
+                uploadPasskey(vault, passkey, accessToken, symmetricKey)
+            }
             when (result) {
                 is UploadItemResult.Success -> uploaded++
                 is UploadItemResult.Error -> failed++
@@ -675,6 +982,11 @@ class CipherUploadProcessor(
 
     /**
      * 批量更新已同步的 Passkeys（修复 counter / userHandle 等字段）
+     *
+     * 分支策略：
+     * - DELETE_PENDING（绑定型 passkey 删除）→ 从密码 cipher 的 fido2Credentials 移除该 credential 后 PUT，成功后删本地
+     * - 绑定型（bitwardenCipherId == 密码 cipherId）→ 合并刷新（PUT 密码 cipher）
+     * - 其余 → 独立 cipher PUT（现状）
      */
     suspend fun uploadModifiedPasskeys(
         vault: BitwardenVault,
@@ -683,16 +995,23 @@ class CipherUploadProcessor(
     ): BatchUploadResult {
         val candidates = passkeyDao.getByBitwardenVaultId(vault.id)
             .filter { passkey ->
-                canSyncPasskeyToBitwarden(passkey) &&
-                passkey.syncStatus != "REFERENCE" &&
+                if (!canSyncPasskeyToBitwarden(passkey) || passkey.syncStatus == "REFERENCE") return@filter false
+                if (passkey.syncStatus == PasskeyEntry.SYNC_STATUS_DELETE_PENDING) {
+                    // 删除不需要私钥材料
+                    !passkey.bitwardenCipherId.isNullOrBlank()
+                } else {
                     (passkey.syncStatus == "PENDING" || passkey.syncStatus == "FAILED") &&
-                    !passkey.bitwardenCipherId.isNullOrBlank() &&
-                    passkey.privateKeyAlias.isNotBlank()
+                        !passkey.bitwardenCipherId.isNullOrBlank() &&
+                        passkey.privateKeyAlias.isNotBlank()
+                }
             }
 
         if (candidates.isEmpty()) {
             return BatchUploadResult(uploaded = 0, failed = 0, total = 0)
         }
+
+        val passwordMap = passwordEntryDao.getEntriesByVaultId(vault.id)
+            .associateBy { it.id }
 
         var uploaded = 0
         var failed = 0
@@ -703,7 +1022,35 @@ class CipherUploadProcessor(
                 failed++
                 continue
             }
-            val result = updatePasskey(vault, passkey, cipherId, accessToken, symmetricKey)
+            val boundPassword = passkey.boundPasswordId?.let { passwordMap[it] }
+            val result = when {
+                passkey.syncStatus == PasskeyEntry.SYNC_STATUS_DELETE_PENDING -> {
+                    if (boundPassword != null && !boundPassword.bitwardenCipherId.isNullOrBlank()) {
+                        removeFido2CredentialFromPasswordCipher(
+                            vault = vault,
+                            passwordEntry = boundPassword,
+                            passkey = passkey,
+                            accessToken = accessToken,
+                            symmetricKey = symmetricKey
+                        )
+                    } else {
+                        // 密码条目已删除/从未同步：无远端可清理，直接删除本地记录
+                        passkeyDao.delete(passkey)
+                        UploadItemResult.Success("local-only delete")
+                    }
+                }
+                boundPassword != null && !boundPassword.bitwardenCipherId.isNullOrBlank() -> {
+                    // 绑定型：合并刷新进密码 cipher（更新 counter/userHandle 等）
+                    mergePasskeyIntoPasswordCipher(
+                        vault = vault,
+                        passwordEntry = boundPassword,
+                        passkey = passkey,
+                        accessToken = accessToken,
+                        symmetricKey = symmetricKey
+                    )
+                }
+                else -> updatePasskey(vault, passkey, cipherId, accessToken, symmetricKey)
+            }
             when (result) {
                 is UploadItemResult.Success -> uploaded++
                 is UploadItemResult.Error -> failed++

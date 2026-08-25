@@ -1278,6 +1278,11 @@ class CipherSyncProcessor(
         val notes = extractPasskeyUserNotes(decryptString(cipher.notes, symmetricKey))
         val fallbackUserName = decryptString(login?.username, symmetricKey) ?: ""
 
+        // 回填本地绑定关系：密码 cipher 带 fido2Credentials 时，passkey 关联到本地密码条目
+        // （syncLoginCipher 先 syncPasswordCipher 再 syncPasskeyCipher，密码条目此时已存在）
+        val boundPasswordEntry = passwordEntryDao.getByBitwardenCipherIdInVault(vault.id, cipher.id)
+        val boundPasswordId = boundPasswordEntry?.id
+
         val fallbackRpId = login?.uris
             ?.asSequence()
             ?.mapNotNull { uri ->
@@ -1323,6 +1328,7 @@ class CipherSyncProcessor(
                         signCount = 0,
                         isBackedUp = false,
                         notes = notes,
+                        boundPasswordId = boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = "REFERENCE",
@@ -1402,6 +1408,7 @@ class CipherSyncProcessor(
                         signCount = decoded.counter,
                         isBackedUp = false,
                         notes = notes,
+                        boundPasswordId = boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = syncStatus,
@@ -1425,6 +1432,7 @@ class CipherSyncProcessor(
                         isDiscoverable = decoded.discoverable,
                         signCount = maxOf(existing.signCount, decoded.counter),
                         notes = notes.ifBlank { existing.notes },
+                        boundPasswordId = boundPasswordId ?: existing.boundPasswordId,
                         bitwardenVaultId = vault.id,
                         bitwardenCipherId = cipher.id,
                         syncStatus = syncStatus,
@@ -1448,60 +1456,13 @@ class CipherSyncProcessor(
     
     // ========== 辅助方法 ==========
 
-    private data class DecodedPasskeyCredential(
-        val credentialId: String,
-        val keyValue: String,
-        val rpId: String,
-        val rpName: String,
-        val userHandle: String,
-        val userName: String,
-        val userDisplayName: String,
-        val counter: Long,
-        val discoverable: Boolean,
-        val creationDateMillis: Long?,
-        val publicKeyAlgorithm: Int
-    )
+    private typealias DecodedPasskeyCredential = Fido2CredentialCodec.DecodedFido2Credential
 
     private fun decodeFido2Credentials(
         credentials: List<CipherLoginFido2CredentialApiData>?,
         key: SymmetricCryptoKey
     ): List<DecodedPasskeyCredential> {
-        if (credentials.isNullOrEmpty()) return emptyList()
-
-        return credentials.mapNotNull { credential ->
-            val credentialId = decryptOrPlain(credential.credentialId, key).orEmpty()
-            val keyValue = decryptOrPlain(credential.keyValue, key).orEmpty()
-            val rpId = decryptOrPlain(credential.rpId, key).orEmpty()
-            val rpName = decryptOrPlain(credential.rpName, key).orEmpty()
-            val userHandle = decryptOrPlain(credential.userHandle, key).orEmpty()
-            val userName = decryptOrPlain(credential.userName, key).orEmpty()
-            val userDisplayName = decryptOrPlain(credential.userDisplayName, key).orEmpty()
-            val counter = decryptOrPlain(credential.counter, key)?.toLongOrNull() ?: 0L
-            val discoverable = parseBooleanText(decryptOrPlain(credential.discoverable, key))
-            val creationDate = parseCreationDateMillis(decryptOrPlain(credential.creationDate, key))
-            val keyAlgorithm = decryptOrPlain(credential.keyAlgorithm, key)
-            val publicKeyAlgorithm = parseAlgorithm(keyAlgorithm)
-
-            val hasAnySignal = credentialId.isNotBlank() ||
-                keyValue.isNotBlank() ||
-                rpId.isNotBlank() ||
-                userName.isNotBlank()
-            if (!hasAnySignal) return@mapNotNull null
-
-            DecodedPasskeyCredential(
-                credentialId = credentialId,
-                keyValue = keyValue,
-                rpId = rpId,
-                rpName = rpName,
-                userHandle = userHandle,
-                userName = userName,
-                userDisplayName = userDisplayName,
-                counter = counter,
-                discoverable = discoverable,
-                creationDateMillis = creationDate,
-                publicKeyAlgorithm = publicKeyAlgorithm
-            )
-        }
+        return Fido2CredentialCodec.decodeFido2Credentials(credentials, key)
     }
 
     private fun decryptOrPlain(value: String?, key: SymmetricCryptoKey): String? {
