@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bastion.app.bitwarden.sync.VaultSyncStatus
+import com.bastion.app.bitwarden.sync.isUserVisibleSyncInProgress
 import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 import com.bastion.app.data.bitwarden.BitwardenVault
 import java.text.SimpleDateFormat
@@ -64,7 +65,7 @@ fun BitwardenSettingsScreen(
         (unlockStateByVault[vault.id] ?: BitwardenViewModel.UnlockState.Locked) ==
             BitwardenViewModel.UnlockState.Unlocked || viewModel.isVaultUnlocked(vault.id)
     }
-    val isAnyVaultSyncing = syncStatusByVault.values.any { it.isRunning } ||
+    val isAnyVaultSyncing = syncStatusByVault.values.any { it.isUserVisibleSyncInProgress() } ||
         syncState is BitwardenViewModel.SyncState.Syncing
     
     // 对话框状态
@@ -354,7 +355,7 @@ fun VaultCard(
     )
     val isUnlocked = unlockState == BitwardenViewModel.UnlockState.Unlocked
     val isUnlocking = unlockState == BitwardenViewModel.UnlockState.Unlocking
-    val isSyncing = syncStatus?.isRunning == true
+    val isSyncing = syncStatus?.isUserVisibleSyncInProgress() == true
     val lastSyncTime = vault.lastSyncAt ?: syncStatus?.lastSuccessAt ?: 0L
     val secondaryStatus = when {
         isSyncing -> "同步中"

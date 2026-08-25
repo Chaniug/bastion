@@ -70,7 +70,10 @@ data class VaultSyncStatus(
     val lastError: String? = null,
     val lastSuccessAt: Long? = null,
     val nextRetryAt: Long? = null,
-    val retryAttempt: Int = 0
+    val retryAttempt: Int = 0,
+    // 静默同步（自动触发，非手动）：同步后台进行，UI 不显示"同步中"转圈，
+    // 本地离线数据已秒开渲染，完成后列表静默更新
+    val isSilent: Boolean = false
 )
 
 private data class VaultRuntime(
@@ -230,7 +233,8 @@ class BitwardenSyncOrchestrator(
                     queuedReason = null,
                     lastTriggerReason = reason,
                     blockedReason = null,
-                    nextRetryAt = null
+                    nextRetryAt = null,
+                    isSilent = silent
                 )
             }
             startedAt = SyncDiagnostics.start(
@@ -491,7 +495,8 @@ class BitwardenSyncOrchestrator(
             existing.copy(
                 isRunning = runtime.isRunning,
                 queuedReason = reason,
-                blockedReason = null
+                blockedReason = null,
+                isSilent = reason != SyncTriggerReason.MANUAL
             )
         }
     }
