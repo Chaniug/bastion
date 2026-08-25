@@ -854,6 +854,9 @@ data class SendApiResponse(
     @JsonNames("deletionDate")
     @SerialName("DeletionDate")
     val deletionDate: String? = null,
+    @JsonNames("deletedDate")
+    @SerialName("DeletedDate")
+    val deletedDate: String? = null,
     @JsonNames("password")
     @SerialName("Password")
     val password: String? = null,
