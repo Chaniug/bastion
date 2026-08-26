@@ -57,7 +57,6 @@ fun BitwardenSettingsScreen(
     val syncState by viewModel.syncState.collectAsState()
     val isNeverLockEnabled by viewModel.isNeverLockEnabledFlow.collectAsState()
     val isAutoSyncEnabled by viewModel.isAutoSyncEnabledFlow.collectAsState()
-    val isSyncOnWifiOnly by viewModel.isSyncOnWifiOnlyFlow.collectAsState()
     val pendingCount by viewModel.pendingSyncCount.collectAsState()
     val failedCount by viewModel.failedSyncCount.collectAsState()
     val context = LocalContext.current
@@ -209,8 +208,6 @@ fun BitwardenSettingsScreen(
                 SyncSettingsCard(
                     isAutoSyncEnabled = isAutoSyncEnabled,
                     onAutoSyncChanged = { viewModel.isAutoSyncEnabled = it },
-                    isSyncOnWifiOnly = isSyncOnWifiOnly,
-                    onSyncOnWifiOnlyChanged = { viewModel.isSyncOnWifiOnly = it },
                     isNeverLockEnabled = isNeverLockEnabled,
                     onNeverLockChanged = { enabled ->
                         if (!enabled) {
@@ -580,8 +577,6 @@ fun EmptyVaultCard(onAddClick: () -> Unit) {
 fun SyncSettingsCard(
     isAutoSyncEnabled: Boolean,
     onAutoSyncChanged: (Boolean) -> Unit,
-    isSyncOnWifiOnly: Boolean,
-    onSyncOnWifiOnlyChanged: (Boolean) -> Unit,
     isNeverLockEnabled: Boolean = false,
     onNeverLockChanged: (Boolean) -> Unit = {}
 ) {
@@ -606,31 +601,6 @@ fun SyncSettingsCard(
                 Switch(
                     checked = isAutoSyncEnabled,
                     onCheckedChange = onAutoSyncChanged
-                )
-            }
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "仅 Wi-Fi 同步",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = "仅在 Wi-Fi 网络下自动同步",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = isSyncOnWifiOnly,
-                    onCheckedChange = onSyncOnWifiOnlyChanged,
-                    enabled = isAutoSyncEnabled
                 )
             }
             

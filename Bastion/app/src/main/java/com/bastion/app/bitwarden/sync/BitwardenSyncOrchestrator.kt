@@ -47,8 +47,7 @@ sealed class SyncExecutionOutcome {
 
 enum class NetworkGateResult {
     ALLOWED,
-    NETWORK_UNAVAILABLE,
-    WIFI_REQUIRED
+    NETWORK_UNAVAILABLE
 }
 
 data class SyncManagerConfig(
@@ -207,11 +206,6 @@ class BitwardenSyncOrchestrator(
                 NetworkGateResult.NETWORK_UNAVAILABLE -> {
                     setBlocked(vaultId, runtime, SyncBlockReason.NETWORK_UNAVAILABLE, "网络不可用")
                     SyncDiagnostics.blocked(taskId, target, trigger, "network_unavailable")
-                    return
-                }
-                NetworkGateResult.WIFI_REQUIRED -> {
-                    setBlocked(vaultId, runtime, SyncBlockReason.WIFI_REQUIRED, "仅 Wi-Fi 同步")
-                    SyncDiagnostics.blocked(taskId, target, trigger, "wifi_required")
                     return
                 }
             }
