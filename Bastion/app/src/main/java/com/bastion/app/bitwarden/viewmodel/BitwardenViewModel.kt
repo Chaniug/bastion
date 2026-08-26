@@ -170,7 +170,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         isAutoSyncEnabled = { _isAutoSyncEnabled.value },
         checkNetwork = { evaluateNetworkGate() },
         isVaultUnlocked = { vaultId -> repository.isVaultUnlocked(vaultId) },
-        executeSync = { vaultId, silent -> runSync(vaultId = vaultId, silent = silent) }
+        executeSync = { vaultId, silent, reason -> runSync(vaultId = vaultId, silent = silent, reason = reason) }
     )
     val syncStatusByVault: StateFlow<Map<Long, VaultSyncStatus>> = combine(
         syncOrchestrator.statusByVault,
@@ -1365,7 +1365,11 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         return NetworkGateResult.ALLOWED
     }
 
-    private suspend fun runSync(vaultId: Long, silent: Boolean): SyncExecutionOutcome {
+    private suspend fun runSync(
+        vaultId: Long,
+        silent: Boolean,
+        reason: SyncTriggerReason = SyncTriggerReason.MANUAL
+    ): SyncExecutionOutcome {
         val vault = _vaults.value.firstOrNull { it.id == vaultId }
             ?: repository.getAllVaults().firstOrNull { it.id == vaultId }
             ?: return SyncExecutionOutcome.FatalError("Vault 不存在")
@@ -1374,7 +1378,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             _syncState.value = SyncState.Syncing
         }
 
-        return when (val coordinatedResult = runRepositorySyncThroughCoordinator(vault.id, silent)) {
+        val pullAfterPush = reason != SyncTriggerReason.LOCAL_MUTATION
+        return when (val coordinatedResult = runRepositorySyncThroughCoordinator(vault.id, silent, pullAfterPush)) {
             BitwardenCoordinatedSyncResult.Merged,
             is BitwardenCoordinatedSyncResult.Skipped -> {
                 if (!silent) {
@@ -1585,7 +1590,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
 
     private suspend fun runRepositorySyncThroughCoordinator(
         vaultId: Long,
-        silent: Boolean
+        silent: Boolean,
+        pullAfterPush: Boolean = true
     ): BitwardenCoordinatedSyncResult {
         return repository.syncViaCoordinator(
             vaultId = vaultId,
@@ -1593,7 +1599,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             trigger = if (silent) SyncTrigger.PAGE_VISIBLE else SyncTrigger.MANUAL,
             priority = if (silent) SyncPriority.PAGE_VISIBLE else SyncPriority.MANUAL,
             mode = if (silent) SyncMode.SILENT else SyncMode.FOREGROUND,
-            networkPolicy = SyncNetworkPolicy.REQUIRED
+            networkPolicy = SyncNetworkPolicy.REQUIRED,
+            pullAfterPush = pullAfterPush
         )
     }
 

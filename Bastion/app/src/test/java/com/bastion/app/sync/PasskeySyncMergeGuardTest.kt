@@ -99,7 +99,7 @@ class PasskeySyncMergeGuardTest {
     @Test
     fun syncFlowMustRunHistoricalStandalonePasskeyMigration() {
         val syncBody = repositorySource
-            .substringAfter("suspend fun sync(vaultId: Long)")
+            .substringAfter("suspend fun sync(")
             .substringBefore("suspend fun getVaultCacheRiskSummary(")
 
         // 注意：不能用 indexOf("uploadLocalEntries")，注释里可能出现该字样；

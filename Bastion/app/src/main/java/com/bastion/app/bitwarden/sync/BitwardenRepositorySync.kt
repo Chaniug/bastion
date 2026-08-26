@@ -26,6 +26,7 @@ suspend fun BitwardenRepository.syncViaCoordinator(
     vaultId: Long,
     requestIdPrefix: String,
     trigger: SyncTrigger,
+    pullAfterPush: Boolean = true,
     priority: SyncPriority = SyncPriority.forTrigger(trigger),
     mode: SyncMode = SyncMode.BACKGROUND,
     // 「仅 Wi-Fi 同步」已移除：一律要求有网络即可，不区分 Wi-Fi/移动
@@ -44,7 +45,7 @@ suspend fun BitwardenRepository.syncViaCoordinator(
     )
 
     @Suppress("DEPRECATION")
-    return when (val result = SyncTaskRunner.requestAndAwait(request) { sync(vaultId) }) {
+    return when (val result = SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush) }) {
         is SyncTaskAwaitResult.Completed -> BitwardenCoordinatedSyncResult.Completed(result.value)
         is SyncTaskAwaitResult.Merged -> BitwardenCoordinatedSyncResult.Merged
         is SyncTaskAwaitResult.Skipped -> BitwardenCoordinatedSyncResult.Skipped(result.reason)

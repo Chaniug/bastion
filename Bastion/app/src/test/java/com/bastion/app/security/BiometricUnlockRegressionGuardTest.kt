@@ -621,7 +621,7 @@ class BiometricUnlockRegressionGuardTest {
             bitwardenOrchestratorSource.contains("import kotlinx.coroutines.Dispatchers") &&
                 bitwardenOrchestratorSource.contains("import kotlinx.coroutines.withContext") &&
                 bitwardenOrchestratorSource.contains("withContext(Dispatchers.IO)") &&
-                bitwardenOrchestratorSource.contains("executeSync(vaultId, silent)")
+                bitwardenOrchestratorSource.contains("executeSync(vaultId, silent, reason)")
         )
         assertTrue(
             "Silent Bitwarden auto sync must not immediately warm every offline secret or refresh every UI snapshot during tab switching.",
