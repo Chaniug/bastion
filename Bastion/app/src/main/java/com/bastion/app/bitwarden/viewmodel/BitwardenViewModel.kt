@@ -170,7 +170,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         isAutoSyncEnabled = { _isAutoSyncEnabled.value },
         checkNetwork = { evaluateNetworkGate() },
         isVaultUnlocked = { vaultId -> repository.isVaultUnlocked(vaultId) },
-        executeSync = { vaultId, silent -> runSync(vaultId = vaultId, silent = silent) }
+        executeSync = { vaultId, silent, reason -> runSync(vaultId = vaultId, silent = silent, reason = reason) }
     )
     val syncStatusByVault: StateFlow<Map<Long, VaultSyncStatus>> = combine(
         syncOrchestrator.statusByVault,
