@@ -77,6 +77,8 @@ class BitwardenRepository(private val context: Context) {
         private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_NEVER_LOCK_BITWARDEN = "never_lock_bitwarden"
+        // P1：revision-date 预检之外的兜底防抖，避免前后台切换/解锁瞬间的秒级连发打 revision-date 请求。
+        private const val SKIP_DEBOUNCE_MS = 60_000L
         private const val PBKDF2_DEFAULT_ITERATIONS = 600000
         private const val ARGON2_DEFAULT_ITERATIONS = 3
         private const val ARGON2_DEFAULT_MEMORY_MB = 64
@@ -739,7 +741,50 @@ class BitwardenRepository(private val context: Context) {
     }
     
     // ==================== 同步 ====================
-    
+
+    /**
+     * 判断是否可跳过整库拉取（revision-date 轻量预检 + 60s 防抖）。
+     *
+     * 借鉴 Bitwarden 官方 Android 与 Keyguard：先打一次极小的 `GET /accounts/revision-date`，
+     * 与本地 [BitwardenVault.revisionDate] 一致即说明服务器自上次拉取后无新变更，直接跳过整库
+     * `GET /sync` 的下载与解密。对 Vaultwarden 等忽略 `sinceRevisionDate`、每次都返回全量的自建服务器，
+     * 这是解决"同步慢"的关键手段。
+     *
+     * 跳过条件必须全部满足：
+     * - 非强制同步（[forced] = false；用户手动刷新 / 重试 / 恢复一律全量）
+     * - 本地无待上传改动（[hasPendingLocalWork] = false；否则应先把本地改动推上去并拉取他人变更）
+     * - 距上次成功全量同步 < [SKIP_DEBOUNCE_MS]（P1：只防秒级抖动，不替代 revision-date 比较）
+     * - 远程 revision-date 与本地 [BitwardenVault.revisionDate] 一致
+     *
+     * 任一不满足都返回 false（执行全量拉取）。误跳（假阴性）只会导致"多拉一次全量"，绝不丢数据。
+     */
+    private suspend fun shouldSkipFullSyncPull(
+        vault: BitwardenVault,
+        accessToken: String,
+        forced: Boolean,
+        hasPendingLocalWork: Boolean
+    ): Boolean {
+        if (forced) return false
+        if (hasPendingLocalWork) return false
+        val localRev = vault.revisionDate
+        if (localRev.isNullOrBlank()) return false   // 从未同步过 → 全量
+
+        // P1：per-vault 防抖（用 vault.lastSyncAt，避免全局时间戳在多 vault 下误伤）
+        val lastSyncAt = vault.lastSyncAt ?: 0L
+        if (lastSyncAt > 0L && System.currentTimeMillis() - lastSyncAt < SKIP_DEBOUNCE_MS) {
+            return true
+        }
+
+        // P0：打极小的 revision-date 请求，与本地比较
+        val serverRev = runCatching {
+            val resp = apiManager.getVaultApi(vault).getRevisionDate("Bearer $accessToken")
+            if (!resp.isSuccessful) return@runCatching null
+            resp.body()?.string()?.trim()?.trim('"')?.takeIf { it.isNotBlank() }
+        }.getOrNull() ?: return false   // 取不到则保守地走全量，不跳过
+
+        return serverRev == localRev.trim()
+    }
+
     /**
      * 执行完整同步
      * 
@@ -754,7 +799,8 @@ class BitwardenRepository(private val context: Context) {
     )
     suspend fun sync(
         vaultId: Long,
-        pullAfterPush: Boolean = true
+        pullAfterPush: Boolean = true,
+        forced: Boolean = false
     ): SyncResult = withContext(Dispatchers.IO) {
         syncMutexForVault(vaultId).withLock {
             try {
@@ -838,6 +884,39 @@ class BitwardenRepository(private val context: Context) {
                             "uploaded=$uploadedCount, modifiedUploaded=$modifiedUploadedCount, " +
                             "uploadFailed=$totalUploadFailedCount, deletes=$processedDeleteCount"
                     )
+                    return@withLock SyncResult.Success(
+                        appliedChangeCount = totalUploadedCount + processedDeleteCount,
+                        remoteAddedCount = 0,
+                        remoteUpdatedCount = 0,
+                        uploadedCount = totalUploadedCount,
+                        deletedCount = processedDeleteCount,
+                        availableOfflineCount = getAvailableOfflineSecretCount(vaultId),
+                        conflictCount = 0,
+                        uploadFailedCount = totalUploadFailedCount,
+                        skippedDueToLocalDirtyCount = 0
+                    )
+                }
+
+                // 4.5 revision-date 轻量预检（借鉴 Bitwarden 官方 / Keyguard）：
+                // 先打极小 GET /accounts/revision-date，与本地 vault.revisionDate 一致则跳过整库下载+解密。
+                // 对 Vaultwarden 等不支持增量 delta 的自建服务器收益最大。本地有未上传改动或 60s 防抖内则不跳过。
+                val hasPendingLocalWork = (processedDeleteCount + uploadedCount + modifiedUploadedCount > 0)
+                    || pendingOpDao.getRunnableOperationsByVault(vaultId).isNotEmpty()
+                if (shouldSkipFullSyncPull(
+                        vault = vault,
+                        accessToken = accessToken,
+                        forced = forced,
+                        hasPendingLocalWork = hasPendingLocalWork
+                    )
+                ) {
+                    val totalUploadedCount = uploadedCount + modifiedUploadedCount
+                    val totalUploadFailedCount = uploadFailedCount + modifiedUploadFailedCount
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository revisionDate precheck SKIP: vaultId=$vaultId, " +
+                            "localRev=${vault.revisionDate}, hasPendingLocalWork=$hasPendingLocalWork, forced=$forced, " +
+                            "uploaded=$totalUploadedCount, uploadFailed=$totalUploadFailedCount, deletes=$processedDeleteCount"
+                    )
+                    securePrefs.edit().putLong(KEY_LAST_SYNC_TIME, System.currentTimeMillis()).apply()
                     return@withLock SyncResult.Success(
                         appliedChangeCount = totalUploadedCount + processedDeleteCount,
                         remoteAddedCount = 0,

@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNames
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -140,7 +141,21 @@ interface BitwardenVaultApi {
         @Query("excludeDomains") excludeDomains: Boolean = true,
         @Query("sinceRevisionDate") sinceRevisionDate: String? = null
     ): Response<SyncResponse>
-    
+
+    /**
+     * 轻量预检：获取服务器密码库的最后变更时间（revision-date）。
+     *
+     * 与 Bitwarden 官方 Android / Keyguard 一致的设计：先用这个极小的 `GET /accounts/revision-date`
+     * 打一次请求，若返回值与本地 [com.bastion.app.data.bitwarden.BitwardenVault.revisionDate] 一致，
+     * 就跳过整库 `GET /sync` 的下载与解密。这对不支持增量 delta 的自建服务器（如 Vaultwarden）收益最大。
+     *
+     * 该端点返回纯文本时间戳（部分实现会带 JSON 引号），用 [ResponseBody] 读取以绕过 JSON 转换器。
+     */
+    @GET("accounts/revision-date")
+    suspend fun getRevisionDate(
+        @Header("Authorization") authorization: String
+    ): Response<ResponseBody>
+
     /**
      * 获取单个 Cipher
      */
