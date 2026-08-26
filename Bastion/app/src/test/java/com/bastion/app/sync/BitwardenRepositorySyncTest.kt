@@ -117,7 +117,7 @@ class BitwardenRepositorySyncTest {
                 syncSection.contains("pullAfterPush") &&
                 syncSection.contains("syncViaCoordinator") &&
                 repositorySyncSource.contains("@Suppress(\"DEPRECATION\")") &&
-                repositorySyncSource.contains("SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush) }")
+                repositorySyncSource.contains("SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush, forced) }")
         )
         assertTrue(
             "BitwardenRepository.refreshSends performs a bare sync and must stay deprecated so Send UI uses the coordinator path.",

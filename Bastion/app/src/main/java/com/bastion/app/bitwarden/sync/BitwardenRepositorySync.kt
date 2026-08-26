@@ -27,6 +27,8 @@ suspend fun BitwardenRepository.syncViaCoordinator(
     requestIdPrefix: String,
     trigger: SyncTrigger,
     pullAfterPush: Boolean = true,
+    // 强制全量：用户手动刷新 / 重试 / 恢复时绕过 revision-date 预检跳过，确保拿到最新数据。
+    forced: Boolean = false,
     priority: SyncPriority = SyncPriority.forTrigger(trigger),
     mode: SyncMode = SyncMode.BACKGROUND,
     // 「仅 Wi-Fi 同步」已移除：一律要求有网络即可，不区分 Wi-Fi/移动
@@ -45,7 +47,7 @@ suspend fun BitwardenRepository.syncViaCoordinator(
     )
 
     @Suppress("DEPRECATION")
-    return when (val result = SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush) }) {
+    return when (val result = SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush, forced) }) {
         is SyncTaskAwaitResult.Completed -> BitwardenCoordinatedSyncResult.Completed(result.value)
         is SyncTaskAwaitResult.Merged -> BitwardenCoordinatedSyncResult.Merged
         is SyncTaskAwaitResult.Skipped -> BitwardenCoordinatedSyncResult.Skipped(result.reason)
@@ -63,6 +65,8 @@ suspend fun BitwardenRepository.syncForUserVisibleRequest(
         vaultId = vaultId,
         requestIdPrefix = requestIdPrefix,
         trigger = SyncTrigger.MANUAL,
+        // 用户主动触发的可见同步：强制全量，绕过 revision-date 预检跳过
+        forced = true,
         priority = SyncPriority.MANUAL,
         mode = SyncMode.FOREGROUND
     ).toRepositorySyncResultForUi()

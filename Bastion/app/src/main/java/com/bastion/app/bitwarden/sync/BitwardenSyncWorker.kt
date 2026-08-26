@@ -256,6 +256,8 @@ class BitwardenSyncWorker(
             vaultId = vaultId,
             requestIdPrefix = "bw-worker-vault",
             trigger = SyncTrigger.WORKER_RECOVERY,
+            // 后台恢复型同步：强制全量，确保从异常/崩溃后恢复最新数据
+            forced = true,
             priority = SyncPriority.BACKGROUND,
             mode = SyncMode.BACKGROUND,
             networkPolicy = SyncNetworkPolicy.REQUIRED

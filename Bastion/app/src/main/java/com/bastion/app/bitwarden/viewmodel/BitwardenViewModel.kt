@@ -762,6 +762,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             vaultId = vaultId,
             requestIdPrefix = "bw-send-vault",
             trigger = SyncTrigger.MANUAL,
+            // 用户主动触发的 Send 刷新：强制全量
+            forced = true,
             priority = SyncPriority.MANUAL,
             mode = SyncMode.FOREGROUND,
             networkPolicy = SyncNetworkPolicy.REQUIRED
@@ -1379,7 +1381,14 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         val pullAfterPush = reason != SyncTriggerReason.LOCAL_MUTATION
-        return when (val coordinatedResult = runRepositorySyncThroughCoordinator(vault.id, silent, pullAfterPush)) {
+        // 用户手动刷新或重试：强制全量，绕过 revision-date 预检跳过，确保拿到服务器最新数据。
+        val forced = reason == SyncTriggerReason.MANUAL || reason == SyncTriggerReason.RETRY
+        return when (val coordinatedResult = runRepositorySyncThroughCoordinator(
+            vault.id,
+            silent,
+            pullAfterPush = pullAfterPush,
+            forced = forced
+        )) {
             BitwardenCoordinatedSyncResult.Merged,
             is BitwardenCoordinatedSyncResult.Skipped -> {
                 if (!silent) {
@@ -1591,7 +1600,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     private suspend fun runRepositorySyncThroughCoordinator(
         vaultId: Long,
         silent: Boolean,
-        pullAfterPush: Boolean = true
+        pullAfterPush: Boolean = true,
+        forced: Boolean = false
     ): BitwardenCoordinatedSyncResult {
         return repository.syncViaCoordinator(
             vaultId = vaultId,
@@ -1600,7 +1610,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             priority = if (silent) SyncPriority.PAGE_VISIBLE else SyncPriority.MANUAL,
             mode = if (silent) SyncMode.SILENT else SyncMode.FOREGROUND,
             networkPolicy = SyncNetworkPolicy.REQUIRED,
-            pullAfterPush = pullAfterPush
+            pullAfterPush = pullAfterPush,
+            forced = forced
         )
     }
 
