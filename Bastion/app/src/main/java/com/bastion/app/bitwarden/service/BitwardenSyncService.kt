@@ -153,6 +153,15 @@ class BitwardenSyncService(
                 return@withContext SyncResult.Error("Empty sync response")
             }
 
+            // P0 诊断：探查服务端是否真的支持增量同步。Vaultwarden 会忽略 sinceRevisionDate，
+            // 每次仍返回整个保险库（ciphers 数≈全量）。真机日志据此确认根因，判断是否需回退全量。
+            val contentLength = response.headers()["Content-Length"]
+            android.util.Log.i(
+                TAG,
+                "sync probe: isIncremental=$isIncremental ciphers=${syncResponse.ciphers.size} " +
+                    "revisionDate=${syncResponse.revisionDate} contentLength=$contentLength"
+            )
+
             // ===== 空 Vault 保护检查（仅全量同步执行：增量响应里 serverCipherCount 只是变更数，会误判）=====
             if (!isIncremental) {
                 val serverCipherCount = syncResponse.ciphers.size

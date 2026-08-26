@@ -93,7 +93,7 @@ class BitwardenSyncOrchestrator(
     private val isAutoSyncEnabled: () -> Boolean,
     private val checkNetwork: () -> NetworkGateResult,
     private val isVaultUnlocked: (Long) -> Boolean,
-    private val executeSync: suspend (vaultId: Long, silent: Boolean) -> SyncExecutionOutcome,
+    private val executeSync: suspend (vaultId: Long, silent: Boolean, reason: SyncTriggerReason) -> SyncExecutionOutcome,
     private val nowProvider: () -> Long = { System.currentTimeMillis() }
 ) {
     private val mutex = Mutex()
@@ -247,12 +247,12 @@ class BitwardenSyncOrchestrator(
                 if (isPassiveAutoSyncReason(reason)) {
                     passiveAutoSyncMutex.withLock {
                         maybeStaggerPassiveAutoSync()
-                        executeSync(vaultId, silent).also {
+                        executeSync(vaultId, silent, reason).also {
                             lastPassiveAutoSyncDoneAt = nowProvider()
                         }
                     }
                 } else {
-                    executeSync(vaultId, silent)
+                    executeSync(vaultId, silent, reason)
                 }
             }
         } catch (error: CancellationException) {

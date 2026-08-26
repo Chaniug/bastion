@@ -752,7 +752,10 @@ class BitwardenRepository(private val context: Context) {
     @Deprecated(
         message = "Use BitwardenRepository.syncViaCoordinator for external callers. Bare sync is the coordinator executor body and must not be used as a UI/worker entrypoint."
     )
-    suspend fun sync(vaultId: Long): SyncResult = withContext(Dispatchers.IO) {
+    suspend fun sync(
+        vaultId: Long,
+        pullAfterPush: Boolean = true
+    ): SyncResult = withContext(Dispatchers.IO) {
         syncMutexForVault(vaultId).withLock {
             try {
                 val vault = vaultDao.getVaultById(vaultId) ?: return@withLock SyncResult.Error("Vault 不存在")
@@ -821,6 +824,31 @@ class BitwardenRepository(private val context: Context) {
                 val modifiedUploadFailedCount = when (modifiedUploadResult) {
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> modifiedUploadResult.failed
                     else -> 0
+                }
+
+                // P1：LOCAL_MUTATION 走「只上传」路径，跳过整库下载（Vaultwarden 无增量同步，
+                // 每次 GET /api/sync 都返回整个保险库，会把新条目上服务器的时间拖到整库下载之后）。
+                // 下载仅用于拉取「其他设备的变更」，交给后台 reconcile（PAGE_ENTER/APP_RESUME 节流）即可。
+                if (!pullAfterPush) {
+                    val totalUploadedCount = uploadedCount + modifiedUploadedCount
+                    val totalUploadFailedCount = uploadFailedCount + modifiedUploadFailedCount
+                    val overallResult = if (totalUploadFailedCount > 0) "PARTIAL_SUCCESS" else "SUCCESS"
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository pushOnlySync: vaultId=$vaultId, result=$overallResult, " +
+                            "uploaded=$uploadedCount, modifiedUploaded=$modifiedUploadedCount, " +
+                            "uploadFailed=$totalUploadFailedCount, deletes=$processedDeleteCount"
+                    )
+                    return@withLock SyncResult.Success(
+                        appliedChangeCount = totalUploadedCount + processedDeleteCount,
+                        remoteAddedCount = 0,
+                        remoteUpdatedCount = 0,
+                        uploadedCount = totalUploadedCount,
+                        deletedCount = processedDeleteCount,
+                        availableOfflineCount = getAvailableOfflineSecretCount(vaultId),
+                        conflictCount = 0,
+                        uploadFailedCount = totalUploadFailedCount,
+                        skippedDueToLocalDirtyCount = 0
+                    )
                 }
 
                 // 4. 执行同步（pull）：带上次 revisionDate 则走增量（只拉变更），无则全量

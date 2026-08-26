@@ -35,7 +35,7 @@ class BitwardenSyncOrchestratorTest {
             isAutoSyncEnabled = { true },
             checkNetwork = { NetworkGateResult.ALLOWED },
             isVaultUnlocked = { true },
-            executeSync = { _, _ ->
+            executeSync = { _, _, _ ->
                 syncCount.incrementAndGet()
                 firstStarted.complete(Unit)
                 releaseFirst.await()
@@ -90,7 +90,7 @@ class BitwardenSyncOrchestratorTest {
             isAutoSyncEnabled = { true },
             checkNetwork = { NetworkGateResult.ALLOWED },
             isVaultUnlocked = { true },
-            executeSync = { _, _ ->
+            executeSync = { _, _, _ ->
                 when (syncCount.incrementAndGet()) {
                     1 -> {
                         firstStarted.complete(Unit)
@@ -155,7 +155,7 @@ class BitwardenSyncOrchestratorTest {
             isAutoSyncEnabled = { true },
             checkNetwork = { NetworkGateResult.ALLOWED },
             isVaultUnlocked = { true },
-            executeSync = { _, _ ->
+            executeSync = { _, _, _ ->
                 val current = activeCount.incrementAndGet()
                 maxConcurrent.updateAndGet { maxOf(it, current) }
                 if (!firstEntered.isCompleted) firstEntered.complete(Unit)
