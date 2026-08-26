@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bastion.app.bitwarden.sync.VaultSyncStatus
+import com.bastion.app.bitwarden.sync.isUserVisibleSyncInProgress
 import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 import com.bastion.app.data.bitwarden.BitwardenVault
 import java.text.SimpleDateFormat
@@ -56,7 +57,6 @@ fun BitwardenSettingsScreen(
     val syncState by viewModel.syncState.collectAsState()
     val isNeverLockEnabled by viewModel.isNeverLockEnabledFlow.collectAsState()
     val isAutoSyncEnabled by viewModel.isAutoSyncEnabledFlow.collectAsState()
-    val isSyncOnWifiOnly by viewModel.isSyncOnWifiOnlyFlow.collectAsState()
     val pendingCount by viewModel.pendingSyncCount.collectAsState()
     val failedCount by viewModel.failedSyncCount.collectAsState()
     val context = LocalContext.current
@@ -64,7 +64,7 @@ fun BitwardenSettingsScreen(
         (unlockStateByVault[vault.id] ?: BitwardenViewModel.UnlockState.Locked) ==
             BitwardenViewModel.UnlockState.Unlocked || viewModel.isVaultUnlocked(vault.id)
     }
-    val isAnyVaultSyncing = syncStatusByVault.values.any { it.isRunning } ||
+    val isAnyVaultSyncing = syncStatusByVault.values.any { it.isUserVisibleSyncInProgress() } ||
         syncState is BitwardenViewModel.SyncState.Syncing
     
     // 对话框状态
@@ -208,8 +208,6 @@ fun BitwardenSettingsScreen(
                 SyncSettingsCard(
                     isAutoSyncEnabled = isAutoSyncEnabled,
                     onAutoSyncChanged = { viewModel.isAutoSyncEnabled = it },
-                    isSyncOnWifiOnly = isSyncOnWifiOnly,
-                    onSyncOnWifiOnlyChanged = { viewModel.isSyncOnWifiOnly = it },
                     isNeverLockEnabled = isNeverLockEnabled,
                     onNeverLockChanged = { enabled ->
                         if (!enabled) {
@@ -354,7 +352,7 @@ fun VaultCard(
     )
     val isUnlocked = unlockState == BitwardenViewModel.UnlockState.Unlocked
     val isUnlocking = unlockState == BitwardenViewModel.UnlockState.Unlocking
-    val isSyncing = syncStatus?.isRunning == true
+    val isSyncing = syncStatus?.isUserVisibleSyncInProgress() == true
     val lastSyncTime = vault.lastSyncAt ?: syncStatus?.lastSuccessAt ?: 0L
     val secondaryStatus = when {
         isSyncing -> "同步中"
@@ -579,8 +577,6 @@ fun EmptyVaultCard(onAddClick: () -> Unit) {
 fun SyncSettingsCard(
     isAutoSyncEnabled: Boolean,
     onAutoSyncChanged: (Boolean) -> Unit,
-    isSyncOnWifiOnly: Boolean,
-    onSyncOnWifiOnlyChanged: (Boolean) -> Unit,
     isNeverLockEnabled: Boolean = false,
     onNeverLockChanged: (Boolean) -> Unit = {}
 ) {
@@ -605,31 +601,6 @@ fun SyncSettingsCard(
                 Switch(
                     checked = isAutoSyncEnabled,
                     onCheckedChange = onAutoSyncChanged
-                )
-            }
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "仅 Wi-Fi 同步",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = "仅在 Wi-Fi 网络下自动同步",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = isSyncOnWifiOnly,
-                    onCheckedChange = onSyncOnWifiOnlyChanged,
-                    enabled = isAutoSyncEnabled
                 )
             }
             

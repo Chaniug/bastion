@@ -96,23 +96,27 @@ class BitwardenSyncService(
     }
     
     /**
-     * 执行全量同步
+     * 执行同步（全量或增量）
      * 
      * @param vault Vault 配置
      * @param accessToken 访问令牌
      * @param symmetricKey 对称加密密钥
+     * @param sinceRevisionDate 非空 = 增量同步，只拉该时间点之后的变更；空 = 全量
      */
     suspend fun fullSync(
         vault: BitwardenVault,
         accessToken: String,
-        symmetricKey: SymmetricCryptoKey
+        symmetricKey: SymmetricCryptoKey,
+        sinceRevisionDate: String? = null
     ): SyncResult = withContext(Dispatchers.IO) {
-        android.util.Log.i(TAG, "Starting full sync for vault ${vault.id}")
-        
+        val isIncremental = sinceRevisionDate != null
+        android.util.Log.i(TAG, "Starting ${if (isIncremental) "incremental" else "full"} sync for vault ${vault.id}")
+
         try {
                 val vaultApi = apiManager.getVaultApi(vault)
             val response = vaultApi.sync(
-                authorization = "Bearer $accessToken"
+                authorization = "Bearer $accessToken",
+                sinceRevisionDate = sinceRevisionDate
             )
             
             if (!response.isSuccessful) {
@@ -149,50 +153,52 @@ class BitwardenSyncService(
                 return@withContext SyncResult.Error("Empty sync response")
             }
 
-            // ===== 空 Vault 保护检查 =====
-            val serverCipherCount = syncResponse.ciphers.size
-            val localCipherCount = passwordEntryDao.getBitwardenEntriesCount(vault.id)
-            val isFirstSync = vault.lastSyncAt == null
-            
-            val protectionResult = EmptyVaultProtection.checkSyncAllowed(
-                vaultId = vault.id,
-                localCipherCount = localCipherCount,
-                serverCipherCount = serverCipherCount,
-                isFirstSync = isFirstSync
-            )
-            
-            when (protectionResult) {
-                is EmptyVaultProtection.CheckResult.Blocked -> {
-                    android.util.Log.w(TAG, "⚠️ 空 Vault 保护触发: ${protectionResult.reason}")
-                    // 发送警告事件
-                    EmptyVaultProtection.emitEmptyVaultDetected(
-                        vaultId = vault.id,
-                        localCount = protectionResult.localCount,
-                        serverCount = protectionResult.serverCount
-                    )
-                    return@withContext SyncResult.EmptyVaultBlocked(
-                        localCount = protectionResult.localCount,
-                        serverCount = protectionResult.serverCount,
-                        reason = protectionResult.reason
-                    )
+            // ===== 空 Vault 保护检查（仅全量同步执行：增量响应里 serverCipherCount 只是变更数，会误判）=====
+            if (!isIncremental) {
+                val serverCipherCount = syncResponse.ciphers.size
+                val localCipherCount = passwordEntryDao.getBitwardenEntriesCount(vault.id)
+                val isFirstSync = vault.lastSyncAt == null
+
+                val protectionResult = EmptyVaultProtection.checkSyncAllowed(
+                    vaultId = vault.id,
+                    localCipherCount = localCipherCount,
+                    serverCipherCount = serverCipherCount,
+                    isFirstSync = isFirstSync
+                )
+
+                when (protectionResult) {
+                    is EmptyVaultProtection.CheckResult.Blocked -> {
+                        android.util.Log.w(TAG, "⚠️ 空 Vault 保护触发: ${protectionResult.reason}")
+                        // 发送警告事件
+                        EmptyVaultProtection.emitEmptyVaultDetected(
+                            vaultId = vault.id,
+                            localCount = protectionResult.localCount,
+                            serverCount = protectionResult.serverCount
+                        )
+                        return@withContext SyncResult.EmptyVaultBlocked(
+                            localCount = protectionResult.localCount,
+                            serverCount = protectionResult.serverCount,
+                            reason = protectionResult.reason
+                        )
+                    }
+                    is EmptyVaultProtection.CheckResult.FirstSyncAllowed -> {
+                        android.util.Log.i(TAG, "首次同步，允许空 Vault")
+                    }
+                    is EmptyVaultProtection.CheckResult.Allowed -> {
+                        android.util.Log.d(TAG, "同步检查通过")
+                    }
                 }
-                is EmptyVaultProtection.CheckResult.FirstSyncAllowed -> {
-                    android.util.Log.i(TAG, "首次同步，允许空 Vault")
+
+                // 额外检查：是否有显著数据丢失风险
+                if (EmptyVaultProtection.checkSignificantDataLoss(localCipherCount, serverCipherCount)) {
+                    android.util.Log.w(TAG, "⚠️ 检测到潜在数据丢失: 本地 $localCipherCount 条 → 服务器 $serverCipherCount 条")
+                    // 这里不阻止同步，但记录警告
                 }
-                is EmptyVaultProtection.CheckResult.Allowed -> {
-                    android.util.Log.d(TAG, "同步检查通过")
-                }
-            }
-            
-            // 额外检查：是否有显著数据丢失风险
-            if (EmptyVaultProtection.checkSignificantDataLoss(localCipherCount, serverCipherCount)) {
-                android.util.Log.w(TAG, "⚠️ 检测到潜在数据丢失: 本地 $localCipherCount 条 → 服务器 $serverCipherCount 条")
-                // 这里不阻止同步，但记录警告
             }
             // ===== 空 Vault 保护检查结束 =====
             
             // 处理同步数据
-            val result = processSyncResponse(vault, syncResponse, symmetricKey)
+            val result = processSyncResponse(vault, syncResponse, symmetricKey, isIncremental)
             
             // 更新 Vault 同步状态
             val now = System.currentTimeMillis()
@@ -209,7 +215,8 @@ class BitwardenSyncService(
                 accountKey = profileIdentity.accountKey,
                 displayName = profileIdentity.displayName,
                 lastSyncAt = now,
-                revisionDate = syncResponse.profile.securityStamp
+                // 增量游标优先用 sync 响应顶层 RevisionDate（若服务端不返回则回退 securityStamp）
+                revisionDate = syncResponse.revisionDate ?: syncResponse.profile.securityStamp
             )
             // 记录 profile.premium 供附件 UI 判断（批量移动弹窗 / 上传按钮启用态）
             BitwardenVaultPremiumStore.setPremium(
@@ -233,7 +240,8 @@ class BitwardenSyncService(
     private suspend fun processSyncResponse(
         vault: BitwardenVault,
         response: SyncResponse,
-        symmetricKey: SymmetricCryptoKey
+        symmetricKey: SymmetricCryptoKey,
+        isIncremental: Boolean = false
     ): SyncResult {
         // Send 防回收的双重保护基线：本次 sync 启动时刻。
         // 任何 created_at >= 这个值的 send，都会被 deleteNotInProtectingDirty 视作"本次 sync 之后才出现"。
@@ -362,20 +370,25 @@ class BitwardenSyncService(
                     }
                 }
 
-                // 2.1 清理服务器已不存在的本地 Cipher（delete-wins）
-                if (activeServerCipherIds.isEmpty()) {
-                    passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
-                    secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
-                    passkeyDao.deleteAllByBitwardenVaultId(vault.id)
-                } else {
-                    passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-                    secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-                    passkeyDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
-                }
+                // 2.1 清理服务器已不存在的本地 Cipher（delete-wins）+ 3. 文件夹清理
+                // 仅全量同步执行：增量响应只含变更条目，不能按 not-in 清理，
+                // 否则会把本次未返回的本地条目全部误删；增量删除由 syncCipherFromServer
+                // 对 deletedDate 非空条目的软删逻辑处理。
+                if (!isIncremental) {
+                    if (activeServerCipherIds.isEmpty()) {
+                        passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
+                        secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
+                        passkeyDao.deleteAllByBitwardenVaultId(vault.id)
+                    } else {
+                        passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
+                        secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
+                        passkeyDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
+                    }
 
-                // 3. 清理已删除的文件夹 (服务器上不存在的)
-                val serverFolderIds = response.folders.map { it.id }
-                folderDao.deleteNotIn(vault.id, serverFolderIds)
+                    // 3. 清理已删除的文件夹 (服务器上不存在的)
+                    val serverFolderIds = response.folders.map { it.id }
+                    folderDao.deleteNotIn(vault.id, serverFolderIds)
+                }
 
                 // 4. 同步 Sends
                 response.sends?.forEach { sendApi ->
@@ -389,12 +402,23 @@ class BitwardenSyncService(
                     }
                 }
                 response.sends?.let { sends ->
-                    val serverSendIds = sends.map { it.id }
-                    // 双重保护：保留 is_dirty=1 行（写后读不一致）+ 本次 sync 之后落地的行（兜底）
-                    if (serverSendIds.isEmpty()) {
-                        sendDao.deleteByVaultProtectingDirty(vault.id, syncStartedAtMs)
+                    if (isIncremental) {
+                        // 增量模式：只按 deletedDate 删除，不做 not-in 清理（响应只有变更）
+                        sends.filter { it.deletedDate != null }.forEach { deletedSend ->
+                            runCatchingObserved {
+                                sendDao.deleteBySendId(vault.id, deletedSend.id)
+                            }.onFailure { err ->
+                                android.util.Log.w(TAG, "Incremental send delete failed for ${deletedSend.id}: ${err.message}")
+                            }
+                        }
                     } else {
-                        sendDao.deleteNotInProtectingDirty(vault.id, serverSendIds, syncStartedAtMs)
+                        val serverSendIds = sends.map { it.id }
+                        // 双重保护：保留 is_dirty=1 行（写后读不一致）+ 本次 sync 之后落地的行（兜底）
+                        if (serverSendIds.isEmpty()) {
+                            sendDao.deleteByVaultProtectingDirty(vault.id, syncStartedAtMs)
+                        } else {
+                            sendDao.deleteNotInProtectingDirty(vault.id, serverSendIds, syncStartedAtMs)
+                        }
                     }
                 }
 

@@ -47,13 +47,13 @@ sealed class SyncExecutionOutcome {
 
 enum class NetworkGateResult {
     ALLOWED,
-    NETWORK_UNAVAILABLE,
-    WIFI_REQUIRED
+    NETWORK_UNAVAILABLE
 }
 
 data class SyncManagerConfig(
-    val pageEnterThrottleMs: Long = 45_000L,
-    val appResumeThrottleMs: Long = 60_000L,
+    // P2 节流拉长：自建服务器高 RTT 场景下，减少"切页/回前台反复全量同步"的观感
+    val pageEnterThrottleMs: Long = 90_000L,
+    val appResumeThrottleMs: Long = 180_000L,
     val localMutationDebounceMs: Long = 700L,
     val retryBaseDelayMs: Long = 5_000L,
     val retryMaxDelayMs: Long = 15 * 60 * 1000L,
@@ -69,7 +69,10 @@ data class VaultSyncStatus(
     val lastError: String? = null,
     val lastSuccessAt: Long? = null,
     val nextRetryAt: Long? = null,
-    val retryAttempt: Int = 0
+    val retryAttempt: Int = 0,
+    // 静默同步（自动触发，非手动）：同步后台进行，UI 不显示"同步中"转圈，
+    // 本地离线数据已秒开渲染，完成后列表静默更新
+    val isSilent: Boolean = false
 )
 
 private data class VaultRuntime(
@@ -205,11 +208,6 @@ class BitwardenSyncOrchestrator(
                     SyncDiagnostics.blocked(taskId, target, trigger, "network_unavailable")
                     return
                 }
-                NetworkGateResult.WIFI_REQUIRED -> {
-                    setBlocked(vaultId, runtime, SyncBlockReason.WIFI_REQUIRED, "仅 Wi-Fi 同步")
-                    SyncDiagnostics.blocked(taskId, target, trigger, "wifi_required")
-                    return
-                }
             }
 
             if (!isVaultUnlocked(vaultId)) {
@@ -229,7 +227,8 @@ class BitwardenSyncOrchestrator(
                     queuedReason = null,
                     lastTriggerReason = reason,
                     blockedReason = null,
-                    nextRetryAt = null
+                    nextRetryAt = null,
+                    isSilent = silent
                 )
             }
             startedAt = SyncDiagnostics.start(
@@ -490,7 +489,8 @@ class BitwardenSyncOrchestrator(
             existing.copy(
                 isRunning = runtime.isRunning,
                 queuedReason = reason,
-                blockedReason = null
+                blockedReason = null,
+                isSilent = reason != SyncTriggerReason.MANUAL
             )
         }
     }

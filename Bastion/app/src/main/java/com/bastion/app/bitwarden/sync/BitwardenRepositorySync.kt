@@ -28,11 +28,8 @@ suspend fun BitwardenRepository.syncViaCoordinator(
     trigger: SyncTrigger,
     priority: SyncPriority = SyncPriority.forTrigger(trigger),
     mode: SyncMode = SyncMode.BACKGROUND,
-    networkPolicy: SyncNetworkPolicy = if (isSyncOnWifiOnly) {
-        SyncNetworkPolicy.WIFI_ONLY
-    } else {
-        SyncNetworkPolicy.REQUIRED
-    },
+    // 「仅 Wi-Fi 同步」已移除：一律要求有网络即可，不区分 Wi-Fi/移动
+    networkPolicy: SyncNetworkPolicy = SyncNetworkPolicy.REQUIRED,
     requiresUnlockedTarget: Boolean = true
 ): BitwardenCoordinatedSyncResult {
     val request = SyncRequest(

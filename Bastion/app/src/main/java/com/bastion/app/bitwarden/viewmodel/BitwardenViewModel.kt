@@ -161,9 +161,6 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     private val _isAutoSyncEnabled = MutableStateFlow(false)
     val isAutoSyncEnabledFlow: StateFlow<Boolean> = _isAutoSyncEnabled.asStateFlow()
 
-    private val _isSyncOnWifiOnly = MutableStateFlow(false)
-    val isSyncOnWifiOnlyFlow: StateFlow<Boolean> = _isSyncOnWifiOnly.asStateFlow()
-    
     // 一次性事件
     private val _events = MutableSharedFlow<BitwardenEvent>()
     val events = _events.asSharedFlow()
@@ -190,7 +187,6 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         // 加载永不锁定设置
         _isNeverLockEnabled.value = repository.isNeverLockEnabled
         _isAutoSyncEnabled.value = repository.isAutoSyncEnabled
-        _isSyncOnWifiOnly.value = repository.isSyncOnWifiOnly
         BitwardenMutationSyncBridge.register(this) { vaultId ->
             syncOrchestrator.requestSync(
                 vaultId = vaultId,
@@ -768,11 +764,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             trigger = SyncTrigger.MANUAL,
             priority = SyncPriority.MANUAL,
             mode = SyncMode.FOREGROUND,
-            networkPolicy = if (_isSyncOnWifiOnly.value) {
-                SyncNetworkPolicy.WIFI_ONLY
-            } else {
-                SyncNetworkPolicy.REQUIRED
-            }
+            networkPolicy = SyncNetworkPolicy.REQUIRED
         )) {
             is BitwardenCoordinatedSyncResult.Completed -> when (val result = coordinatedResult.result) {
                 is BitwardenRepository.SyncResult.Success -> {
@@ -1065,17 +1057,6 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         set(value) {
             repository.isAutoSyncEnabled = value
             _isAutoSyncEnabled.value = value
-            if (!value) {
-                repository.isSyncOnWifiOnly = false
-                _isSyncOnWifiOnly.value = false
-            }
-        }
-    
-    var isSyncOnWifiOnly: Boolean
-        get() = _isSyncOnWifiOnly.value
-        set(value) {
-            repository.isSyncOnWifiOnly = value
-            _isSyncOnWifiOnly.value = value
         }
     
     /**
@@ -1381,11 +1362,6 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         if (!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
             return NetworkGateResult.NETWORK_UNAVAILABLE
         }
-        if (_isSyncOnWifiOnly.value &&
-            !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-        ) {
-            return NetworkGateResult.WIFI_REQUIRED
-        }
         return NetworkGateResult.ALLOWED
     }
 
@@ -1617,11 +1593,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             trigger = if (silent) SyncTrigger.PAGE_VISIBLE else SyncTrigger.MANUAL,
             priority = if (silent) SyncPriority.PAGE_VISIBLE else SyncPriority.MANUAL,
             mode = if (silent) SyncMode.SILENT else SyncMode.FOREGROUND,
-            networkPolicy = if (_isSyncOnWifiOnly.value) {
-                SyncNetworkPolicy.WIFI_ONLY
-            } else {
-                SyncNetworkPolicy.REQUIRED
-            }
+            networkPolicy = SyncNetworkPolicy.REQUIRED
         )
     }
 

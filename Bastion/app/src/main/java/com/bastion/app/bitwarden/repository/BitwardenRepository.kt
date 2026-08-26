@@ -75,7 +75,6 @@ class BitwardenRepository(private val context: Context) {
         private const val PREFS_NAME = "bitwarden_secure_prefs"
         private const val KEY_ACTIVE_VAULT_ID = "active_vault_id"
         private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
-        private const val KEY_SYNC_ON_WIFI_ONLY = "sync_on_wifi_only"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_NEVER_LOCK_BITWARDEN = "never_lock_bitwarden"
         private const val PBKDF2_DEFAULT_ITERATIONS = 600000
@@ -824,8 +823,13 @@ class BitwardenRepository(private val context: Context) {
                     else -> 0
                 }
 
-                // 4. 执行同步（pull）
-                val result = syncService.fullSync(vault, accessToken, symmetricKey)
+                // 4. 执行同步（pull）：带上次 revisionDate 则走增量（只拉变更），无则全量
+                val result = syncService.fullSync(
+                    vault = vault,
+                    accessToken = accessToken,
+                    symmetricKey = symmetricKey,
+                    sinceRevisionDate = vault.revisionDate
+                )
 
                 // 更新最后同步时间
                 securePrefs.edit().putLong(KEY_LAST_SYNC_TIME, System.currentTimeMillis()).apply()
@@ -1236,7 +1240,6 @@ class BitwardenRepository(private val context: Context) {
         BitwardenMutationSyncBridge.requestLocalMutationSync(
             context = context,
             vaultId = vaultId,
-            requiresWifi = isSyncOnWifiOnly,
             autoSyncEnabled = isAutoSyncEnabled
         )
     }
@@ -1995,11 +1998,7 @@ class BitwardenRepository(private val context: Context) {
     var isAutoSyncEnabled: Boolean
         get() = securePrefs.getBoolean(KEY_AUTO_SYNC_ENABLED, true)
         set(value) = securePrefs.edit().putBoolean(KEY_AUTO_SYNC_ENABLED, value).apply()
-    
-    var isSyncOnWifiOnly: Boolean
-        get() = securePrefs.getBoolean(KEY_SYNC_ON_WIFI_ONLY, false)
-        set(value) = securePrefs.edit().putBoolean(KEY_SYNC_ON_WIFI_ONLY, value).apply()
-    
+
     /**
      * 是否永不锁定 Bitwarden
      * 
