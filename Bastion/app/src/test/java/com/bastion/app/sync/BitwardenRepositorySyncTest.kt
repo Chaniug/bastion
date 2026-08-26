@@ -113,10 +113,11 @@ class BitwardenRepositorySyncTest {
 
         assertTrue(
             "BitwardenRepository.sync is the bare executor body and must stay deprecated so UI/worker code uses syncViaCoordinator.",
-            syncSection.contains("suspend fun sync(vaultId: Long)") &&
+            syncSection.contains("suspend fun sync(") &&
+                syncSection.contains("pullAfterPush") &&
                 syncSection.contains("syncViaCoordinator") &&
                 repositorySyncSource.contains("@Suppress(\"DEPRECATION\")") &&
-                repositorySyncSource.contains("SyncTaskRunner.requestAndAwait(request) { sync(vaultId) }")
+                repositorySyncSource.contains("SyncTaskRunner.requestAndAwait(request) { sync(vaultId, pullAfterPush) }")
         )
         assertTrue(
             "BitwardenRepository.refreshSends performs a bare sync and must stay deprecated so Send UI uses the coordinator path.",
