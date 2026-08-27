@@ -28,6 +28,7 @@ import java.net.UnknownHostException
 import java.net.URL
 import java.security.MessageDigest
 import javax.net.ssl.SSLException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Favicon cache for fetching and storing website icons.
@@ -36,6 +37,9 @@ object FaviconCache {
     private const val TAG = "FaviconCache"
     private const val CACHE_DIR_NAME = "favicons"
     private const val MAX_MEMORY_CACHE_BYTES_KB = 4 * 1024 // ~4MB，以 KB 计
+    private const val MAX_DISK_CACHE_FILES = 600 // favicon 磁盘缓存文件数上限
+    private const val MAX_DISK_CACHE_MB = 24 // favicon 磁盘缓存体积上限（MB）
+    private val pruneCounter = AtomicInteger(0) // 节流：每 25 次写入触发一次清理
 
     private val memoryCache = object : LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_BYTES_KB) {
         override fun sizeOf(key: String, value: ImageBitmap): Int {
@@ -64,7 +68,7 @@ object FaviconCache {
         if (!cacheDir.exists()) {
             cacheDir.mkdirs()
         }
-        val cacheFile = File(cacheDir, "$cacheKey.png")
+        val cacheFile = File(cacheDir, "$cacheKey.webp")
         if (cacheFile.exists()) {
             try {
                 val bitmap = decodeFaviconSampled(cacheFile, MAX_FAVICON_DIM)
@@ -89,9 +93,10 @@ object FaviconCache {
                 if (bitmap != null) {
                     try {
                         val out = FileOutputStream(cacheFile)
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                        bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)
                         out.flush()
                         out.close()
+                        pruneFaviconDiskCacheIfNeeded(cacheDir)
                     } catch (e: Exception) {
                         Log.w(TAG, "Error saving favicon disk cache: ${e.message}")
                     }
@@ -101,6 +106,33 @@ object FaviconCache {
                 }
             }
             null
+        }
+    }
+
+    /**
+     * 磁盘 favicon 缓存清理：每 25 次写入触发一次，按修改时间删除最旧文件，
+     * 直到文件数与总大小回落到阈值的 70%，防止下载缓存目录长期无限膨胀。
+     * 注意：仅清理自动下载的 favicon；用户上传覆盖图在 password_icons/，属于用户数据，不在此清理。
+     */
+    private fun pruneFaviconDiskCacheIfNeeded(cacheDir: File) {
+        if (pruneCounter.incrementAndGet() % 25 != 0) return
+        val files = cacheDir.listFiles()?.filter { it.isFile } ?: return
+        if (files.isEmpty()) return
+        val maxBytes = MAX_DISK_CACHE_MB * 1024L * 1024L
+        val totalBytes = files.sumOf { it.length() }
+        if (files.size <= MAX_DISK_CACHE_FILES && totalBytes <= maxBytes) return
+
+        val sorted = files.sortedBy { it.lastModified() }
+        var remaining = files.size
+        var used = totalBytes
+        val targetCount = (MAX_DISK_CACHE_FILES * 0.7).toInt()
+        val targetBytes = (maxBytes * 0.7).toLong()
+        for (f in sorted) {
+            if (remaining <= targetCount && used <= targetBytes) break
+            if (f.delete()) {
+                remaining -= 1
+                used -= f.length()
+            }
         }
     }
 
