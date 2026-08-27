@@ -772,15 +772,35 @@ class BitwardenRepository(private val context: Context) {
         // P1：per-vault 防抖（用 vault.lastSyncAt，避免全局时间戳在多 vault 下误伤）
         val lastSyncAt = vault.lastSyncAt ?: 0L
         if (lastSyncAt > 0L && System.currentTimeMillis() - lastSyncAt < SKIP_DEBOUNCE_MS) {
+            BitwardenDiagLogger.append(
+                "BitwardenRepository precheck: debounce skip (lastSyncAt=$lastSyncAt, within ${SKIP_DEBOUNCE_MS}ms), " +
+                    "vaultId=${vault.id}"
+            )
             return true
         }
 
         // P0：打极小的 revision-date 请求，与本地比较
+        val precheckStart = System.currentTimeMillis()
         val serverRev = runCatching {
             val resp = apiManager.getVaultApi(vault).getRevisionDate("Bearer $accessToken")
-            if (!resp.isSuccessful) return@runCatching null
-            resp.body()?.string()?.trim()?.trim('"')?.takeIf { it.isNotBlank() }
-        }.getOrNull() ?: return false   // 取不到则保守地走全量，不跳过
+            val code = resp.code()
+            val body = if (resp.isSuccessful) {
+                resp.body()?.string()?.trim()?.trim('"')?.takeIf { it.isNotBlank() }
+            } else {
+                null
+            }
+            BitwardenDiagLogger.append(
+                "BitwardenRepository precheck: getRevisionDate HTTP=$code, serverRev=$body, " +
+                    "localRev=${localRev?.trim()}, took ${System.currentTimeMillis() - precheckStart}ms, vaultId=${vault.id}"
+            )
+            body
+        }.getOrNull() ?: run {
+            BitwardenDiagLogger.append(
+                "BitwardenRepository precheck: getRevisionDate FAILED/threw -> conservative NOT skip, " +
+                    "vaultId=${vault.id}"
+            )
+            return false
+        }
 
         return serverRev == localRev.trim()
     }
@@ -804,23 +824,51 @@ class BitwardenRepository(private val context: Context) {
     ): SyncResult = withContext(Dispatchers.IO) {
         syncMutexForVault(vaultId).withLock {
             try {
-                val vault = vaultDao.getVaultById(vaultId) ?: return@withLock SyncResult.Error("Vault 不存在")
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync START: vaultId=$vaultId, pullAfterPush=$pullAfterPush, " +
+                        "forced=$forced, thread=${Thread.currentThread().name}"
+                )
+                val vault = vaultDao.getVaultById(vaultId) ?: run {
+                    BitwardenDiagLogger.append("BitwardenRepository.sync ABORT: vault not found vaultId=$vaultId")
+                    return@withLock SyncResult.Error("Vault 不存在")
+                }
 
                 if (!isVaultUnlocked(vaultId)) {
+                    BitwardenDiagLogger.append("BitwardenRepository.sync ABORT: vault locked vaultId=$vaultId")
                     return@withLock SyncResult.Error("Vault 未解锁")
                 }
 
-                val symmetricKey = symmetricKeyCache[vaultId] ?: return@withLock SyncResult.Error("密钥不可用")
-                var accessToken = accessTokenCache[vaultId] ?: return@withLock SyncResult.Error("令牌不可用")
+                val symmetricKey = symmetricKeyCache[vaultId] ?: run {
+                    BitwardenDiagLogger.append("BitwardenRepository.sync ABORT: symmetric key unavailable vaultId=$vaultId")
+                    return@withLock SyncResult.Error("密钥不可用")
+                }
+                var accessToken = accessTokenCache[vaultId] ?: run {
+                    BitwardenDiagLogger.append("BitwardenRepository.sync ABORT: access token unavailable vaultId=$vaultId")
+                    return@withLock SyncResult.Error("令牌不可用")
+                }
 
                 // 检查 Token 是否需要刷新
                 val expiresAt = vault.accessTokenExpiresAt ?: 0
-                if (expiresAt <= System.currentTimeMillis() + 60000) {
+                val nowMs = System.currentTimeMillis()
+                if (expiresAt <= nowMs + 60000) {
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository.sync: accessToken expiring/Expired (expiresAt=$expiresAt, now=$nowMs) " +
+                            "-> attempt refreshToken"
+                    )
+                    val refreshStart = System.currentTimeMillis()
                     val refreshResult = refreshToken(vault)
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository.sync: refreshToken finished in ${System.currentTimeMillis() - refreshStart}ms, " +
+                            "success=${refreshResult != null}, vaultId=$vaultId"
+                    )
                     if (refreshResult != null) {
                         accessToken = refreshResult
                         accessTokenCache[vaultId] = accessToken
                     } else {
+                        BitwardenDiagLogger.append(
+                            "BitwardenRepository.sync ABORT: token refresh failed (refresh token likely invalid), " +
+                                "vaultId=$vaultId -> user must re-login"
+                        )
                         return@withLock SyncResult.Error("Token 刷新失败，请重新登录")
                     }
                 }
@@ -931,11 +979,20 @@ class BitwardenRepository(private val context: Context) {
                 }
 
                 // 4. 执行同步（pull）：带上次 revisionDate 则走增量（只拉变更），无则全量
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository fullSync START: vaultId=$vaultId, sinceRevisionDate=${vault.revisionDate}, " +
+                        "hasPendingLocalWork=$hasPendingLocalWork, forced=$forced"
+                )
+                val fullSyncStart = System.currentTimeMillis()
                 val result = syncService.fullSync(
                     vault = vault,
                     accessToken = accessToken,
                     symmetricKey = symmetricKey,
                     sinceRevisionDate = vault.revisionDate
+                )
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository fullSync DONE: vaultId=$vaultId, took ${System.currentTimeMillis() - fullSyncStart}ms, " +
+                        "resultType=${result::class.simpleName}"
                 )
 
                 // 更新最后同步时间
@@ -977,6 +1034,9 @@ class BitwardenRepository(private val context: Context) {
                         )
                     }
                     is ServiceSyncResult.Error -> {
+                        BitwardenDiagLogger.append(
+                            "BitwardenRepository.sync fullSync Error: vaultId=$vaultId, message=${result.message}"
+                        )
                         SyncResult.Error(result.message)
                     }
                     is ServiceSyncResult.EmptyVaultBlocked -> {
@@ -990,6 +1050,10 @@ class BitwardenRepository(private val context: Context) {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "同步异常", e)
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync EXCEPTION: vaultId=$vaultId, type=${e::class.simpleName}, " +
+                        "msg=${e.message}, thread=${Thread.currentThread().name}"
+                )
                 SyncResult.Error(e.message ?: "同步失败")
             }
         }
@@ -1152,7 +1216,10 @@ class BitwardenRepository(private val context: Context) {
      * 刷新访问令牌
      */
     private suspend fun refreshToken(vault: BitwardenVault): String? {
-        val refreshToken = vault.encryptedRefreshToken?.let { decryptFromStorage(it) } ?: return null
+        val refreshToken = vault.encryptedRefreshToken?.let { decryptFromStorage(it) } ?: run {
+            BitwardenDiagLogger.append("BitwardenRepository.refreshToken ABORT: no encryptedRefreshToken stored, vaultId=${vault.id}")
+            return null
+        }
         
         return try {
             val result = authService.refreshToken(
@@ -1177,11 +1244,24 @@ class BitwardenRepository(private val context: Context) {
                 encryptedRefreshToken?.let { 
                     vaultDao.updateRefreshToken(vault.id, it)
                 }
-                
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.refreshToken SUCCESS: vaultId=${vault.id}, " +
+                        "expiresIn=${refreshResult.expiresIn}s, newExpiresAt=$expiresAt"
+                )
                 refreshResult.accessToken
+            } ?: run {
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.refreshToken FAILED: identity/connect/token returned failure, " +
+                        "vaultId=${vault.id}, refreshTokenPresent=${vault.encryptedRefreshToken != null}"
+                )
+                null
             }
         } catch (e: Exception) {
             Log.e(TAG, "Token 刷新失败", e)
+            BitwardenDiagLogger.append(
+                "BitwardenRepository.refreshToken EXCEPTION: vaultId=${vault.id}, type=${e::class.simpleName}, " +
+                    "msg=${e.message}"
+            )
             null
         }
     }
