@@ -813,6 +813,7 @@ class BitwardenSyncService(
         }
         
         for (op in pendingOps) {
+            val opStart = System.currentTimeMillis()
             try {
                 if (op.operationType == BitwardenPendingOperation.OP_DELETE) {
                     android.util.Log.i(
@@ -827,7 +828,12 @@ class BitwardenSyncService(
                     BitwardenPendingOperation.OP_RESTORE -> processRestoreOperation(vault, op, accessToken)
                     else -> false
                 }
-                
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.processPendingOperations: opId=${op.id}, type=${op.operationType}, " +
+                        "cipherId=${op.bitwardenCipherId}, took ${System.currentTimeMillis() - opStart}ms, " +
+                        "success=$success, vaultId=${vault.id}"
+                )
+
                 if (success) {
                     pendingOpDao.markCompleted(op.id)
                     processed++
@@ -842,6 +848,10 @@ class BitwardenSyncService(
                 }
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Failed to process operation ${op.id}: ${e.message}")
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.processPendingOperations EXCEPTION: opId=${op.id}, type=${op.operationType}, " +
+                        "took ${System.currentTimeMillis() - opStart}ms, msg=${e.message}, vaultId=${vault.id}"
+                )
                 pendingOpDao.updateStatus(
                     id = op.id,
                     status = BitwardenPendingOperation.STATUS_FAILED,
@@ -916,17 +926,48 @@ class BitwardenSyncService(
         
         var entriesToUpload = passwordEntryDao.getLocalEntriesPendingUpload(vault.id)
         if (entriesToUpload.isNotEmpty()) {
-            val reconciled = reconcilePendingPasswordUploadsFromRemote(
-                vault = vault,
-                accessToken = accessToken,
-                symmetricKey = symmetricKey,
-                pendingEntries = entriesToUpload
-            )
-            if (reconciled > 0) {
-                val line = "$TAG reconcilePendingPasswordUploadsFromRemote: vaultId=${vault.id}, reconciled=$reconciled"
-                android.util.Log.i(TAG, line)
-                BitwardenDiagLogger.append(line)
-                entriesToUpload = passwordEntryDao.getLocalEntriesPendingUpload(vault.id)
+            val reconcileStart = System.currentTimeMillis()
+            // 优化：上传前先打轻量 GET /accounts/revision-date，与本地 vault.revisionDate 一致说明远端
+            // 没有其他设备的新变更，本地 pending 条目不可能已在远端存在 → 跳过全量对账，
+            // 省掉一次全量 GET /sync（Vaultwarden 忽略 sinceRevisionDate，每次全量返回）。
+            var needReconcile = true
+            try {
+                val revResp = apiManager.getVaultApi(vault).getRevisionDate("Bearer $accessToken")
+                if (revResp.isSuccessful) {
+                    val serverRev = revResp.body()?.string()?.trim('"', ' ', '\n', '\r')
+                    if (!serverRev.isNullOrBlank() && serverRev == vault.revisionDate) {
+                        needReconcile = false
+                        BitwardenDiagLogger.append(
+                            "BitwardenSyncService.uploadLocalEntries: skip reconcile (serverRev==localRev), " +
+                                "vaultId=${vault.id}, serverRev=$serverRev"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "revision-date precheck failed, fallback to reconcile: ${e.message}")
+            }
+            if (needReconcile) {
+                val reconciled = reconcilePendingPasswordUploadsFromRemote(
+                    vault = vault,
+                    accessToken = accessToken,
+                    symmetricKey = symmetricKey,
+                    pendingEntries = entriesToUpload
+                )
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.uploadLocalEntries: reconcile took ${System.currentTimeMillis() - reconcileStart}ms, " +
+                        "reconciled=$reconciled, vaultId=${vault.id}"
+                )
+                if (reconciled > 0) {
+                    val line = "$TAG reconcilePendingPasswordUploadsFromRemote: vaultId=${vault.id}, reconciled=$reconciled"
+                    android.util.Log.i(TAG, line)
+                    BitwardenDiagLogger.append(line)
+                    entriesToUpload = passwordEntryDao.getLocalEntriesPendingUpload(vault.id)
+                }
+            } else {
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.uploadLocalEntries: reconcile skipped, precheck took " +
+                        "${System.currentTimeMillis() - reconcileStart}ms, vaultId=${vault.id}"
+                )
             }
         }
         
@@ -939,8 +980,14 @@ class BitwardenSyncService(
         }
 
         for (entry in entriesToUpload) {
+            val entryStart = System.currentTimeMillis()
             try {
                 val result = uploadLocalEntry(vault, entry, accessToken, symmetricKey)
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.uploadLocalEntry: entryId=${entry.id}, " +
+                        "took ${System.currentTimeMillis() - entryStart}ms, success=${result.success}, " +
+                        "authRequired=${result.authRequired}, vaultId=${vault.id}"
+                )
                 if (result.success) {
                     uploaded++
                 } else {
@@ -951,6 +998,10 @@ class BitwardenSyncService(
                 }
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Failed to upload entry ${entry.id}: ${e.message}")
+                BitwardenDiagLogger.append(
+                    "BitwardenSyncService.uploadLocalEntry EXCEPTION: entryId=${entry.id}, " +
+                        "took ${System.currentTimeMillis() - entryStart}ms, msg=${e.message}, vaultId=${vault.id}"
+                )
                 failed++
                 if (isMdkUnavailableException(e)) {
                     authRequiredFailures++
@@ -1081,9 +1132,15 @@ class BitwardenSyncService(
 
         try {
             val vaultApi = apiManager.getVaultApi(vault)
+            val postStart = System.currentTimeMillis()
             val response = vaultApi.createCipher(
                 authorization = "Bearer $accessToken",
                 cipher = createRequest
+            )
+            val postMs = System.currentTimeMillis() - postStart
+            BitwardenDiagLogger.append(
+                "BitwardenSyncService.uploadLocalEntry POST: entryId=${entry.id}, took ${postMs}ms, " +
+                    "code=${response.code()}, vaultId=${vault.id}"
             )
 
             if (!response.isSuccessful) {
