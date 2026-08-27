@@ -3222,6 +3222,8 @@
     <string name="icon_settings_authenticator_page_subtitle">验证器卡片显示站点/应用图标</string>
     <string name="icon_settings_passkey_page_title">通行密钥页面</string>
     <string name="icon_settings_passkey_page_subtitle">通行秘钥列表卡片显示图标</string>
+    <string name="icon_settings_third_party_favicon_title">第三方图标补全</string>
+    <string name="icon_settings_third_party_favicon_subtitle">用 DuckDuckGo / Google 补全无自带图标的站点（会向第三方暴露访问域名）</string>
     <string name="icon_settings_unmatched_strategy_title">无匹配图标处理策略</string>
     <string name="icon_settings_unmatched_strategy_desc">当图标源都未命中时，控制卡片图标区域的显示方式。</string>
     <string name="icon_settings_unmatched_strategy_default">显示默认钥匙图标</string>

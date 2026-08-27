@@ -28,6 +28,7 @@ import java.net.UnknownHostException
 import java.net.URL
 import java.security.MessageDigest
 import javax.net.ssl.SSLException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Favicon cache for fetching and storing website icons.
@@ -36,6 +37,10 @@ object FaviconCache {
     private const val TAG = "FaviconCache"
     private const val CACHE_DIR_NAME = "favicons"
     private const val MAX_MEMORY_CACHE_BYTES_KB = 4 * 1024 // ~4MB，以 KB 计
+    private const val MAX_DISK_CACHE_FILES = 600 // favicon 磁盘缓存文件数上限
+    private const val MAX_DISK_CACHE_MB = 24 // favicon 磁盘缓存体积上限（MB）
+    private val pruneCounter = AtomicInteger(0) // 节流：每 25 次写入触发一次清理
+    @Volatile var useThirdPartyFavicons: Boolean = false // 是否允许使用第三方服务补全 favicon（隐私开关，默认关）
 
     private val memoryCache = object : LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_BYTES_KB) {
         override fun sizeOf(key: String, value: ImageBitmap): Int {
@@ -64,7 +69,7 @@ object FaviconCache {
         if (!cacheDir.exists()) {
             cacheDir.mkdirs()
         }
-        val cacheFile = File(cacheDir, "$cacheKey.png")
+        val cacheFile = File(cacheDir, "$cacheKey.webp")
         if (cacheFile.exists()) {
             try {
                 val bitmap = decodeFaviconSampled(cacheFile, MAX_FAVICON_DIM)
@@ -89,9 +94,10 @@ object FaviconCache {
                 if (bitmap != null) {
                     try {
                         val out = FileOutputStream(cacheFile)
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                        bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)
                         out.flush()
                         out.close()
+                        pruneFaviconDiskCacheIfNeeded(cacheDir)
                     } catch (e: Exception) {
                         Log.w(TAG, "Error saving favicon disk cache: ${e.message}")
                     }
@@ -105,16 +111,48 @@ object FaviconCache {
     }
 
     /**
+     * 磁盘 favicon 缓存清理：每 25 次写入触发一次，按修改时间删除最旧文件，
+     * 直到文件数与总大小回落到阈值的 70%，防止下载缓存目录长期无限膨胀。
+     * 注意：仅清理自动下载的 favicon；用户上传覆盖图在 password_icons/，属于用户数据，不在此清理。
+     */
+    private fun pruneFaviconDiskCacheIfNeeded(cacheDir: File) {
+        if (pruneCounter.incrementAndGet() % 25 != 0) return
+        val files = cacheDir.listFiles()?.filter { it.isFile } ?: return
+        if (files.isEmpty()) return
+        val maxBytes = MAX_DISK_CACHE_MB * 1024L * 1024L
+        val totalBytes = files.sumOf { it.length() }
+        if (files.size <= MAX_DISK_CACHE_FILES && totalBytes <= maxBytes) return
+
+        val sorted = files.sortedBy { it.lastModified() }
+        var remaining = files.size
+        var used = totalBytes
+        val targetCount = (MAX_DISK_CACHE_FILES * 0.7).toInt()
+        val targetBytes = (maxBytes * 0.7).toLong()
+        for (f in sorted) {
+            if (remaining <= targetCount && used <= targetBytes) break
+            if (f.delete()) {
+                remaining -= 1
+                used -= f.length()
+            }
+        }
+    }
+
+    /**
      * 按优先级生成 favicon 候选源。
      * 站点直连 /favicon.ico 不依赖任何第三方服务（国内可用且最快）；
      * DuckDuckGo 作次选兜底；Google S2 作海外兜底。
      */
-    private fun buildFaviconCandidates(domain: String): List<String> = listOf(
-        "https://$domain/favicon.ico",
-        "https://icons.duckduckgo.com/ip3/$domain.ico",
-        "https://www.google.com/s2/favicons?domain=$domain&sz=64",
-        "https://www.google.com/s2/favicons?domain=$domain&sz=128"
-    )
+    private fun buildFaviconCandidates(domain: String): List<String> {
+        // 默认仅站点直连，不向任何第三方服务暴露访问域名（隐私优先）。
+        // 仅当用户在设置中开启“第三方图标补全”时才追加 DuckDuckGo / Google 兜底源。
+        val candidates = mutableListOf("https://$domain/favicon.ico")
+        if (useThirdPartyFavicons) {
+            candidates += "https://icons.duckduckgo.com/ip3/$domain.ico"
+            candidates += "https://www.google.com/s2/favicons?domain=$domain&sz=64"
+            candidates += "https://www.google.com/s2/favicons?domain=$domain&sz=128"
+        }
+        return candidates
+    }
 
     /**
      * 从单个 URL 拉取 favicon 位图；任何网络异常都返回 null，由调用方尝试下一个源。

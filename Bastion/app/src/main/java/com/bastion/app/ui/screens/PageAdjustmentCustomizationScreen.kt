@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Waves
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -2429,6 +2430,13 @@ fun IconSettingsScreen(
             icon = Icons.Default.VpnKey,
             checked = settings.passkeyPageIconEnabled,
             onCheckedChange = viewModel::updatePasskeyPageIconEnabled
+        ),
+        IconSettingOption(
+            title = stringResource(R.string.icon_settings_third_party_favicon_title),
+            subtitle = stringResource(R.string.icon_settings_third_party_favicon_subtitle),
+            icon = Icons.Default.Public,
+            checked = settings.thirdPartyFaviconEnabled,
+            onCheckedChange = viewModel::updateThirdPartyFaviconEnabled
         )
     )
 

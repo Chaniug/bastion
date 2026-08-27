@@ -463,10 +463,10 @@ object PasswordCustomIconStore {
             val finalBitmap = resizeIfNeeded(decoded, MAX_DIMENSION)
             if (finalBitmap !== decoded) decoded.recycle()
 
-            val fileName = "icon_${System.currentTimeMillis()}_${Random.nextInt(1000, 9999)}.png"
+            val fileName = "icon_${System.currentTimeMillis()}_${Random.nextInt(1000, 9999)}.webp"
             val target = File(getIconDir(context), fileName)
             FileOutputStream(target).use { out ->
-                if (!finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)) {
+                if (!finalBitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)) {
                     throw IllegalStateException("Failed to compress image")
                 }
                 out.flush()
