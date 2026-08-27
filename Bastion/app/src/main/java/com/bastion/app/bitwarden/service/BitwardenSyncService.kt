@@ -959,12 +959,24 @@ class BitwardenSyncService(
         }
         
         // 同步上传 SecureItems
+        val secureStart = System.currentTimeMillis()
         val secureResult = cipherUploadProcessor.uploadPendingSecureItems(vault, accessToken, symmetricKey)
+        BitwardenDiagLogger.append(
+            "BitwardenSyncService.uploadLocalEntries: uploadPendingSecureItems took " +
+                "${System.currentTimeMillis() - secureStart}ms, uploaded=${secureResult.uploaded}, " +
+                "failed=${secureResult.failed}, vaultId=${vault.id}"
+        )
         uploaded += secureResult.uploaded
         failed += secureResult.failed
 
         // 同步上传 Passkeys（仅新增）
+        val passkeyStart = System.currentTimeMillis()
         val passkeyResult = cipherUploadProcessor.uploadPendingPasskeys(vault, accessToken, symmetricKey)
+        BitwardenDiagLogger.append(
+            "BitwardenSyncService.uploadLocalEntries: uploadPendingPasskeys took " +
+                "${System.currentTimeMillis() - passkeyStart}ms, uploaded=${passkeyResult.uploaded}, " +
+                "failed=${passkeyResult.failed}, vaultId=${vault.id}"
+        )
         uploaded += passkeyResult.uploaded
         failed += passkeyResult.failed
 

@@ -11,6 +11,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -68,7 +69,7 @@ import com.bastion.app.data.bitwarden.*
  * 3. 提供统一的数据访问接口
  * 4. 管理加密密钥的安全存储
  */
-class BitwardenRepository(private val context: Context) {
+class BitwardenRepository(private val context: Context) : BitwardenApiFactory.BitwardenTokenRefresher {
     
     companion object {
         private const val TAG = "BitwardenRepository"
@@ -93,7 +94,11 @@ class BitwardenRepository(private val context: Context) {
         
         fun getInstance(context: Context): BitwardenRepository {
             return instance ?: synchronized(this) {
-                instance ?: BitwardenRepository(context.applicationContext).also { instance = it }
+                instance ?: BitwardenRepository(context.applicationContext).also { repo ->
+                    instance = repo
+                    // 注册 401 自动恢复：任意 Bitwarden 调用遇 401 → 按 host 找到 vault 刷新 token → 重试
+                    BitwardenApiFactory.setTokenRefresher(repo)
+                }
             }
         }
         
@@ -874,7 +879,13 @@ class BitwardenRepository(private val context: Context) {
                 }
 
                 // 1. 先处理本地待删除操作（delete）
+                val pendingStart = System.currentTimeMillis()
+                BitwardenDiagLogger.append("BitwardenRepository.sync: processPendingOperations START vaultId=$vaultId")
                 val processedDeleteCount = syncService.processPendingOperations(vault, accessToken, symmetricKey)
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync: processPendingOperations DONE took ${System.currentTimeMillis() - pendingStart}ms, " +
+                        "processed=$processedDeleteCount, vaultId=$vaultId"
+                )
 
                 // 1.5 迁移历史独立 [Passkey] cipher 到密码 cipher（在 uploadLocalEntries 之前，避免待迁移 passkey 被当独立条目上传）
                 val passkeyMergeResult = runCatchingObserved {
@@ -899,7 +910,13 @@ class BitwardenRepository(private val context: Context) {
                 }
 
                 // 2. 再上传本地创建的条目到服务器（create）
+                val uploadStart = System.currentTimeMillis()
+                BitwardenDiagLogger.append("BitwardenRepository.sync: uploadLocalEntries START vaultId=$vaultId")
                 val uploadResult = syncService.uploadLocalEntries(vault, accessToken, symmetricKey)
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync: uploadLocalEntries DONE took ${System.currentTimeMillis() - uploadStart}ms, " +
+                        "uploaded=${uploadResult.uploaded}, failed=${uploadResult.failed}, vaultId=$vaultId"
+                )
                 val uploadedCount = when (uploadResult) {
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> uploadResult.uploaded
                     else -> 0
@@ -910,7 +927,13 @@ class BitwardenRepository(private val context: Context) {
                 }
 
                 // 3. 上传本地已修改的条目到服务器（update）
+                val modifiedStart = System.currentTimeMillis()
+                BitwardenDiagLogger.append("BitwardenRepository.sync: uploadModifiedEntries START vaultId=$vaultId")
                 val modifiedUploadResult = syncService.uploadModifiedEntries(vault, accessToken, symmetricKey)
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync: uploadModifiedEntries DONE took ${System.currentTimeMillis() - modifiedStart}ms, " +
+                        "uploaded=${modifiedUploadResult.uploaded}, failed=${modifiedUploadResult.failed}, vaultId=$vaultId"
+                )
                 val modifiedUploadedCount = when (modifiedUploadResult) {
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> modifiedUploadResult.uploaded
                     else -> 0
@@ -1263,9 +1286,43 @@ class BitwardenRepository(private val context: Context) {
                     "msg=${e.message}"
             )
             null
-        }
+            }
     }
-    
+
+    /**
+     * 实现 [BitwardenApiFactory.BitwardenTokenRefresher]：供 OkHttp 401 Authenticator 阻塞式调用。
+     * OkHttp 在自身网络线程上调用本方法，内部 runBlocking(Dispatchers.IO) 执行刷新请求。
+     */
+    override fun refreshForHost(host: String): String? =
+        runBlocking(Dispatchers.IO) { refreshTokenByHost(host) }
+
+    /**
+     * 按请求 host 找到对应 vault 并刷新 access token（用于任意 Bitwarden 调用返回 401 的自动恢复）。
+     * 命中后同步更新 accessTokenCache，使同一次 sync 的后续请求也用上新 token。
+     */
+    private suspend fun refreshTokenByHost(host: String): String? {
+        val vault = vaultDao.getAllVaults().firstOrNull { v ->
+            val hosts = listOf(v.serverUrl, v.apiUrl).mapNotNull { url ->
+                runCatching { java.net.URI(url).host }.getOrNull()
+            }
+            hosts.any { it.equals(host, ignoreCase = true) }
+        } ?: run {
+            BitwardenDiagLogger.append("BitwardenRepository.refreshTokenByHost: no vault matches host=$host")
+            return null
+        }
+        val refreshed = refreshToken(vault) ?: run {
+            BitwardenDiagLogger.append(
+                "BitwardenRepository.refreshTokenByHost: refresh failed, host=$host, vaultId=${vault.id}"
+            )
+            return null
+        }
+        accessTokenCache[vault.id] = refreshed
+        BitwardenDiagLogger.append(
+            "BitwardenRepository.refreshTokenByHost SUCCESS: host=$host, vaultId=${vault.id}"
+        )
+        return refreshed
+    }
+
     // ==================== 数据访问 ====================
     
     suspend fun getPasswordEntries(vaultId: Long): List<PasswordEntry> = withContext(Dispatchers.IO) {

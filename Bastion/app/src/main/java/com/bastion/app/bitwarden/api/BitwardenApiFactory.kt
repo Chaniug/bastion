@@ -4,6 +4,7 @@ import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import android.util.Base64
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Authenticator
 import okhttp3.OkHttpClient
 import okhttp3.ConnectionPool
 import okhttp3.logging.HttpLoggingInterceptor
@@ -52,6 +53,36 @@ object BitwardenApiFactory {
         coerceInputValues = true
         explicitNulls = false
     }
+
+    /**
+     * 401 自动恢复回调。由 [BitwardenRepository]（持有 vault/refresh token）注册。
+     * [refreshForHost] 为阻塞式：内部自行切到 IO 线程执行刷新网络请求，返回新 access token，失败返回 null。
+     * 这样 OkHttp 层对任意 Bitwarden 调用（同步/附件/Send 等）返回的 401 都能自动恢复，
+     * 不再只依赖 [BitwardenRepository.sync] 入口按 accessTokenExpiresAt 预判刷新。
+     */
+    interface BitwardenTokenRefresher {
+        fun refreshForHost(host: String): String?
+    }
+
+    @Volatile
+    private var tokenRefresher: BitwardenTokenRefresher? = null
+
+    fun setTokenRefresher(refresher: BitwardenTokenRefresher?) {
+        tokenRefresher = refresher
+    }
+
+    /**
+     * 全局 401 自动恢复拦截器：任意 Bitwarden 请求返回 401 → 回调刷新 token → 用新 token 重试一次。
+     * OkHttp 对同一响应链只会调用一次（priorResponse 非空即已重试过），天然防死循环。
+     */
+    private val tokenAuthenticator = Authenticator { route, response ->
+        if (response.priorResponse != null) return@Authenticator null
+        val host = route?.address?.url?.host ?: return@Authenticator null
+        val newToken = tokenRefresher?.refreshForHost(host) ?: return@Authenticator null
+        response.request.newBuilder()
+            .header("Authorization", "Bearer $newToken")
+            .build()
+    }
     
     enum class HeaderProfile {
         MONICA_DEFAULT,
@@ -84,12 +115,18 @@ object BitwardenApiFactory {
         val headerSpec = getHeaderSpec(headerProfile)
         val builder = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
+            // 收紧读/写超时：自建服务器经反代时，复用的空闲连接可能被服务端静默关闭（半开连接），
+            // 原 60s 会让请求一直挂到读超时（用户感知"很慢很慢"）。降到 30s 让死连接更快失败，
+            // 配合下面 retryOnConnectionFailure 立即重试新连接。
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             // 显式连接池：自建服务器高 RTT 下避免每次 sync 重建 TCP/TLS；
-            // pingInterval 启用 HTTP/2 keepalive，VPN/自签 CA 抖动时快速发现死连接
-            .connectionPool(ConnectionPool(8, 5, TimeUnit.MINUTES))
+            // pingInterval 启用 HTTP/2 keepalive，VPN/自签 CA 抖动时快速发现死连接；
+            // keepAliveDuration 从 5min 降到 2min，缩短空闲连接存活，降低复用已被反代关闭的连接的概率
+            .connectionPool(ConnectionPool(8, 2, TimeUnit.MINUTES))
             .pingInterval(30, TimeUnit.SECONDS)
+            .authenticator(tokenAuthenticator)
             // 添加 Keyguard 使用的 Cloudflare 绕过 headers
             .addInterceptor { chain ->
                 val original = chain.request()
