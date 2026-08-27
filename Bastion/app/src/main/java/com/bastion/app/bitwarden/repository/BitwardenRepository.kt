@@ -913,10 +913,6 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                 val uploadStart = System.currentTimeMillis()
                 BitwardenDiagLogger.append("BitwardenRepository.sync: uploadLocalEntries START vaultId=$vaultId")
                 val uploadResult = syncService.uploadLocalEntries(vault, accessToken, symmetricKey)
-                BitwardenDiagLogger.append(
-                    "BitwardenRepository.sync: uploadLocalEntries DONE took ${System.currentTimeMillis() - uploadStart}ms, " +
-                        "uploaded=${uploadResult.uploaded}, failed=${uploadResult.failed}, vaultId=$vaultId"
-                )
                 val uploadedCount = when (uploadResult) {
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> uploadResult.uploaded
                     else -> 0
@@ -925,15 +921,15 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> uploadResult.failed
                     else -> 0
                 }
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync: uploadLocalEntries DONE took ${System.currentTimeMillis() - uploadStart}ms, " +
+                        "uploaded=$uploadedCount, failed=$uploadFailedCount, vaultId=$vaultId"
+                )
 
                 // 3. 上传本地已修改的条目到服务器（update）
                 val modifiedStart = System.currentTimeMillis()
                 BitwardenDiagLogger.append("BitwardenRepository.sync: uploadModifiedEntries START vaultId=$vaultId")
                 val modifiedUploadResult = syncService.uploadModifiedEntries(vault, accessToken, symmetricKey)
-                BitwardenDiagLogger.append(
-                    "BitwardenRepository.sync: uploadModifiedEntries DONE took ${System.currentTimeMillis() - modifiedStart}ms, " +
-                        "uploaded=${modifiedUploadResult.uploaded}, failed=${modifiedUploadResult.failed}, vaultId=$vaultId"
-                )
                 val modifiedUploadedCount = when (modifiedUploadResult) {
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> modifiedUploadResult.uploaded
                     else -> 0
@@ -942,6 +938,10 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                     is com.bastion.app.bitwarden.service.UploadResult.Success -> modifiedUploadResult.failed
                     else -> 0
                 }
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository.sync: uploadModifiedEntries DONE took ${System.currentTimeMillis() - modifiedStart}ms, " +
+                        "uploaded=$modifiedUploadedCount, failed=$modifiedUploadFailedCount, vaultId=$vaultId"
+                )
 
                 // P1：LOCAL_MUTATION 走「只上传」路径，跳过整库下载（Vaultwarden 无增量同步，
                 // 每次 GET /api/sync 都返回整个保险库，会把新条目上服务器的时间拖到整库下载之后）。
