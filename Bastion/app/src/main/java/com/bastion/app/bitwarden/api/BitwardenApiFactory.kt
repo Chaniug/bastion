@@ -79,12 +79,11 @@ object BitwardenApiFactory {
         if (response.priorResponse != null) return@Authenticator null
         val host = route?.address?.url?.host ?: return@Authenticator null
         val newToken = tokenRefresher?.refreshForHost(host) ?: return@Authenticator null
-        // Authenticator 约定返回 Response（其 request 为新凭证请求），OkHttp 内部会用该 request 重发。
-        // 注意不能只返回 Request 本身（authenticate 签名返回 Response?），否则编译期 Type mismatch。
-        val newRequest = response.request.newBuilder()
+        // OkHttp4 Authenticator.authenticate(route, response) 返回「带新凭证的 Request」（签名 Request?），
+        // OkHttp 内部会自动用该 Request 重新发起请求；不能返回 Response（签名不匹配，编译报错）。
+        response.request.newBuilder()
             .header("Authorization", "Bearer $newToken")
             .build()
-        response.newBuilder().request(newRequest).build()
     }
     
     enum class HeaderProfile {
