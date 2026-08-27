@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.ViewWeek
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Waves
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
