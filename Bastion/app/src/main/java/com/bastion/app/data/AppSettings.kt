@@ -527,6 +527,7 @@ data class AppSettings(
     val passwordPageIconEnabled: Boolean = true, // 密码页图标开关
     val authenticatorPageIconEnabled: Boolean = true, // 验证器页图标开关
     val passkeyPageIconEnabled: Boolean = true, // 通行密钥页图标开关
+    val thirdPartyFaviconEnabled: Boolean = false, // 是否使用第三方服务(DuckDuckGo/Google)补全 favicon；默认关：隐私优先，避免向第三方暴露访问域名
     val unmatchedIconHandlingStrategy: UnmatchedIconHandlingStrategy = UnmatchedIconHandlingStrategy.WEBSITE_OR_TITLE_INITIAL, // 无匹配图标处理策略（默认显示首字母头像）
     val passwordCardDisplayMode: PasswordCardDisplayMode = PasswordCardDisplayMode.SHOW_ALL, // 卡片显示模式
     val passwordCardDisplayFields: List<PasswordCardDisplayField> = PasswordCardDisplayField.DEFAULT_ORDER, // 卡片显示字段（顺序即展示顺序）

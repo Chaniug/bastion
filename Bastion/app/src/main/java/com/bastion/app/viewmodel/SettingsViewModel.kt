@@ -142,6 +142,11 @@ class SettingsViewModel(
 
     fun updateIconCardsEnabled(enabled: Boolean) = commitUpdate { updateIconCardsEnabled(enabled) }
 
+    fun updateThirdPartyFaviconEnabled(enabled: Boolean) {
+        commitUpdate { updateThirdPartyFaviconEnabled(enabled) }
+        com.bastion.app.autofill_ng.ui.FaviconCache.useThirdPartyFavicons = enabled
+    }
+
     fun updateAppLauncherIcon(icon: AppLauncherIcon) = commitUpdate { updateAppLauncherIcon(icon) }
 
     fun updateAppLauncherLabel(label: AppLauncherLabel) = commitUpdate { updateAppLauncherLabel(label) }

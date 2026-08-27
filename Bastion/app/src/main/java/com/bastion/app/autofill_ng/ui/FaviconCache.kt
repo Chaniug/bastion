@@ -40,6 +40,7 @@ object FaviconCache {
     private const val MAX_DISK_CACHE_FILES = 600 // favicon 磁盘缓存文件数上限
     private const val MAX_DISK_CACHE_MB = 24 // favicon 磁盘缓存体积上限（MB）
     private val pruneCounter = AtomicInteger(0) // 节流：每 25 次写入触发一次清理
+    @Volatile var useThirdPartyFavicons: Boolean = false // 是否允许使用第三方服务补全 favicon（隐私开关，默认关）
 
     private val memoryCache = object : LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_BYTES_KB) {
         override fun sizeOf(key: String, value: ImageBitmap): Int {
@@ -141,12 +142,17 @@ object FaviconCache {
      * 站点直连 /favicon.ico 不依赖任何第三方服务（国内可用且最快）；
      * DuckDuckGo 作次选兜底；Google S2 作海外兜底。
      */
-    private fun buildFaviconCandidates(domain: String): List<String> = listOf(
-        "https://$domain/favicon.ico",
-        "https://icons.duckduckgo.com/ip3/$domain.ico",
-        "https://www.google.com/s2/favicons?domain=$domain&sz=64",
-        "https://www.google.com/s2/favicons?domain=$domain&sz=128"
-    )
+    private fun buildFaviconCandidates(domain: String): List<String> {
+        // 默认仅站点直连，不向任何第三方服务暴露访问域名（隐私优先）。
+        // 仅当用户在设置中开启“第三方图标补全”时才追加 DuckDuckGo / Google 兜底源。
+        val candidates = mutableListOf("https://$domain/favicon.ico")
+        if (useThirdPartyFavicons) {
+            candidates += "https://icons.duckduckgo.com/ip3/$domain.ico"
+            candidates += "https://www.google.com/s2/favicons?domain=$domain&sz=64"
+            candidates += "https://www.google.com/s2/favicons?domain=$domain&sz=128"
+        }
+        return candidates
+    }
 
     /**
      * 从单个 URL 拉取 favicon 位图；任何网络异常都返回 null，由调用方尝试下一个源。

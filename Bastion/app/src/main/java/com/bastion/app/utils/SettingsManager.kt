@@ -202,6 +202,7 @@ class SettingsManager(private val context: Context) {
         private val PASSWORD_PAGE_ICON_ENABLED_KEY = booleanPreferencesKey("password_page_icon_enabled") // 密码页图标开关
         private val AUTHENTICATOR_PAGE_ICON_ENABLED_KEY = booleanPreferencesKey("authenticator_page_icon_enabled") // 验证器页图标开关
         private val PASSKEY_PAGE_ICON_ENABLED_KEY = booleanPreferencesKey("passkey_page_icon_enabled") // 通行密钥页图标开关
+        private val THIRD_PARTY_FAVICON_ENABLED_KEY = booleanPreferencesKey("third_party_favicon_enabled") // 第三方 favicon 补全开关（隐私：默认关）
         private val UNMATCHED_ICON_HANDLING_STRATEGY_KEY = stringPreferencesKey("unmatched_icon_handling_strategy") // 无匹配图标处理策略
         private val PASSWORD_CARD_DISPLAY_MODE_KEY = stringPreferencesKey("password_card_display_mode") // 密码卡片显示模式
         private val PASSWORD_CARD_DISPLAY_FIELDS_KEY = stringPreferencesKey("password_card_display_fields") // 密码卡片显示字段
@@ -545,6 +546,7 @@ class SettingsManager(private val context: Context) {
             trashEnabled = preferences[TRASH_ENABLED_KEY] ?: true,
             trashAutoDeleteDays = preferences[TRASH_AUTO_DELETE_DAYS_KEY] ?: 30,
             iconCardsEnabled = preferences[ICON_CARDS_ENABLED_KEY] ?: true,
+            thirdPartyFaviconEnabled = preferences[THIRD_PARTY_FAVICON_ENABLED_KEY] ?: false,
             appLauncherIcon = runCatchingObserved {
                 AppLauncherIcon.valueOf(
                     preferences[APP_LAUNCHER_ICON_KEY] ?: AppLauncherIcon.MODERN.name
@@ -897,6 +899,12 @@ class SettingsManager(private val context: Context) {
     suspend fun updateIconCardsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[ICON_CARDS_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun updateThirdPartyFaviconEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[THIRD_PARTY_FAVICON_ENABLED_KEY] = enabled
         }
     }
 
