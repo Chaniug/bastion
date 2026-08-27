@@ -1799,9 +1799,17 @@ fun SimpleMainScreen(
     }
     LaunchedEffect(bitwardenViewModel, context) {
         bitwardenViewModel.events.collect { event ->
-            if (event is com.bastion.app.bitwarden.viewmodel.BitwardenViewModel.BitwardenEvent.SyncFinished) {
-                val hint = buildBitwardenSyncMiniHint(context, event.summary)
-                enqueueMiniHint(hint.title, hint.supportingText)
+            when (event) {
+                is com.bastion.app.bitwarden.viewmodel.BitwardenViewModel.BitwardenEvent.SyncFinished -> {
+                    val hint = buildBitwardenSyncMiniHint(context, event.summary)
+                    enqueueMiniHint(hint.title, hint.supportingText)
+                }
+                // 主 Vault 界面此前未消费 ShowError：同步失败/超时在这里以 Toast 明确提示，
+                // 避免"感觉没同步"的静默失败（用户点同步后至少能看到失败原因）
+                is com.bastion.app.bitwarden.viewmodel.BitwardenViewModel.BitwardenEvent.ShowError -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+                else -> {}
             }
         }
     }
