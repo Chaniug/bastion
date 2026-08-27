@@ -10,11 +10,13 @@ import androidx.room.withTransaction
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -888,13 +890,36 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                 )
 
                 // 1.5 迁移历史独立 [Passkey] cipher 到密码 cipher（在 uploadLocalEntries 之前，避免待迁移 passkey 被当独立条目上传）
-                val passkeyMergeResult = runCatchingObserved {
-                    historicalPasskeyMergeService.mergeHistoricalStandalonePasskeys(
-                        vault = vault,
-                        accessToken = accessToken,
-                        symmetricKey = symmetricKey
+                // 超时保护：该流程含网络请求（legacy 字段 cleanup 会对 vault 内全部条目逐个 GET /ciphers/{id}），
+                // 连接池死连接/网络慢时曾把同步挂死（表现为"清缓存后才能同步成功"）。15s 超时则跳过迁移，
+                // 不阻塞主同步（迁移可下轮重试）。
+                val passkeyMergeStart = System.currentTimeMillis()
+                val passkeyMergeResult = try {
+                    withTimeout(15_000L) {
+                        runCatchingObserved {
+                            historicalPasskeyMergeService.mergeHistoricalStandalonePasskeys(
+                                vault = vault,
+                                accessToken = accessToken,
+                                symmetricKey = symmetricKey
+                            )
+                        }.getOrNull()
+                    }
+                } catch (e: TimeoutCancellationException) {
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository passkeyMerge TIMEOUT: vaultId=$vaultId, exceeded 15s, skipped"
                     )
-                }.getOrNull()
+                    null
+                } catch (e: Exception) {
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository passkeyMerge EXCEPTION: vaultId=$vaultId, type=${e::class.simpleName}, msg=${e.message}"
+                    )
+                    null
+                }
+                BitwardenDiagLogger.append(
+                    "BitwardenRepository passkeyMerge DONE: vaultId=$vaultId, " +
+                        "took ${System.currentTimeMillis() - passkeyMergeStart}ms, result=" +
+                        (passkeyMergeResult?.let { "merged=${it.mergedPasskeys}, deleted=${it.deletedStandaloneCiphers}" } ?: "skipped")
+                )
                 if (passkeyMergeResult != null && (
                         passkeyMergeResult.mergedPasskeys > 0 ||
                             passkeyMergeResult.deletedStandaloneCiphers > 0 ||

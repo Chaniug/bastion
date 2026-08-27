@@ -30,12 +30,13 @@ import com.bastion.app.data.bitwarden.BitwardenVault
  * 模式参考：BitwardenHistoricalTotpRepairService（遍历本地 → GET 对比 → 更新 → 交统一 sync）。
  */
 class BitwardenHistoricalPasskeyMergeService(
-    context: Context,
+    private val context: Context,
     private val apiManager: BitwardenApiManager = BitwardenApiManager(),
     private val uploadProcessor: CipherUploadProcessor = CipherUploadProcessor(context)
 ) {
     companion object {
         private const val TAG = "BwHistoricalPasskeyMerge"
+        private const val PREFS_NAME = "bw_historical_merge_meta"
     }
 
     private val database = PasswordDatabase.getDatabase(context)
@@ -196,6 +197,17 @@ class BitwardenHistoricalPasskeyMergeService(
         accessToken: String,
         symmetricKey: SymmetricCryptoKey
     ): Int {
+        // 完成标记（vault 级）：首次跑完后置位，后续同步直接跳过。
+        // 该函数会对 vault 内全部密码条目逐个发 GET /ciphers/{id} 检查 legacy 字段
+        //（216+ 次网络请求），连接池死连接/网络慢时会把同步挂死（表现为"清缓存后才能同步成功"）。
+        // legacy 字段只存在于旧版本数据，新代码不再写入，一次性清理即可，无需每次同步全量重扫。
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val markerKey = "legacy_bindings_cleanup_done_${vault.id}"
+        if (prefs.getBoolean(markerKey, false)) {
+            Log.i(TAG, "Skip legacy bindings cleanup (marker set): vaultId=${vault.id}")
+            return 0
+        }
+
         val candidates = passwordEntryDao.getByBitwardenVaultId(vault.id)
             .filter { !it.isDeleted && !it.bitwardenCipherId.isNullOrBlank() }
         if (candidates.isEmpty()) return 0
@@ -248,6 +260,8 @@ class BitwardenHistoricalPasskeyMergeService(
                 Log.w(TAG, "Clean legacy field exception for entry ${entry.id}: ${e.message}")
             }
         }
+        // 跑完即置位（无论清理了多少；新数据不再带 legacy 字段，一次性清理即可）
+        prefs.edit().putBoolean(markerKey, true).apply()
         return cleaned
     }
 
