@@ -32,6 +32,58 @@
 - `deploy-pages.yml`、`Desktop-Build.yml` 同样仅触发 `dev`。
 - 推送注意：`gh-proxy.com` 镜像 + GitHub API 真实直连 IP；限流时优先用 `git ls-remote` / shields.io badge 绕开（user `26280126` 共享额度易耗尽）。
 
+### 3.1 排错环境：直连不通 + 代理"假限流"（必读）
+
+沙箱内 `api.github.com`、`github.com`、`dl.google.com` 均为**直连不通**（HTTP 000，非超时非 403），
+只有 `gh-proxy.com` 可达。由此派生两个坑：
+
+**坑 1：本地无法编译。** `dl.google.com` 被阻断 → 装不了 Android SDK → 无法在本地跑
+`./gradlew :app:assembleDebug`。所有编译错误只能靠推到 `dev` 看 CI 反馈，
+一轮往返约 8–10 分钟。**因此提交前务必逐项静态自检**（见 3.2），别把低级错误推上去浪费轮次。
+
+**坑 2：gh-proxy 会缓存 403，表现为"假限流"。**
+查 `/rate_limit` 明明 `remaining: 5000/5000`，实际请求却持续返回 403，
+且报错里的 user ID 在 `26280126` / `108915192` / `10094017` 之间反复横跳——
+这是代理池不同出口身份的配额状况被缓存后串在一起回吐。
+
+解法：每个请求带随机 cache-buster 绕过代理缓存，实测首次即通：
+
+```bash
+curl -sL "https://gh-proxy.com/https://api.github.com/repos/Chaniug/bastion/actions/runs/33159066546?_cb=$RANDOM$RANDOM" \
+  -H "Authorization: Bearer $GH_TOKEN" -H "Cache-Control: no-cache"
+```
+
+**取 CI 报错的最优通道是 annotations，不要下载日志。** 日志走
+`blob.core.windows.net`，在该环境会被 DNS 劫持到保留段，拿不到数据；
+而 annotation 走 checks API，稳定可读。`main.yml` 的
+"Build Debug APK" 步骤会把 `e: ` 开头的编译错误逐条打成 annotation：
+
+```bash
+curl -sL "https://gh-proxy.com/https://api.github.com/repos/Chaniug/bastion/check-runs/<JOB_ID>/annotations?per_page=100&_cb=$RANDOM$RANDOM" \
+  -H "Authorization: Bearer $GH_TOKEN" -H "Cache-Control: no-cache"
+```
+
+### 3.2 无法本地编译时的提交前自检清单
+
+按顺序过一遍，能拦掉绝大多数编译错误：
+
+1. **新增枚举值 / sealed 子类** → 全局搜该类型，检查所有 `when` 是否穷尽（无 `else` 的一定会挂）。
+   实测踩过两次：`WebDavErrorKind` 加 3 个值挂了 `WebDavHelper.buildConnectionErrorMessage`；
+   `KeePassErrorCode` 加 4 个值挂了 `ImportFormatDetection.keepassImportSuggestion`。
+2. **新增函数 / 常量引用** → 逐个 `grep` 确认符号存在，别凭记忆写签名（优先看声明处的完整参数表）。
+3. **第三方 API 的嵌套类型** → 确认是顶层类还是父接口的嵌套接口。
+   实测踩过：MSAL 的 `RemoveAccountCallback` 是
+   `IMultipleAccountPublicClientApplication.RemoveAccountCallback`，**不存在顶层类**，写顶层 import 会报
+   Unresolved reference。
+4. **空安全** → `takeIf { }` 的返回值是可空的，后面不能直接 `.ifBlank {}` / `.length`，
+   需拆成非空变量与可空变量两个。
+5. **UI 里赋值的状态变量** → 确认该 `var` 在当前文件确实存在。
+   实测踩过：在 A 文件写了 `browserEntries = emptyList()`，但该变量只在同名的 B 文件声明。
+6. **Kotlin 不可重入锁** → `Mutex` 不是 `ReentrantLock`，外层已 `withLock` 的函数不能再对内层的同名锁 `withLock`，会死锁。
+   加锁点应放在公开入口，内部私有函数不加锁。
+7. **XML** → `python3 -c "import xml.etree.ElementTree as ET; ET.parse('.../strings.xml')"` 验结构；
+   并确认新增 string 的 name 与代码引用完全一致。
+
 ---
 
 ## 4. 提交历史归纳（按主题）
@@ -85,10 +137,30 @@
 | 9 | Via 系统 WebView 密码框填不进 | dataset 回填在系统 WebView 内核下不可靠 | 解析器保留密码候选 + 直填路径修正 | `Via系统WebView密码框回填不可靠修复计划` |
 | 10 | OneDrive 登录 `invalid_request: redirect_uri` | Azure 门户 redirect URI 配置与代码不一致 | 修正 Azure 应用注册 / 回环地址（或自注册 Azure 应用） | `onedrive-login-bug-diagnosis` |
 | 11 | 清空所有数据失效 + TOTP 双显示/消失 | K2 suspend lambda 跨文件解析缺陷 + 重复 TOTP 合并逻辑 | 修复 lambda 作用域、收敛 TOTP 去重 | `83de32e0` `d4003067` |
+| 12 | **OneDrive 大库上传生成 `file 1.kdbx` 副本而非覆盖（数据丢失）** | `Json { ignoreUnknownKeys = true }` 缺 `encodeDefaults`，`UploadSessionRequestDto` 退化为 `{}`，`conflictBehavior=replace` 未发出，Graph 按默认 rename 处理 | 补 `encodeDefaults = true`（桌面端已是如此，勿改回） | `e0102bc0` |
+| 13 | **OneDrive 无法切换/注销账户** | 完全没有注销路径；且单一缓存账户下 `Prompt.SELECT_ACCOUNT` 被 MSAL 优化为静默登录，点了"切换账户"仍是原账号 | 新增 `signOut()` 调 MSAL `removeAccount` + UI"退出登录"按钮；切换时改 `Prompt.LOGIN` 强制重新认证 | `e0102bc0` |
+| 14 | **WebDAV 多设备首次上传互相静默覆盖** | 首次上传直接 `sardine.put` 无条件写 | 改条件写 `If-None-Match: *`（`WebDavWriteMode.CREATE_ONLY`），已存在则拒绝并提示重新同步 | `e0102bc0` |
+| 15 | **本地改动永不上传，界面却显示同步成功** | `runCatchingObserved { stat() }.getOrDefault(FileSourceStat())` 把 token 过期/网络超时降级成全空对象，被误判为"远端无变化"而跳过上传 | 新增 `remoteStatOrNull()`，区分"远端不存在"（返回 null）与"读取失败"（抛 IOException） | `e0102bc0` |
+| 16 | 连点同步 / 前后台并发导致互相覆盖 | `stat→read→merge→write` 非原子，两条链路交错 | 按 `databaseId` 加 `Mutex` 串行化（注意 `Mutex` 不可重入，锁只能加在公开入口） | `e0102bc0` |
+| 17 | WebDAV 条件写被 412 拒绝 / 版本比对误报"远端已变化" | Nextcloud 等返回弱校验 ETag `W/"abc"`，直接用作 `If-Match` 值或字符串比对 | 新增 `normalizeEtag()` 剥离 `W/` 前缀与引号，`stat()` 与 `matchesExpectedVersion` 统一走归一化 | `e0102bc0` |
+| 18 | 多 MB kdbx 上传总超时，但小文件备份正常 | `WebDavGateway` 的 `callTimeout=15s` 覆盖整通调用（含请求体上传） | 新增 `buildBulkClient()`：write 120s / call 300s，kdbx 同步专用 | `e0102bc0` |
+| 19 | 服务器返回超大 `Retry-After` 导致同步永久卡死 | 盲目信任服务端值，且该状态持久化跨进程生效 | `MAX_RETRY_AFTER_MS = 5min` 截断 | `e0102bc0` |
+| 20 | KDBX 打开失败只提示"格式不支持或文件已损坏" | 6 类 `FormatError` 塌缩为同一提示，用户无法自助处理 | 拆为版本过新 / 非 KDBX / 文件损坏三类独立提示；新增 Challenge-Response（YubiKey）判定并置于"密码错误"之前（否则被误报为密码错误） | `e0102bc0` |
+| 21 | WebDAV 507/423/409/412 被归为 Unknown | `classifySardine` 未覆盖这些状态码 | 补 `InsufficientStorage` / `Locked` / `PreconditionFailed` 分类及中文提示 | `e0102bc0` |
 
 ---
 
 ## 6. 当前状态与未决项
+
+- **已稳定**：Bitwarden 同步卡死系列（#1–#5）已随 `aff292c1` 合 main，CI 在 `dev` 双绿。
+- **本轮（#12–#21）**：KDBX / OneDrive / WebDAV 三模块修复已在 `dev` CI #510 双绿
+  （`4cc912bc`，含 APK 发布到 preview Release），**待真机验证后合 main**。
+- **已知边界**：passkey 解绑场景不会自动从密码 cipher 移除旧 credential；多设备并发追加 passkey 极短覆盖窗口（已缓解）。
+- **本轮遗留 / 未做**：
+  - 未用真实 KDBX 3.1 / 4.0 / 4.1 样本做兼容性回归（沙箱装不了 SDK，只能靠 CI 编译验证）。
+  - kotpass 版本升级评估未做（当前 0.10.0）。
+  - OneDrive 分片上传重试未覆盖"服务端已接收但响应丢失"的幂等重传（当前重试会重发整片，依赖 Content-Range 幂等性）。
+- **待续方向**：本地数据库统一同步架构重构（三条同步通路归一）、KEEPASS 独立客户端化、桌面端 Phase 5 三 Tab UI 完善。
 
 - **已稳定**：Bitwarden 同步卡死系列（#1–#5）已随 `aff292c1` 合 main，CI 在 `dev` 双绿。
 - **已知边界**：passkey 解绑场景不会自动从密码 cipher 移除旧 credential；多设备并发追加 passkey 极短覆盖窗口（已缓解）。

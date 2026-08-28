@@ -1,112 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" width="420" height="420" role="img" aria-label="Bastion 保险库核心">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Bastion fortress shield with golden keyhole">
+  <title>Bastion fortress shield with golden keyhole</title>
   <defs>
-    <radialGradient id="blueGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#2E7CC8" stop-opacity="0.5"/>
-      <stop offset="60%" stop-color="#1E5FA8" stop-opacity="0.14"/>
-      <stop offset="100%" stop-color="#1E5FA8" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.55"/>
+    <radialGradient id="h" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F5B942" stop-opacity="0.24"/>
+      <stop offset="55%" stop-color="#F5B942" stop-opacity="0.08"/>
       <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="ringGrad" x1="120" y1="90" x2="300" y2="330" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#9FD4FF"/>
-      <stop offset="0.5" stop-color="#2E7FC8"/>
-      <stop offset="1" stop-color="#0A2A4D"/>
+    <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#9FD4FF" stop-opacity="0.28"/>
+      <stop offset="55%" stop-color="#4A82C4" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#0B2E52" stop-opacity="0.55"/>
     </linearGradient>
-    <radialGradient id="core" cx="50%" cy="38%" r="62%">
-      <stop offset="0" stop-color="#FFF0CC"/>
-      <stop offset="0.5" stop-color="#F5B942"/>
-      <stop offset="1" stop-color="#B9760F"/>
-    </radialGradient>
-    <linearGradient id="ray" x1="0" y1="60" x2="0" y2="5" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F5B942" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    <linearGradient id="e" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#BFE4FF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#9FD4FF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5E9BD6" stop-opacity="0.35"/>
     </linearGradient>
-    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+    <linearGradient id="s" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="38%" stop-color="#FFFFFF" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="go" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE6A8"/>
+      <stop offset="48%" stop-color="#F5B942"/>
+      <stop offset="100%" stop-color="#B9760F"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
 
-    <!-- 单根光射线 -->
-    <path id="ray" d="M204 60 L210 5 L216 60 Z" fill="url(#ray)"/>
-    <!-- 库门外环刻度 -->
-    <line id="tick" x1="210" y1="46" x2="210" y2="60" stroke="#9FD4FF" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
-    <!-- 径向辐条 -->
-    <line id="spoke" x1="210" y1="152" x2="210" y2="104" stroke="#9FD4FF" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
+    <!-- 几何堡垒：顶部 4 垛 + 收腰 + 尖底。中心 (200,190) -->
+    <path id="keep" d="M 128 130
+      L 139 130 L 139 110 L 157 110 L 157 130
+      L 172 130 L 172 108 L 190 108 L 190 130
+      L 210 130 L 210 108 L 228 108 L 228 130
+      L 243 130 L 243 110 L 261 110 L 261 130
+      L 272 130 L 272 152 L 259 166 L 259 216
+      C 259 250 235 276 200 292
+      C 165 276 141 250 141 216
+      L 141 166 L 128 152 Z"/>
   </defs>
 
-  <!-- 背后蓝色光晕 -->
-  <circle cx="210" cy="210" r="200" fill="url(#blueGlow)" filter="url(#soft)"/>
+  <rect width="400" height="400" fill="none"/>
+  <ellipse cx="200" cy="190" rx="180" ry="170" fill="url(#h)"/>
+  <circle cx="200" cy="190" r="156" fill="none" stroke="#9FD4FF" stroke-opacity="0.13" stroke-width="1.5"/>
+  <circle cx="200" cy="190" r="176" fill="none" stroke="#F5B942" stroke-opacity="0.18"
+          stroke-width="1" stroke-dasharray="3 12" stroke-linecap="round"/>
 
-  <!-- 光射线（12 根） -->
   <g>
-    <use href="#ray"/>
-    <use href="#ray" transform="rotate(30 210 210)"/>
-    <use href="#ray" transform="rotate(60 210 210)"/>
-    <use href="#ray" transform="rotate(90 210 210)"/>
-    <use href="#ray" transform="rotate(120 210 210)"/>
-    <use href="#ray" transform="rotate(150 210 210)"/>
-    <use href="#ray" transform="rotate(180 210 210)"/>
-    <use href="#ray" transform="rotate(210 210 210)"/>
-    <use href="#ray" transform="rotate(240 210 210)"/>
-    <use href="#ray" transform="rotate(270 210 210)"/>
-    <use href="#ray" transform="rotate(300 210 210)"/>
-    <use href="#ray" transform="rotate(330 210 210)"/>
+    <use href="#keep" fill="none" stroke="#9FD4FF" stroke-opacity="0.35" stroke-width="6" filter="url(#glow)"/>
+    <use href="#keep" fill="url(#g)"/>
+    <use href="#keep" fill="none" stroke="url(#e)" stroke-width="2.5" stroke-linejoin="round"/>
+    <use href="#keep" fill="url(#s)"/>
   </g>
 
-  <!-- 金色轨道环 -->
-  <circle cx="210" cy="210" r="178" fill="none" stroke="#F5B942" stroke-opacity="0.42" stroke-width="2" stroke-dasharray="2 22"/>
-  <circle cx="392" cy="392" r="5" fill="#F5B942"/>
-  <circle cx="392" cy="392" r="10" fill="#F5B942" fill-opacity="0.25"/>
-
-  <!-- 库门外环（金属渐变 + 刻度） -->
-  <circle cx="210" cy="210" r="150" fill="none" stroke="url(#ringGrad)" stroke-width="20"/>
-  <g>
-    <use href="#tick"/>
-    <use href="#tick" transform="rotate(15 210 210)"/>
-    <use href="#tick" transform="rotate(30 210 210)"/>
-    <use href="#tick" transform="rotate(45 210 210)"/>
-    <use href="#tick" transform="rotate(60 210 210)"/>
-    <use href="#tick" transform="rotate(75 210 210)"/>
-    <use href="#tick" transform="rotate(90 210 210)"/>
-    <use href="#tick" transform="rotate(105 210 210)"/>
-    <use href="#tick" transform="rotate(120 210 210)"/>
-    <use href="#tick" transform="rotate(135 210 210)"/>
-    <use href="#tick" transform="rotate(150 210 210)"/>
-    <use href="#tick" transform="rotate(165 210 210)"/>
-    <use href="#tick" transform="rotate(180 210 210)"/>
-    <use href="#tick" transform="rotate(195 210 210)"/>
-    <use href="#tick" transform="rotate(210 210 210)"/>
-    <use href="#tick" transform="rotate(225 210 210)"/>
-    <use href="#tick" transform="rotate(240 210 210)"/>
-    <use href="#tick" transform="rotate(255 210 210)"/>
-    <use href="#tick" transform="rotate(270 210 210)"/>
-    <use href="#tick" transform="rotate(285 210 210)"/>
-    <use href="#tick" transform="rotate(300 210 210)"/>
-    <use href="#tick" transform="rotate(315 210 210)"/>
-    <use href="#tick" transform="rotate(330 210 210)"/>
-    <use href="#tick" transform="rotate(345 210 210)"/>
+  <g filter="url(#glow)" opacity="0.6">
+    <circle cx="200" cy="177" r="14" fill="#F5B942"/>
+    <path d="M 190 183 L 210 183 L 213 212 L 187 212 Z" fill="#F5B942"/>
   </g>
-
-  <!-- 内环 + 径向辐条 -->
-  <circle cx="210" cy="210" r="112" fill="none" stroke="#9FD4FF" stroke-opacity="0.30" stroke-width="2"/>
   <g>
-    <use href="#spoke"/>
-    <use href="#spoke" transform="rotate(30 210 210)"/>
-    <use href="#spoke" transform="rotate(60 210 210)"/>
-    <use href="#spoke" transform="rotate(90 210 210)"/>
-    <use href="#spoke" transform="rotate(120 210 210)"/>
-    <use href="#spoke" transform="rotate(150 210 210)"/>
-    <use href="#spoke" transform="rotate(180 210 210)"/>
-    <use href="#spoke" transform="rotate(210 210 210)"/>
-    <use href="#spoke" transform="rotate(240 210 210)"/>
-    <use href="#spoke" transform="rotate(270 210 210)"/>
-    <use href="#spoke" transform="rotate(300 210 210)"/>
-    <use href="#spoke" transform="rotate(330 210 210)"/>
+    <circle cx="200" cy="177" r="14" fill="url(#go)"/>
+    <path d="M 190 183 L 210 183 L 213 212 L 187 212 Z" fill="url(#go)"/>
+    <circle cx="200" cy="177" r="14" fill="none" stroke="#7A4E07" stroke-opacity="0.35" stroke-width="1"/>
   </g>
-
-  <!-- 金色内核 -->
-  <circle cx="210" cy="210" r="74" fill="url(#coreGlow)" filter="url(#soft)"/>
-  <circle cx="210" cy="210" r="50" fill="url(#core)" stroke="#C98A1E" stroke-width="1.5"/>
-  <circle cx="210" cy="202" r="12" fill="#0A2A4D"/>
-  <path d="M204 209 L216 209 L219 234 L201 234 Z" fill="#0A2A4D"/>
-  <ellipse cx="200" cy="197" rx="5" ry="3.4" fill="#FFFFFF" fill-opacity="0.7"/>
 </svg>

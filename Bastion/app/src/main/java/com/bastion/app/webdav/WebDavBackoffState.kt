@@ -34,6 +34,9 @@ object WebDavBackoffState {
     internal const val EXPONENTIAL_BASE_MS: Long = 1_000L
     internal const val EXPONENTIAL_CAP_MS: Long = 60_000L
 
+    /** 服务器指定 Retry-After 的可接受上限（5 分钟），超过则截断。 */
+    private const val MAX_RETRY_AFTER_MS: Long = 5 * 60_000L
+
     private val hosts = ConcurrentHashMap<String, HostState>()
 
     @Volatile
@@ -66,7 +69,10 @@ object WebDavBackoffState {
             val attempt = state.rateLimitTimestamps.size
 
             val waitMs = if (retryAfterMillis != null && retryAfterMillis > 0L) {
-                retryAfterMillis
+                // 服务器返回的 Retry-After 可能是异常巨大值（故障或被恶意构造），
+                // 而该状态会持久化并跨进程生效，直接信任会让同步永久卡死。
+                // 这里截断到与指数退避同样的上限。
+                retryAfterMillis.coerceAtMost(MAX_RETRY_AFTER_MS)
             } else {
                 computeExponentialWait(attempt)
             }

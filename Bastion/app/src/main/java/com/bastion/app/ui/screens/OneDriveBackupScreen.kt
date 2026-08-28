@@ -461,7 +461,15 @@ fun OneDriveBackupScreen(
                                 loadingEntries = false
                                 loadingBackups = false
                                 coroutineScope.launch {
-                                    val signInResult = runCatchingObserved { authManager.signIn(activity) }
+                                    // 已登录时点「切换账户」：先移除 MSAL 缓存账户，
+                                    // 再强制 LOGIN 提示，否则会被旧账户静默登录，等于没切换。
+                                    val switching = session != null
+                                    if (switching) {
+                                        runCatchingObserved { authManager.signOut(session?.accountId) }
+                                    }
+                                    val signInResult = runCatchingObserved {
+                                        authManager.signIn(activity, forceAccountChooser = switching)
+                                    }
                                     signingIn = false
                                     signInResult
                                         .onSuccess { result ->

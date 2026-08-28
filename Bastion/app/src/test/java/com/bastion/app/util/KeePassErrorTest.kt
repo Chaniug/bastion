@@ -19,11 +19,28 @@ class KeePassErrorTest {
         assertEquals(KeePassErrorCode.INVALID_CREDENTIAL, ex.code)
     }
 
+    // 原先 UnsupportedVersion 与选错文件、文件损坏一并塌缩为 FORMAT_UNSUPPORTED，
+    // 用户只看到一句"格式不支持或文件已损坏"，无法自助处理。
+    // 现已拆分为三类独立错误码，此处断言同步更新为 FORMAT_VERSION_TOO_NEW。
     @Test
-    fun unsupportedVersion_mapsToFormatUnsupported() {
+    fun unsupportedVersion_mapsToFormatVersionTooNew() {
         val ex = FormatError.UnsupportedVersion("File version is not supported.")
             .toKeePassOperationException()
-        assertEquals(KeePassErrorCode.FORMAT_UNSUPPORTED, ex.code)
+        assertEquals(KeePassErrorCode.FORMAT_VERSION_TOO_NEW, ex.code)
+    }
+
+    @Test
+    fun unknownFormat_mapsToFormatNotKdbx() {
+        val ex = FormatError.UnknownFormat("Not a KDBX file.")
+            .toKeePassOperationException()
+        assertEquals(KeePassErrorCode.FORMAT_NOT_KDBX, ex.code)
+    }
+
+    @Test
+    fun invalidContent_mapsToFormatCorrupted() {
+        val ex = FormatError.InvalidContent("Failed to parse content.")
+            .toKeePassOperationException()
+        assertEquals(KeePassErrorCode.FORMAT_CORRUPTED, ex.code)
     }
 
     @Test

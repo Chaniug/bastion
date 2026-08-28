@@ -206,7 +206,13 @@ fun KeepassOneDriveBrowserBottomSheet(
                                 isConnecting = true
                                 browserError = null
                                 coroutineScope.launch {
-                                    runCatchingObserved { authManager.signIn(activity) }
+                                    // 已登录时点「切换账户」必须强制走 LOGIN 提示，
+                                    // 否则 MSAL 会用第一个缓存账户静默登录，等于没切换。
+                                    val switching = session != null
+                                    if (switching) {
+                                        runCatchingObserved { authManager.signOut(session?.accountId) }
+                                    }
+                                    runCatchingObserved { authManager.signIn(activity, forceAccountChooser = switching) }
                                         .onSuccess { result ->
                                             session = result
                                             currentPath = ""
@@ -229,6 +235,24 @@ fun KeepassOneDriveBrowserBottomSheet(
                                 if (session == null) stringResource(R.string.keepass_onedrive_sign_in_action)
                                 else stringResource(R.string.keepass_onedrive_switch_account)
                             )
+                        }
+                        if (session != null) {
+                            OutlinedButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isConnecting = true
+                                        runCatchingObserved { authManager.signOut(session?.accountId) }
+                                        isConnecting = false
+                                        session = null
+                                        currentPath = ""
+                                        connectionState = KeepassOneDriveConnectionState.NotConnected
+                                        browserError = null
+                                    }
+                                },
+                                enabled = !isConnecting && !isLoadingEntries
+                            ) {
+                                Text(stringResource(R.string.keepass_onedrive_sign_out_action))
+                            }
                         }
                     }
                 }

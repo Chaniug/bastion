@@ -33,12 +33,12 @@ class WebDavKeePassFileSource(
     private val normalizedServerUrl = serverUrl.trim().trimEnd('/')
     private val normalizedRemotePath = normalizeOptionalRemotePath(remotePath)
     private val remoteUrl = buildRemoteUrl(normalizedServerUrl, normalizedRemotePath)
+    // 经由 WebDavGateway 构造，复用统一的拦截器链（预置式 Basic Auth / 限流 / UA）与超时配置。
+    // 旧实现用裸 `OkHttpSardine()` + setCredentials()，会绕过网关：
+    // 既没有超时与限流保护，双重设置凭据还会走 challenge-response，与网关注释要求相反。
     private val sardine by lazy {
-        OkHttpSardine().apply {
-            if (username.isNotBlank() || password.isNotBlank()) {
-                setCredentials(username.trim(), password)
-            }
-        }
+        // kdbx 密码库动辄数 MB，用大文件档位，避免被 15s callTimeout 掐断。
+        WebDavGateway.buildBulkClient(WebDavCredentials(username.trim(), password))
     }
 
     /**
@@ -57,10 +57,13 @@ class WebDavKeePassFileSource(
         requireRemotePath()
         val resource = resolveResource(remoteUrl)
         if (resource != null) {
-            val etag = resource.etag?.takeIf { it.isNotBlank() }
+            val etag = normalizeEtag(resource.etag)
+            val etagOrNull = etag.takeIf { it.isNotBlank() }
             return@withContext FileSourceStat(
-                versionToken = etag ?: resource.modified?.time?.toString() ?: resource.contentLength?.toString(),
-                etag = etag,
+                versionToken = etagOrNull
+                    ?: resource.modified?.time?.toString()
+                    ?: resource.contentLength?.toString(),
+                etag = etagOrNull,
                 lastModified = resource.modified?.time,
                 sizeBytes = resource.contentLength,
                 isDirectory = resource.isDirectory,
@@ -131,8 +134,21 @@ class WebDavKeePassFileSource(
                 sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
             }
         } else {
-            // 首次上传/强制覆盖：直接写入
-            sardine.put(remoteUrl, bytes, KEEPASS_KDBX_MIME_TYPE)
+            // 首次上传/强制覆盖：
+            // 旧实现是直接 sardine.put 无条件覆盖，多设备同时首次上传（或清库后重绑）
+            // 会互相静默覆盖，属于数据丢失。改为 If-None-Match: *，让服务端在文件已存在时
+            // 直接拒绝，交由上层提示用户重新同步，而不是盲目覆盖别人的数据。
+            try {
+                conditionalWriter.write(
+                    targetUrl = remoteUrl,
+                    bytes = bytes,
+                    mode = WebDavWriteMode.CREATE_ONLY,
+                    // CREATE_ONLY 语义即"仅当不存在时写入"，无需 If-Match 值
+                    expectedVersion = null
+                )
+            } catch (e: WebDavPreconditionException) {
+                throw IOException("远端文件已存在，请先重新同步后再上传", e)
+            }
         }
 
         // 读回校验：部分 WebDAV 供应商可能返回成功但未完整写入（截断/损坏）。
@@ -315,12 +331,28 @@ class WebDavKeePassFileSource(
     }
 
     private fun FileSourceStat.matchesExpectedVersion(expectedVersion: String): Boolean {
-        val expected = expectedVersion.trim()
+        val expected = normalizeEtag(expectedVersion)
         return expected.isBlank() ||
-            expected == etag ||
+            expected == normalizeEtag(etag) ||
             expected == versionToken ||
             expected == lastModified?.toString() ||
             expected == sizeBytes?.toString()
+    }
+
+    /**
+     * ETag 归一化：剥离弱校验前缀 `W/` 与包裹引号。
+     *
+     * Nextcloud / ownCloud 等实现常返回 `W/"abc"` 或 `"abc"` 形式，
+     * 直接作为 If-Match 值或做字符串比对，会被部分服务器以 412 拒绝，
+     * 或导致版本比对失败而误报"远端已变化"。
+     */
+    private fun normalizeEtag(raw: String?): String {
+        if (raw.isNullOrBlank()) return ""
+        return raw.trim()
+            .removePrefix("W/")
+            .removePrefix("w/")
+            .trim()
+            .trim('"')
     }
 
     companion object {

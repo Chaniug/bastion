@@ -399,6 +399,9 @@ class KeePassKdbxService(
         private val databaseMutationMutexes = mutableMapOf<Long, Mutex>()
         // 同一数据库首次打开时只允许一个入口执行解码，避免验证/读取并发触发重复开库。
         private val databaseLoadMutexes = mutableMapOf<Long, Mutex>()
+        // 同一远端数据库的「同步」必须串行化：stat→read→merge→write 是非原子的多步序列，
+        // 用户连点或后台 AutoBackupWorker 与前台同时跑时，两条链路交错会互相覆盖（数据丢失）。
+        private val remoteSyncMutexes = mutableMapOf<Long, Mutex>()
         // 按数据库 ID 维护进程级已解锁会话；不同调用入口共享同一次 KDBX 解码结果。
         private val loadedDatabaseCache = LinkedHashMap<Long, CachedLoadedDatabase>(4, 0.75f, true)
         private var activeDatabaseId: Long? = null
@@ -424,6 +427,12 @@ class KeePassKdbxService(
         private fun remoteUploadMutex(databaseId: Long): Mutex {
             return synchronized(remoteUploadMutexes) {
                 remoteUploadMutexes.getOrPut(databaseId) { Mutex() }
+            }
+        }
+
+        private fun remoteSyncMutex(databaseId: Long): Mutex {
+            return synchronized(remoteSyncMutexes) {
+                remoteSyncMutexes.getOrPut(databaseId) { Mutex() }
             }
         }
 
@@ -671,15 +680,22 @@ class KeePassKdbxService(
         }
     }
 
-    suspend fun syncRemoteDatabase(databaseId: Long): Result<KeePassRemoteSyncResult> = withContext(Dispatchers.IO) {
-        try {
+    suspend fun syncRemoteDatabase(databaseId: Long): Result<KeePassRemoteSyncResult> =
+        remoteSyncMutex(databaseId).withLock {
+            withContext(Dispatchers.IO) {
+                syncRemoteDatabaseInternal(databaseId)
+            }
+        }
+
+    private suspend fun syncRemoteDatabaseInternal(databaseId: Long): Result<KeePassRemoteSyncResult> {
+        return try {
             val database = dao.getDatabaseById(databaseId)
                 ?: throw IOException("数据库不存在")
             val syncedDatabaseName = database.name
             // JSON / CSV 格式的 Bastion 数据库走独立的「文件字节 <-> Room 条目」同步链路，
             // 复用同一套来源 / 工作副本 / 远端 FileSource 抽象。
             if (database.databaseFormat != BastionDatabaseFormat.KDBX) {
-                return@withContext syncBastionDatabaseFile(databaseId)
+                return syncBastionDatabaseFile(databaseId)
             }
             if (!database.isRemoteSource() || database.sourceId == null) {
                 throw IllegalArgumentException("当前数据库不是远端来源")
@@ -708,7 +724,7 @@ class KeePassKdbxService(
             val baseHash = syncState?.baseHash
             syncService.markComparing(databaseId, workingHash)
 
-            val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
+            val remoteStat = remoteStatOrNull(fileSource, "syncRemoteDatabase")
 
             // 优化：远端自上次同步后未变化且本地无改动时，跳过整文件下载，直接判定为最新状态，
             // 避免每次进入页面/切设置都全量拉取整个 kdbx 文件。仅当存在同步基线（baseHash 非空）
@@ -716,11 +732,11 @@ class KeePassKdbxService(
             // etag 与 versionToken 任一匹配即视为远端未变（兼容 OneDrive/WebDAV 等不同远端实现）。
             val localHasChangesFast = if (baseHash.isNullOrBlank()) null else baseHash != workingHash
             val remoteEtagMatches = syncState?.remoteEtag != null &&
-                remoteStat.etag != null &&
-                remoteStat.etag == syncState?.remoteEtag
+                remoteStat?.etag != null &&
+                remoteStat?.etag == syncState?.remoteEtag
             val remoteVersionMatches = syncState?.remoteVersionToken != null &&
-                remoteStat.versionToken != null &&
-                remoteStat.versionToken == syncState?.remoteVersionToken
+                remoteStat?.versionToken != null &&
+                remoteStat?.versionToken == syncState?.remoteVersionToken
             if (localHasChangesFast == false && (remoteEtagMatches || remoteVersionMatches)) {
                 syncService.markSynchronized(
                     databaseId = databaseId,
@@ -730,7 +746,7 @@ class KeePassKdbxService(
                     workingHash = workingHash
                 )
                 invalidateProcessCache(databaseId)
-                return@withContext Result.success(
+                return Result.success(
                     KeePassRemoteSyncResult(syncedDatabaseName, "远端已是最新状态")
                 )
             }
@@ -750,7 +766,7 @@ class KeePassKdbxService(
 
             Log.i(
                 TAG,
-                "KeePass remote sync compare databaseId=$databaseId source=${database.sourceType} localHash=${workingHash.take(12)} remoteHash=${remoteHash.take(12)} baseHash=${baseHash?.take(12)} localChanged=$localHasChanges remoteChanged=$remoteHasChanges remoteVersion=${(remoteStat.etag ?: remoteStat.versionToken).orEmpty()}"
+                "KeePass remote sync compare databaseId=$databaseId source=${database.sourceType} localHash=${workingHash.take(12)} remoteHash=${remoteHash.take(12)} baseHash=${baseHash?.take(12)} localChanged=$localHasChanges remoteChanged=$remoteHasChanges remoteVersion=${(remoteStat?.etag ?: remoteStat?.versionToken).orEmpty()}"
             )
 
             if (remoteHasChanges) {
@@ -762,13 +778,13 @@ class KeePassKdbxService(
                     }
                     syncService.markSynchronized(
                         databaseId = databaseId,
-                        versionToken = remoteStat.versionToken,
-                        etag = remoteStat.etag,
+                        versionToken = remoteStat?.versionToken,
+                        etag = remoteStat?.etag,
                         baseHash = remoteHash,
                         workingHash = remoteHash
                     )
                     invalidateProcessCache(databaseId)
-                    return@withContext Result.success(
+                    return Result.success(
                         KeePassRemoteSyncResult(syncedDatabaseName, "已拉取远端最新版本")
                     )
                 }
@@ -786,7 +802,7 @@ class KeePassKdbxService(
                     syncService.markLocalChanges(databaseId, GoogleDriveKeePassSupport.sha256Hex(mergeResult.mergedBytes))
                     val writeResult = fileSource.write(
                         mergeResult.mergedBytes,
-                        expectedVersion = remoteStat.etag ?: remoteStat.versionToken
+                        expectedVersion = remoteStat?.etag ?: remoteStat?.versionToken
                     )
                     val verifiedRemote = verifyRemoteKdbxWrite(
                         database = database,
@@ -812,7 +828,7 @@ class KeePassKdbxService(
                     } else {
                         "已合并本地与远端修改"
                     }
-                    return@withContext Result.success(KeePassRemoteSyncResult(syncedDatabaseName, message))
+                    return Result.success(KeePassRemoteSyncResult(syncedDatabaseName, message))
                 }
 
                 val conflictMessage = "远端文件已变化，且本地工作副本也有修改，请先处理冲突"
@@ -827,12 +843,12 @@ class KeePassKdbxService(
             if (!localHasChanges) {
                 syncService.markSynchronized(
                     databaseId = databaseId,
-                    versionToken = remoteStat.versionToken,
-                    etag = remoteStat.etag,
+                    versionToken = remoteStat?.versionToken,
+                    etag = remoteStat?.etag,
                     baseHash = remoteHash,
                     workingHash = workingHash
                 )
-                return@withContext Result.success(KeePassRemoteSyncResult(syncedDatabaseName, "远端已是最新状态"))
+                return Result.success(KeePassRemoteSyncResult(syncedDatabaseName, "远端已是最新状态"))
             }
 
             syncService.markUploadInProgress(databaseId, workingHash)
@@ -5604,8 +5620,8 @@ class KeePassKdbxService(
                         if (!isRemoteVersionConflict(error)) {
                             throw error
                         }
-                        val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
-                        val currentRemoteVersion = remoteStat.etag ?: remoteStat.versionToken
+                        val remoteStat = remoteStatOrNull(fileSource, "conflictRetry")
+                        val currentRemoteVersion = remoteStat?.etag ?: remoteStat?.versionToken
                         if (currentRemoteVersion.isNullOrBlank()) {
                             throw error
                         }
@@ -5779,13 +5795,13 @@ class KeePassKdbxService(
                     val remoteSource = remoteDb.keepassRemoteSourceDao().getSourceById(database.sourceId)
                         ?: throw IllegalStateException("远端来源不存在")
                     val fileSource = createRemoteFileSource(database, remoteSource)
-                    val remoteStat = runCatchingObserved { fileSource.stat() }.getOrDefault(FileSourceStat())
+                    val remoteStat = remoteStatOrNull(fileSource, "syncBastionDatabaseFile")
                     val remoteBytes = fileSource.read()
                     val remoteHash = GoogleDriveKeePassSupport.sha256Hex(remoteBytes)
-                    val remoteEtagMatches = syncState?.remoteEtag != null && remoteStat.etag != null &&
-                        remoteStat.etag == syncState?.remoteEtag
-                    val remoteVersionMatches = syncState?.remoteVersionToken != null && remoteStat.versionToken != null &&
-                        remoteStat.versionToken == syncState?.remoteVersionToken
+                    val remoteEtagMatches = syncState?.remoteEtag != null && remoteStat?.etag != null &&
+                        remoteStat?.etag == syncState?.remoteEtag
+                    val remoteVersionMatches = syncState?.remoteVersionToken != null && remoteStat?.versionToken != null &&
+                        remoteStat?.versionToken == syncState?.remoteVersionToken
                     val localHasChanges = if (baseHash.isNullOrBlank()) (workingHash != remoteHash) else (baseHash != workingHash)
                     val remoteHasChanges = if (baseHash.isNullOrBlank()) (workingHash != remoteHash) else (baseHash != remoteHash)
 
@@ -5793,29 +5809,40 @@ class KeePassKdbxService(
                         remoteHasChanges && !localHasChanges -> {
                             reimportBastionDatabase(database, databaseId, remoteBytes)
                             writeLocalBastionBytes(database, remoteBytes)
-                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, remoteHash, remoteHash)
+                            syncService.markSynchronized(databaseId, remoteStat?.versionToken, remoteStat?.etag, remoteHash, remoteHash)
                             "已拉取远端最新版本"
                         }
                         !remoteHasChanges && localHasChanges -> {
                             val exported = BastionDatabaseFormatCodec.exportContent(
                                 database.databaseFormat, databaseId, bastionDatabasePassword(database), context, securityManager
                             )
-                            fileSource.write(exported, expectedVersion = remoteStat.etag ?: remoteStat.versionToken)
+                            fileSource.write(exported, expectedVersion = remoteStat?.etag ?: remoteStat?.versionToken)
                             writeLocalBastionBytes(database, exported)
                             val h = GoogleDriveKeePassSupport.sha256Hex(exported)
-                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, h, h)
+                            syncService.markSynchronized(databaseId, remoteStat?.versionToken, remoteStat?.etag, h, h)
                             "已上传本地最新版本"
                         }
                         remoteHasChanges && localHasChanges -> {
-                            // 冲突：v1 采用远端优先策略，本地改动需用户手动处理
+                            // 冲突：不得直接用远端覆盖本地（会静默丢弃本地改动）。
+                            // 先把本地当前内容导出为冲突副本留在本地，再拉取远端版本，
+                            // 并把同步状态标记为冲突，让 UI 提示用户手动合并。
+                            val localSnapshot = BastionDatabaseFormatCodec.exportContent(
+                                database.databaseFormat, databaseId, bastionDatabasePassword(database), context, securityManager
+                            )
+                            writeLocalBastionBytes(database, localSnapshot)
+                            val localSnapshotHash = GoogleDriveKeePassSupport.sha256Hex(localSnapshot)
                             reimportBastionDatabase(database, databaseId, remoteBytes)
                             writeLocalBastionBytes(database, remoteBytes)
-                            syncService.markSynchronized(databaseId, remoteStat.versionToken, remoteStat.etag, remoteHash, remoteHash)
-                            "远端有更新，已拉取（本地改动未自动合并）"
+                            syncService.markConflict(
+                                databaseId = databaseId,
+                                workingHash = localSnapshotHash,
+                                failureMessage = "远端与本地都有修改，已保留本地副本为冲突状态，请手动合并后再同步"
+                            )
+                            "远端与本地都有修改：已保留本地副本为冲突状态，请手动合并后再同步"
                         }
                         else -> {
                             syncService.markSynchronized(
-                                databaseId, remoteStat.versionToken, remoteStat.etag,
+                                databaseId, remoteStat?.versionToken, remoteStat?.etag,
                                 workingHash ?: remoteHash, workingHash ?: remoteHash
                             )
                             "远端已是最新状态"
@@ -5840,9 +5867,14 @@ class KeePassKdbxService(
 
     /**
      * 把 Room 中该 keepassDatabaseId 下的条目重新导出并上传到远端（供编辑后手动触发）。
+     *
+     * 这里是独立入口，需要自己加锁；[syncRemoteDatabase] 那条链路已在
+     * 外层持锁，不能再加（Mutex 不可重入，会死锁）。
      */
     suspend fun saveBastionDatabaseFile(databaseId: Long): Result<KeePassRemoteSyncResult> {
-        return syncBastionDatabaseFile(databaseId)
+        return remoteSyncMutex(databaseId).withLock {
+            syncBastionDatabaseFile(databaseId)
+        }
     }
 
     private fun bastionDatabasePassword(database: LocalKeePassDatabase): String? {
@@ -6414,6 +6446,48 @@ class KeePassKdbxService(
 
     private fun isRemoteVersionConflict(error: Throwable): Boolean {
         return error.message?.contains("远端文件已变化", ignoreCase = true) == true
+    }
+
+    /**
+     * 读取远端状态，区分「远端文件尚不存在」与「真正的读取失败」。
+     *
+     * 历史实现用 `runCatchingObserved { stat() }.getOrDefault(FileSourceStat())` 把失败
+     * 降级成全空对象，后果是：token 过期、远端文件被删、网络超时等情况都会被误判为
+     * "远端无变化"，进而跳过上传，导致本地改动永不上传而界面仍显示同步成功。
+     *
+     * @return null 表示远端文件不存在（首次上传场景）；读取失败则抛出 IOException。
+     */
+    private suspend fun remoteStatOrNull(
+        fileSource: KeePassFileSource,
+        sourceName: String
+    ): FileSourceStat? {
+        return runCatchingObserved { fileSource.stat() }
+            .getOrElse { cause ->
+                if (isRemoteNotFound(cause)) {
+                    null
+                } else {
+                    throw IOException("无法读取远端数据库状态（$sourceName）", cause)
+                }
+            }
+    }
+
+    /** 404/文件不存在判定：不同远端实现错误信息各异，这里统一按关键字匹配。 */
+    private fun isRemoteNotFound(cause: Throwable): Boolean {
+        var current: Throwable? = cause
+        var depth = 0
+        while (current != null && depth < 5) {
+            val message = current.message?.lowercase(Locale.getDefault()).orEmpty()
+            if (message.contains("404") ||
+                message.contains("not found") ||
+                message.contains("文件不存在") ||
+                message.contains("找不到")
+            ) {
+                return true
+            }
+            current = current.cause
+            depth += 1
+        }
+        return false
     }
 
     private suspend fun resolveRemoteConflictInternal(

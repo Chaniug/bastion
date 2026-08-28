@@ -2058,7 +2058,13 @@ fun SimpleMainScreen(
                                     )
                                 },
                                 selected = item.key == selectedDockTab.key,
-                                onClick = { selectedTabKey = item.key }
+                                onClick = { selectedTabKey = item.key },
+                                // Material3 Expressive 的选中 indicator 会在 tab 之间
+                                // 产生一个明显漂浮/放大的圆形/胶囊动画， visually 像 bug。
+                                // 关闭 indicator 背景，仅保留图标/文字颜色变化作为选中态。
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = Color.Transparent
+                                )
                             )
                         }
                     }
@@ -2456,7 +2462,11 @@ fun SimpleMainScreen(
                                             overflow = TextOverflow.Clip
                                         )
                                     },
-                                    alwaysShowLabel = true
+                                    alwaysShowLabel = true,
+                                    // 与 NavigationBarItem 保持一致：关闭漂浮放大 indicator。
+                                    colors = NavigationRailItemDefaults.colors(
+                                        indicatorColor = Color.Transparent
+                                    )
                                 )
                             }
                         }

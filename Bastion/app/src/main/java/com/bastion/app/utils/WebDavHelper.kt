@@ -1007,6 +1007,12 @@ class WebDavHelper(
                 context.getString(R.string.webdav_error_network_unreachable) + urlHint
             com.bastion.app.webdav.WebDavErrorKind.MalformedResponse ->
                 context.getString(R.string.webdav_error_malformed_response) + urlHint
+            com.bastion.app.webdav.WebDavErrorKind.InsufficientStorage ->
+                context.getString(R.string.webdav_error_insufficient_storage) + urlHint
+            com.bastion.app.webdav.WebDavErrorKind.Locked ->
+                context.getString(R.string.webdav_error_locked) + urlHint
+            com.bastion.app.webdav.WebDavErrorKind.PreconditionFailed ->
+                context.getString(R.string.webdav_error_precondition_failed) + urlHint
             com.bastion.app.webdav.WebDavErrorKind.NotFound -> "资源不存在$urlHint"
             com.bastion.app.webdav.WebDavErrorKind.Ok,
             com.bastion.app.webdav.WebDavErrorKind.Unknown -> {
