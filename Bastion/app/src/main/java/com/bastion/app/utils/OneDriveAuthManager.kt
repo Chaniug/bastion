@@ -11,6 +11,7 @@ import com.microsoft.identity.client.IAuthenticationResult
 import com.microsoft.identity.client.IMultipleAccountPublicClientApplication
 import com.microsoft.identity.client.Prompt
 import com.microsoft.identity.client.PublicClientApplication
+import com.microsoft.identity.client.RemoveAccountCallback
 import com.microsoft.identity.client.exception.MsalException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -37,13 +38,31 @@ class OneDriveAuthTemporarilyUnavailableException(
 class OneDriveAuthManager(context: Context) {
     private val appContext = context.applicationContext
 
-    suspend fun signIn(activity: Activity): OneDriveAccountSession = withContext(Dispatchers.Main) {
+    /**
+     * 交互式登录。
+     *
+     * @param activity 用于拉起授权页面的 Activity。
+     * @param forceAccountChooser true 时强制弹出账户选择框。切换账户必须用它：
+     *   默认 [Prompt.SELECT_ACCOUNT] 在仅有一个缓存账户时会被 MSAL 优化成静默登录，
+     *   用户点了「切换账户」却仍以原账户进入。
+     */
+    suspend fun signIn(
+        activity: Activity,
+        forceAccountChooser: Boolean = false
+    ): OneDriveAccountSession = withContext(Dispatchers.Main) {
         val application = getApplication()
         suspendCancellableCoroutine { continuation ->
-            val parameters = AcquireTokenParameters.Builder()
+            val builder = AcquireTokenParameters.Builder()
                 .startAuthorizationFromActivity(activity)
                 .withScopes(SCOPES)
-                .withPrompt(Prompt.SELECT_ACCOUNT)
+            // LOGIN 会强制重新走登录流程并清掉浏览器会话 Cookie，
+            // 是「切换账户 / 注销后重登」时能真正换号的唯一可靠方式。
+            if (forceAccountChooser) {
+                builder.withPrompt(Prompt.LOGIN)
+            } else {
+                builder.withPrompt(Prompt.SELECT_ACCOUNT)
+            }
+            val parameters = builder
                 .withCallback(object : AuthenticationCallback {
                     override fun onSuccess(authenticationResult: IAuthenticationResult) {
                         continuation.resume(authenticationResult.toSession())
@@ -65,6 +84,65 @@ class OneDriveAuthManager(context: Context) {
     suspend fun getCachedSession(): OneDriveAccountSession? {
         val account = getAccounts().firstOrNull() ?: return null
         return account.toSession()
+    }
+
+    /**
+     * 列出 MSAL 本地缓存的全部账户，供 UI 提供「切换账户」能力。
+     *
+     * 注意：这与 Bastion 自己保存的凭据不是一回事。MSAL 的 token 缓存独立于
+     * 业务数据库配置存在，若不显式移除，即使清掉了本地配置，
+     * 下次 [signIn] 也会被静默复用旧账户，导致用户无法真正换号。
+     */
+    suspend fun listCachedSessions(): List<OneDriveAccountSession> {
+        return getAccounts().mapNotNull { account ->
+            runCatching { account.toSession() }.getOrNull()
+        }
+    }
+
+    /**
+     * 注销指定账户：清除 MSAL 本地 token 缓存。
+     *
+     * 只清 Bastion 侧配置是不够的 —— MSAL 缓存仍在的话，
+     * 下次 [signIn] 会直接复用旧账户（不弹选择框），
+     * 表现为「点了切换账号却还是原账号」。因此这里必须显式
+     * 调用 [IMultipleAccountPublicClientApplication.removeAccount]。
+     *
+     * 失败不抛出：注销是尽力而为的操作。即便 MSAL 侧失败，
+     * 上层仍应继续清理 Bastion 自己的配置，不能卡住用户。
+     *
+     * @param accountId 要注销的账户 ID；为 null 时注销全部缓存账户。
+     * @return 成功移除的账户数量。
+     */
+    suspend fun signOut(accountId: String? = null): Int = withContext(Dispatchers.IO) {
+        val application = runCatching { getApplication() }.getOrNull() ?: return@withContext 0
+        val targets = if (accountId == null) {
+            runCatching { application.getAccounts().orEmpty() }.getOrNull().orEmpty()
+        } else {
+            listOfNotNull(runCatching { application.getAccount(accountId) }.getOrNull())
+        }
+        if (targets.isEmpty()) return@withContext 0
+
+        var removed = 0
+        targets.forEach { account ->
+            val ok = runCatching {
+                suspendCancellableCoroutine { continuation ->
+                    application.removeAccount(
+                        account,
+                        object : RemoveAccountCallback {
+                            override fun onRemoved() {
+                                if (continuation.isActive) continuation.resume(true)
+                            }
+
+                            override fun onError(exception: MsalException) {
+                                if (continuation.isActive) continuation.resume(false)
+                            }
+                        }
+                    )
+                }
+            }.getOrDefault(false)
+            if (ok) removed++
+        }
+        removed
     }
 
     suspend fun acquireAccessToken(accountId: String): OneDriveAccountSession {

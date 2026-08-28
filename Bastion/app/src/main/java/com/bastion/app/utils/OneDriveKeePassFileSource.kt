@@ -4,11 +4,13 @@ import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -16,6 +18,7 @@ import com.bastion.app.data.KeepassRemoteSource
 import java.io.IOException
 import java.time.Instant
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Serializable
 private data class OneDriveDriveItemDto(
@@ -90,7 +93,12 @@ class OneDriveKeePassFileSource(
     private val appContext = context.applicationContext
     private val authManager = OneDriveAuthManager(appContext)
     private val normalizedRemotePath = normalizeOptionalRemotePath(remotePath)
-    private val json = Json { ignoreUnknownKeys = true }
+    // encodeDefaults=true：保证值等于默认值的属性也参与序列化。
+    // 否则 UploadSessionRequestDto() 会退化为 "{}"，createUploadSession 的
+    // conflictBehavior=replace 发不出去，Graph 按默认 rename 处理，
+    // >2MB 重复上传会生成 "file 1.kdbx" 副本而非覆盖（数据丢失）。
+    // 与桌面端 desktop/.../kdbx/OneDriveKeePassFileSource.kt 保持一致，勿改回默认值。
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     override suspend fun stat(): FileSourceStat = withContext(Dispatchers.IO) {
         requireRemotePath()
@@ -378,30 +386,65 @@ class OneDriveKeePassFileSource(
         while (offset < bytes.size) {
             val endExclusive = minOf(offset + UPLOAD_CHUNK_SIZE_BYTES, bytes.size)
             val chunk = bytes.copyOfRange(offset, endExclusive)
-            val request = Request.Builder()
-                .url(session.uploadUrl)
-                .header("Content-Range", "bytes $offset-${endExclusive - 1}/${bytes.size}")
-                .header("Content-Length", chunk.size.toString())
-                .put(chunk.toRequestBody(KEEPASS_KDBX_MIME_TYPE.toMediaType()))
-                .build()
-            sharedHttpClient.newCall(request).execute().use { response ->
-                val responseBody = response.body?.string().orEmpty()
-                when (response.code) {
-                    200, 201 -> {
-                        val item = json.decodeFromString<OneDriveDriveItemDto>(responseBody)
-                        return item.toWriteResult()
+            // 单分片带重试：OneDrive 对 upload session 的 5xx/429 很敏感，
+            // 无重试时网络抖动会直接让整个大库上传失败（对齐桌面端 MAX_CHUNK_RETRIES）。
+            var attempt = 0
+            var chunkDone = false
+            while (!chunkDone) {
+                val request = Request.Builder()
+                    .url(session.uploadUrl)
+                    .header("Content-Range", "bytes $offset-${endExclusive - 1}/${bytes.size}")
+                    .header("Content-Length", chunk.size.toString())
+                    .put(chunk.toRequestBody(KEEPASS_KDBX_MIME_TYPE.toMediaType()))
+                    .build()
+                val outcome = runCatchingObserved {
+                    sharedHttpClient.newCall(request).execute().use { response ->
+                        val responseBody = response.body?.string().orEmpty()
+                        when (response.code) {
+                            200, 201 -> {
+                                val item = json.decodeFromString<OneDriveDriveItemDto>(responseBody)
+                                UploadChunkOutcome.Done(item.toWriteResult())
+                            }
+                            202 -> UploadChunkOutcome.Advance
+                            412 -> throw IOException("远端文件已变化，请先重新同步")
+                            429, 500, 502, 503, 504 -> throw IOException(
+                                "OneDrive 分片上传暂时失败: HTTP ${response.code}"
+                            )
+                            else -> throw IOException(
+                                responseBody.ifBlank {
+                                    "OneDrive 大文件上传失败: HTTP ${response.code}"
+                                }
+                            )
+                        }
                     }
-                    202 -> {
-                        offset = endExclusive
+                }
+                val result = outcome.getOrNull()
+                if (result != null) {
+                    when (result) {
+                        is UploadChunkOutcome.Done -> return result.writeResult
+                        UploadChunkOutcome.Advance -> {
+                            offset = endExclusive
+                            chunkDone = true
+                        }
                     }
-                    412 -> throw IOException("远端文件已变化，请先重新同步")
-                    else -> throw IOException(
-                        responseBody.ifBlank { "OneDrive 大文件上传失败: HTTP ${response.code}" }
-                    )
+                } else {
+                    attempt += 1
+                    if (attempt > MAX_CHUNK_RETRIES) {
+                        throw IOException(
+                            "OneDrive 大文件上传失败（已重试 $MAX_CHUNK_RETRIES 次）",
+                            outcome.exceptionOrNull()
+                        )
+                    }
+                    delay(RETRY_DELAY_MS * attempt)
                 }
             }
         }
         throw IOException("OneDrive 大文件上传未返回最终结果")
+    }
+
+    private sealed interface UploadChunkOutcome {
+        data class Done(val writeResult: FileSourceWriteResult) : UploadChunkOutcome
+        data object Advance : UploadChunkOutcome
     }
 
     private suspend fun executeJsonRequest(
@@ -553,7 +596,20 @@ class OneDriveKeePassFileSource(
         private const val GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
         private const val LARGE_UPLOAD_THRESHOLD_BYTES = 2 * 1024 * 1024
         private const val UPLOAD_CHUNK_SIZE_BYTES = 320 * 1024 * 16
-        private val sharedHttpClient = OkHttpClient()
+        private const val MAX_CHUNK_RETRIES = 3
+        private const val RETRY_DELAY_MS = 500L
+        // 单例复用 + 显式超时 + 连接池，避免：
+        // 1) 无超时导致弱网下永久挂起；
+        // 2) 复用已失效连接导致挂死（Bitwarden 侧曾出现同类问题）；
+        // 3) 每次新建 client 造成连接池堆积。
+        private val sharedHttpClient = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS) // 大文件分片由各自超时控制，不设整体上限
+            .retryOnConnectionFailure(true)
+            .connectionPool(ConnectionPool(8, 2, TimeUnit.MINUTES))
+            .build()
 
         fun normalizeRemotePath(remotePath: String): String {
             val normalized = remotePath

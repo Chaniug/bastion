@@ -81,8 +81,11 @@ object WebDavErrorClassifier {
             401, 403 -> ClassifiedError(WebDavErrorKind.AuthFailed, cause = e)
             404 -> ClassifiedError(WebDavErrorKind.NotFound, cause = e)
             405, 501 -> ClassifiedError(WebDavErrorKind.MethodNotAllowed, cause = e)
+            409, 412 -> ClassifiedError(WebDavErrorKind.PreconditionFailed, cause = e)
+            423 -> ClassifiedError(WebDavErrorKind.Locked, cause = e)
             429 -> ClassifiedError(WebDavErrorKind.RateLimited, cause = e)
             503 -> ClassifiedError(WebDavErrorKind.RateLimited, cause = e)
+            507 -> ClassifiedError(WebDavErrorKind.InsufficientStorage, cause = e)
             else -> ClassifiedError(WebDavErrorKind.Unknown, cause = e)
         }
     }

@@ -28,6 +28,19 @@ enum class WebDavErrorKind {
      */
     MethodNotAllowed,
 
+    /** 服务器存储空间不足：HTTP 507。需用户清理空间，重试无意义。 */
+    InsufficientStorage,
+
+    /** 目标资源被锁定（他人正在编辑）：HTTP 423。可稍后重试。 */
+    Locked,
+
+    /**
+     * 前置条件失败：HTTP 412 / 409。
+     * 常见于条件写（If-Match / If-None-Match）被服务端拒绝，
+     * 意味着远端文件已被其他设备修改 —— 属并发冲突，不是网络错误。
+     */
+    PreconditionFailed,
+
     /** DNS 无法解析 / 无路由 / 连接被拒。 */
     NetworkUnreachable,
 
