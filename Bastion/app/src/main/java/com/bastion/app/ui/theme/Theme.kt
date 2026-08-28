@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -1246,6 +1247,11 @@ fun BastionTheme(
         colorScheme = finalColorScheme,
         typography = Typography,
         shapes = BastionShapes,
+        // 显式使用 Standard motion scheme。
+        // 项目依赖 Material3 Expressive（1.5.0-alpha16），其默认 MotionScheme.expressive()
+        // 带 overshoot 回弹，会让 NavigationBarItem 选中时把图标放大约 2 倍再回弹，
+        // 真机表现为"切 tab 时图标闪一下"。Standard 无 overshoot，更契合工具型产品。
+        motionScheme = MotionScheme.standard(),
         content = content
     )
 }
