@@ -673,50 +673,6 @@ private fun TimelineDetailPane(
 /**
  * 带有底部导航的主屏幕
  */
-/**
- * 自定义底部/侧边导航项。
- *
- * 不使用 Material3 Expressive 的 NavigationBarItem：Expressive 在选中态会把图标
- * 放大 ~3 倍并在 tab 之间做漂浮/缩放动画（真机录屏已确认，选中图标 w30→w91），
- * 视觉上像 bug。这里用固定 24dp 图标 + 颜色区分选中态，无缩放动画。
- */
-@Composable
-private fun BastionNavItem(
-    item: BottomNavItem,
-    selected: Boolean,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val label = stringResource(item.shortLabelRes())
-    val contentColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Column(
-        modifier = modifier
-            .clickable(onClick = onSelect)
-            .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = item.icon,
-            contentDescription = label,
-            modifier = Modifier.size(24.dp),
-            tint = contentColor
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Clip
-        )
-    }
-}
-
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3WindowSizeClassApi::class,
@@ -2089,11 +2045,26 @@ fun SimpleMainScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ) {
                         tabs.forEach { item ->
-                            BastionNavItem(
-                                item = item,
+                            val label = stringResource(item.shortLabelRes())
+                            NavigationBarItem(
+                                icon = {
+                                    Icon(item.icon, contentDescription = label)
+                                },
+                                label = {
+                                    Text(
+                                        text = label,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Clip
+                                    )
+                                },
                                 selected = item.key == selectedDockTab.key,
-                                onSelect = { selectedTabKey = item.key },
-                                modifier = Modifier.weight(1f).fillMaxHeight()
+                                onClick = { selectedTabKey = item.key },
+                                // Material3 Expressive 的选中 indicator 会在 tab 之间
+                                // 产生一个明显漂浮/放大的圆形/胶囊动画， visually 像 bug。
+                                // 关闭 indicator 背景，仅保留图标/文字颜色变化作为选中态。
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = Color.Transparent
+                                )
                             )
                         }
                     }
@@ -2479,11 +2450,23 @@ fun SimpleMainScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             tabs.forEach { item ->
-                                BastionNavItem(
-                                    item = item,
+                                val label = stringResource(item.shortLabelRes())
+                                NavigationRailItem(
                                     selected = item.key == selectedDockTab.key,
-                                    onSelect = { selectedTabKey = item.key },
-                                    modifier = Modifier.fillMaxWidth()
+                                    onClick = { selectedTabKey = item.key },
+                                    icon = { Icon(item.icon, contentDescription = label) },
+                                    label = {
+                                        Text(
+                                            text = label,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Clip
+                                        )
+                                    },
+                                    alwaysShowLabel = true,
+                                    // 与 NavigationBarItem 保持一致：关闭漂浮放大 indicator。
+                                    colors = NavigationRailItemDefaults.colors(
+                                        indicatorColor = Color.Transparent
+                                    )
                                 )
                             }
                         }
