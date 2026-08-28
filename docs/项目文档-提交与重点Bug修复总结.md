@@ -153,17 +153,17 @@ curl -sL "https://gh-proxy.com/https://api.github.com/repos/Chaniug/bastion/chec
 ## 6. 当前状态与未决项
 
 - **已稳定**：Bitwarden 同步卡死系列（#1–#5）已随 `aff292c1` 合 main，CI 在 `dev` 双绿。
-- **本轮（#12–#21）**：KDBX / OneDrive / WebDAV 三模块修复已在 `dev` CI #510 双绿
-  （`4cc912bc`，含 APK 发布到 preview Release），**待真机验证后合 main**。
+- **已合 main（2026-08-28）**：#12–#21 三模块同步修复 + 导航闪烁修复 + README/Pages 视觉文案重构，
+  合并提交 `6142d911`。合并前 `merge-tree` 预演零冲突，合并后 `git diff origin/dev HEAD` 为空，
+  main 与 dev 内容完全一致。真机（荣耀 / Android 17）已验证同步与导航无异常。
+- **CI 覆盖说明**：`main.yml`、`codeql.yml`、`deploy-pages.yml` 的 `push` 触发器**只监听 `dev`**，
+  `Android-Release.yml` 只监听 `v*` tag。因此推送 `main` 不会触发任何工作流；
+  main 分支的绿灯状态需以合并前 dev 上的最后一次 run 为准。
 - **已知边界**：passkey 解绑场景不会自动从密码 cipher 移除旧 credential；多设备并发追加 passkey 极短覆盖窗口（已缓解）。
 - **本轮遗留 / 未做**：
   - 未用真实 KDBX 3.1 / 4.0 / 4.1 样本做兼容性回归（沙箱装不了 SDK，只能靠 CI 编译验证）。
   - kotpass 版本升级评估未做（当前 0.10.0）。
   - OneDrive 分片上传重试未覆盖"服务端已接收但响应丢失"的幂等重传（当前重试会重发整片，依赖 Content-Range 幂等性）。
-- **待续方向**：本地数据库统一同步架构重构（三条同步通路归一）、KEEPASS 独立客户端化、桌面端 Phase 5 三 Tab UI 完善。
-
-- **已稳定**：Bitwarden 同步卡死系列（#1–#5）已随 `aff292c1` 合 main，CI 在 `dev` 双绿。
-- **已知边界**：passkey 解绑场景不会自动从密码 cipher 移除旧 credential；多设备并发追加 passkey 极短覆盖窗口（已缓解）。
 - **待续方向**：本地数据库统一同步架构重构（三条同步通路归一）、KEEPASS 独立客户端化、桌面端 Phase 5 三 Tab UI 完善。
 
 ## 7. 文档索引（本仓库仅保留以下 5 篇内部交接文档）
