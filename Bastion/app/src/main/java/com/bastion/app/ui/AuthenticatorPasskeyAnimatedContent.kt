@@ -1,8 +1,6 @@
 package com.bastion.app.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
@@ -12,6 +10,8 @@ import com.bastion.app.ui.navigation.parallaxEnterFromLeft
 import com.bastion.app.ui.navigation.parallaxExitToLeft
 import com.bastion.app.ui.navigation.slideInFromRight
 import com.bastion.app.ui.navigation.slideOutToRight
+import com.bastion.app.ui.navigation.tabSwitchEnter
+import com.bastion.app.ui.navigation.tabSwitchExit
 
 @Composable
 internal fun AuthenticatorPasskeyAnimatedContent(
@@ -30,7 +30,9 @@ internal fun AuthenticatorPasskeyAnimatedContent(
                 initialState == BottomNavItem.Passkey && targetState == BottomNavItem.Authenticator ->
                     parallaxEnterFromLeft() togetherWith slideOutToRight()
 
-                else -> EnterTransition.None togetherWith ExitTransition.None
+                // 其余 tab 切换：此前为 EnterTransition.None（硬切），
+                // 现改用显式页面过渡，避免 Standard motion scheme 下显得僵硬。
+                else -> tabSwitchEnter() togetherWith tabSwitchExit()
             }
             transform.using(SizeTransform(clip = false))
         },

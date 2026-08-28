@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 
 /**
@@ -69,6 +70,31 @@ fun easyNotesScreenEnter(): EnterTransition =
             initialScale = EASY_NOTES_INITIAL_SCALE,
             animationSpec = tween(EASY_NOTES_SCALE_DURATION)
         )
+
+/**
+ * 底部导航 tab 之间的通用切换过渡（淡入 + 轻微上移）。
+ *
+ * 背景：tab 切换此前对大多数组合使用 EnterTransition.None，页面是硬切的；
+ * 原先观感"流畅"实际来自 Material3 Expressive 组件内部的 spring 动画。
+ * 主题改用 Standard motion scheme 后组件内部动画收敛，硬切被暴露出来，
+ * 因此这里显式补上页面级过渡，不依赖组件内部动画。
+ *
+ * 说明：这里只用 fade + slideVertically（Compose 稳定 API），
+ * 不依赖 MotionScheme，因此在 Standard / Expressive 下表现一致。
+ */
+private const val DURATION_TAB_SWITCH = 220
+private const val DURATION_TAB_FADE_OUT = 120
+private const val TAB_SWITCH_OFFSET_RATIO = 16
+
+fun tabSwitchEnter(): EnterTransition =
+    fadeIn(animationSpec = tween(durationMillis = DURATION_TAB_SWITCH, easing = navEasing)) +
+        slideInVertically(
+            animationSpec = tween(durationMillis = DURATION_TAB_SWITCH, easing = navEasing),
+            initialOffsetY = { fullHeight -> fullHeight / TAB_SWITCH_OFFSET_RATIO }
+        )
+
+fun tabSwitchExit(): ExitTransition =
+    fadeOut(animationSpec = tween(durationMillis = DURATION_TAB_FADE_OUT, easing = navEasing))
 
 /** EasyNotes 风格页面退出：从 1 缩到 0.9，同时淡出。 */
 fun easyNotesScreenExit(): ExitTransition =
