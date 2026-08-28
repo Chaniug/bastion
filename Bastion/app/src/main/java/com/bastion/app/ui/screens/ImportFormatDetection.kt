@@ -164,6 +164,14 @@ fun keepassImportSuggestion(context: Context, code: KeePassErrorCode): String {
             context.getString(R.string.import_data_keepass_tip_kdf_memory)
         KeePassErrorCode.FORMAT_UNSUPPORTED ->
             context.getString(R.string.import_data_keepass_tip_format_unsupported)
+        KeePassErrorCode.FORMAT_VERSION_TOO_NEW ->
+            context.getString(R.string.import_data_keepass_tip_format_version_too_new)
+        KeePassErrorCode.FORMAT_NOT_KDBX ->
+            context.getString(R.string.import_data_keepass_tip_format_not_kdbx)
+        KeePassErrorCode.FORMAT_CORRUPTED ->
+            context.getString(R.string.import_data_keepass_tip_format_corrupted)
+        KeePassErrorCode.CHALLENGE_RESPONSE_UNSUPPORTED ->
+            context.getString(R.string.import_data_keepass_tip_challenge_response)
         KeePassErrorCode.IO_READ_WRITE_FAILED ->
             context.getString(R.string.import_data_keepass_tip_io_failed)
         KeePassErrorCode.AMBIGUOUS_ENTRY_MATCH ->

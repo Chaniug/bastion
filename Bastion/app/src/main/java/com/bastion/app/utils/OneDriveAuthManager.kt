@@ -11,7 +11,6 @@ import com.microsoft.identity.client.IAuthenticationResult
 import com.microsoft.identity.client.IMultipleAccountPublicClientApplication
 import com.microsoft.identity.client.Prompt
 import com.microsoft.identity.client.PublicClientApplication
-import com.microsoft.identity.client.RemoveAccountCallback
 import com.microsoft.identity.client.exception.MsalException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -128,7 +127,7 @@ class OneDriveAuthManager(context: Context) {
                 suspendCancellableCoroutine { continuation ->
                     application.removeAccount(
                         account,
-                        object : RemoveAccountCallback {
+                        object : IMultipleAccountPublicClientApplication.RemoveAccountCallback {
                             override fun onRemoved() {
                                 if (continuation.isActive) continuation.resume(true)
                             }

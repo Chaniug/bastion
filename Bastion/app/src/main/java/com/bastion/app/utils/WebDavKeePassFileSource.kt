@@ -57,12 +57,13 @@ class WebDavKeePassFileSource(
         requireRemotePath()
         val resource = resolveResource(remoteUrl)
         if (resource != null) {
-            val etag = normalizeEtag(resource.etag).takeIf { it.isNotBlank() }
+            val etag = normalizeEtag(resource.etag)
+            val etagOrNull = etag.takeIf { it.isNotBlank() }
             return@withContext FileSourceStat(
-                versionToken = etag.ifBlank { null }
+                versionToken = etagOrNull
                     ?: resource.modified?.time?.toString()
                     ?: resource.contentLength?.toString(),
-                etag = etag.ifBlank { null },
+                etag = etagOrNull,
                 lastModified = resource.modified?.time,
                 sizeBytes = resource.contentLength,
                 isDirectory = resource.isDirectory,
@@ -141,7 +142,9 @@ class WebDavKeePassFileSource(
                 conditionalWriter.write(
                     targetUrl = remoteUrl,
                     bytes = bytes,
-                    mode = WebDavWriteMode.CREATE_ONLY
+                    mode = WebDavWriteMode.CREATE_ONLY,
+                    // CREATE_ONLY 语义即"仅当不存在时写入"，无需 If-Match 值
+                    expectedVersion = null
                 )
             } catch (e: WebDavPreconditionException) {
                 throw IOException("远端文件已存在，请先重新同步后再上传", e)
