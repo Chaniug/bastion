@@ -1,24 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140" role="img" aria-label="加密锁">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-label="Bastion encrypted lock">
+  <title>Bastion encrypted lock</title>
   <defs>
     <linearGradient id="body" x1="20" y1="60" x2="100" y2="135" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#5FB0F2"/>
-      <stop offset="0.55" stop-color="#1E6FC0"/>
+      <stop offset="0" stop-color="#86C6F7"/>
+      <stop offset="0.5" stop-color="#2E7FC8"/>
       <stop offset="1" stop-color="#0A2A4D"/>
     </linearGradient>
-    <radialGradient id="hole" cx="60" cy="100" r="22" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFEFC4"/>
-      <stop offset="0.55" stop-color="#F5B942"/>
-      <stop offset="1" stop-color="#B9760F"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE6A8"/>
+      <stop offset="48%" stop-color="#F5B942"/>
+      <stop offset="100%" stop-color="#B9760F"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="60" cy="80" r="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5B942" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
     </radialGradient>
+    <filter id="g" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
   </defs>
-  <!-- shackle -->
-  <path d="M38 62 V52 a22 22 0 0 1 44 0 V62" fill="none" stroke="#9FD4FF" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9"/>
-  <!-- body -->
-  <rect x="24" y="60" width="72" height="64" rx="16" fill="url(#body)"/>
-  <rect x="24" y="60" width="72" height="22" rx="16" fill="#FFFFFF" fill-opacity="0.16"/>
-  <rect x="24" y="60" width="72" height="64" rx="16" fill="none" stroke="#9FD4FF" stroke-opacity="0.5" stroke-width="1.5"/>
+
+  <!-- shackle: 半透明玻璃质感 -->
+  <path d="M38 62 V52 a22 22 0 0 1 44 0 V62" fill="none" stroke="#9FD4FF" stroke-width="9"
+        stroke-linecap="round" stroke-opacity="0.9"/>
+
+  <!-- body: 堡垒轮廓（与品牌图标同构） -->
+  <path d="M24 60
+    L 33 60 L 33 48 L 45 48 L 45 60
+    L 54 60 L 54 46 L 66 46 L 66 60
+    L 75 60 L 75 48 L 87 48 L 87 60
+    L 96 60 L 96 74 L 86 82 L 86 116
+    C 86 126 75 134 60 138
+    C 45 134 34 126 34 116
+    L 34 82 L 24 74 Z" fill="url(#body)"/>
+  <path d="M24 60
+    L 33 60 L 33 48 L 45 48 L 45 60
+    L 54 60 L 54 46 L 66 46 L 66 60
+    L 75 60 L 75 48 L 87 48 L 87 60
+    L 96 60 L 96 74 L 86 82 L 86 116
+    C 86 126 75 134 60 138
+    C 45 134 34 126 34 116
+    L 34 82 L 24 74 Z" fill="none" stroke="#A9D8FF" stroke-width="1.6"
+        stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M24 60
+    L 33 60 L 33 48 L 45 48 L 45 60
+    L 54 60 L 54 46 L 66 46 L 66 60
+    L 75 60 L 75 48 L 87 48 L 87 60
+    L 96 60 L 96 74 L 86 82 L 86 116
+    C 86 126 75 134 60 138
+    C 45 134 34 126 34 116
+    L 34 82 L 24 74 Z" fill="url(#topHi)" opacity="0.35"/>
+
   <!-- keyhole -->
-  <circle cx="60" cy="98" r="11" fill="url(#hole)"/>
-  <path d="M54 104 L66 104 L71 124 L49 124 Z" fill="url(#hole)"/>
-  <ellipse cx="56.5" cy="93" rx="3.4" ry="2.4" fill="#FFFFFF" fill-opacity="0.6"/>
+  <circle cx="60" cy="92" r="11" fill="url(#gold)"/>
+  <path d="M54 98 L66 98 L71 118 L49 118 Z" fill="url(#gold)"/>
+  <ellipse cx="56.5" cy="87" rx="3.2" ry="2.2" fill="#FFFFFF" fill-opacity="0.6"/>
 </svg>
