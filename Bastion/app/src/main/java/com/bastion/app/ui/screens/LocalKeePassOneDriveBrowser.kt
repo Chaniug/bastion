@@ -244,7 +244,6 @@ fun KeepassOneDriveBrowserBottomSheet(
                                         runCatchingObserved { authManager.signOut(session?.accountId) }
                                         isConnecting = false
                                         session = null
-                                        browserEntries = emptyList()
                                         currentPath = ""
                                         connectionState = KeepassOneDriveConnectionState.NotConnected
                                         browserError = null
