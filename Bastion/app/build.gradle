@@ -240,11 +240,6 @@ android {
     }
     lint {
         baseline = file('lint-baseline.xml')
-        // [navigation 2.10 升级过渡项] 2.10 传递升级 compose-ui，其新 lint 规则引入
-        // 大量新问题（首个为 NonObservableLocale）。本地无 Android SDK，无法重新生成
-        // lint-baseline.xml 吸收这些新问题，故暂时关闭 abortOnError 保证 dev 出包；
-        // 待 CI 跑 lint 重新生成 baseline 覆盖这些新问题后，再移除本项。
-        abortOnError false
         // Workaround: lint/lifecycle detector crashes with Kotlin 2.x analysis API in current toolchain.
         disable 'NullSafeMutableLiveData',
                 'FrequentlyChangingValue',
