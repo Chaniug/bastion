@@ -309,3 +309,52 @@ P0 删 slice 死依赖                    ✅ 已完成（a143f4f）
 **建议下一步**：P1 已证明不是版本切换能解决的事，若要继续需单独立项做 API 迁移。
 在此之前，可先推进零风险的 7.x 治理债（硬编码收拢 catalog），
 该项风险低、不触碰 UI 行为，能实打实降低后续升级的漏改风险。
+
+---
+
+## 9. 2026-08 全量升级执行记录（已合入 main）
+
+> 更新时间：2026-08-29。分支：`dev` 已完成，并以 `--no-ff` 合并进 `main`（合并点 `7c0c6b7b`）。
+> 升级前约定（来自更早会话）：一次性全推，JDK / 依赖升到新版本。
+
+### 9.1 已落地的升级内容
+
+| 项 | 改动 | commit | CI 验证 |
+|---|---|---|---|
+| JDK 21 + Gradle 9.5.1 | 构建工具链升级（Desktop `jvmToolchain(21)` 与 `jvmTarget JVM_21` 对齐） | `f7389f50` 系列 | Desktop Build ✅ / Android CI ✅ |
+| AGP 9.3 平台精确匹配 | `platforms;android-37.0` 精确锁定（CI 镜像曾装成 `android-37.1` 触发"Failed to find Platform SDK"） | `ensure-android-sdk.sh` 共享脚本（main/codeql/Release 三处统一调用） | Android CI ✅ |
+| `androidx.credentials` 锁 1.3.0 | 1.6.0 把 `CallingAppInfo.origin` 收紧为 internal，Passkey 相关 7 处引用编译失败；锁回 1.3.0 | `0cf3ba1b` | Android CI ✅（单元测失败数 0） |
+| 显式声明 `androidx.documentfile` | 此前靠 credentials 1.3.0 传递带入、从未声明，升级后链断；补 `1.1.0` | `0cf3ba1b` | Android CI ✅ |
+| `navigation` 2.10.0 | `predictivePop*` 显式接管预测性返回，修升 2.10 后的「页面缩小」回归 | `3a62510` / `36544c2` | Android CI ✅ |
+| lint-baseline 重生成 workflow | 新增可手动触发的 `regenerate-lint-baseline.yml`，修其在 CI 上失败（全量分析崩溃 → 改增量更新 + 关 config-cache + 超时 45→60） | `8ea64bc9` | Lint baseline run ✅ |
+
+**验证结论**：dev 上 Android CI（`ed27c3f` 含升级 + credentials/documentfile 修复）success，
+单元测基线门禁 `BASELINE_FAILURES=0` 下失败数 **0** → 依赖升级未引入测试回归；
+Desktop Build（`4ff2192`）success；Lint baseline（`8ea64bc9`）success。
+
+### 9.2 lint 质量门复位
+
+`Bastion/app/build.gradle` 的 `lint {}` 块此前为 nav 2.10 过渡临时加了 `abortOnError false`
+（nav 2.10 传递升级 compose-ui 引入大量新 lint 问题，首个为 `NonObservableLocale`，
+本地无 Android SDK 无法重新生成 baseline 吸收）。现已确认 `lint-baseline.xml` 已吸收这些问题
+（grep 确认含 `NonObservableLocale`，且 regenerate 流程报 "No baseline changes"），
+故**移除 `abortOnError false`**，lint 重新成为硬质量门。
+保留：`baseline = file(...)` 与 Kotlin 2.x detector 崩溃的 `disable` 兜底清单（属独立 workaround，非临时项）。
+
+### 9.3 待稳定 / 阻塞项
+
+- **Kotlin 2.4 待 KSP 2.4**：当前 `kotlin = 2.3.21`，KSP 只发到 `2.3.11`、无 2.4.x，
+  Room 编译器跑不起来。待 KSP 2.4 发布后再升（已在 `libs.versions.toml` 注释固化）。
+- **Compose Multiplatform 1.12 待稳定**：desktop 工程 `compose = 1.10.3`，
+  1.12.0 于 2026-08-25 发布但刻意保留 1.10.3（与 Kotlin 版本强绑定 + 桌面端为次要模块）。
+  待 1.12 线稳定后单独升。
+
+### 9.4 二分回退项（已知良好回退版本）
+
+后续升级若再次破坏，以下为实测可用的回退锚点（"试过"列是踩坑版本，"回退"列是当前锁定且验证可用的版本）：
+
+| 依赖 | 试过（坏） | 回退（好，当前锁定） | 位置 |
+|---|---|---|---|
+| app `composeBom` | `2026.08.00` | `2026.03.00` | `Bastion/gradle/libs.versions.toml` |
+| desktop `sqldelight` | `2.3.2` | `2.1.0` | `desktop/gradle/libs.versions.toml` |
+| desktop `jna` | `5.19.1` | `5.14.0` | `desktop/gradle/libs.versions.toml` |
