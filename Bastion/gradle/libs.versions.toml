@@ -26,14 +26,21 @@ activityCompose = "1.13.0"
 # 若只升 bom 而 material3 仍留在 alpha16，解析结果会是 1.12.0，而 alpha16 的字节码
 # 是针对 1.11.0-beta02 编译的 —— 跨 minor 属二进制不兼容（NoSuchMethodError 风险）。
 # 这正是 bd8591b 曾把本值从 2026.08.00 静默回退到 2026.03.00 的真正原因（非误操作）。
-composeBom = "2026.08.00"
-# alpha16 → alpha27，与上面的 bom 2026.08.00 配套：alpha27 依赖 1.12.0-beta01，
-# bom 解析出 1.12.0，beta01 → 正式版 API 已冻结，故安全。
-# ⚠️ 风险：alpha16 当初是为修 Expressive 回弹导致的「底部导航切 tab 图标闪烁」而刻意锁定的
-# （改用 MotionScheme.standard()，见 b97b39e / e6047c3）。alpha 线跨 11 个版本，
-# motion 行为会变 —— 升级后【必须真机验证】底部/侧边导航切换无图标缩放放大与闪烁、
-# 页面过渡动画正常。回滚只需把这两个值改回 2026.03.00 / 1.5.0-alpha16，无代码改动。
-material3Expressive = "1.5.0-alpha27"
+composeBom = "2026.03.00"
+# 刻意保留 alpha16，且【升级前必须读完下面两段】。
+# ① 为什么锁定：为修 Expressive 回弹导致的「底部导航切 tab 图标闪烁」而刻意锁定
+#    （改用 MotionScheme.standard()，见 b97b39e / e6047c3）；
+#    最新稳定版 1.4.0 比 alpha 线更旧，回退会丢 Expressive 特性。
+# ② 2026-08-29 实测：alpha16 → alpha27 会【编译失败】，不是 motion 回归那么简单。
+#    曾与 composeBom 2026.08.00 捆绑升级（CI run 33239556904），结果 70 处编译错误：
+#      - menuAnchor() 无参重载被移除，必须显式传 ExposedDropdownMenuAnchorType（50 处）
+#      - ExposedDropdownMenu 引用失效（20 处）
+#    涉及 PasswordEntryPickerBottomSheet / AutofillPickerActivityV2 / AddEditWifiScreen /
+#    AutofillSettingsV2Screen / AddEditTotpScreen / AddEditSshKeyScreen /
+#    BitwardenLoginScreen 等业务的 ExposedDropdownMenu 系列组件。
+#    → 升 alpha27 前必须先完成这套 API 迁移（非版本切换，是业务代码改造），
+#      且迁移后仍需按①真机验证 motion。改回 2026.03.00 / 1.5.0-alpha16 即可回滚。
+material3Expressive = "1.5.0-alpha16"
 navigation = "2.10.0"
 room = "2.8.4"
 # 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
