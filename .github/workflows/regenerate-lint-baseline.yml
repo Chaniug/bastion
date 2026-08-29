@@ -1,0 +1,84 @@
+name: Regenerate lint baseline
+
+# 手动触发：在 dev 上跑 lint，重生成 Bastion/app/lint-baseline.xml 并自动提交回 dev。
+# 用途：navigation 2.10 传递升级的 compose-ui 引入大量新 lint 问题，本地无 Android SDK
+# 无法重生成 baseline；此 workflow 借助 CI 的 SDK 环境生成，并把结果回写仓库。
+# 触发后，dev 上会多出一次 baseline 提交；随后即可移除 build.gradle 里的
+# `abortOnError false` 过渡项，让 lint 重新成为质量门。
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "分支（默认 dev）"
+        required: true
+        default: "dev"
+
+permissions:
+  contents: write   # 把重生成的 baseline 提交回分支
+
+jobs:
+  regenerate:
+    name: Regenerate lint-baseline.xml
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: "Bastion"
+    env:
+      GRADLE_OPTS: -Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.configuration-cache=true -Dorg.gradle.configuration-cache.problems=warn
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.ref }}
+          fetch-depth: 1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 与 Android CI debug 共用同一份 SDK 准备脚本，确保 compileSdk 37 可用
+      - name: Install Android SDK platform 37
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/ensure-android-sdk.sh"
+
+      # 先删除旧 baseline，让 lint 写出当前完整的「已知问题」集合；
+      # 当前 build.gradle 的 abortOnError=false 保证即便有新问题也不会让 lint 失败。
+      - name: Regenerate lint-baseline.xml
+        run: |
+          rm -f app/lint-baseline.xml
+          ./gradlew :app:lintDebug --stacktrace
+
+      # 兜底：万一自动提交失败，仍可手动从 artifact 取回
+      - name: Upload baseline as artifact (fallback)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-baseline
+          path: Bastion/app/lint-baseline.xml
+          if-no-files-found: warn
+          retention-days: 30
+
+      # 自动提交回触发分支（默认 dev）。无变化则跳过，避免空提交触发额外构建。
+      - name: Commit baseline back to branch
+        working-directory: ${{ github.workspace }}
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git add Bastion/app/lint-baseline.xml
+          if git diff --cached --quiet; then
+            echo "No baseline changes; nothing to commit."
+          else
+            git commit -m "chore(lint): 重生成 lint-baseline.xml（navigation 2.10 升级引入的新 lint 问题）"
+            git push origin "${{ github.event.inputs.ref }}"
+          fi
