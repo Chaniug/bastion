@@ -278,35 +278,41 @@ kotlin {
     }
 }
 
+// Kotlin / serialization 的 force 版本改为从 catalog 读取，消除双轨维护。
+// 此前这里硬编码了 2.3.21 / 1.11.0，与 libs.versions.toml 的 kotlin / kotlinxSerialization
+// 各写一遍：将来升 Kotlin 若只改 catalog，force 会把新版本压回旧版本，且症状隐蔽。
+def kotlinVersion = libs.versions.kotlin.get()
+def serializationVersion = libs.versions.kotlinxSerialization.get()
+
 configurations.configureEach {
     resolutionStrategy.force(
-        "org.jetbrains.kotlin:kotlin-bom:2.3.21",
-        "org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
-        "org.jetbrains.kotlin:kotlin-stdlib-common:2.3.21",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.21",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
-        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.11.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0"
+        "org.jetbrains.kotlin:kotlin-bom:$kotlinVersion",
+        "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion",
+        "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion",
+        "org.jetbrains.kotlinx:kotlinx-serialization-bom:$serializationVersion",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:$serializationVersion"
     )
 }
 
 dependencies {
     constraints {
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     }
 
     // Core Android libraries
     implementation libs.androidx.core.ktx
     implementation libs.androidx.core.splashscreen  // 添加splashscreen依赖
     implementation libs.androidx.lifecycle.runtime.ktx
-    implementation "androidx.lifecycle:lifecycle-process:2.11.0"
+    implementation libs.androidx.lifecycle.process
     implementation libs.androidx.activity.compose
     // Pin profileinstaller to the latest stable patch and avoid older transitive copies.
-    implementation "androidx.profileinstaller:profileinstaller:1.4.1"
+    implementation libs.androidx.profileinstaller
     // 阶段二·稳定性：原计划在 debug 引入 LeakCanary 捕获内存泄漏，但 2.14 在 Android 17(API 37)
     // 进程启动期(ContentProvider 自启)崩溃导致预览版无法启动，已回退。
     // 经核查官方仓库：LeakCanary 无稳定版 3.0，最新仅为 v3.0-alpha-9（alpha）。要支持 Android 17
@@ -394,7 +400,7 @@ dependencies {
     implementation libs.kotlinx.serialization.json
     
     // WebDAV for cloud backup
-    implementation 'com.github.thegrizzlylabs:sardine-android:0.8'
+    implementation libs.sardine.android
     
     // KeePass KDBX library for KeePass compatibility
     // 0.10.0 → 0.13.0：
@@ -403,7 +409,7 @@ dependencies {
     //   0.13 开放 KdfProvider 接口，可替换 KDF 实现
     // 注意：0.12 换了 XML 解析器，FormatError.InvalidXml 的触发条件可能变化，
     // 需重点验证 KDBX 导入导出与本轮拆分的错误分类。
-    implementation 'app.keemobile:kotpass:0.13.0'
+    implementation libs.kotpass
     
     // WorkManager for auto backup
     implementation libs.androidx.work.runtime.ktx
@@ -413,9 +419,10 @@ dependencies {
 
     // Markdown rendering
     implementation libs.commonmark
-    implementation 'org.commonmark:commonmark-ext-gfm-tables:0.30.0'
-    implementation 'org.commonmark:commonmark-ext-gfm-strikethrough:0.30.0'
-    implementation 'org.commonmark:commonmark-ext-task-list-items:0.30.0'
+    // 三个扩展与主库共用 commonmark 版本（此前同一版本号在此硬编码 4 遍）
+    implementation libs.commonmark.ext.gfm.tables
+    implementation libs.commonmark.ext.gfm.strikethrough
+    implementation libs.commonmark.ext.task.list.items
     
     // Charts for ledger analytics
     // TODO: Re-enable after resolving Kotlin version compatibility
@@ -425,32 +432,32 @@ dependencies {
     implementation libs.scrypt
 
     // Password strength analysis, same engine used by Keyguard
-    implementation 'com.nulab-inc:zxcvbn:1.9.0'
+    implementation libs.zxcvbn
     
     // ==== Bitwarden Integration ====
     // Retrofit for API calls（2.11.0 → 3.0.0 稳定版，与 OkHttp 5 配套）
-    implementation 'com.squareup.retrofit2:retrofit:3.0.0'
-    implementation 'com.squareup.retrofit2:converter-kotlinx-serialization:3.0.0'
+    implementation libs.retrofit
+    implementation libs.retrofit.kotlinx.serialization
     
     // OkHttp 5.x：官方 breaking —— connectTimeout/readTimeout/writeTimeout/callTimeout
     // 改用 kotlin.time.Duration（不再用 (Long, TimeUnit)）。
     // 项目中所有超时配置点已同步改造，见 BitwardenApiFactory / UpdateChecker /
     // OneDriveKeePassFileSource / WebDavGateway。
-    implementation 'com.squareup.okhttp3:okhttp:5.5.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
-    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:5.5.0'
+    implementation libs.okhttp
+    implementation libs.okhttp.logging.interceptor
+    implementation libs.okhttp.dnsoverhttps
 
     // Microsoft identity platform / OneDrive auth
-    implementation 'com.microsoft.identity.client:msal:8.4.2'
-    implementation 'com.squareup.moshi:moshi-adapters:1.15.2'
+    implementation libs.msal
+    implementation libs.moshi.adapters
     
     // BouncyCastle for Argon2 (Bitwarden KDF support)
     // 1.78.1 → 1.85.2：修复 GHSA-574f-3g2m-x479（GOST CTR 密钥流重用）与
     // GHSA-c3fc-8qff-9hwx（LDAP 注入），两者的彻底修复版本都是 1.84。
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.85.2'
+    implementation libs.bcprov.jdk18on
     // Native Argon2 backend for Bitwarden Argon2id KDF. This keeps high-memory
     // KDF work off the Android JVM heap.
-    implementation('com.lambdapioneer.argon2kt:argon2kt:1.6.0') {
+    implementation(libs.argon2kt) {
         exclude group: 'androidx.appcompat', module: 'appcompat'
         exclude group: 'androidx.core', module: 'core-ktx'
     }
