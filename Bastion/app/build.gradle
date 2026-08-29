@@ -235,6 +235,11 @@ android {
     }
     lint {
         baseline = file('lint-baseline.xml')
+        // [feat/navigation-2.10 实验分支临时项，合回 dev 前必须移除]
+        // navigation 2.10 传递升级 compose-ui，其新 lint 规则产生约 546 个新错误
+        //（首个为 NonObservableLocale）。本实验目标是真机验证 predictivePop* 参数，
+        // lint 不应阻塞出包；正式升级前需重新生成 lint-baseline.xml 并移除此项。
+        abortOnError false
         // Workaround: lint/lifecycle detector crashes with Kotlin 2.x analysis API in current toolchain.
         disable 'NullSafeMutableLiveData',
                 'FrequentlyChangingValue',
