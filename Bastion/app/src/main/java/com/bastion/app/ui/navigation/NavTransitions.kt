@@ -54,13 +54,16 @@ private const val EASY_NOTES_INITIAL_SCALE = 0.94f
 private const val PARENT_PAGE_SCALE = 0.99f
 
 /**
- * 返回（back）时子页面淡出的时长。
+ * 返回（back）时子页面划出的时长。
  *
- * 明显短于进入动画（[EASY_NOTES_DURATION]）。
- * 依据 Material Design motion 规范：返回应当是**快速、干脆**的，
- * 用户在按返回时已经知道要去哪，不需要长动画来引导注意力。
+ * 短于进入动画（[EASY_NOTES_DURATION] = 260ms）：
+ * 依据 Material Design motion 规范，返回应当**快速、干脆**，
+ * 用户在返回时已经知道要去哪，不需要长动画来引导注意力。
+ *
+ * 取 200ms 而非更短：返回手势期间动画是**实时跟随手指**的，
+ * 这里的时长只用于「松手后把剩余部分补完」；全宽划出若太短会显得急促。
  */
-private const val DURATION_BACK_EXIT = 150
+private const val DURATION_BACK_EXIT = 200
 
 private val navEasing = CubicBezierEasing(0.6f, 0.0f, 0.4f, 1.0f)
 
@@ -135,15 +138,20 @@ fun tabSwitchExit(): ExitTransition =
     fadeOut(animationSpec = tween(durationMillis = DURATION_TAB_FADE_OUT, easing = navEasing))
 
 /**
- * 子页面返回退出：**只做短淡出，不做缩放、不做位移**。
+ * 子页面返回退出：**跟随手指向右划出屏幕**，同时淡出。
  *
- * 缩放退场是 iOS modal 的表现方式，在安卓上会让人觉得「页面在缩回去」，
- * 与返回手势（页面向右划走 / 直接消失）的直觉不符。
- * 按 Material motion 规范，返回应当快速干脆，故用 [DURATION_BACK_EXIT]（150ms）
- * 而非进入的 [EASY_NOTES_DURATION]（260ms）。
+ * 用户主要用「边缘侧滑」返回，而 Predictive Back 的灵魂就是**跟手** ——
+ * 页面必须实时跟随手指位移。若只做淡出没有位移，侧滑时会有明显的「不跟手」感。
+ *
+ * 按 Android 标准，返回时当前页面向右划走，故用全宽 slideOutHorizontally。
+ * **不做任何缩放** —— 缩放退场是 iOS modal 的表现方式，在安卓上会让人觉得
+ * 「页面在缩回去」，与返回手势直觉不符。
  */
 fun easyNotesScreenExit(): ExitTransition =
-    fadeOut(animationSpec = tween(DURATION_BACK_EXIT, easing = navEasing))
+    slideOutHorizontally(
+        animationSpec = tween(DURATION_BACK_EXIT, easing = navEasing),
+        targetOffsetX = { fullWidth -> fullWidth }
+    ) + fadeOut(animationSpec = tween(DURATION_BACK_EXIT, easing = navEasing))
 
 /**
  * 父页面（Main / 设置页）让位给子页面：只做极轻微缩小，**不淡出**。
@@ -159,11 +167,16 @@ fun parentPageExit(): ExitTransition =
     )
 
 /**
- * 父页面（Main / 设置页）在子页面返回时恢复：**无动画，直接显现**。
+ * 父页面（Main / 设置页）在子页面返回时恢复：**从左后方轻微跟进（视差）**。
  *
- * 返回时子页面在上方做短淡出（[easyNotesScreenExit]），
- * 父页面不做任何缩放 / 位移 / 淡入 —— 它在下层本来就是可见的，
- * 子页面淡完就直接露出来。这样返回是「一步到位」的，
- * 不会出现「先缩小、然后才返回上一级」的两段感。
+ * 子页面向右划走的同时，父页面从左侧 1/12 处滑回原位，
+ * 形成 Android 标准的层次感（parallax），让返回动作有空间关系。
+ *
+ * 不做缩放、不做淡入 —— 父页面在下层本来就可见，
+ * 保持不透明更干净，也避免出现「两层半透明内容重叠」的重影。
  */
-fun parentPageEnter(): EnterTransition = EnterTransition.None
+fun parentPageEnter(): EnterTransition =
+    slideInHorizontally(
+        animationSpec = tween(DURATION_BACK_EXIT, easing = navEasing),
+        initialOffsetX = { fullWidth -> -fullWidth / 12 }
+    )
