@@ -1,48 +1,53 @@
 [versions]
-agp = "9.1.1"
-# Phase A：AGP 9.1.1 要求 Kotlin ≥ 2.3（官方兼容表：Kotlin 2.2 仅支持 AGP 7.3.1–8.10，
-# 2.3 需 AGP ≥ 9.0.28）。故从方案 A 原定的 2.2.0 升到 2.3.21。
+# 2026-08 全量依赖升级批次。
+# AGP 9.1.1 → 9.3.2，对应最低 Gradle 9.5.0（见 gradle-wrapper.properties）。
+# 注意：AGP 9.1 / 9.2 / 9.3 内置的 KGP 均为 2.2.10，本项目用下面的 kotlin 变量显式声明
+# 2.3.21 将其覆盖，所以升 AGP 不会动 Kotlin，KSP 2.3.11 的配对关系保持不变。
+agp = "9.3.2"
+# Kotlin 停在 2.3.21（已是 2.3 线最新）。升 2.4.10 被 KSP 阻塞：
+# KSP 至今只发到 2.3.11，没有 2.4.x，Room 编译器跑不起来。待 KSP 2.4 发布后再动。
 kotlin = "2.3.21"
 # KSP 已改为单号版本体系：2.3.x 线对应 Kotlin 2.3（Kotlin 2.4 的 KSP 尚未发布）。
 ksp = "2.3.11"
-coreKtx = "1.10.1"
-# kotlinx-serialization 1.8.1：与 Kotlin 2.3 兼容（1.6.0 偏旧，2.3 建议 ≥ 1.7）
-kotlinxSerialization = "1.8.1"
-junit = "4.13.2"
-junitVersion = "1.2.1"
-# mockk 1.14.0：本项目已升到 kotlin = 2.3.21，mockk 1.14.x 由 Kotlin 2.3 编译，
-# metadata 2.3 与 2.3.21 编译器对齐（原 1.13.17 由 2.0 编译，迁 2.3 后需同步升级）。
-mockk = "1.14.0"
-espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.9.3"
-composeBom = "2026.03.00"
+coreKtx = "1.19.0"
+kotlinxSerialization = "1.11.0"
+junit = "4.13.2"  # JUnit 4 的最终版本，无更高版本
+junitVersion = "1.3.0"
+mockk = "1.14.11"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.08.00"
+# 刻意保留 1.5.0-alpha16：刚用 MotionScheme.standard() 修掉 Expressive 回弹导致的
+# 底部导航切 tab 图标闪烁。alpha 线版本间 motion 行为会变，升 alpha27 有复发风险；
+# 而最新稳定版 1.4.0 比 alpha 线更旧，回退会丢 Expressive 特性。
 material3Expressive = "1.5.0-alpha16"
-navigation = "2.8.9"
-# D.3 Room 升级：2.6.1 → 2.7.1（KSP 支持更好、编译更快；2.7 原生支持 SELECT 投影到非 @Entity data class，为 C.3 投影铺路）
-room = "2.7.1"
+navigation = "2.10.0"
+room = "2.8.4"
+# 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
+# 生物识别关系解锁路径，alpha 线跨 2 个 minor（→1.4.0-alpha07）风险不划算。
 biometric = "1.2.0-alpha05"
-securityCrypto = "1.1.0-alpha06"
-viewModel = "2.8.7"
-# D.1 协程对齐：1.7.3 → 1.9.0（Kotlin 2.0 时代应配 1.8+/1.9，API 稳定无明显 breaking）
-coroutines = "1.9.0"
-# D.2 DataStore 对齐：1.0.0 → 1.1.7（1.1.x 性能/bug 修复，context.dataStore API 无 breaking）
-datastore = "1.1.7"
-zxing = "3.5.3"
+securityCrypto = "1.1.0"  # alpha06 → 1.1.0 稳定版
+viewModel = "2.11.0"
+coroutines = "1.11.0"
+datastore = "1.2.1"
+zxing = "3.5.4"
 zxingAndroidEmbedded = "4.3.0"
-camerax = "1.5.3"
-permissions = "0.32.0"
-commonmark = "0.22.0"
-splashscreen = "1.0.1"  # 添加splashscreen版本
+camerax = "1.6.2"
+permissions = "0.37.3"
+commonmark = "0.30.0"
+splashscreen = "1.2.0"
 scrypt = "1.4.0"
-fragment = "1.6.2"  # Fragment for BottomSheetDialogFragment
-material = "1.11.0"  # Google Material Components
-autofill = "1.2.0-beta01"  # Autofill framework for InlinePresentation
-slice = "1.1.0-alpha02"  # Slice for inline UI
-playServicesAuth = "21.5.1"  # Google Play Services Auth for SMS Retriever API and Google authorization
-credentials = "1.2.2"  # Credential Manager for Passkeys (Android 14+)
-work = "2.8.1"  # WorkManager for auto backup
-reorderable = "3.0.0"  # Compose Reorderable for drag-and-drop sorting
+fragment = "1.9.0"
+material = "1.14.0"
+autofill = "1.3.0"  # beta01 → 1.3.0 稳定版
+slice = "1.1.0-alpha02"  # 上游已停更，无更高版本
+playServicesAuth = "22.0.0"
+# 此变量此前是死配置：app/build.gradle 里 credentials 走硬编码 1.3.0，从未引用 catalog。
+# 本次统一改回 catalog 引用（见 app/build.gradle），版本一并从 1.3.0 提到 1.6.0。
+credentials = "1.6.0"
+work = "2.11.2"
+reorderable = "3.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

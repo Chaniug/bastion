@@ -25,8 +25,12 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(17)
+    // CI 已统一到 JDK 21（见 .github/workflows/*.yml）。jvmToolchain 若仍写 17，
+    // 在只有 JDK 21 的构建环境下 Gradle 会去找 JDK 17 工具链并失败。
+    jvmToolchain(21)
     compilerOptions {
+        // 语言级别保持 17：桌面端无 Android API 限制，但保持与移动端一致，
+        // 且 Compose Desktop 与 JDK 17 字节码级别组合经过验证。
         jvmTarget.set(JvmTarget.JVM_17)
     }
 }

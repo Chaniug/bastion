@@ -285,25 +285,25 @@ configurations.configureEach {
         "org.jetbrains.kotlin:kotlin-stdlib-common:2.3.21",
         "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.21",
         "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
-        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.8.1",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",
-        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.8.1",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.8.1"
+        "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.11.0",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0",
+        "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0"
     )
 }
 
 dependencies {
     constraints {
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     }
 
     // Core Android libraries
     implementation libs.androidx.core.ktx
     implementation libs.androidx.core.splashscreen  // 添加splashscreen依赖
     implementation libs.androidx.lifecycle.runtime.ktx
-    implementation "androidx.lifecycle:lifecycle-process:2.8.7"
+    implementation "androidx.lifecycle:lifecycle-process:2.11.0"
     implementation libs.androidx.activity.compose
     // Pin profileinstaller to the latest stable patch and avoid older transitive copies.
     implementation "androidx.profileinstaller:profileinstaller:1.4.1"
@@ -357,8 +357,10 @@ dependencies {
     implementation libs.androidx.slice.builders
     
     // Credentials API (for Passkey support, Android 14+)
-    implementation "androidx.credentials:credentials:1.3.0"
-    implementation "androidx.credentials:credentials-play-services-auth:1.3.0"
+    // 此前这里硬编码 1.3.0，导致 libs.versions.toml 的 credentials 变量成了死配置
+    // （改 catalog 不生效）。现统一走 catalog，版本一并提到 1.6.0。
+    implementation libs.androidx.credentials
+    implementation libs.androidx.credentials.play.services.auth
     
     // Google Play Services Auth (for SMS Retriever API - OTP auto-read)
     implementation libs.play.services.auth
@@ -389,8 +391,13 @@ dependencies {
     implementation 'com.github.thegrizzlylabs:sardine-android:0.8'
     
     // KeePass KDBX library for KeePass compatibility
-    // 0.10.0 is the newest release compatible with the project's Kotlin 1.9 toolchain.
-    implementation 'app.keemobile:kotpass:0.10.0'
+    // 0.10.0 → 0.13.0：
+    //   0.11 修 historyMaxItems 负数/无限值处理
+    //   0.12 内嵌 XML 解析器（去掉外部 XML 依赖）+ 导入时尊重 in-memory 保护标志
+    //   0.13 开放 KdfProvider 接口，可替换 KDF 实现
+    // 注意：0.12 换了 XML 解析器，FormatError.InvalidXml 的触发条件可能变化，
+    // 需重点验证 KDBX 导入导出与本轮拆分的错误分类。
+    implementation 'app.keemobile:kotpass:0.13.0'
     
     // WorkManager for auto backup
     implementation libs.androidx.work.runtime.ktx
@@ -400,9 +407,9 @@ dependencies {
 
     // Markdown rendering
     implementation libs.commonmark
-    implementation 'org.commonmark:commonmark-ext-gfm-tables:0.22.0'
-    implementation 'org.commonmark:commonmark-ext-gfm-strikethrough:0.22.0'
-    implementation 'org.commonmark:commonmark-ext-task-list-items:0.22.0'
+    implementation 'org.commonmark:commonmark-ext-gfm-tables:0.30.0'
+    implementation 'org.commonmark:commonmark-ext-gfm-strikethrough:0.30.0'
+    implementation 'org.commonmark:commonmark-ext-task-list-items:0.30.0'
     
     // Charts for ledger analytics
     // TODO: Re-enable after resolving Kotlin version compatibility
@@ -415,21 +422,26 @@ dependencies {
     implementation 'com.nulab-inc:zxcvbn:1.9.0'
     
     // ==== Bitwarden Integration ====
-    // Retrofit for API calls
-    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
-    implementation 'com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0'
+    // Retrofit for API calls（2.11.0 → 3.0.0 稳定版，与 OkHttp 5 配套）
+    implementation 'com.squareup.retrofit2:retrofit:3.0.0'
+    implementation 'com.squareup.retrofit2:converter-kotlinx-serialization:3.0.0'
     
-    // OkHttp for networking
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0'
+    // OkHttp 5.x：官方 breaking —— connectTimeout/readTimeout/writeTimeout/callTimeout
+    // 改用 kotlin.time.Duration（不再用 (Long, TimeUnit)）。
+    // 项目中所有超时配置点已同步改造，见 BitwardenApiFactory / UpdateChecker /
+    // OneDriveKeePassFileSource / WebDavGateway。
+    implementation 'com.squareup.okhttp3:okhttp:5.5.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
+    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:5.5.0'
 
     // Microsoft identity platform / OneDrive auth
-    implementation 'com.microsoft.identity.client:msal:8.3.2'
-    implementation 'com.squareup.moshi:moshi-adapters:1.15.1'
+    implementation 'com.microsoft.identity.client:msal:8.4.2'
+    implementation 'com.squareup.moshi:moshi-adapters:1.15.2'
     
     // BouncyCastle for Argon2 (Bitwarden KDF support)
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    // 1.78.1 → 1.85.2：修复 GHSA-574f-3g2m-x479（GOST CTR 密钥流重用）与
+    // GHSA-c3fc-8qff-9hwx（LDAP 注入），两者的彻底修复版本都是 1.84。
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.85.2'
     // Native Argon2 backend for Bitwarden Argon2id KDF. This keeps high-memory
     // KDF work off the Android JVM heap.
     implementation('com.lambdapioneer.argon2kt:argon2kt:1.6.0') {
