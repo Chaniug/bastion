@@ -146,6 +146,21 @@ jobs:
           BASTION_KS_KEY_PASSWORD: ${{ github.event_name == 'push' && secrets.DEBUG_KEY_PASSWORD || '' }}
 
       # 2) 立即上传 APK —— 在跑测试之前，push 场景最快拿到包用于真机验证
+      # 关键：Compose 报告目录是【所有 Kotlin 编译任务共用】的固定路径，后跑的会整体覆盖先跑的。
+      # 实测：单测编译 compileDebugUnitTestKotlin 在最后执行，会把主代码的报告冲掉 ——
+      # 首次上传拿到的 app-classes.txt 里清一色是 *Test / *RegressionGuardTest 类，
+      # module.json 的 107 个 composable 也全来自测试代码，数据完全不可用。
+      # 因此在 build gate 之后、单测之前把报告快照到独立目录，后面上传这份。
+      - name: Snapshot compose compiler reports before unit test compile overwrites them
+        if: always()
+        run: |
+          mkdir -p build/compose-reports
+          cp -r app/build/compose_compiler build/compose-reports/compose_compiler 2>/dev/null || echo "no compose_compiler dir"
+          cp -r app/build/compose_metrics/debug build/compose-reports/compose_metrics 2>/dev/null || echo "no compose_metrics/debug dir"
+          echo "--- snapshot summary ---"
+          find build/compose-reports -type f | head -20
+          wc -l build/compose-reports/compose_compiler/app-composables.csv 2>/dev/null || true
+
       - name: List debug APK outputs
         run: find app/build/outputs/apk/debug -maxdepth 1 -type f -print || true
 
@@ -268,8 +283,7 @@ jobs:
         with:
           name: compose-compiler-reports
           path: |
-            Bastion/app/build/compose_compiler
-            Bastion/app/build/compose_metrics
+            Bastion/build/compose-reports
           if-no-files-found: ignore
           retention-days: 14
 
