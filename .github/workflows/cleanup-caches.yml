@@ -48,7 +48,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh cache list --limit 1000 --json id,key,lastAccessedAt > /tmp/caches.json
+          # sizeInBytes 必须显式请求，否则下面的占用统计恒为 0
+          gh cache list --limit 1000 --json id,key,sizeInBytes,lastAccessedAt > /tmp/caches.json
 
           python3 - <<'PY'
           import collections, json, os, subprocess, sys
