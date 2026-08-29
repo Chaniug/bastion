@@ -53,6 +53,15 @@ private const val EASY_NOTES_INITIAL_SCALE = 0.94f
  */
 private const val PARENT_PAGE_SCALE = 0.99f
 
+/**
+ * 返回（back）时子页面淡出的时长。
+ *
+ * 明显短于进入动画（[EASY_NOTES_DURATION]）。
+ * 依据 Material Design motion 规范：返回应当是**快速、干脆**的，
+ * 用户在按返回时已经知道要去哪，不需要长动画来引导注意力。
+ */
+private const val DURATION_BACK_EXIT = 150
+
 private val navEasing = CubicBezierEasing(0.6f, 0.0f, 0.4f, 1.0f)
 
 private fun <T> tweenForward() = tween<T>(durationMillis = DURATION_FORWARD, easing = navEasing)
@@ -126,19 +135,15 @@ fun tabSwitchExit(): ExitTransition =
     fadeOut(animationSpec = tween(durationMillis = DURATION_TAB_FADE_OUT, easing = navEasing))
 
 /**
- * EasyNotes 风格页面退出：淡出 + 极轻微缩小。
+ * 子页面返回退出：**只做短淡出，不做缩放、不做位移**。
  *
- * 退出幅度用 0.99f（几乎不可见），而进入仍保持 0.94f。
- * 原因：用户反馈返回时「先看到页面缩小，然后才返回上一级」，
- * 子页面退场时的大幅缩放（原 0.9f / 上版 0.94f）是主要来源。
- * 进入可以明显一点，但退出要干脆、不让人觉得「在缩回去」。
+ * 缩放退场是 iOS modal 的表现方式，在安卓上会让人觉得「页面在缩回去」，
+ * 与返回手势（页面向右划走 / 直接消失）的直觉不符。
+ * 按 Material motion 规范，返回应当快速干脆，故用 [DURATION_BACK_EXIT]（150ms）
+ * 而非进入的 [EASY_NOTES_DURATION]（260ms）。
  */
 fun easyNotesScreenExit(): ExitTransition =
-    fadeOut(animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)) +
-        scaleOut(
-            targetScale = 0.99f,
-            animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
-        )
+    fadeOut(animationSpec = tween(DURATION_BACK_EXIT, easing = navEasing))
 
 /**
  * 父页面（Main / 设置页）让位给子页面：只做极轻微缩小，**不淡出**。
@@ -154,14 +159,11 @@ fun parentPageExit(): ExitTransition =
     )
 
 /**
- * 父页面（Main / 设置页）在子页面返回时恢复：从轻微缩小还原，**不淡入**。
+ * 父页面（Main / 设置页）在子页面返回时恢复：**无动画，直接显现**。
  *
- * 与 [parentPageExit] 对称。返回时子页面在上方做 easyNotesScreenExit
- * （缩放 + 淡出），父页面只做还原、不叠加 alpha 变化，
- * 因此不会出现「两层半透明内容同时缩放」的重影。
+ * 返回时子页面在上方做短淡出（[easyNotesScreenExit]），
+ * 父页面不做任何缩放 / 位移 / 淡入 —— 它在下层本来就是可见的，
+ * 子页面淡完就直接露出来。这样返回是「一步到位」的，
+ * 不会出现「先缩小、然后才返回上一级」的两段感。
  */
-fun parentPageEnter(): EnterTransition =
-    scaleIn(
-        initialScale = PARENT_PAGE_SCALE,
-        animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
-    )
+fun parentPageEnter(): EnterTransition = EnterTransition.None
