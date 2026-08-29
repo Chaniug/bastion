@@ -25,9 +25,32 @@ import androidx.compose.animation.slideOutHorizontally
 
 private const val DURATION_FORWARD = 300
 private const val DURATION_BACK = 280
-private const val EASY_NOTES_FADE_DURATION = 300
-private const val EASY_NOTES_SCALE_DURATION = 400
-private const val EASY_NOTES_INITIAL_SCALE = 0.9f
+
+/**
+ * EasyNotes 风格缩放转场的统一时长。
+ *
+ * 之前 fade 用 300ms、scale 用 400ms，**两者不同步**，造成两个可见问题：
+ * - 进入：alpha 在 300ms 就到 1，剩下 100ms 是「已经完全不透明却还在缩放」
+ * - 退出：alpha 在 300ms 就到 0，剩下 100ms 的缩放根本看不见，纯属空转
+ *
+ * 现统一为同一时长，让 alpha 与 scale 同步到位。
+ */
+private const val EASY_NOTES_DURATION = 260
+
+/**
+ * 子页面进入/退出的缩放幅度。
+ *
+ * 原先 0.9f 幅度偏大：进入方与退出方**同时做反向缩放且都带 alpha**，
+ * 中间帧（约 t=0.5）两层内容缩放比接近、又都是半透明，高度重合 → 明显重影。
+ * 收到 0.94f 后，重叠偏差降到肉眼不易察觉。
+ */
+private const val EASY_NOTES_INITIAL_SCALE = 0.94f
+
+/**
+ * 父页面（Main / 设置页）让位给子页面时的缩放幅度。
+ * 比子页面更小，形成景深层次，同时把两层内容的重叠偏差压到最低。
+ */
+private const val PARENT_PAGE_SCALE = 0.97f
 
 private val navEasing = CubicBezierEasing(0.6f, 0.0f, 0.4f, 1.0f)
 
@@ -63,12 +86,17 @@ fun parallaxEnterFromLeft(): EnterTransition =
         initialOffsetX = { fullWidth -> -fullWidth / 12 },
     ) + fadeIn(animationSpec = tweenBack())
 
-/** EasyNotes 风格页面进入：从 0.9 缩放到 1，同时淡入。 */
+/**
+ * EasyNotes 风格页面进入：从 [EASY_NOTES_INITIAL_SCALE] 缩放到 1，同时淡入。
+ *
+ * fade 与 scale 现在共用 [EASY_NOTES_DURATION]，alpha 与缩放同步到位，
+ * 不会再出现「已经不透明但还在缩放」的末段突起。
+ */
 fun easyNotesScreenEnter(): EnterTransition =
-    fadeIn(animationSpec = tween(EASY_NOTES_FADE_DURATION)) +
+    fadeIn(animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)) +
         scaleIn(
             initialScale = EASY_NOTES_INITIAL_SCALE,
-            animationSpec = tween(EASY_NOTES_SCALE_DURATION)
+            animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
         )
 
 /**
@@ -96,10 +124,36 @@ fun tabSwitchEnter(): EnterTransition =
 fun tabSwitchExit(): ExitTransition =
     fadeOut(animationSpec = tween(durationMillis = DURATION_TAB_FADE_OUT, easing = navEasing))
 
-/** EasyNotes 风格页面退出：从 1 缩到 0.9，同时淡出。 */
+/** EasyNotes 风格页面退出：从 1 缩到 [EASY_NOTES_INITIAL_SCALE]，同时淡出。 */
 fun easyNotesScreenExit(): ExitTransition =
-    fadeOut(animationSpec = tween(EASY_NOTES_FADE_DURATION)) +
+    fadeOut(animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)) +
         scaleOut(
             targetScale = EASY_NOTES_INITIAL_SCALE,
-            animationSpec = tween(EASY_NOTES_SCALE_DURATION)
+            animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
         )
+
+/**
+ * 父页面（Main / 设置页）让位给子页面：只做极轻微缩小，**不淡出**。
+ *
+ * 为什么不淡出：子页面是在父页面上方淡入的。若父页面同时淡出，
+ * 中间帧会出现两层半透明内容叠在一起（重影）。
+ * 父页面保持不透明，就会被上层自然遮住，不需要靠 alpha 退场。
+ */
+fun parentPageExit(): ExitTransition =
+    scaleOut(
+        targetScale = PARENT_PAGE_SCALE,
+        animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
+    )
+
+/**
+ * 父页面（Main / 设置页）在子页面返回时恢复：从轻微缩小还原，**不淡入**。
+ *
+ * 与 [parentPageExit] 对称。返回时子页面在上方做 easyNotesScreenExit
+ * （缩放 + 淡出），父页面只做还原、不叠加 alpha 变化，
+ * 因此不会出现「两层半透明内容同时缩放」的重影。
+ */
+fun parentPageEnter(): EnterTransition =
+    scaleIn(
+        initialScale = PARENT_PAGE_SCALE,
+        animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
+    )

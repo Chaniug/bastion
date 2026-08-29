@@ -20,6 +20,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.bastion.app.ui.navigation.easyNotesScreenEnter
 import com.bastion.app.ui.navigation.easyNotesScreenExit
+import com.bastion.app.ui.navigation.parentPageEnter
+import com.bastion.app.ui.navigation.parentPageExit
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -968,8 +970,11 @@ fun BastionContent(
                     defaultValue = 0
                 }
             ),
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() }
+            // 主界面（含底部导航与长列表）让位给子页面时，只做极轻微缩小、不淡出；
+            // 子页面在自己上方做缩放 + 淡入。父页面不参与 alpha 变化，
+            // 避免转场中间帧出现两层半透明内容叠影（返回时尤其明显）。
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() }
         ) { backStackEntry ->
             val tab = backStackEntry.arguments?.getInt("tab") ?: 0
             val scope = rememberCoroutineScope()
