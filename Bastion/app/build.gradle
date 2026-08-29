@@ -165,12 +165,16 @@ android {
     // CI 固定签名：当注入 BASTION_KS_FILE 时，debug 与 release 共用同一 keystore，
     // 使 preview debug APK 与 stable release APK 签名一致，可互相覆盖安装。
     // 本地开发不设这些环境变量，仍走 Android 默认 debug keystore，无副作用。
+    // 仅在真正注入非空(非空白) keystore 路径时才启用固定签名；
+    // 否则（workflow_dispatch / pull_request / 本地开发）回退到 Android 默认 debug keystore，
+    // 避免构建因占位文件 nonexistent.jks 不存在而失败。
+    def ksFile = System.getenv('BASTION_KS_FILE')?.trim()
     signingConfigs {
         ciFixed {
-            storeFile file(System.env.BASTION_KS_FILE ?: 'nonexistent.jks')
-            storePassword System.env.BASTION_KS_STORE_PASSWORD ?: ''
-            keyAlias System.env.BASTION_KS_ALIAS ?: ''
-            keyPassword System.env.BASTION_KS_KEY_PASSWORD ?: ''
+            storeFile file(ksFile ?: 'nonexistent.jks')
+            storePassword System.getenv('BASTION_KS_STORE_PASSWORD')?.trim() ?: ''
+            keyAlias System.getenv('BASTION_KS_ALIAS')?.trim() ?: ''
+            keyPassword System.getenv('BASTION_KS_KEY_PASSWORD')?.trim() ?: ''
         }
     }
 
@@ -198,8 +202,9 @@ android {
         debug {
             minifyEnabled false
             shrinkResources false
-            // CI 注入固定 keystore 时启用，确保 debug APK 与 stable release APK 签名一致可互相覆盖
-            if (System.env.BASTION_KS_FILE != null) {
+            // 仅当注入了非空 keystore 路径时才应用固定签名，确保 debug 与 stable 签名一致可互相覆盖；
+            // 否则（如 workflow_dispatch / pull_request / 本地）使用默认 debug keystore，构建不被签名卡住。
+            if (ksFile) {
                 signingConfig signingConfigs.ciFixed
             }
         }
