@@ -41,15 +41,15 @@ composeBom = "2026.03.00"
 #    → 升 alpha27 前必须先完成这套 API 迁移（非版本切换，是业务代码改造），
 #      且迁移后仍需按①真机验证 motion。改回 2026.03.00 / 1.5.0-alpha16 即可回滚。
 material3Expressive = "1.5.0-alpha16"
-# 【实验分支 feat/navigation-2.10】重新升级到 2.10.0 验证 predictivePop* 参数。
-# 背景：2026-08-29 曾因升 2.10.0 出现「边缘侧滑返回时页面缩小」回归并回退到 2.8.9。
-# 根因：2.8.x 的预测性返回不读取 composable 上的 pop* 转场（走默认交叉淡入淡出）；
+# navigation 2.10.0：用 NavHost 的 predictivePopEnterTransition /
+# predictivePopExitTransition 显式接管预测性返回（边缘侧滑）动画，修复升 2.10 后
+# 出现的「页面缩小」回归。
+# 根因：2.8.x 的预测性返回不读取 composable 的 pop* 转场（走默认交叉淡入淡出）；
 #      2.10 重做了该交互（release notes：2.10.0-alpha01 新增 NavHost 的
 #      predictivePopEnterTransition / predictivePopExitTransition 参数，并注明
 #      「此前 popEnter/popExit 过渡在预测性返回场景下无法单独定制」）。
-# 本次升级在 MainActivity 的 NavHost 上同时配置 predictivePop* 参数，
-# 由 CI 编译验证参数名（若参数名有误，Kotlin 编译器会报错并列出可用参数），
-# 再由真机验证边缘侧滑是否不再缩小。验证不通过则整个分支废弃，dev 上的 2.8.9 不受影响。
+# 仅配 popEnter/popExit 不足以消除缩小动画，必须同时配 predictivePop*（见 MainActivity.kt）。
+# 回归背景与验证过程见 commit 3a62510 / 36544c2。
 navigation = "2.10.0"
 room = "2.8.4"
 # 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
