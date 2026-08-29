@@ -41,7 +41,17 @@ class ClipboardUtils(private val context: Context) {
         // 评估过用 ProcessLifecycleOwner 作用域替代，但会增加复杂度且无实测收益，
         // 且 delayed clear 本就在 Main.immediate 上调度，取消由 clearClipboardJob 单独管理，
         // 不会泄漏。故保留 companion 级全局 scope。
-        private val clipboardScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        //
+        // 惰性初始化（2026-08 CI 修复）：此处若写成 eager 字段，`Dispatchers.Main.immediate`
+        // 会在 ClipboardUtils 类被加载的瞬间求值。纯 JVM 单测里没有真实主线程，
+        // kotlinx-coroutines-android 1.11 起会在 Looper 缺失时直接抛 IllegalStateException
+        // （1.9 时代 android.jar 的 Handler 桩方法返回默认值，恰好"能用"，所以历史一直是绿的）。
+        // 结果是：只要单测触碰该类（哪怕只调 shouldClearDelayedClipboard 这种纯函数），
+        // 类初始化就炸出 ExceptionInInitializerError，整个测试类 3 个用例全灭。
+        // 改成 lazy 后，纯函数路径不再依赖 Main 调度器，行为保持不变。
+        private val clipboardScope by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        }
         @Volatile
         private var clearClipboardJob: Job? = null
 
