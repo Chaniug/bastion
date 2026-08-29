@@ -181,7 +181,7 @@ jobs:
       #      main 不触发本工作流（触发分支仅 dev）：dev 合并到 main 后代码一致，main 不再重复构建/发布，
       #      preview 由 dev push 维护，与 CodeQL 仅扫 dev 的策略一致。
       - name: Generate preview version suffix
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/feat/navigation-2.10'
         id: preview_meta
         shell: bash
         run: |
@@ -189,7 +189,7 @@ jobs:
           echo "preview_version_suffix=$suffix" >> "$GITHUB_OUTPUT"
 
       - name: Cleanup previous preview release (assets + release + tag)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/feat/navigation-2.10'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -208,7 +208,7 @@ jobs:
           echo "Cleanup done"
 
       - name: Collect debug APK metadata
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/feat/navigation-2.10'
         id: apk_meta
         shell: bash
         run: |
@@ -227,7 +227,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish Debug APK to preview Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/feat/navigation-2.10'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: preview

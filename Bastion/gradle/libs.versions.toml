@@ -41,23 +41,16 @@ composeBom = "2026.03.00"
 #    → 升 alpha27 前必须先完成这套 API 迁移（非版本切换，是业务代码改造），
 #      且迁移后仍需按①真机验证 motion。改回 2026.03.00 / 1.5.0-alpha16 即可回滚。
 material3Expressive = "1.5.0-alpha16"
-# ⚠️ 刻意回退 2.10.0 -> 2.8.9：返回时页面出现「缩小」动画的回归源。
-# 证据链（2026-08-29 排查）：
-#   1. 正式版 v1.0.321（2026-08-28）无此问题，本批次依赖升级（2026-08-29）后出现。
-#   2. v1.0.321 时 targetSdk 已是 37，故 Predictive Back 一直强制开启，不是回归原因。
-#   3. v1.0.321 的代码里本就存在 scaleOut(1 -> 0.9)，却未表现出缩小 ——
-#      说明 **2.8.9 时代这些 pop* 转场并未被真正应用**；升 2.10.0 后才开始生效，
-#      于是那个一直躺在代码里的缩放第一次被「看见」。
-#   4. 官方 release notes 佐证：2.10.0-alpha01 新增 NavHost 的
+# 【实验分支 feat/navigation-2.10】重新升级到 2.10.0 验证 predictivePop* 参数。
+# 背景：2026-08-29 曾因升 2.10.0 出现「边缘侧滑返回时页面缩小」回归并回退到 2.8.9。
+# 根因：2.8.x 的预测性返回不读取 composable 上的 pop* 转场（走默认交叉淡入淡出）；
+#      2.10 重做了该交互（release notes：2.10.0-alpha01 新增 NavHost 的
 #      predictivePopEnterTransition / predictivePopExitTransition 参数，并注明
-#      「此前 popEnter/popExit 过渡在预测性返回场景下无法单独定制」——
-#      即 2.8.x 的预测性返回（边缘侧滑）根本不读取 composable 上的 pop* 转场，
-#      走的是默认交叉淡入淡出（无缩放）；2.10 重做了这块交互，缩放因此显现。
-#      这也解释了为何连改 5 版 NavTransitions.kt 动画参数均无效。
-# 将来若要升回 2.10+：不能只配 popEnter/popExitTransition，
-# 必须用 NavHost 的 predictivePopEnterTransition / predictivePopExitTransition
-# 显式定制预测性返回期间的动画，否则会复现本问题。
-navigation = "2.8.9"
+#      「此前 popEnter/popExit 过渡在预测性返回场景下无法单独定制」）。
+# 本次升级在 MainActivity 的 NavHost 上同时配置 predictivePop* 参数，
+# 由 CI 编译验证参数名（若参数名有误，Kotlin 编译器会报错并列出可用参数），
+# 再由真机验证边缘侧滑是否不再缩小。验证不通过则整个分支废弃，dev 上的 2.8.9 不受影响。
+navigation = "2.10.0"
 room = "2.8.4"
 # 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
 # 生物识别关系解锁路径，alpha 线跨 2 个 minor（→1.4.0-alpha07）风险不划算。

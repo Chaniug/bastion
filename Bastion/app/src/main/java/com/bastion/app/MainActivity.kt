@@ -942,17 +942,17 @@ fun BastionContent(
             NavHost(
                 navController = navController,
                 startDestination = fixedStartDestination,
-                // Android 15+ 对 targetSdk 36+ **强制开启 Predictive Back**，
-                // 已无法通过 enableOnBackInvokedCallback="false" 关闭（本项目 targetSdk 37）。
-                // 若应用不接管返回手势，系统会播放自带的「窗口缩小 + 淡出」动画，
-                // 且要等它播完才把返回事件交给应用 —— 观感就是「先缩小、然后才返回上一级」。
-                // 该动画绘制在 Compose 之上，所以在各 composable 上调转场参数完全无效。
-                //
-                // 在 NavHost 级别显式声明 pop 转场，即可让 Navigation Compose 接管返回手势：
-                // 系统不再播放默认动画，改由下面两个转场渲染（淡出 / 无动画）。
-                // 各 composable 上单独配置的 pop* 仍优先，这里作为全局兜底。
+                // 常规返回（点返回箭头触发 popBackStack）走这两个：
                 popEnterTransition = { parentPageEnter() },
-                popExitTransition = { easyNotesScreenExit() }
+                popExitTransition = { easyNotesScreenExit() },
+                // 预测性返回手势（边缘侧滑）期间走这两个 —— navigation 2.10 新增参数。
+                // 2.10 重做了预测性返回与转场的交互：手势期间不读取 pop* 转场，
+                // 必须用 predictivePop* 显式指定；不配则显示系统默认的窗口缩小动画
+                // （2026-08-29 在 2.10.0 上实机复现过，当时靠回退 2.8.9 绕开）。
+                // 参数名来自官方 release notes（2.10.0-alpha01），
+                // 若与实际 API 有出入，编译器会在此处报错。
+                predictivePopEnterTransition = { parentPageEnter() },
+                predictivePopExitTransition = { easyNotesScreenExit() }
             ) {
             composable(
                 route = Screen.Login.route,
