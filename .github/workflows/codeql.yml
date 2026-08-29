@@ -1,23 +1,34 @@
 name: CodeQL Advanced
 
-# 在 PR 与 dev 推送时做静态安全分析，把漏洞拦截在合并前（而非合并后才被发现）。
+# 静态安全分析。触发策略（2026-08-29 调整）：
+#   PR 合并前拦截 + 每周定时兜底审计 + 手动触发；【不再】每次 push 到 dev 都跑。
+#
 # 说明：
 # - 本项目 Kotlin/Android，CodeQL 用 java-kotlin 提取器，必须在「编译过程中」挂上才能拿到完整分析，
 #   因此这里用 `./gradlew :app:assembleDebug`（已在 Android-Preview 流水线验证可成功）触发提取，
 #   而非依赖 autobuild（autobuild 会连带跑 lint/test，Android 项目易误失败）。
 # - 语言只写 kotlin（java-kotlin 同属一个 CodeQL 包，写两个会重复分析同一份代码）。
-# - 只扫 dev（push + PR），不扫 main：dev 合并到 main 后代码完全一致，扫 main 属冗余；
-#   本项目规范以 dev 为开发/测试分支，main 仅从 dev 合并，不会有绕过 dev 的直接 main 推送。
-# - 每周一定时扫描作为兜底审计（按默认分支 main 的代码跑），与事件触发不重复。
+# - 去掉 push 的原因：CodeQL 需要完整编译一遍 app（约 10 分钟），dev 日常高频推送时
+#   每次都全量重跑性价比很低，且结果通常无变化。改为 PR 时拦截 + 每周兜底，
+#   既不漏掉合并前的安全门禁，也不再占用每次推送的反馈时间。
+#
+# ⚠️ GitHub 限制（务必知悉）：
+#   schedule 触发【只在仓库默认分支】生效，其他分支上的 schedule 会被静默忽略。
+#   本仓库默认分支是 main，因此下面这条 cron 实际是「每周一按 main 的代码」扫描，
+#   而不是 dev —— 若 dev 长期领先 main，定时审计扫到的就不是最新代码。
+#   两个补救办法（择一）：
+#     1) 把仓库默认分支改为 dev（推荐，dev 才是实际开发主线），定时扫描即覆盖 dev；
+#     2) 保留默认分支 main，但接受定时审计扫的是已发布代码（PR 触发仍会覆盖 dev 的变更）。
+#   改频率：每月一次把 cron 换成 '27 3 1 * *'（每月 1 号 03:27 UTC）。
 
 on:
-  push:
-    branches: [ dev ]
   pull_request:
     branches: [ dev ]
   schedule:
-    # 每周一 03:27 UTC 例行全量扫描（兜底审计，按默认分支 main 的代码运行）
+    # 每周一 03:27 UTC 例行全量扫描（兜底审计；按默认分支 main 的代码运行，见上方限制说明）
     - cron: '27 3 * * 1'
+  # 随时手动触发：Actions → CodeQL Advanced → Run workflow（可选分支，用于临时扫 dev）
+  workflow_dispatch:
 
 permissions:
   contents: read
