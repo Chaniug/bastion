@@ -1279,8 +1279,8 @@ fun BastionContent(
                 }
             ),
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1365,8 +1365,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditWifi.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1424,8 +1424,8 @@ fun BastionContent(
         composable(
             route = Screen.WifiDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val wifiId = backStackEntry.arguments?.getString("passwordId")?.toLongOrNull() ?: -1L
@@ -1468,8 +1468,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditSshKey.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1526,8 +1526,8 @@ fun BastionContent(
         composable(
             route = Screen.SshKeyDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val sshId = backStackEntry.arguments?.getString("passwordId")?.toLongOrNull() ?: -1L
@@ -1570,8 +1570,8 @@ fun BastionContent(
         composable(
             route = Screen.BarcodeDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val barcodeId = backStackEntry.arguments?.getString("passwordId")?.toLongOrNull() ?: -1L
@@ -1601,8 +1601,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditTotp.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1785,8 +1785,8 @@ fun BastionContent(
         composable(
             route = Screen.WalletAdd.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1823,8 +1823,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditBankCard.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1856,8 +1856,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditDocument.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1889,8 +1889,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditBillingAddress.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1918,8 +1918,8 @@ fun BastionContent(
         composable(
             route = "bank_card_detail/{cardId}",
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val cardId = backStackEntry.arguments?.getString("cardId")?.toLongOrNull() ?: -1L
@@ -1941,8 +1941,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditNote.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -1974,8 +1974,8 @@ fun BastionContent(
         composable(
             route = Screen.AddEditSend.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             AddEditRouteContent {
@@ -2035,8 +2035,8 @@ fun BastionContent(
                 }
             ),
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val noteId = backStackEntry.arguments?.getString("noteId")?.toLongOrNull() ?: -1L
@@ -2076,8 +2076,8 @@ fun BastionContent(
         composable(
             route = Screen.DocumentDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val documentId = backStackEntry.arguments?.getString("documentId")?.toLongOrNull() ?: -1L
@@ -2099,8 +2099,8 @@ fun BastionContent(
         composable(
             route = Screen.BillingAddressDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val addressId = backStackEntry.arguments?.getString("addressId")?.toLongOrNull() ?: -1L
@@ -2122,8 +2122,8 @@ fun BastionContent(
         composable(
             route = Screen.PasswordDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val passwordId = backStackEntry.arguments?.getString("passwordId")?.toLongOrNull() ?: -1L
@@ -2432,8 +2432,8 @@ fun BastionContent(
         composable(
             route = Screen.ExportData.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val dataExportImportViewModel: com.bastion.app.viewmodel.DataExportImportViewModel = viewModel {
@@ -2488,8 +2488,8 @@ fun BastionContent(
         composable(
             route = Screen.ImportData.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val dataExportImportViewModel: com.bastion.app.viewmodel.DataExportImportViewModel = viewModel {
@@ -2558,8 +2558,8 @@ fun BastionContent(
         composable(
             route = Screen.ChangePassword.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2580,8 +2580,8 @@ fun BastionContent(
         composable(
             route = Screen.SecurityQuestion.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2601,10 +2601,15 @@ fun BastionContent(
 
         composable(
             route = Screen.Settings.route,
-            enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
-            popExitTransition = { easyNotesScreenExit() }
+            // Settings 是「中间层」页面：既是 Main 的子页面，又是各设置子页面的父页面。
+            // 四个转场必须拆成两种语义，不能全部配成同一组缩放动画 ——
+            // 否则从设置子页面返回时，Settings 会走「从 0.94 放大 + 淡入」，
+            // 与上方子页面的「缩小 + 淡出」串行叠加，观感是
+            // 「先看到子页面缩完，设置页才浮现」，而不是平滑退回。
+            enterTransition = { easyNotesScreenEnter() }, // Main -> Settings：作为子页面进入
+            exitTransition = { parentPageExit() },        // Settings -> 子页面：作为父页面让位
+            popEnterTransition = { parentPageEnter() },   // 子页面 -> Settings：作为父页面恢复
+            popExitTransition = { easyNotesScreenExit() } // Settings -> Main：作为子页面退出
         ) {
             val scope = rememberCoroutineScope()
 
@@ -2741,8 +2746,8 @@ fun BastionContent(
         composable(
             route = Screen.MasterPasswordLockingSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2770,8 +2775,8 @@ fun BastionContent(
         composable(
             route = Screen.BottomNavSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2793,8 +2798,8 @@ fun BastionContent(
                 defaultValue = false
             }),
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val skipCurrentPassword = backStackEntry.arguments?.getBoolean("skipCurrentPassword") ?: false
@@ -2845,8 +2850,8 @@ fun BastionContent(
         composable(
             route = Screen.SecurityQuestionsSetup.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2867,8 +2872,8 @@ fun BastionContent(
         composable(
             route = Screen.SecurityQuestionsVerification.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             SecurityQuestionsVerificationScreen(
@@ -2887,8 +2892,8 @@ fun BastionContent(
         composable(
             route = Screen.SupportAuthor.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             SupportAuthorScreen(
@@ -2902,8 +2907,8 @@ fun BastionContent(
         composable(
             route = Screen.WebDavBackup.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             WebDavBackupScreen(
@@ -2918,8 +2923,8 @@ fun BastionContent(
         composable(
             route = Screen.OneDriveBackup.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             OneDriveBackupScreen(
@@ -2937,8 +2942,8 @@ fun BastionContent(
         composable(
             route = Screen.AutofillSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2961,8 +2966,8 @@ fun BastionContent(
         composable(
             route = Screen.AutofillBlockedFields.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2979,8 +2984,8 @@ fun BastionContent(
         composable(
             route = Screen.AutofillSaveBlockedTargets.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -2997,8 +3002,8 @@ fun BastionContent(
         composable(
             route = Screen.PasskeySettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3015,8 +3020,8 @@ fun BastionContent(
         composable(
             route = Screen.PasskeyDetail.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) { backStackEntry ->
             val recordId = backStackEntry.arguments?.getString("recordId")?.toLongOrNull() ?: -1L
@@ -3036,8 +3041,8 @@ fun BastionContent(
         composable(
             route = Screen.SecurityAnalysis.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val context = LocalContext.current
@@ -3088,8 +3093,8 @@ fun BastionContent(
         composable(
             route = Screen.QuickSetup.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val closeQuickSetup = {
@@ -3138,8 +3143,8 @@ fun BastionContent(
         composable(
             route = Screen.DeveloperSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3157,8 +3162,8 @@ fun BastionContent(
         composable(
             route = Screen.Extensions.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val settings by settingsViewModel.settings.collectAsState()
@@ -3214,8 +3219,8 @@ fun BastionContent(
         composable(
             route = Screen.CommonAccountTemplates.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3232,8 +3237,8 @@ fun BastionContent(
         composable(
             route = Screen.PageAdjustmentCustomization.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.PageAdjustmentCustomizationScreen(
@@ -3264,8 +3269,8 @@ fun BastionContent(
         composable(
             route = Screen.AddButtonCustomization.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.AddButtonCustomizationScreen(
@@ -3279,8 +3284,8 @@ fun BastionContent(
         composable(
             route = Screen.PasswordListCustomization.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.PasswordListCustomizationScreen(
@@ -3294,8 +3299,8 @@ fun BastionContent(
         composable(
             route = Screen.PasswordCardAdjustment.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.PasswordCardAdjustmentScreen(
@@ -3309,8 +3314,8 @@ fun BastionContent(
         composable(
             route = Screen.AuthenticatorCardAdjustment.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.AuthenticatorCardAdjustmentScreen(
@@ -3324,8 +3329,8 @@ fun BastionContent(
         composable(
             route = Screen.IconSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.IconSettingsScreen(
@@ -3340,8 +3345,8 @@ fun BastionContent(
         composable(
             route = Screen.PasswordFieldCustomization.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.PasswordFieldCustomizationScreen(
@@ -3355,8 +3360,8 @@ fun BastionContent(
         composable(
             route = Screen.SyncBackup.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3394,8 +3399,8 @@ fun BastionContent(
         composable(
             route = Screen.DedupEngine.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val dedupPasskeyRepository = remember {
@@ -3467,8 +3472,8 @@ fun BastionContent(
         composable(
             route = Screen.LocalKeePass.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.LocalKeePassScreen(
@@ -3482,8 +3487,8 @@ fun BastionContent(
         composable(
             route = Screen.ThemeAndColorScheme.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3504,8 +3509,8 @@ fun BastionContent(
         composable(
             route = Screen.CustomColorSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             com.bastion.app.ui.screens.CustomColorSettingsScreen(
@@ -3530,8 +3535,8 @@ fun BastionContent(
         composable(
             route = Screen.PermissionManagement.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
@@ -3549,8 +3554,8 @@ fun BastionContent(
         composable(
             route = Screen.BitwardenLogin.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = 
@@ -3572,8 +3577,8 @@ fun BastionContent(
         composable(
             route = Screen.BitwardenSettings.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = 
@@ -3600,8 +3605,8 @@ fun BastionContent(
         composable(
             route = Screen.SyncQueue.route,
             enterTransition = { easyNotesScreenEnter() },
-            exitTransition = { easyNotesScreenExit() },
-            popEnterTransition = { easyNotesScreenEnter() },
+            exitTransition = { parentPageExit() },
+            popEnterTransition = { parentPageEnter() },
             popExitTransition = { easyNotesScreenExit() }
         ) {
             // Legacy queue page placeholder; Bitwarden sync now runs through SyncTaskRunner.
