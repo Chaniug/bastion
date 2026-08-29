@@ -351,10 +351,10 @@ dependencies {
     implementation libs.androidx.fragment.ktx
     implementation libs.material
     
-    // Autofill and Slice (for InlinePresentation)
+    // Autofill（InlinePresentation 来自 androidx.autofill，与 Slice 无关）
+    // 注：androidx.slice 两枚依赖已于 2026-08-29 移除 —— 全仓库 0 处 import，
+    // 是历史遗留的死依赖（原注释"Slice for InlinePresentation"属误解）。
     implementation libs.androidx.autofill
-    implementation libs.androidx.slice.core
-    implementation libs.androidx.slice.builders
     
     // Credentials API (for Passkey support, Android 14+)
     // 此前这里硬编码 1.3.0，导致 libs.versions.toml 的 credentials 变量成了死配置

@@ -17,11 +17,23 @@ mockk = "1.14.11"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.03.00"
-# 刻意保留 1.5.0-alpha16：刚用 MotionScheme.standard() 修掉 Expressive 回弹导致的
-# 底部导航切 tab 图标闪烁。alpha 线版本间 motion 行为会变，升 alpha27 有复发风险；
-# 而最新稳定版 1.4.0 比 alpha 线更旧，回退会丢 Expressive 特性。
-material3Expressive = "1.5.0-alpha16"
+# ⚠️ composeBom 与下面的 material3Expressive 是【硬绑定】，禁止只升级其中一个。
+# 实测版本依赖链（查上游 POM 得出）：
+#   bom 2026.03.00 锁 runtime/foundation/ui = 1.10.5
+#   bom 2026.08.00 锁同上            = 1.12.0
+#   material3 1.5.0-alpha16 依赖        1.11.0-beta02
+#   material3 1.5.0-alpha27 依赖        1.12.0-beta01
+# 若只升 bom 而 material3 仍留在 alpha16，解析结果会是 1.12.0，而 alpha16 的字节码
+# 是针对 1.11.0-beta02 编译的 —— 跨 minor 属二进制不兼容（NoSuchMethodError 风险）。
+# 这正是 bd8591b 曾把本值从 2026.08.00 静默回退到 2026.03.00 的真正原因（非误操作）。
+composeBom = "2026.08.00"
+# alpha16 → alpha27，与上面的 bom 2026.08.00 配套：alpha27 依赖 1.12.0-beta01，
+# bom 解析出 1.12.0，beta01 → 正式版 API 已冻结，故安全。
+# ⚠️ 风险：alpha16 当初是为修 Expressive 回弹导致的「底部导航切 tab 图标闪烁」而刻意锁定的
+# （改用 MotionScheme.standard()，见 b97b39e / e6047c3）。alpha 线跨 11 个版本，
+# motion 行为会变 —— 升级后【必须真机验证】底部/侧边导航切换无图标缩放放大与闪烁、
+# 页面过渡动画正常。回滚只需把这两个值改回 2026.03.00 / 1.5.0-alpha16，无代码改动。
+material3Expressive = "1.5.0-alpha27"
 navigation = "2.10.0"
 room = "2.8.4"
 # 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
@@ -41,7 +53,6 @@ scrypt = "1.4.0"
 fragment = "1.9.0"
 material = "1.14.0"
 autofill = "1.3.0"  # beta01 → 1.3.0 稳定版
-slice = "1.1.0-alpha02"  # 上游已停更，无更高版本
 playServicesAuth = "22.0.0"
 # 此变量此前是死配置：app/build.gradle 里 credentials 走硬编码 1.3.0，从未引用 catalog。
 # 本次统一改回 catalog 引用（见 app/build.gradle），但版本仍锁 1.3.0，不能升 1.6.0：
@@ -130,10 +141,8 @@ scrypt = { group = "com.lambdaworks", name = "scrypt", version.ref = "scrypt" }
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
-# Autofill and Slice for InlinePresentation
+# Autofill（原"and Slice"已移除：androidx.slice 全仓库 0 处引用，是死依赖）
 androidx-autofill = { group = "androidx.autofill", name = "autofill", version.ref = "autofill" }
-androidx-slice-core = { group = "androidx.slice", name = "slice-core", version.ref = "slice" }
-androidx-slice-builders = { group = "androidx.slice", name = "slice-builders", version.ref = "slice" }
 
 # Google Play Services for SMS Retriever API
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
