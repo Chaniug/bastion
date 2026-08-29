@@ -36,6 +36,13 @@ import com.bastion.app.ui.password.selectionKeysForPasswords
 import com.bastion.app.ui.password.toPasswordPageCardItemUi
 import com.bastion.app.viewmodel.PasswordViewModel
 
+// LazyColumn 复用池的类型标识（供下方 items 的 contentType 使用）。
+// 取值刻意用 Int 常量：卡片类直接用 PasswordPageContentType 枚举，两者不会相等，
+// 因此分组头/卡片/补充项各自落在独立复用池，互不串用。
+private const val CONTENT_TYPE_GROUP = 0
+private const val CONTENT_TYPE_MANUAL_STACK_GROUP = 1
+private const val CONTENT_TYPE_SUPPLEMENTARY = 2
+
 internal fun LazyListScope.passwordPageListRows(
     isListScrolling: Boolean,
     passwordPageListItems: List<PasswordPageListItemUi>,
@@ -253,7 +260,22 @@ internal fun LazyListScope.passwordPageListRows(
         }
     }
 
-    items(passwordPageListItems, key = { item -> item.key }) { listItem ->
+    items(
+        items = passwordPageListItems,
+        key = { item -> item.key },
+        // contentType：告诉 Compose 复用池按「结构类型」分池。
+        // 本列表混合了分组头与 5 种内容卡片（密码/卡包/笔记/验证码/通行证），
+        // 不传时复用池只有一类，滚动时可能拿错类型的 composition 重建。
+        // 用 Int 常量 + 枚举（而非字符串）避免每次比较都产生临时对象。
+        contentType = { item ->
+            when (item) {
+                is PasswordGroupListItemUi -> CONTENT_TYPE_GROUP
+                is PasswordManualStackGroupListItemUi -> CONTENT_TYPE_MANUAL_STACK_GROUP
+                is PasswordSupplementaryListItemUi -> CONTENT_TYPE_SUPPLEMENTARY
+                is PasswordPageCardItemUi -> item.type
+            }
+        }
+    ) { listItem ->
         when (listItem) {
             is PasswordGroupListItemUi -> {
                 val groupKey = listItem.groupKey

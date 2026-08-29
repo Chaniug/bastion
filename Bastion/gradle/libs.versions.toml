@@ -1,48 +1,95 @@
 [versions]
-agp = "9.1.1"
-# Phase A：AGP 9.1.1 要求 Kotlin ≥ 2.3（官方兼容表：Kotlin 2.2 仅支持 AGP 7.3.1–8.10，
-# 2.3 需 AGP ≥ 9.0.28）。故从方案 A 原定的 2.2.0 升到 2.3.21。
+# 2026-08 全量依赖升级批次。
+# AGP 9.1.1 → 9.3.2，对应最低 Gradle 9.5.0（见 gradle-wrapper.properties）。
+# 注意：AGP 9.1 / 9.2 / 9.3 内置的 KGP 均为 2.2.10，本项目用下面的 kotlin 变量显式声明
+# 2.3.21 将其覆盖，所以升 AGP 不会动 Kotlin，KSP 2.3.11 的配对关系保持不变。
+agp = "9.3.2"
+# Kotlin 停在 2.3.21（已是 2.3 线最新）。升 2.4.10 被 KSP 阻塞：
+# KSP 至今只发到 2.3.11，没有 2.4.x，Room 编译器跑不起来。待 KSP 2.4 发布后再动。
 kotlin = "2.3.21"
 # KSP 已改为单号版本体系：2.3.x 线对应 Kotlin 2.3（Kotlin 2.4 的 KSP 尚未发布）。
 ksp = "2.3.11"
-coreKtx = "1.10.1"
-# kotlinx-serialization 1.8.1：与 Kotlin 2.3 兼容（1.6.0 偏旧，2.3 建议 ≥ 1.7）
-kotlinxSerialization = "1.8.1"
-junit = "4.13.2"
-junitVersion = "1.2.1"
-# mockk 1.14.0：本项目已升到 kotlin = 2.3.21，mockk 1.14.x 由 Kotlin 2.3 编译，
-# metadata 2.3 与 2.3.21 编译器对齐（原 1.13.17 由 2.0 编译，迁 2.3 后需同步升级）。
-mockk = "1.14.0"
-espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.9.3"
+coreKtx = "1.19.0"
+kotlinxSerialization = "1.11.0"
+junit = "4.13.2"  # JUnit 4 的最终版本，无更高版本
+junitVersion = "1.3.0"
+mockk = "1.14.11"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+# ⚠️ composeBom 与下面的 material3Expressive 是【硬绑定】，禁止只升级其中一个。
+# 实测版本依赖链（查上游 POM 得出）：
+#   bom 2026.03.00 锁 runtime/foundation/ui = 1.10.5
+#   bom 2026.08.00 锁同上            = 1.12.0
+#   material3 1.5.0-alpha16 依赖        1.11.0-beta02
+#   material3 1.5.0-alpha27 依赖        1.12.0-beta01
+# 若只升 bom 而 material3 仍留在 alpha16，解析结果会是 1.12.0，而 alpha16 的字节码
+# 是针对 1.11.0-beta02 编译的 —— 跨 minor 属二进制不兼容（NoSuchMethodError 风险）。
+# 这正是 bd8591b 曾把本值从 2026.08.00 静默回退到 2026.03.00 的真正原因（非误操作）。
 composeBom = "2026.03.00"
+# 刻意保留 alpha16，且【升级前必须读完下面两段】。
+# ① 为什么锁定：为修 Expressive 回弹导致的「底部导航切 tab 图标闪烁」而刻意锁定
+#    （改用 MotionScheme.standard()，见 b97b39e / e6047c3）；
+#    最新稳定版 1.4.0 比 alpha 线更旧，回退会丢 Expressive 特性。
+# ② 2026-08-29 实测：alpha16 → alpha27 会【编译失败】，不是 motion 回归那么简单。
+#    曾与 composeBom 2026.08.00 捆绑升级（CI run 33239556904），结果 70 处编译错误：
+#      - menuAnchor() 无参重载被移除，必须显式传 ExposedDropdownMenuAnchorType（50 处）
+#      - ExposedDropdownMenu 引用失效（20 处）
+#    涉及 PasswordEntryPickerBottomSheet / AutofillPickerActivityV2 / AddEditWifiScreen /
+#    AutofillSettingsV2Screen / AddEditTotpScreen / AddEditSshKeyScreen /
+#    BitwardenLoginScreen 等业务的 ExposedDropdownMenu 系列组件。
+#    → 升 alpha27 前必须先完成这套 API 迁移（非版本切换，是业务代码改造），
+#      且迁移后仍需按①真机验证 motion。改回 2026.03.00 / 1.5.0-alpha16 即可回滚。
 material3Expressive = "1.5.0-alpha16"
-navigation = "2.8.9"
-# D.3 Room 升级：2.6.1 → 2.7.1（KSP 支持更好、编译更快；2.7 原生支持 SELECT 投影到非 @Entity data class，为 C.3 投影铺路）
-room = "2.7.1"
+navigation = "2.10.0"
+room = "2.8.4"
+# 刻意保留 1.2.0-alpha05：最新稳定版 1.1.0 比它更旧，没有"更新的稳定版"可升；
+# 生物识别关系解锁路径，alpha 线跨 2 个 minor（→1.4.0-alpha07）风险不划算。
 biometric = "1.2.0-alpha05"
-securityCrypto = "1.1.0-alpha06"
-viewModel = "2.8.7"
-# D.1 协程对齐：1.7.3 → 1.9.0（Kotlin 2.0 时代应配 1.8+/1.9，API 稳定无明显 breaking）
-coroutines = "1.9.0"
-# D.2 DataStore 对齐：1.0.0 → 1.1.7（1.1.x 性能/bug 修复，context.dataStore API 无 breaking）
-datastore = "1.1.7"
-zxing = "3.5.3"
+securityCrypto = "1.1.0"  # alpha06 → 1.1.0 稳定版
+viewModel = "2.11.0"
+coroutines = "1.11.0"
+datastore = "1.2.1"
+zxing = "3.5.4"
 zxingAndroidEmbedded = "4.3.0"
-camerax = "1.5.3"
-permissions = "0.32.0"
-commonmark = "0.22.0"
-splashscreen = "1.0.1"  # 添加splashscreen版本
+camerax = "1.6.2"
+permissions = "0.37.3"
+commonmark = "0.30.0"
+splashscreen = "1.2.0"
 scrypt = "1.4.0"
-fragment = "1.6.2"  # Fragment for BottomSheetDialogFragment
-material = "1.11.0"  # Google Material Components
-autofill = "1.2.0-beta01"  # Autofill framework for InlinePresentation
-slice = "1.1.0-alpha02"  # Slice for inline UI
-playServicesAuth = "21.5.1"  # Google Play Services Auth for SMS Retriever API and Google authorization
-credentials = "1.2.2"  # Credential Manager for Passkeys (Android 14+)
-work = "2.8.1"  # WorkManager for auto backup
-reorderable = "3.0.0"  # Compose Reorderable for drag-and-drop sorting
+fragment = "1.9.0"
+material = "1.14.0"
+autofill = "1.3.0"  # beta01 → 1.3.0 稳定版
+playServicesAuth = "22.0.0"
+# 此变量此前是死配置：app/build.gradle 里 credentials 走硬编码 1.3.0，从未引用 catalog。
+# 本次统一改回 catalog 引用（见 app/build.gradle），但版本仍锁 1.3.0，不能升 1.6.0：
+#   - callingAppInfo.origin 在 1.6.0 被收紧为 internal，本项目 PasskeyAuthActivity /
+#     PasskeyCreateActivity / PasskeyOriginResolver / PasskeyRequestValidator 共 7 处
+#     读它做来源校验，升级即编译失败。改用 public API 属行为变更，需单独立项。
+#   - credentials 1.3.0 还传递带入了 androidx.documentfile，本项目直接用了
+#     DocumentFile 却从未显式声明，升级后传递链断开同样编译失败（已单独补声明）。
+credentials = "1.3.0"
+documentfile = "1.1.0"
+work = "2.11.2"
+reorderable = "3.1.0"
+
+# ---- 2026-08-29 治理债清理 ----
+# 以下版本此前直接硬编码在 app/build.gradle 里，与 catalog 双轨维护：
+# 改一处漏一处只是时间问题（commonmark 一个版本号曾硬编码 4 遍）。
+# 现统一收拢到 catalog，app/build.gradle 改为 libs.xxx 引用。
+# ⚠️ 注意：kotpass / bcprov / retrofit / okhttp 与根目录 desktop/ 工程共享，
+#    desktop 是独立 Gradle 工程（有自己的 libs.versions.toml），两边必须同步改。
+lifecycleProcess = "2.11.0"
+profileinstaller = "1.4.1"
+sardineAndroid = "0.8"
+kotpass = "0.13.0"
+zxcvbn = "1.9.0"
+retrofit = "3.0.0"
+okhttp = "5.5.0"
+msal = "8.4.2"
+moshiAdapters = "1.15.2"
+bcprov = "1.85.2"
+argon2kt = "1.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -119,10 +166,8 @@ scrypt = { group = "com.lambdaworks", name = "scrypt", version.ref = "scrypt" }
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
-# Autofill and Slice for InlinePresentation
+# Autofill（原"and Slice"已移除：androidx.slice 全仓库 0 处引用，是死依赖）
 androidx-autofill = { group = "androidx.autofill", name = "autofill", version.ref = "autofill" }
-androidx-slice-core = { group = "androidx.slice", name = "slice-core", version.ref = "slice" }
-androidx-slice-builders = { group = "androidx.slice", name = "slice-builders", version.ref = "slice" }
 
 # Google Play Services for SMS Retriever API
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
@@ -131,11 +176,36 @@ play-services-auth = { group = "com.google.android.gms", name = "play-services-a
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 
+# DocumentFile：SAF(Storage Access Framework) URI 的封装，KeePass 本地库导入/导出用。
+# 此前一直靠 credentials 1.3.0 传递带入、从未显式声明（隐式依赖），
+# 上游传递链一变就断（credentials 升级即触发），故显式声明。
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
+
 # WorkManager for auto backup
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 
 # Reorderable for drag-and-drop sorting
 reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
+
+# ---- 2026-08-29 治理债清理：从 app/build.gradle 硬编码收拢而来 ----
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+sardine-android = { group = "com.github.thegrizzlylabs", name = "sardine-android", version.ref = "sardineAndroid" }
+kotpass = { module = "app.keemobile:kotpass", version.ref = "kotpass" }
+zxcvbn = { group = "com.nulab-inc", name = "zxcvbn", version.ref = "zxcvbn" }
+# commonmark 三个扩展复用主库的 commonmark 版本，避免同一版本号写 4 遍
+commonmark-ext-gfm-tables = { group = "org.commonmark", name = "commonmark-ext-gfm-tables", version.ref = "commonmark" }
+commonmark-ext-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
+commonmark-ext-task-list-items = { group = "org.commonmark", name = "commonmark-ext-task-list-items", version.ref = "commonmark" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+okhttp-dnsoverhttps = { group = "com.squareup.okhttp3", name = "okhttp-dnsoverhttps", version.ref = "okhttp" }
+msal = { group = "com.microsoft.identity.client", name = "msal", version.ref = "msal" }
+moshi-adapters = { group = "com.squareup.moshi", name = "moshi-adapters", version.ref = "moshiAdapters" }
+bcprov-jdk18on = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bcprov" }
+argon2kt = { group = "com.lambdapioneer.argon2kt", name = "argon2kt", version.ref = "argon2kt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
