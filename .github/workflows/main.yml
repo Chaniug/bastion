@@ -254,6 +254,25 @@ jobs:
             Bastion/app/build/test-results/testDebugUnitTest
           if-no-files-found: ignore
 
+      # 3.5) Compose 编译器报告 / 指标：此前生成在 runner 上即随 job 结束丢弃，白生成。
+      #     上传后可每次 push 直接下载，用于定位重组热点：
+      #       - compose_metrics/*-module.json  模块级汇总（Top N unstable 类、可跳过/可重启比例）
+      #       - compose_metrics/*-composables.txt / classes.txt
+      #       - compose_compiler/*  逐个 composable 的稳定性报告（参数是否 skippable 等）
+      #     排查顺序：先看 metrics 找 Top N，再回 reports 定位具体函数。
+      #     注意：这两个目录由 :app:assembleDebug 期间的 Kotlin 编译产出，
+      #     若 build gate 编译失败则不存在，故 if-no-files-found 用 ignore 不阻断流水线。
+      - name: Upload compose compiler reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-compiler-reports
+          path: |
+            Bastion/app/build/compose_compiler
+            Bastion/app/build/compose_metrics
+          if-no-files-found: ignore
+          retention-days: 14
+
       # 4) 回归基线闸门
       #    背景：单测步骤 continue-on-error，CI 恒绿，存量 22 个失效守卫无告警，
       #          新增失败只能靠人工扒日志发现（详见 docs/ci-test-signal-and-guard-test-debt.md）。

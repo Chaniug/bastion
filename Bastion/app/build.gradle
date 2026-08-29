@@ -275,6 +275,13 @@ kotlin {
     // 仅生成报告，不改变编译行为，不影响产物。
     composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        // 2026-08-29：补开 metricsDestination。
+        // reportsDestination 只给「每个 composable 的稳定性报告」（逐个函数），
+        // metricsDestination 额外给「模块级汇总」：各类的 stable/unstable 统计、
+        // composable 函数总数、可跳过（skippable）/可重启（restartable）比例。
+        // 排查重组热点时先看 metrics 找 Top N，再回 reports 定位具体函数，效率高得多。
+        // 此前报告生成在 runner 上即丢弃，已同步在 main.yml 里作为 artifact 上传。
+        metricsDestination = layout.buildDirectory.dir("compose_metrics")
     }
 }
 
