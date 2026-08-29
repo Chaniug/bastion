@@ -48,9 +48,10 @@ private const val EASY_NOTES_INITIAL_SCALE = 0.94f
 
 /**
  * 父页面（Main / 设置页）让位给子页面时的缩放幅度。
- * 比子页面更小，形成景深层次，同时把两层内容的重叠偏差压到最低。
+ * 设成 0.99 后肉眼几乎不可见，只保留极轻微景深，
+ * 避免用户在「返回上一级」时看到明显的缩小感。
  */
-private const val PARENT_PAGE_SCALE = 0.97f
+private const val PARENT_PAGE_SCALE = 0.99f
 
 private val navEasing = CubicBezierEasing(0.6f, 0.0f, 0.4f, 1.0f)
 
@@ -124,11 +125,18 @@ fun tabSwitchEnter(): EnterTransition =
 fun tabSwitchExit(): ExitTransition =
     fadeOut(animationSpec = tween(durationMillis = DURATION_TAB_FADE_OUT, easing = navEasing))
 
-/** EasyNotes 风格页面退出：从 1 缩到 [EASY_NOTES_INITIAL_SCALE]，同时淡出。 */
+/**
+ * EasyNotes 风格页面退出：淡出 + 极轻微缩小。
+ *
+ * 退出幅度用 0.99f（几乎不可见），而进入仍保持 0.94f。
+ * 原因：用户反馈返回时「先看到页面缩小，然后才返回上一级」，
+ * 子页面退场时的大幅缩放（原 0.9f / 上版 0.94f）是主要来源。
+ * 进入可以明显一点，但退出要干脆、不让人觉得「在缩回去」。
+ */
 fun easyNotesScreenExit(): ExitTransition =
     fadeOut(animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)) +
         scaleOut(
-            targetScale = EASY_NOTES_INITIAL_SCALE,
+            targetScale = 0.99f,
             animationSpec = tween(EASY_NOTES_DURATION, easing = navEasing)
         )
 
