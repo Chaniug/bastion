@@ -16,6 +16,19 @@ on:
         description: 'Release version (no v prefix), e.g. 1.0.297. 留空则自动建议：上一个 stable tag 的 patch +1'
         required: false
         default: ''
+      keep_android:
+        description: '发布后保留多少个 Android stable release（v1.*）'
+        required: false
+        default: '5'
+      keep_desktop:
+        description: '发布后保留多少个 Desktop release（v0.*）'
+        required: false
+        default: '3'
+      prune_dry_run:
+        description: '旧 Release 清理只报告不删除'
+        required: false
+        default: false
+        type: boolean
   push:
     tags:
       - 'v*'
@@ -248,3 +261,91 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 发布后清理旧 Release，防止版本列表无限膨胀。
+      #
+      # 背景：本仓库发版频率很高（2026-08 实测 10 天内发了 11 个 stable），
+      # Release 数量会快速累积，需人工反复清理。此处在每次发布成功后自动收敛。
+      #
+      # 安全边界（三重）：
+      #   1. `preview` 永不删除 —— 它由 main.yml 每次 dev push 自动删旧建新，自行维护。
+      #   2. 只按 tag 前缀分组处理（v1.* = Android，v0.* = Desktop），未知前缀一律跳过，
+      #      避免将来新增版本线时被误伤。
+      #   3. 每组内按创建时间倒序保留最新 N 个，刚发布的版本必然在保留范围内。
+      #
+      # 另注：gh release delete 只删 Release、保留 tag，历史版本仍可基于 tag 重建。
+      - name: Prune old releases
+        if: success()
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP_ANDROID: ${{ github.event.inputs.keep_android || '5' }}
+          KEEP_DESKTOP: ${{ github.event.inputs.keep_desktop || '3' }}
+          DRY_RUN: ${{ github.event.inputs.prune_dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          gh release list --limit 200 --json tagName,createdAt > /tmp/releases.json
+
+          python3 - <<'PY'
+          import collections, json, os, subprocess, sys
+
+          limits = {
+              "android": int(os.environ.get("KEEP_ANDROID", "5")),
+              "desktop": int(os.environ.get("KEEP_DESKTOP", "3")),
+          }
+          dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
+
+          with open("/tmp/releases.json") as handle:
+              releases = json.load(handle)
+
+          def group_of(tag):
+              # 返回 None 表示不纳入清理（preview 自维护、未知前缀保守跳过）
+              if tag == "preview":
+                  return None
+              if tag.startswith("v1."):
+                  return "android"
+              if tag.startswith("v0."):
+                  return "desktop"
+              return None
+
+          groups = collections.defaultdict(list)
+          skipped = []
+          for rel in releases:
+              name = group_of(rel["tagName"])
+              if name is None:
+                  skipped.append(rel["tagName"])
+              else:
+                  groups[name].append(rel)
+
+          doomed = []
+          for name, items in groups.items():
+              items.sort(key=lambda r: r.get("createdAt") or "", reverse=True)
+              doomed.extend(items[limits[name]:])
+
+          print(f"total={len(releases)} to_delete={len(doomed)}")
+          for name, items in sorted(groups.items()):
+              print(f"  {name:<10} {len(items):>3} 份，保留最新 {limits[name]} 份")
+          print(f"  跳过: {skipped or '无'}")
+          for rel in doomed:
+              print(f"  - 将删除 {rel['tagName']}")
+
+          if dry_run:
+              print("dry_run=true，跳过删除")
+              sys.exit(0)
+
+          failed = 0
+          for rel in doomed:
+              tag = rel["tagName"]
+              res = subprocess.run(
+                  ["gh", "release", "delete", tag, "--yes"],
+                  capture_output=True, text=True,
+              )
+              if res.returncode != 0:
+                  failed += 1
+                  print(f"::warning title=Release delete failed::{tag}: {res.stderr.strip()}")
+              else:
+                  print(f"已删除 {tag}")
+
+          print(f"清理完成：{len(doomed) - failed} 成功，{failed} 失败")
+          print("注：仅删除 Release，tag 保留，可基于 tag 重建")
+          PY
