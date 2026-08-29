@@ -17,7 +17,7 @@ mockk = "1.14.11"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.08.00"
+composeBom = "2026.03.00"
 # 刻意保留 1.5.0-alpha16：刚用 MotionScheme.standard() 修掉 Expressive 回弹导致的
 # 底部导航切 tab 图标闪烁。alpha 线版本间 motion 行为会变，升 alpha27 有复发风险；
 # 而最新稳定版 1.4.0 比 alpha 线更旧，回退会丢 Expressive 特性。

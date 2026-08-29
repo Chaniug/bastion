@@ -44,7 +44,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           java-version: '21'
@@ -55,6 +55,12 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      # compileSdk 37 的平台准备。与 Android CI debug 共用同一份脚本：
+      # AGP 9.3 只认 ApiLevel 恰好为 37.0 的平台，runner 镜像若只有 android-37.1
+      # 会直接构建失败（Failed to find Platform SDK with path: platforms;android-37.0）。
+      - name: Install Android SDK platform 37
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/ensure-android-sdk.sh"
 
       - name: Validate signing secrets
         shell: bash

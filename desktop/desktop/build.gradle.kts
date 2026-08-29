@@ -29,9 +29,13 @@ kotlin {
     // 在只有 JDK 21 的构建环境下 Gradle 会去找 JDK 17 工具链并失败。
     jvmToolchain(21)
     compilerOptions {
-        // 语言级别保持 17：桌面端无 Android API 限制，但保持与移动端一致，
-        // 且 Compose Desktop 与 JDK 17 字节码级别组合经过验证。
-        jvmTarget.set(JvmTarget.JVM_17)
+        // 必须与 jvmToolchain 一致：Kotlin 2.x 会校验 compileJava 的 target（由 toolchain
+        // 推导为 21）与 compileKotlin 的 jvmTarget 是否相同，不一致直接构建失败：
+        //   Inconsistent JVM-target compatibility detected for tasks
+        //   'compileJava' (21) and 'compileKotlin' (17)
+        // 桌面端无 Android API 限制，且 jpackage 打包时自带 JRE 由 JDK 21 的 jlink 生成，
+        // 直接用 21 是安全的（注意：这里不能只升 toolchain 而留 jvmTarget 17）。
+        jvmTarget.set(JvmTarget.JVM_21)
     }
 }
 

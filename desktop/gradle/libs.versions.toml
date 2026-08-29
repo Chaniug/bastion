@@ -8,7 +8,7 @@ compose = "1.10.3"
 composeCompiler = "2.3.21"
 kotlinxSerialization = "1.11.0"
 kotlinxCoroutines = "1.11.0"
-sqldelight = "2.3.2"
+sqldelight = "2.1.0"
 # 必须与 app 模块保持同一个 kotpass 版本：desktop/shared 与 app 共享 KDBX 代码
 # （KeePassKdbxService 的 public API 暴露了 kotpass 类型），版本不一致会导致
 # 两端对同一份 KDBX 的解析行为分叉。
@@ -16,7 +16,7 @@ kotpass = "0.13.0"
 bouncycastle = "1.85.2"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
-jna = "5.19.1"
+jna = "5.14.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
