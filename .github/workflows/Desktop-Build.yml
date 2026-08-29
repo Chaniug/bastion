@@ -185,6 +185,9 @@ jobs:
             desktop/desktop/build/compose/binaries/main/msi/**/*.msi
             desktop/desktop/build/compose/binaries/main/exe/**/*.exe
           if-no-files-found: warn
+          # 保留期（2026-08-29）：安装包单个约 169 MB，是所有 artifact 里最大的一类，
+          # 此前用默认 90 天。Desktop 构建频率低但单份极大，14 天足以覆盖验证窗口。
+          retention-days: 14
 
       - name: Resolve release version & tag
         if: github.event_name == 'workflow_dispatch'
