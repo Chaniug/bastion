@@ -1435,7 +1435,7 @@ fun PasswordCardAdjustmentScreen(
         PasswordEntry(
             title = "GitHub - Bastion-all",
             website = "github.com",
-            username = "joyins",
+            username = "valkjin",
             password = "******",
             appName = "GitHub",
             authenticatorKey = "JBSWY3DPEHPK3PXP"
@@ -1956,7 +1956,7 @@ fun AuthenticatorCardAdjustmentScreen(
                 TotpData(
                     secret = "JBSWY3DPEHPK3PXP",
                     issuer = "GitHub",
-                    accountName = "joyins@example.com",
+                    accountName = "valkjin@example.com",
                     link = "github.com"
                 )
             )
