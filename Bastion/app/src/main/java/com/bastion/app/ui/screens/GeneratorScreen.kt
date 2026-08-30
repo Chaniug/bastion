@@ -2161,6 +2161,19 @@ private fun GeneratorHistorySheet(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // 批量判定哪些历史密码已经存进密码库。
+    // 列表流不再逐条解密后，密文无法直接与明文比较，改为按需解密后比对；
+    // 合并成一次批量查询，避免每条历史各自触发一轮全表扫描。
+    // passwordEntries 参与 key，密码库有增删时自动重算。
+    val passwordEntries by passwordViewModel.passwordEntries.collectAsState()
+    val savedHistoryTimestamps by produceState(
+        initialValue = emptySet<Long>(),
+        filteredHistoryList,
+        passwordEntries
+    ) {
+        value = passwordViewModel.findAlreadySavedHistoryTimestamps(filteredHistoryList)
+    }
+
     fun dismissHistorySheet(afterDismiss: (() -> Unit)? = null) {
         scope.launch {
             if (sheetState.isVisible) {
@@ -2374,17 +2387,9 @@ private fun GeneratorHistorySheet(
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                // 保存到密码库按钮
-                                val allPasswords by passwordViewModel.passwordEntries.collectAsState()
-
                                 // 检查密码是否已存在（相同密码和域名/包名）
-                                val alreadyExists = remember(historyItem.password, historyItem.domain, historyItem.packageName, allPasswords) {
-                                    allPasswords.any { entry ->
-                                        entry.password == historyItem.password &&
-                                            (entry.website == historyItem.domain ||
-                                                entry.appPackageName == historyItem.packageName)
-                                    }
-                                }
+                                // 密文无法直接比对明文，改由外层 savedHistoryTimestamps 批量按需解密后判定
+                                val alreadyExists = historyItem.timestamp in savedHistoryTimestamps
 
                                 var saved by remember { mutableStateOf(false) }
 
