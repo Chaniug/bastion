@@ -80,6 +80,20 @@ override val vaultDataStateFlow: StateFlow<DataState<VaultData>> =
 | **离线优先** | 标语即为 "Offline access to decrypted vault items with background sync"；本地 SQLCipher 加密数据库 + 后台同步 + 增量同步（revisionDate 比对） |
 | **会话管理** | auto-lock timeout + vault session persistence + 生物识别解锁 |
 
+### 补充验证：Keyguard 生产代码确认无「解密预热」
+
+用 GitHub 代码搜索核对 `warmup` / `preload` 关键字（2026-08-30）：
+
+- `warmup` 共 12 处，**全部位于 `desktopTest` 的 benchmark 代码**
+  （`BitwardenCryptoBenchmarkHarness.kt`、`WatchtowerBenchmarkTest.kt`、`CipherUrlCheckBenchmarkTest.kt`、
+  `TldServiceBenchmarkHarness.kt`、`NativeCryptoLayerBenchmarkHarness.kt` 等）——即性能测试的 JIT 预热；
+- `preload` 仅 1 处，位于 `server/web/src/layouts/BaseLayout.astro`（官网页面，与 App 无关）。
+
+**生产代码中不存在全库解密预热机制**，与官方客户端结论一致。
+
+> 附注：Keyguard 仓库含 Rust 代码（约 2.3%），加密下沉到 `util/crypto` 的 native crypto 层，
+> 与官方「加密委托 Rust SDK」思路一致：把高频加解密移出逐条 JVM/Keystore 调用路径。
+
 ---
 
 ## 三、Bastion 现状与差距
