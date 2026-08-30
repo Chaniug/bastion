@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+     width="512" height="512" role="img"
+     aria-label="Bastion — a paw guarded by a shield, Safety first">
+  <title>Bastion — Safety first</title>
+
+  <style>
+    svg {
+      --paw: #0F1B2D;
+      --text: #0F1B2D;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --paw: #F4F8FF;
+        --text: #F4F8FF;
+      }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE6A8"/>
+      <stop offset="48%" stop-color="#F5B942"/>
+      <stop offset="100%" stop-color="#B9760F"/>
+    </linearGradient>
+    <path id="shield" d="M 34 16 H 206 A 18 18 0 0 1 224 34 V 116 C 224 170 182 208 120 230 C 58 208 16 170 16 116 V 34 A 18 18 0 0 1 34 16 Z"/>
+  </defs>
+
+  <!-- 盾牌 + 猫爪 -->
+  <g transform="translate(118.00,84.0) scale(1.15)">
+      <use href="#shield" fill="none" stroke="url(#gold)" stroke-width="11" stroke-linejoin="round"/>
+      <g fill="var(--paw)">
+        <path d="M 120 126 C 96 126 79 145 79 166 C 79 181 88 193 100 197 C 109 200 114 195 120 188 C 126 195 131 200 140 197 C 152 193 161 181 161 166 C 161 145 144 126 120 126 Z"/>
+        <ellipse cx="70" cy="102" rx="15.5" ry="19.5" transform="rotate(-24 70 102)"/>
+        <ellipse cx="101" cy="76" rx="15.5" ry="19.5" transform="rotate(-9 101 76)"/>
+        <ellipse cx="139" cy="76" rx="15.5" ry="19.5" transform="rotate(9 139 76)"/>
+        <ellipse cx="170" cy="102" rx="15.5" ry="19.5" transform="rotate(24 170 102)"/>
+      </g>
+  </g>
+
+  <!-- 口号：改用几何无衬线，避免手写体在缩略图上被误读成 Sarfity / Salfity -->
+  <text x="256" y="404" text-anchor="middle"
+        font-family="Quicksand, Nunito, 'Avenir Next', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" font-size="52" font-weight="700"
+        letter-spacing="1.5" fill="var(--text)">Safety first</text>
+</svg>

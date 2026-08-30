@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420"
+     width="100%" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Bastion — local-first, open-source password fortress">
+  <title>Bastion — local-first, open-source password fortress</title>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A2545"/>
+      <stop offset="48%" stop-color="#0B2E52"/>
+      <stop offset="100%" stop-color="#061426"/>
+    </linearGradient>
+
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F5B942" stop-opacity="0.20"/>
+      <stop offset="45%" stop-color="#F5B942" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#F5B942" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="topLight" cx="50%" cy="0%" r="62%">
+      <stop offset="0%" stop-color="#9FD4FF" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="#9FD4FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE6A8"/>
+      <stop offset="48%" stop-color="#F5B942"/>
+      <stop offset="100%" stop-color="#B9760F"/>
+    </linearGradient>
+
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+
+    <path id="shield" d="M 34 16 H 206 A 18 18 0 0 1 224 34 V 116 C 224 170 182 208 120 230 C 58 208 16 170 16 116 V 34 A 18 18 0 0 1 34 16 Z"/>
+  </defs>
+
+  <!-- 画布 -->
+  <rect width="1280" height="420" fill="url(#bg)"/>
+  <rect width="1280" height="420" fill="url(#topLight)"/>
+
+  <!-- 质感底纹 -->
+  <g stroke="#9FD4FF" stroke-opacity="0.045" stroke-width="1">
+    <path d="M0 70H1280M0 140H1280M0 210H1280M0 280H1280M0 350H1280"/>
+    <path d="M160 0V420M320 0V420M480 0V420M640 0V420M800 0V420M960 0V420M1120 0V420"/>
+  </g>
+
+  <!-- 金色辉光 + 两层防护环，暗示「层层设防」 -->
+  <ellipse cx="640" cy="147" rx="230" ry="175" fill="url(#halo)"/>
+  <circle cx="640" cy="147" r="152" fill="none" stroke="#9FD4FF"
+          stroke-opacity="0.14" stroke-width="1.5"/>
+  <circle cx="640" cy="147" r="172" fill="none" stroke="#F5B942"
+          stroke-opacity="0.22" stroke-width="1"
+          stroke-dasharray="3 13" stroke-linecap="round"/>
+
+  <!-- 盾牌 + 猫爪 -->
+  <g transform="translate(546.40,51.52) scale(0.78)">
+      <use href="#shield" fill="none" stroke="#F5B942" stroke-opacity="0.30" stroke-width="22" filter="url(#soft)"/>
+      <use href="#shield" fill="none" stroke="url(#gold)" stroke-width="11" stroke-linejoin="round"/>
+      <g fill="#F4F8FF">
+        <path d="M 120 126 C 96 126 79 145 79 166 C 79 181 88 193 100 197 C 109 200 114 195 120 188 C 126 195 131 200 140 197 C 152 193 161 181 161 166 C 161 145 144 126 120 126 Z"/>
+        <ellipse cx="70" cy="102" rx="15.5" ry="19.5" transform="rotate(-24 70 102)"/>
+        <ellipse cx="101" cy="76" rx="15.5" ry="19.5" transform="rotate(-9 101 76)"/>
+        <ellipse cx="139" cy="76" rx="15.5" ry="19.5" transform="rotate(9 139 76)"/>
+        <ellipse cx="170" cy="102" rx="15.5" ry="19.5" transform="rotate(24 170 102)"/>
+      </g>
+  </g>
+
+  <!-- 字标与口号（纯英文，避免字体缺失导致方块） -->
+  <g text-anchor="middle" font-family="Quicksand, Nunito, 'Avenir Next', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif">
+    <text x="640" y="310" fill="#FFFFFF"
+          font-size="60" font-weight="800" letter-spacing="14">BASTION</text>
+    <rect x="596" y="326" width="88" height="2.5"
+          rx="1.25" fill="url(#gold)" opacity="0.85"/>
+    <text x="640" y="362" fill="#9FD4FF"
+          font-size="15" font-weight="600" letter-spacing="6.5" opacity="0.9">SAFETY FIRST &#183; LOCAL-FIRST &#183; OPEN SOURCE</text>
+  </g>
+</svg>
