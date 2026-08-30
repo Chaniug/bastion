@@ -1670,26 +1670,43 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     private fun classifyError(message: String): SyncExecutionOutcome {
         val msg = message.lowercase()
         return when {
+            // 保险库未解锁 / 密钥不可用：需要用户解锁，不是认证失效
             msg.contains("mdk not available") ||
                 msg.contains("vault 未解锁") ||
                 msg.contains("密钥不可用") -> {
                 SyncExecutionOutcome.Blocked(SyncBlockReason.VAULT_LOCKED, message)
             }
 
-            msg.contains("token 刷新失败") ||
-                msg.contains("重新登录") ||
-                msg.contains("401") ||
-                msg.contains("403") ||
-                msg.contains("unauthorized") ||
-                msg.contains("forbidden") -> {
-                SyncExecutionOutcome.Blocked(SyncBlockReason.AUTH_REQUIRED, message)
-            }
-
+            // 可重试：网络异常 / 超时 / 网关临时拒绝（403、429、5xx）。
+            //
+            // 顺序很关键：这一组必须排在 AUTH_REQUIRED **之前**。
+            // 之前把含 "403"/"forbidden" 的消息一概判成认证失败，导致自托管服务器前的
+            // WAF / Cloudflare 返回的临时 403 会把用户直接踢去重新登录，
+            // 还会把该 403 原样显示在登录页（用户看到的 "PreLogin failed: 403"）。
+            //
+            // 对齐上游：Bitwarden 语义里 **401 才是令牌失效**，403 = Forbidden，
+            // 可能是 WAF 拦截、限速或单资源无权限，与登录过期无关；
+            // Keyguard 也只重试 429/5xx，不重试 403。
             msg.contains("timeout") ||
                 msg.contains("connect") ||
                 msg.contains("network") ||
-                msg.contains("ioexception") -> {
+                msg.contains("ioexception") ||
+                msg.contains("网络") ||
+                msg.contains("超时") ||
+                msg.contains("稍后自动重试") ||
+                msg.contains("服务器返回") -> {
                 SyncExecutionOutcome.RetryableError(message)
+            }
+
+            // 真正的认证失效：401 / invalid_grant / 令牌被服务端拒绝
+            msg.contains("401") ||
+                msg.contains("unauthorized") ||
+                msg.contains("invalid_grant") ||
+                msg.contains("invalid_token") ||
+                msg.contains("invalid client") ||
+                msg.contains("token 刷新失败") ||
+                msg.contains("重新登录") -> {
+                SyncExecutionOutcome.Blocked(SyncBlockReason.AUTH_REQUIRED, message)
             }
 
             else -> SyncExecutionOutcome.FatalError(message)

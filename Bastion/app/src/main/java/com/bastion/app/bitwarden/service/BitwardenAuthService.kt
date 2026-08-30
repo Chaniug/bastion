@@ -1060,8 +1060,15 @@ class BitwardenAuthService(
                     )
                 )
             } else {
+                // 保留状态码，供上层区分「凭据真失效(400/401)」与「可重试(403/429/5xx)」。
+                // 之前这里统一抛 "Token refresh failed: <code>" 的通用异常，导致 403/429/5xx
+                // 也被当成凭据失效，把用户强制踢去重新登录（自托管 + WAF 场景尤其容易触发）。
+                val errorBody = runCatching { response.errorBody()?.string() }.getOrNull()
                 Result.failure(
-                    Exception("Token refresh failed: ${response.code()}")
+                    BitwardenHttpStatusException(
+                        code = response.code(),
+                        errorBody = errorBody
+                    )
                 )
             }
         } catch (e: Exception) {

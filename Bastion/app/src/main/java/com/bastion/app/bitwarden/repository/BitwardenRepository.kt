@@ -39,6 +39,7 @@ import com.bastion.app.attachments.facade.AttachmentSizeValidator
 import com.bastion.app.bitwarden.BitwardenVaultPremiumStore
 import com.bastion.app.bitwarden.api.BitwardenApiFactory
 import com.bastion.app.bitwarden.api.BitwardenApiManager
+import com.bastion.app.bitwarden.api.BitwardenHttpStatusException
 import com.bastion.app.bitwarden.api.BitwardenTlsConfig
 import com.bastion.app.bitwarden.api.FolderCreateRequest
 import com.bastion.app.bitwarden.api.FolderUpdateRequest
@@ -896,20 +897,34 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                             "-> attempt refreshToken"
                     )
                     val refreshStart = System.currentTimeMillis()
-                    val refreshResult = refreshToken(vault)
+                    val outcome = refreshTokenDetailed(vault)
                     BitwardenDiagLogger.append(
                         "BitwardenRepository.sync: refreshToken finished in ${System.currentTimeMillis() - refreshStart}ms, " +
-                            "success=${refreshResult != null}, vaultId=$vaultId"
+                            "outcome=${outcome::class.simpleName}, vaultId=$vaultId"
                     )
-                    if (refreshResult != null) {
-                        accessToken = refreshResult
-                        accessTokenCache[vaultId] = accessToken
-                    } else {
-                        BitwardenDiagLogger.append(
-                            "BitwardenRepository.sync ABORT: token refresh failed (refresh token likely invalid), " +
-                                "vaultId=$vaultId -> user must re-login"
-                        )
-                        return@withLock SyncResult.Error("Token 刷新失败，请重新登录")
+                    when (outcome) {
+                        is RefreshOutcome.Success -> {
+                            accessToken = outcome.accessToken
+                            accessTokenCache[vaultId] = accessToken
+                        }
+
+                        is RefreshOutcome.AuthInvalid -> {
+                            BitwardenDiagLogger.append(
+                                "BitwardenRepository.sync ABORT: refresh token rejected by server, " +
+                                    "vaultId=$vaultId -> user must re-login"
+                            )
+                            return@withLock SyncResult.Error("Token 刷新失败，请重新登录")
+                        }
+
+                        is RefreshOutcome.Transient -> {
+                            // 网络抖动 / 网关限流 / 服务端临时故障：凭据本身仍然有效，
+                            // 保留登录态，交给上层退避重试，绝不把用户踢去重新登录。
+                            BitwardenDiagLogger.append(
+                                "BitwardenRepository.sync ABORT: token refresh transient failure, " +
+                                    "vaultId=$vaultId -> keep credentials, retry later"
+                            )
+                            return@withLock SyncResult.Error("${outcome.detail}，稍后自动重试，登录状态保持有效")
+                        }
                     }
                 }
 
@@ -1294,12 +1309,34 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
         }
     
     /**
-     * 刷新访问令牌
+     * 刷新令牌的结果。区分「凭据真失效」与「可重试」，避免把临时故障当成登录过期。
      */
-    private suspend fun refreshToken(vault: BitwardenVault): String? {
+    private sealed class RefreshOutcome {
+        data class Success(val accessToken: String) : RefreshOutcome()
+        /** refresh token 被服务端拒绝（400/401）或本地根本没有 → 必须重新登录。 */
+        object AuthInvalid : RefreshOutcome()
+        /** 网络异常 / 网关临时拒绝（403、429、5xx）→ 退避重试，登录态保持有效。 */
+        data class Transient(val detail: String) : RefreshOutcome()
+    }
+
+    /** 兼容其余调用点：拿不到新 token 就返回 null。 */
+    private suspend fun refreshToken(vault: BitwardenVault): String? =
+        when (val outcome = refreshTokenDetailed(vault)) {
+            is RefreshOutcome.Success -> outcome.accessToken
+            else -> null
+        }
+
+    /**
+     * 刷新访问令牌，返回结构化结果。
+     *
+     * 关键：只有 400/401 才认定凭据失效；403/429/5xx 与网络异常一律归为可重试，
+     * 不清凭据、不要求重新登录。对齐 Bitwarden 官方——官方只在 "Invalid Access Token"
+     * / "Invalid Security Stamp" 时才触发 logout，403 根本不在登出判定里。
+     */
+    private suspend fun refreshTokenDetailed(vault: BitwardenVault): RefreshOutcome {
         val refreshToken = vault.encryptedRefreshToken?.let { decryptFromStorage(it) } ?: run {
             BitwardenDiagLogger.append("BitwardenRepository.refreshToken ABORT: no encryptedRefreshToken stored, vaultId=${vault.id}")
-            return null
+            return RefreshOutcome.AuthInvalid
         }
         
         return try {
@@ -1329,22 +1366,37 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                     "BitwardenRepository.refreshToken SUCCESS: vaultId=${vault.id}, " +
                         "expiresIn=${refreshResult.expiresIn}s, newExpiresAt=$expiresAt"
                 )
-                refreshResult.accessToken
+                RefreshOutcome.Success(refreshResult.accessToken)
             } ?: run {
-                BitwardenDiagLogger.append(
-                    "BitwardenRepository.refreshToken FAILED: identity/connect/token returned failure, " +
-                        "vaultId=${vault.id}, refreshTokenPresent=${vault.encryptedRefreshToken != null}"
-                )
-                null
+                val failure = result.exceptionOrNull()
+                val statusCode = (failure as? BitwardenHttpStatusException)?.code
+                if (statusCode == 400 || statusCode == 401) {
+                    // 服务端明确拒绝 refresh token（invalid_grant 等）→ 确实需要重新登录
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository.refreshToken AUTH_INVALID: HTTP $statusCode, " +
+                            "vaultId=${vault.id} -> re-login required"
+                    )
+                    RefreshOutcome.AuthInvalid
+                } else {
+                    // 网络异常(null)、WAF/反代拦截(403)、限速(429)、服务端故障(5xx) → 可重试，保留凭据
+                    BitwardenDiagLogger.append(
+                        "BitwardenRepository.refreshToken TRANSIENT: http=$statusCode, " +
+                            "vaultId=${vault.id}, type=${failure?.let { it::class.simpleName }} " +
+                            "-> retry later, credentials preserved"
+                    )
+                    RefreshOutcome.Transient(
+                        if (statusCode != null) "刷新令牌时服务器返回 $statusCode" else "刷新令牌时网络异常"
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Token 刷新失败", e)
             BitwardenDiagLogger.append(
                 "BitwardenRepository.refreshToken EXCEPTION: vaultId=${vault.id}, type=${e::class.simpleName}, " +
-                    "msg=${e.message}"
+                    "msg=${e.message} -> treated as retryable, credentials preserved"
             )
-            null
-            }
+            RefreshOutcome.Transient("刷新令牌时网络异常")
+        }
     }
 
     /**

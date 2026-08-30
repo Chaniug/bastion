@@ -3,10 +3,13 @@ package com.bastion.app.bitwarden.api
 import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import android.util.Base64
+import android.util.Log
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Authenticator
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.ConnectionPool
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -85,7 +88,70 @@ object BitwardenApiFactory {
             .header("Authorization", "Bearer $newToken")
             .build()
     }
-    
+
+    // ==================== 可重试错误的自动重试 ====================
+
+    /** 最大重试次数，对齐 Keyguard 的 BitwardenHttpRetry（maxRetries = 5）。 */
+    private const val MAX_RETRY_COUNT = 5
+
+    /** 服务端未给出 Retry-After 时的默认等待（秒）。 */
+    private const val DEFAULT_RETRY_DELAY_SECONDS = 1L
+
+    /** Retry-After 上限（秒），避免服务端给出过长等待把同步卡死。 */
+    private const val MAX_RETRY_DELAY_SECONDS = 30L
+
+    /**
+     * 仅对 429（Too Many Requests）与 5xx 重试。
+     *
+     * 对齐 Keyguard 的判定，**不重试 403 与 401**：
+     * - 401 由 [tokenAuthenticator] 负责刷新令牌后重试一次，盲目重试毫无意义；
+     * - 403 通常是 WAF/反代拦截或单个资源无权限，重试基本无效；而且它**不等于登录过期**——
+     *   上层若把 403 当成认证失败，会把用户强制踢去重新登录（正是之前误伤的原因）。
+     */
+    private fun shouldRetry(response: Response): Boolean =
+        response.code == 429 || response.code in 500..599
+
+    private fun retryDelaySeconds(response: Response): Long {
+        val retryAfter = response.header("Retry-After")?.trim().orEmpty()
+        if (retryAfter.isNotEmpty()) {
+            retryAfter.toLongOrNull()?.let { seconds ->
+                if (seconds > 0) return seconds.coerceAtMost(MAX_RETRY_DELAY_SECONDS)
+            }
+        }
+        return DEFAULT_RETRY_DELAY_SECONDS
+    }
+
+    /**
+     * 429/5xx 自动重试拦截器（对齐 Keyguard 的 BitwardenHttpRetry）。
+     * 有限次重试 + 尊重 Retry-After，让瞬时网络波动 / 网关限流不再直接变成同步失败。
+     *
+     * 说明：429/5xx 表示服务端未（成功）处理该请求，因此对所有方法（含 POST）重试是安全的，
+     * 与 Keyguard 行为一致。
+     */
+    private val bitwardenRetryInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        var attempt = 0
+        var response = chain.proceed(request)
+        while (attempt < MAX_RETRY_COUNT && shouldRetry(response)) {
+            val delayMs = retryDelaySeconds(response) * 1000L
+            val code = response.code
+            response.close()
+            attempt += 1
+            Log.w(
+                TAG,
+                "retry Bitwarden request: http=$code, attempt=$attempt/$MAX_RETRY_COUNT, delay=${delayMs}ms"
+            )
+            try {
+                Thread.sleep(delayMs)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw java.io.IOException("Interrupted while waiting to retry", e)
+            }
+            response = chain.proceed(request)
+        }
+        response
+    }
+
     enum class HeaderProfile {
         MONICA_DEFAULT,
         KEYGUARD_FALLBACK
@@ -129,6 +195,8 @@ object BitwardenApiFactory {
             .connectionPool(ConnectionPool(8, 2, TimeUnit.MINUTES))
             .pingInterval(30, TimeUnit.SECONDS)
             .authenticator(tokenAuthenticator)
+            // 429/5xx 自动重试；放在最外层，包裹下面所有拦截器
+            .addInterceptor(bitwardenRetryInterceptor)
             // 添加 Keyguard 使用的 Cloudflare 绕过 headers
             .addInterceptor { chain ->
                 val original = chain.request()
