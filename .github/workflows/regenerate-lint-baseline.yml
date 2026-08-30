@@ -60,12 +60,16 @@ jobs:
       # 并把 gradle 输出存盘，失败时可从 artifact 查看崩溃栈。
       # continue-on-error：即便 lint 在 Kotlin 2.x 下仍崩溃，也不阻塞本 workflow（已知边界，
       # 后续依据 artifact 崩溃栈精准 disable 对应 detector 后再移除本项）。
+      # 注意：必须用 updateLintBaselineDebug 而不是 lintDebug。
+      # lintDebug 只按现有 baseline 做校验并报告（"Lint found N errors" 后 abort），不会写回文件；
+      # updateLintBaselineDebug 才是把当前全部 issue 重写进 lint-baseline.xml 的任务。
+      # 此前误用 lintDebug，导致 nav 2.10 引入的 651 个存量错误始终没被基线吸收。
       - name: Regenerate lint-baseline.xml
         continue-on-error: true
         run: |
           set -o pipefail
           rm -f /tmp/lint-debug.log
-          ./gradlew :app:lintDebug --stacktrace -Dorg.gradle.configuration-cache=false 2>&1 | tee /tmp/lint-debug.log
+          ./gradlew :app:updateLintBaselineDebug --stacktrace -Dorg.gradle.configuration-cache=false 2>&1 | tee /tmp/lint-debug.log
 
       # 兜底诊断：无论 lint 成功与否都上传 gradle 输出，便于在 artifact 中查看崩溃栈
       - name: Upload lint debug log
