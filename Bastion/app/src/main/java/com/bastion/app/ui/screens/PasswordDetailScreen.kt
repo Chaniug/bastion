@@ -1571,6 +1571,7 @@ private fun HeaderSection(
     iconCardsEnabled: Boolean,
     unmatchedIconHandlingStrategy: UnmatchedIconHandlingStrategy
 ) {
+    val websiteCount = remember(entry.website) { normalizeWebsiteUrls(entry.website).size }
     val textBlock: @Composable ColumnScope.() -> Unit = {
         Text(
             text = entry.title,
@@ -1578,9 +1579,9 @@ private fun HeaderSection(
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        if (entry.website.isNotEmpty()) {
+        if (websiteCount > 0) {
             Text(
-                text = entry.website,
+                text = stringResource(R.string.website_count_summary, websiteCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
