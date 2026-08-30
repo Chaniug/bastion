@@ -26,6 +26,7 @@ import com.bastion.app.data.LocalKeePassDatabaseDao
 import com.bastion.app.data.PasswordOwnership
 import com.bastion.app.data.PasswordArchiveSyncMeta
 import com.bastion.app.data.PasswordEntry
+import com.bastion.app.data.PasswordGenerationHistory
 import com.bastion.app.data.PasswordHistoryEntry
 import com.bastion.app.data.PasswordHistoryManager
 import com.bastion.app.data.SecureItem
@@ -141,8 +142,7 @@ class PasswordViewModel(
     private val bitwardenOfflineSecretCacheFacade = BitwardenOfflineSecretCacheFacade(
         cache = context?.applicationContext?.let {
             BitwardenOfflineSecretCache(it, securityManager)
-        },
-        decodePassword = ::decodePasswordOrNull
+        }
     )
     private val keepassBridge = if (context != null && localKeePassDatabaseDao != null) {
         KeePassCompatibilityBridge(
@@ -324,23 +324,24 @@ class PasswordViewModel(
         observeInvalidCustomCategoryFilter()
         viewModelScope.launch(Dispatchers.IO) {
             runCatchingObserved {
-                repairLegacyDetachedKeePassEntries()
-                repairLegacyOwnershipConflicts()
+                // 只做一次全表扫描。此前「修复 1 + 修复 2 + 离线缓存预热」共触发 3 次
+                // getAllPasswordEntries().first()，其中预热还会对整个密码库逐条解密
+                // （每条最多 3 轮 decryptData，且都串在 decryptLock 全局锁上），与
+                // Bitwarden 恢复解锁态所需的 3 次 Keystore 解密争抢 Keystore，
+                // 造成隔夜冷启动出现肉眼可见的加载过程。
+                // 现在解密改为按需发生（对齐 Bitwarden 官方与 Keyguard 的
+                // 「本地 Flow + 解锁门控 + 按需解密」），冷启动路径不再有任何解密。
+                val startedAt = System.currentTimeMillis()
+                val entries = repository.getAllPasswordEntries().first()
+                repairLegacyDetachedKeePassEntries(entries)
+                repairLegacyOwnershipConflicts(entries)
+                Log.i(
+                    "PasswordViewModel",
+                    "Startup maintenance done: entries=${entries.size}, " +
+                        "costMs=${System.currentTimeMillis() - startedAt}"
+                )
             }.onFailure { error ->
                 Log.w("PasswordViewModel", "Password startup maintenance failed", error)
-            }
-        }
-        // 离线密钥缓存预热：在 ViewModel init 时立即于 Dispatchers.IO（而非与首页密码列表
-        // 共用 Dispatchers.Default 的线程池）开始，抢占冷启动早期窗口把缓存尽早填热。预热只
-        // 把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences），因此不会产生 N 次
-        // apply() 引发的 QueuedWork.waitToFinish() 主线程反堵，冷启动主线程不被堵塞；而用户
-        // 点开密码时 recall() 命中内存即秒回。任何加密/安全逻辑均未改动，常规 remember() 仍
-        // 在真实查看/复制时照常写盘做离线兜底。
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatchingObserved {
-                warmupBitwardenOfflineSecretCache()
-            }.onFailure { error ->
-                Log.w("PasswordViewModel", "Offline secret cache warmup skipped", error)
             }
         }
     }
@@ -546,13 +547,25 @@ class PasswordViewModel(
                 } else {
                     dedupeExactEntries(filtered)
                 }
-                val decrypted = exactDeduped.map { entry ->
-                    entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())
-                }
+                // 列表只吃密文，不再逐条解密。
+                //
+                // 静态审计已确认：列表渲染路径（PasswordEntryCard / PasswordListRows /
+                // PasswordListContent 等 9 个文件）零处读取 entry.password，点击进详情
+                // 也只用 entry.id（明文当场丢弃，详情页自己按 id 查库解密）。
+                // 也就是说这里的逐行解密在首屏是完全没人消费的纯浪费：每条都是
+                // 「1 次解密 + 1 次加密 + 1 次 apply() 写盘」，100~500 条即 3~5 秒。
+                //
+                // 对齐官方 Bitwarden / Keyguard：解密只发生在用户点开某一条、或按需管道里，
+                // 绝不为了「列表上有没有密码」做全量解密。此处比两者更彻底——它们的
+                // cipher 连 name/username 都是加密的，不解密连标题都渲染不出来，
+                // 而 Bastion 的展示字段是本地明文列，列表零解密即可渲染。
+                //
+                // 代价：此前 inspectSecret 顺手做的 Bitwarden 离线缓存预热不再发生，
+                // 由 BitwardenViewModel.warmBitwardenOfflineSecretCacheForVault() 兜底。
                 if (shouldKeepRawDisplay) {
-                    decrypted
+                    exactDeduped
                 } else {
-                    filterGhostEntriesForDisplay(decrypted)
+                    filterGhostEntriesForDisplay(exactDeduped)
                 }
             }
         }
@@ -571,13 +584,9 @@ class PasswordViewModel(
             initialValue = emptyList()
         )
 
+    // 与 passwordEntriesSource 同理：列表只吃密文，不做任何解密。
+    // Room DAO 生成的 Flow 自带 IO 线程调度，故不再需要 flowOn。
     private val allPasswordsSource: Flow<List<PasswordEntry>> = repository.getAllPasswordEntries()
-        .map { entries ->
-            entries.map { entry ->
-                entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())
-            }
-        }
-        .flowOn(kotlinx.coroutines.Dispatchers.Default)
     val allPasswordsReady: StateFlow<Boolean> = allPasswordsSource
         .map { true }
         .stateIn(
@@ -700,6 +709,25 @@ class PasswordViewModel(
         filter: CategoryFilter
     ): List<PasswordEntry> = PasswordEntryMatching.applyCategoryFilterInMemory(entries, filter)
 
+    /**
+     * 判断条目是否「持有可读密码」，**不解密**。
+     *
+     * 列表流改为只吃密文后，这里只能用「密文是否为空」近似「是否有密码」。
+     * 与原先「解密后判空」的语义对照：
+     *
+     * - MDK 正常：密文非空 ⟺ 有密码，与解密结果一致。
+     * - MDK 包装丢失（需重输主密码）：[shouldSkipDecryptAttempt] 为 true，
+     *   所有密文都读不出来 —— 与解密路径（全部解成空串）判定一致。
+     *
+     * 已知的唯一差异：个别条目密文损坏 / 密钥不匹配时，解密路径会得到空串并把它
+     * 当幽灵条目过滤掉，本路径会保留它。这属异常数据，让条目可见（密码显示为
+     * 不可读）比静默丢失一条更正确。
+     */
+    private fun hasReadablePassword(entry: PasswordEntry): Boolean {
+        if (entry.password.isBlank()) return false
+        return !shouldSkipDecryptAttempt()
+    }
+
     private fun filterGhostEntriesForDisplay(entries: List<PasswordEntry>): List<PasswordEntry> {
         if (entries.size <= 1) return entries
 
@@ -708,14 +736,14 @@ class PasswordViewModel(
 
         groups.values.forEach { group ->
             if (group.size <= 1) return@forEach
-            if (!group.any { it.password.isNotBlank() }) return@forEach
+            if (!group.any { hasReadablePassword(it) }) return@forEach
 
             group.forEach { entry ->
                 val isPasswordMode = entry.loginType.equals("PASSWORD", ignoreCase = true)
                 val shouldFilterGhost = !entry.isLocalOnlyEntry() || entry.hasOwnershipConflict()
                 // 仅当密码为空「且」没有任何 TOTP 绑定时才视为幽灵条目过滤；
                 // 只绑定了 TOTP 验证器（密码为空）的条目必须保留，否则 TOTP 会消失。
-                if (isPasswordMode && entry.password.isBlank() && entry.authenticatorKey.isBlank() && shouldFilterGhost) {
+                if (isPasswordMode && !hasReadablePassword(entry) && entry.authenticatorKey.isBlank() && shouldFilterGhost) {
                     ghostIds += entry.id
                 }
             }
@@ -840,6 +868,50 @@ class PasswordViewModel(
         }
     }
 
+    /**
+     * 生成器历史「是否已存进密码库」的批量判定。
+     *
+     * 列表流改为只吃密文后，`entry.password` 是密文、永远不等于明文，
+     * 原先 `entry.password == historyItem.password` 的判重会静默失效，
+     * 因此改为**按需解密**后比较明文。
+     *
+     * 这里是**一次批量查询**而非每条历史各查一遍：历史可能有几十条，
+     * 逐条触发全表扫描会把 O(n) 放大成 O(n×m)。先用 website / packageName
+     * 建索引筛出候选，再对候选解密，且同一条目只解一次
+     * （[inspectSecretState] 对 Bitwarden 条目带加密 + 写盘副作用，去重是顺带的收益）。
+     *
+     * 仅由生成器历史这种用户主动触达的页面调用，**不在列表首屏路径上**。
+     *
+     * @return 已存在于密码库的历史记录 timestamp 集合
+     */
+    suspend fun findAlreadySavedHistoryTimestamps(
+        historyItems: List<PasswordGenerationHistory>
+    ): Set<Long> = withContext(Dispatchers.Default) {
+        if (historyItems.isEmpty()) return@withContext emptySet()
+        val entries = repository.getAllPasswordEntries().first()
+        if (entries.isEmpty()) return@withContext emptySet()
+
+        val byWebsite = entries.groupBy { it.website }
+        val byPackage = entries.groupBy { it.appPackageName }
+        val plainCache = HashMap<Long, String>()
+        val savedTimestamps = HashSet<Long>()
+
+        historyItems.forEach { item ->
+            val candidates = LinkedHashSet<PasswordEntry>().apply {
+                byWebsite[item.domain]?.let { addAll(it) }
+                byPackage[item.packageName]?.let { addAll(it) }
+            }
+            val hit = candidates.any { entry ->
+                val plain = plainCache.getOrPut(entry.id) {
+                    inspectSecretState(entry).plainValueOrEmpty()
+                }
+                plain == item.password
+            }
+            if (hit) savedTimestamps += item.timestamp
+        }
+        savedTimestamps
+    }
+
     suspend fun getBitwardenVaultCacheRiskSummary(vaultId: Long): BitwardenRepository.VaultCacheRiskSummary {
         val repositoryInstance = bitwardenRepository
             ?: throw IllegalStateException("Bitwarden repository unavailable")
@@ -871,6 +943,18 @@ class PasswordViewModel(
 
     private fun decodePasswordOrNull(rawPassword: String): String? {
         if (rawPassword.isEmpty()) return ""
+        if (shouldSkipDecryptAttempt()) {
+            // 注定解密失败且会被判成「需要重新认证」的状态：整体短路，避免逐条触发
+            // forceVaultReauthentication 把会话击穿（详见 shouldSkipDecryptAttempt 注释）。
+            if (!hasLoggedDecryptAuthStateWarning) {
+                Log.w(
+                    "PasswordViewModel",
+                    "Skip decrypt: MDK wrapper needs password re-entry"
+                )
+                hasLoggedDecryptAuthStateWarning = true
+            }
+            return null
+        }
         return try {
             unwrapPasswordLayersForDisplay(rawPassword)
         } catch (error: Exception) {
@@ -904,17 +988,23 @@ class PasswordViewModel(
         return entries.size
     }
 
-    private suspend fun warmupBitwardenOfflineSecretCache() {
-        val entries = repository.getAllPasswordEntries().first()
-        rememberDecodedBitwardenSecrets(entries)
+    /**
+     * 冷启动解密门控。
+     *
+     * 与 [SecurityManager.shouldForceVaultReauthenticationAfterDecryptFailure] 的最后一条
+     * 判定同构：MDK 的 Keystore 包装已丢失（需要用户重输主密码）时，任何解密都注定失败，
+     * 且失败会被判成「需要重新认证」。逐条尝试（历史批量预热 / 批量校验）会把会话反复击穿，
+     * 因此这里整体短路，不产生任何失败副作用。UI 侧的重新认证提示走
+     * [SecurityManager.getVaultAccessState] → REQUIRES_PASSWORD_REENTRY，不依赖本路径。
+     *
+     * 注意：本判定不要求 isVaultRuntimeUnlocked()。首次成功解密本身才会把 MDK 解包进进程
+     * 缓存，若要求解锁态会造成「未解锁 → 不能解密 → 永远解锁不了」的死锁。
+     */
+    private fun shouldSkipDecryptAttempt(): Boolean {
+        return securityManager.requiresPasswordReentryForWrapperRebuild()
     }
 
-    private fun rememberDecodedBitwardenSecrets(entries: List<PasswordEntry>): Int {
-        return bitwardenOfflineSecretCacheFacade.rememberDecodedSecrets(entries)
-    }
-
-    private suspend fun repairLegacyDetachedKeePassEntries() {
-        val entries = repository.getAllPasswordEntries().first()
+    private suspend fun repairLegacyDetachedKeePassEntries(entries: List<PasswordEntry>) {
         val staleIds = mutableListOf<Long>()
         entries.forEach { entry ->
             if (isLegacyDetachedKeePassEntry(entry)) {
@@ -930,8 +1020,7 @@ class PasswordViewModel(
         )
     }
 
-    private suspend fun repairLegacyOwnershipConflicts() {
-        val entries = repository.getAllPasswordEntries().first()
+    private suspend fun repairLegacyOwnershipConflicts(entries: List<PasswordEntry>) {
         var repairedCount = 0
 
         entries.forEach { entry ->
@@ -1057,7 +1146,15 @@ class PasswordViewModel(
      */
     private fun unwrapPasswordLayersForDisplay(value: String): String {
         var current = value
-        repeat(3) {
+        repeat(3) { round ->
+            // 第 1 轮无条件执行：历史遗留的 V1 密文没有 MDK|/V2|/C2| 前缀，不能用
+            // 「长得像不像密文」判断，否则会漏解老数据。
+            // 第 2 轮起先做前缀快筛：只有仍是 Bastion 密文才继续解下一层。绝大多数条目
+            // 只有一层，少了这个判断每个条目都会多做 1~2 次注定原样返回的 decryptData，
+            // 而每次 decryptData 都可能碰一次 Keystore。
+            if (round > 0 && !securityManager.looksLikeBastionCiphertext(current)) {
+                return current
+            }
             val decrypted = synchronized(decryptLock) {
                 securityManager.decryptData(current)
             }

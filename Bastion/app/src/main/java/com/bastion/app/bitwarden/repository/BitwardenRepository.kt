@@ -547,7 +547,21 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
     /**
      * 解锁已登录的 Vault
      */
-    suspend fun unlock(vaultId: Long, masterPassword: String): UnlockResult = withContext(Dispatchers.IO) {
+    suspend fun unlock(vaultId: Long, masterPassword: String): UnlockResult {
+        val unlockStartedAt = System.currentTimeMillis()
+        return try {
+            // 计时放在 finally 里：异常照常向上传播，只补一条耗时日志，不改变任何行为。
+            withContext(Dispatchers.IO) { unlockInternal(vaultId, masterPassword) }
+        } finally {
+            android.util.Log.i(
+                "BASTION-PROFILE",
+                "bitwardenUnlock.total costMs=${System.currentTimeMillis() - unlockStartedAt} " +
+                    "vaultId=$vaultId"
+            )
+        }
+    }
+
+    private suspend fun unlockInternal(vaultId: Long, masterPassword: String): UnlockResult = withContext(Dispatchers.IO) {
         try {
             val vault = vaultDao.getVaultById(vaultId) ?: return@withContext UnlockResult.Error("Vault 不存在")
             val canonicalEmail = BitwardenVaultIdentity.resolveCanonicalEmail(vault)
@@ -559,7 +573,10 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
             val normalizedMemory = vault.kdfMemory.takeIf { it != null && it > 0 } ?: ARGON2_DEFAULT_MEMORY_MB
             val normalizedParallelism = vault.kdfParallelism.takeIf { it != null && it > 0 } ?: ARGON2_DEFAULT_PARALLELISM
             
-            // 派生主密钥
+            // 派生主密钥 —— Bitwarden 主密码解锁的固有开销，几乎全在这里：
+            // PBKDF2 默认 600k 次迭代，且 BitwardenCrypto 走的是 BouncyCastle 纯 Java
+            // 实现（Argon2id 那条路才有 native 加速）。
+            val deriveStartedAt = System.currentTimeMillis()
             val masterKey = when (vault.kdfType) {
                 BitwardenVault.KDF_TYPE_ARGON2ID -> {
                     BitwardenCrypto.deriveMasterKeyArgon2(
@@ -583,6 +600,12 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
                     return@withContext UnlockResult.Error("不支持的 KDF 类型: ${vault.kdfType}，请重新登录")
                 }
             }
+            android.util.Log.i(
+                "BASTION-PROFILE",
+                "bitwardenUnlock.deriveMasterKey " +
+                    "costMs=${System.currentTimeMillis() - deriveStartedAt} " +
+                    "kdf=${vault.kdfType} iterations=$normalizedIterations"
+            )
 
             try {
                 val storedMasterKey = vault.encryptedMasterKey?.let { decryptFromStorage(it) }
@@ -669,12 +692,22 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
             return@withContext emptySet()
         }
 
+        // 冷启动可观测性：这一步每个 Vault 要做 3 次 Keystore 解密
+        // （encKey / macKey / accessToken），是冷启动路径上最重的一段。
+        val startedAt = System.currentTimeMillis()
+        val vaults = getAllVaults()
+
         val restoredVaultIds = linkedSetOf<Long>()
-        getAllVaults().forEach { vault ->
+        vaults.forEach { vault ->
             if (restoreUnlockStateFromVault(vault)) {
                 restoredVaultIds += vault.id
             }
         }
+        Log.i(
+            TAG,
+            "restoreUnlockedVaults done: vaults=${vaults.size}, restored=${restoredVaultIds.size}, " +
+                "costMs=${System.currentTimeMillis() - startedAt}"
+        )
         restoredVaultIds
     }
 

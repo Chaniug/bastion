@@ -22,7 +22,7 @@ import java.util.Date
  * 把这些整体搬过来会牵动 KeePass 与 TOTP 投影链路 —— 那是集群 3 的范围，且用户明令
  * 不得回归。因此这里只注入**函数引用**，KeePass 侧实现继续留在 ViewModel。
  *
- * 该模式与集群 2 的 `BitwardenOfflineSecretCacheFacade`（注入 `::decodePasswordOrNull`）一致，
+ * 该模式与集群 2 的 `BitwardenOfflineSecretCacheFacade`（不持有解密逻辑，只做纯委托）一致，
  * 已经过真机验证。
  *
  * ## 回归网

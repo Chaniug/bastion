@@ -215,6 +215,10 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         triggerStartupAutoSync: Boolean = false,
         triggerActiveVaultAutoSync: Boolean = true
     ) {
+        // 整段计时：本方法在 ViewModel init 与解锁/刷新后都会走，是判断「密码库
+        // 什么时候可见」的主坐标。注意它跑在 viewModelScope（主线程）上，若
+        // costMs 偏大说明主线程被里面的 IO/Keystore 操作堵住了。
+        val loadVaultsStartedAt = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 val restoredVaultIds = if (_isNeverLockEnabled.value) {
@@ -260,6 +264,12 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                     maybeTriggerSilentAutoSync(active, trigger = trigger)
                 }
+                Log.i(
+                    "BASTION-PROFILE",
+                    "loadVaults costMs=${System.currentTimeMillis() - loadVaultsStartedAt} " +
+                        "vaults=${_vaults.value.size} restored=${restoredVaultIds.size} " +
+                        "unlockState=${_unlockState.value}"
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "加载 Vault 失败", e)
                 _events.emit(BitwardenEvent.ShowError("加载 Vault 失败: ${e.message}"))
@@ -1276,12 +1286,18 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     }
     
     private suspend fun loadVaultData(vaultId: Long) {
+        val startedAt = System.currentTimeMillis()
         try {
             _entries.value = repository.getPasswordEntries(vaultId)
             _folders.value = repository.getFolders(vaultId)
             _sends.value = repository.getSends(vaultId)
             refreshSendsAcrossVaults()
             loadConflicts()
+            Log.i(
+                "BASTION-PROFILE",
+                "loadVaultData costMs=${System.currentTimeMillis() - startedAt} " +
+                    "vaultId=$vaultId entries=${_entries.value.size}"
+            )
         } catch (e: Exception) {
             Log.e(TAG, "加载 Vault 数据失败", e)
             _events.emit(BitwardenEvent.ShowError("加载数据失败: ${e.message}"))

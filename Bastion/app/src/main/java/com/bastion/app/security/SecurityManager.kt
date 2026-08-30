@@ -44,12 +44,32 @@ class SecurityManager(private val context: Context) {
 
     private val logTag = "SecurityManager"
 
+    /**
+     * 解锁 / 冷启动耗时剖析的统一 tag。
+     *
+     * 真机上一行拿到全部分段耗时：
+     * `adb logcat | grep BASTION-PROFILE`
+     */
+    private val profileTag = "BASTION-PROFILE"
+
+    private fun profileElapsed(phase: String, startedAt: Long, extra: String = "") {
+        android.util.Log.i(
+            profileTag,
+            "$phase costMs=${System.currentTimeMillis() - startedAt} " +
+                "thread=${Thread.currentThread().name}" +
+                if (extra.isNotEmpty()) " $extra" else ""
+        )
+    }
+
     @Volatile
     private var mdkAuthUnavailableUntilMillis: Long = 0L
     @Volatile
     private var hasLoggedMdkAuthExpiredWarning = false
     @Volatile
     private var hasLoggedMdkFallbackEncryption = false
+    /** [requiresPasswordReentryForWrapperRebuild] 的一次性告警闸门（详见该方法内注释）。 */
+    @Volatile
+    private var hasLoggedReentryRequiredWarning = false
 
     private val mdkAuthCooldownMillis = 30_000L
 
@@ -143,9 +163,20 @@ class SecurityManager(private val context: Context) {
         private var cachedCompatDataKey: SecretKey? = null
 
         @Volatile
+        private var cachedDataKey: SecretKey? = null
+
+        @Volatile
         private var cachedInstance: SecurityManager? = null
 
         private val compatDataKeyLock = Any()
+
+        /**
+         * 主数据密钥（KEY_ALIAS_DATA）的缓存锁。
+         *
+         * 与 [compatDataKeyLock] 分开：两者服务于不同别名、不同失效时机，
+         * 共用一把锁会让「重建 compat key」阻塞「读主 key」，白白串行化。
+         */
+        private val dataKeyLock = Any()
 
         fun clearRuntimeUnlockCache() {
             processCachedMdk = null
@@ -268,18 +299,37 @@ class SecurityManager(private val context: Context) {
         android.util.Log.d("SecurityManager", "Vault unlock requested")
 
         return try {
+            val startedAt = System.currentTimeMillis()
             val storedHash = sharedPreferences.getString(MASTER_PASSWORD_HASH_KEY, null) ?: return false
             val storedSalt = sharedPreferences.getString(MASTER_PASSWORD_SALT_KEY, null)?.let { saltStr ->
                 decodeHex(saltStr)
             } ?: return false
 
-            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, getStoredMasterPasswordIterations())
+            // 主密码验证的代价几乎全在 PBKDF2 上：迭代次数直接决定耗时
+            // （600k 次在本机上通常是秒级）。单独计时以便与 MDK 初始化区分开。
+            val iterations = getStoredMasterPasswordIterations()
+            val hashStartedAt = System.currentTimeMillis()
+            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, iterations)
+            profileElapsed(
+                "passwordUnlock.hashMasterPassword",
+                hashStartedAt,
+                "iterations=$iterations"
+            )
             if (computedHash != storedHash) {
+                profileElapsed("passwordUnlock.total", startedAt, "result=badPassword")
                 return false
             }
 
+            val mdkStartedAt = System.currentTimeMillis()
             ensureMdkInitializedWithPassword(inputPassword)
+            profileElapsed("passwordUnlock.ensureMdkInitializedWithPassword", mdkStartedAt)
+
+            // 存量参数升级会再跑 1~2 次 PBKDF2（600k），是密码解锁偏慢的常见放大器
+            val upgradeStartedAt = System.currentTimeMillis()
             upgradePbkdf2ParamsIfNeeded(inputPassword)
+            profileElapsed("passwordUnlock.upgradePbkdf2ParamsIfNeeded", upgradeStartedAt)
+
+            profileElapsed("passwordUnlock.total", startedAt, "result=ok")
             true
         } catch (e: Exception) {
             android.util.Log.w("SecurityManager", "Vault password unlock failed: ${e.message}")
@@ -293,13 +343,24 @@ class SecurityManager(private val context: Context) {
         }
 
         return try {
+            // 注意：本方法由 Compose 侧（AuthComponents / PasswordListTopSection）
+            // 直接同步调用，默认跑在**主线程**。Keystore 的 getEntry / Cipher.init
+            // 都是跨进程 Binder 调用，主线程上做会直接卡住 UI —— 所以这里打上线程名，
+            // 若日志显示 thread=main 且 costMs 偏大，就该把它挪到后台线程。
+            val startedAt = System.currentTimeMillis()
             // A previous failed keystore read can set a short cooldown. Once the
             // user has just passed biometric auth, retry immediately instead of
             // reporting that the vault key is still unavailable.
             mdkAuthUnavailableUntilMillis = 0L
+            val wrapperStartedAt = System.currentTimeMillis()
             ensureMdkKeystoreWrapper()
+            profileElapsed("biometricUnlock.ensureMdkKeystoreWrapper", wrapperStartedAt)
+            val mdkStartedAt = System.currentTimeMillis()
             val mdk = getMdkForCrypto()
-            mdk != null && mdk.isNotEmpty()
+            profileElapsed("biometricUnlock.getMdkForCrypto", mdkStartedAt)
+            val ok = mdk != null && mdk.isNotEmpty()
+            profileElapsed("biometricUnlock.total", startedAt, "ok=$ok")
+            ok
         } catch (e: Exception) {
             android.util.Log.w("SecurityManager", "Vault biometric unlock failed: ${e.message}")
             false
@@ -319,6 +380,7 @@ class SecurityManager(private val context: Context) {
         mdkAuthUnavailableUntilMillis = 0L
         hasLoggedMdkAuthExpiredWarning = false
         hasLoggedMdkFallbackEncryption = false
+        hasLoggedReentryRequiredWarning = false
     }
 
     /**
@@ -331,6 +393,7 @@ class SecurityManager(private val context: Context) {
         mdkAuthUnavailableUntilMillis = 0L
         hasLoggedMdkAuthExpiredWarning = false
         hasLoggedMdkFallbackEncryption = false
+        hasLoggedReentryRequiredWarning = false
     }
 
     fun forceVaultReauthentication(reason: String) {
@@ -340,6 +403,7 @@ class SecurityManager(private val context: Context) {
         mdkAuthUnavailableUntilMillis = 0L
         hasLoggedMdkAuthExpiredWarning = false
         hasLoggedMdkFallbackEncryption = false
+        hasLoggedReentryRequiredWarning = false
     }
 
     fun shouldForceVaultReauthenticationAfterDecryptFailure(error: Throwable?): Boolean {
@@ -501,7 +565,10 @@ class SecurityManager(private val context: Context) {
         val hasKeystoreBlob = sharedPreferences.contains(MDK_KEYSTORE_BLOB_KEY)
         val keystoreAliasMissing = hasKeystoreBlob && !hasSecureKeyAlias()
         val requires = !hasKeystoreBlob || keystoreAliasMissing
-        if (requires) {
+        // 一次性告警：本方法现在被 PasswordViewModel 的解密门控逐条调用，
+        // 不加闸门会在「MDK 包装丢失」这种持续状态下一次批量操作刷出上百条同样的日志。
+        if (requires && !hasLoggedReentryRequiredWarning) {
+            hasLoggedReentryRequiredWarning = true
             android.util.Log.w(
                 logTag,
                 "requiresPasswordReentryForWrapperRebuild=true: ready=$ready, hasPasswordBlob=$hasPasswordBlob, hasKeystoreBlob=$hasKeystoreBlob, keystoreAliasMissing=$keystoreAliasMissing"
@@ -790,36 +857,63 @@ class SecurityManager(private val context: Context) {
     }
     
     /**
-     * Get or create a secure key from Android KeyStore
+     * Get or create a secure key from Android KeyStore.
      * This key requires user authentication (biometric) to be used.
+     *
+     * 缓存说明（与 [getOrGenerateCompatSecureKey] 同一套双检锁模式）：
+     * `KeyStore.getInstance + load + getEntry` 每次调用都是一次跨进程 Binder 往返，
+     * 实测是冷启动批量解密的主要开销来源 —— 旧实现下每个密码条目最多会触发 3 次。
+     *
+     * 安全性不变：缓存的只是 Keystore 返回的密钥**句柄**，密钥材料仍留在 Keystore 内；
+     * `setUserAuthenticationRequired(true)` 的校验发生在 `Cipher.init()` 而不是
+     * `getEntry()`，因此缓存句柄不会绕过生物认证，认证过期时仍会照常抛
+     * UserNotAuthenticatedException。密钥被永久失效（录入新指纹）时，
+     * [invalidateCachedSecureKey] 会清掉缓存，下次调用重新取。
      */
     private fun getOrGenerateSecureKey(): SecretKey {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
-        keyStore.load(null)
-        
-        if (keyStore.containsAlias(KEY_ALIAS_DATA)) {
-            val entry = keyStore.getEntry(KEY_ALIAS_DATA, null) as? KeyStore.SecretKeyEntry
-            if (entry != null) {
-                return entry.secretKey
+        cachedDataKey?.let { return it }
+
+        return synchronized(dataKeyLock) {
+            cachedDataKey?.let { return@synchronized it }
+
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+
+            if (keyStore.containsAlias(KEY_ALIAS_DATA)) {
+                val entry = keyStore.getEntry(KEY_ALIAS_DATA, null) as? KeyStore.SecretKeyEntry
+                if (entry != null) {
+                    return@synchronized entry.secretKey.also { cachedDataKey = it }
+                }
             }
+
+            // Generate new key
+            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+            val builder = KeyGenParameterSpec.Builder(
+                KEY_ALIAS_DATA,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(256)
+            .setUserAuthenticationRequired(true)
+            .setUserAuthenticationValidityDurationSeconds(300) // Allow use for 5 minutes after authentication
+
+            builder.setInvalidatedByBiometricEnrollment(true) // Key becomes permanently invalid if new biometric is enrolled
+
+            keyGenerator.init(builder.build())
+            keyGenerator.generateKey().also { cachedDataKey = it }
         }
-        
-        // Generate new key
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        val builder = KeyGenParameterSpec.Builder(
-            KEY_ALIAS_DATA,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        )
-        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-        .setKeySize(256)
-        .setUserAuthenticationRequired(true)
-        .setUserAuthenticationValidityDurationSeconds(300) // Allow use for 5 minutes after authentication
-        
-        builder.setInvalidatedByBiometricEnrollment(true) // Key becomes permanently invalid if new biometric is enrolled
-        
-        keyGenerator.init(builder.build())
-        return keyGenerator.generateKey()
+    }
+
+    /**
+     * 丢弃 [cachedDataKey]，迫使下次 [getOrGenerateSecureKey] 重新访问 Keystore。
+     *
+     * 必须在「密钥可能已不再有效」的时刻调用：别名被删除、密钥被永久失效
+     * （KeyPermanentlyInvalidatedException）、或不可恢复（UnrecoverableKeyException）。
+     * 否则缓存会一直持有一个已失效的句柄，让后续解密反复失败。
+     */
+    private fun invalidateCachedSecureKey() {
+        cachedDataKey = null
     }
 
     private fun getOrGenerateCompatSecureKey(): SecretKey {
@@ -862,6 +956,9 @@ class SecurityManager(private val context: Context) {
     }
 
     private fun deleteSecureKeyAlias(alias: String) {
+        // 别名被删 → 缓存里的句柄即使还指向旧对象也已失去意义，必须丢弃，
+        // 否则下次 getOrGenerateSecureKey() 会直接返回这个悬空句柄而不是重新生成。
+        if (alias == KEY_ALIAS_DATA) invalidateCachedSecureKey()
         runCatchingObserved {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
@@ -1121,6 +1218,7 @@ class SecurityManager(private val context: Context) {
         mdkAuthUnavailableUntilMillis = 0L
         hasLoggedMdkAuthExpiredWarning = false
         hasLoggedMdkFallbackEncryption = false
+        hasLoggedReentryRequiredWarning = false
     }
 
     private fun ensureMdkKeystoreWrapper() {
@@ -1193,6 +1291,9 @@ class SecurityManager(private val context: Context) {
             return null
         }
         return try {
+            // 冷启动可观测性：只在这条「真的要走 Keystore 解包」的分支计时。
+            // 命中 processCachedMdk 的调用在上面就 return 了，不会刷日志。
+            val unwrapStartedAt = System.currentTimeMillis()
             val ksKey = if (usesCompatWrapper) getOrGenerateCompatSecureKey() else getOrGenerateSecureKey()
             val combined = android.util.Base64.decode(wrapped.payload, android.util.Base64.NO_WRAP)
             val iv = combined.copyOfRange(0, 12)
@@ -1201,6 +1302,11 @@ class SecurityManager(private val context: Context) {
             val spec = GCMParameterSpec(128, iv)
             cipher.init(Cipher.DECRYPT_MODE, ksKey, spec)
             val mdk = cipher.doFinal(enc)
+            android.util.Log.i(
+                logTag,
+                "getMdkForCrypto: unwrapped MDK in " +
+                    "${System.currentTimeMillis() - unwrapStartedAt}ms (compatWrapper=$usesCompatWrapper)"
+            )
             processCachedMdk = mdk
             mdkAuthUnavailableUntilMillis = 0L
             hasLoggedMdkAuthExpiredWarning = false
@@ -1213,6 +1319,8 @@ class SecurityManager(private val context: Context) {
             // KeyPermanentlyInvalidatedException: 生物识别已更改，密钥永久失效
             // UserNotAuthenticatedException: 用户认证已过期，需要重新认证
             if (e is android.security.keystore.KeyPermanentlyInvalidatedException) {
+                // 句柄已永久失效，清缓存，避免后续调用一直复用它反复失败
+                invalidateCachedSecureKey()
                 throw e  // 密钥永久失效，必须抛出让用户重新设置
             }
             if (e is UserNotAuthenticatedException) {
@@ -1396,6 +1504,13 @@ class SecurityManager(private val context: Context) {
             val decryptedBytes = cipher.doFinal(encrypted)
             return String(decryptedBytes, kotlin.text.Charsets.UTF_8)
         } catch (e: Exception) {
+            // 缓存的密钥句柄已失效（录入新指纹 / 密钥不可恢复）：丢弃缓存，
+            // 让下次调用重新从 Keystore 取，而不是一直复用这个坏句柄。
+            if (e is android.security.keystore.KeyPermanentlyInvalidatedException ||
+                e is UnrecoverableKeyException
+            ) {
+                invalidateCachedSecureKey()
+            }
             // Fallback: try legacy key alias (pre-rebrand "monica_data_key_v2")
             tryGetLegacyKey(LEGACY_KEY_ALIAS_DATA)?.let { legacyKey ->
                 try {
