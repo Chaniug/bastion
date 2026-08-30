@@ -669,12 +669,22 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
             return@withContext emptySet()
         }
 
+        // 冷启动可观测性：这一步每个 Vault 要做 3 次 Keystore 解密
+        // （encKey / macKey / accessToken），是冷启动路径上最重的一段。
+        val startedAt = System.currentTimeMillis()
+        val vaults = getAllVaults()
+
         val restoredVaultIds = linkedSetOf<Long>()
-        getAllVaults().forEach { vault ->
+        vaults.forEach { vault ->
             if (restoreUnlockStateFromVault(vault)) {
                 restoredVaultIds += vault.id
             }
         }
+        Log.i(
+            TAG,
+            "restoreUnlockedVaults done: vaults=${vaults.size}, restored=${restoredVaultIds.size}, " +
+                "costMs=${System.currentTimeMillis() - startedAt}"
+        )
         restoredVaultIds
     }
 

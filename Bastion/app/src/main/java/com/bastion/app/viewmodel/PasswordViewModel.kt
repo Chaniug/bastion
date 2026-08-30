@@ -141,8 +141,7 @@ class PasswordViewModel(
     private val bitwardenOfflineSecretCacheFacade = BitwardenOfflineSecretCacheFacade(
         cache = context?.applicationContext?.let {
             BitwardenOfflineSecretCache(it, securityManager)
-        },
-        decodePassword = ::decodePasswordOrNull
+        }
     )
     private val keepassBridge = if (context != null && localKeePassDatabaseDao != null) {
         KeePassCompatibilityBridge(
@@ -324,23 +323,24 @@ class PasswordViewModel(
         observeInvalidCustomCategoryFilter()
         viewModelScope.launch(Dispatchers.IO) {
             runCatchingObserved {
-                repairLegacyDetachedKeePassEntries()
-                repairLegacyOwnershipConflicts()
+                // 只做一次全表扫描。此前「修复 1 + 修复 2 + 离线缓存预热」共触发 3 次
+                // getAllPasswordEntries().first()，其中预热还会对整个密码库逐条解密
+                // （每条最多 3 轮 decryptData，且都串在 decryptLock 全局锁上），与
+                // Bitwarden 恢复解锁态所需的 3 次 Keystore 解密争抢 Keystore，
+                // 造成隔夜冷启动出现肉眼可见的加载过程。
+                // 现在解密改为按需发生（对齐 Bitwarden 官方与 Keyguard 的
+                // 「本地 Flow + 解锁门控 + 按需解密」），冷启动路径不再有任何解密。
+                val startedAt = System.currentTimeMillis()
+                val entries = repository.getAllPasswordEntries().first()
+                repairLegacyDetachedKeePassEntries(entries)
+                repairLegacyOwnershipConflicts(entries)
+                Log.i(
+                    "PasswordViewModel",
+                    "Startup maintenance done: entries=${entries.size}, " +
+                        "costMs=${System.currentTimeMillis() - startedAt}"
+                )
             }.onFailure { error ->
                 Log.w("PasswordViewModel", "Password startup maintenance failed", error)
-            }
-        }
-        // 离线密钥缓存预热：在 ViewModel init 时立即于 Dispatchers.IO（而非与首页密码列表
-        // 共用 Dispatchers.Default 的线程池）开始，抢占冷启动早期窗口把缓存尽早填热。预热只
-        // 把已解密的明文填入内存缓存（不重新加密、不写 SharedPreferences），因此不会产生 N 次
-        // apply() 引发的 QueuedWork.waitToFinish() 主线程反堵，冷启动主线程不被堵塞；而用户
-        // 点开密码时 recall() 命中内存即秒回。任何加密/安全逻辑均未改动，常规 remember() 仍
-        // 在真实查看/复制时照常写盘做离线兜底。
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatchingObserved {
-                warmupBitwardenOfflineSecretCache()
-            }.onFailure { error ->
-                Log.w("PasswordViewModel", "Offline secret cache warmup skipped", error)
             }
         }
     }
@@ -871,6 +871,18 @@ class PasswordViewModel(
 
     private fun decodePasswordOrNull(rawPassword: String): String? {
         if (rawPassword.isEmpty()) return ""
+        if (shouldSkipDecryptAttempt()) {
+            // 注定解密失败且会被判成「需要重新认证」的状态：整体短路，避免逐条触发
+            // forceVaultReauthentication 把会话击穿（详见 shouldSkipDecryptAttempt 注释）。
+            if (!hasLoggedDecryptAuthStateWarning) {
+                Log.w(
+                    "PasswordViewModel",
+                    "Skip decrypt: MDK wrapper needs password re-entry"
+                )
+                hasLoggedDecryptAuthStateWarning = true
+            }
+            return null
+        }
         return try {
             unwrapPasswordLayersForDisplay(rawPassword)
         } catch (error: Exception) {
@@ -904,17 +916,23 @@ class PasswordViewModel(
         return entries.size
     }
 
-    private suspend fun warmupBitwardenOfflineSecretCache() {
-        val entries = repository.getAllPasswordEntries().first()
-        rememberDecodedBitwardenSecrets(entries)
+    /**
+     * 冷启动解密门控。
+     *
+     * 与 [SecurityManager.shouldForceVaultReauthenticationAfterDecryptFailure] 的最后一条
+     * 判定同构：MDK 的 Keystore 包装已丢失（需要用户重输主密码）时，任何解密都注定失败，
+     * 且失败会被判成「需要重新认证」。逐条尝试（历史批量预热 / 批量校验）会把会话反复击穿，
+     * 因此这里整体短路，不产生任何失败副作用。UI 侧的重新认证提示走
+     * [SecurityManager.getVaultAccessState] → REQUIRES_PASSWORD_REENTRY，不依赖本路径。
+     *
+     * 注意：本判定不要求 isVaultRuntimeUnlocked()。首次成功解密本身才会把 MDK 解包进进程
+     * 缓存，若要求解锁态会造成「未解锁 → 不能解密 → 永远解锁不了」的死锁。
+     */
+    private fun shouldSkipDecryptAttempt(): Boolean {
+        return securityManager.requiresPasswordReentryForWrapperRebuild()
     }
 
-    private fun rememberDecodedBitwardenSecrets(entries: List<PasswordEntry>): Int {
-        return bitwardenOfflineSecretCacheFacade.rememberDecodedSecrets(entries)
-    }
-
-    private suspend fun repairLegacyDetachedKeePassEntries() {
-        val entries = repository.getAllPasswordEntries().first()
+    private suspend fun repairLegacyDetachedKeePassEntries(entries: List<PasswordEntry>) {
         val staleIds = mutableListOf<Long>()
         entries.forEach { entry ->
             if (isLegacyDetachedKeePassEntry(entry)) {
@@ -930,8 +948,7 @@ class PasswordViewModel(
         )
     }
 
-    private suspend fun repairLegacyOwnershipConflicts() {
-        val entries = repository.getAllPasswordEntries().first()
+    private suspend fun repairLegacyOwnershipConflicts(entries: List<PasswordEntry>) {
         var repairedCount = 0
 
         entries.forEach { entry ->
@@ -1057,7 +1074,15 @@ class PasswordViewModel(
      */
     private fun unwrapPasswordLayersForDisplay(value: String): String {
         var current = value
-        repeat(3) {
+        repeat(3) { round ->
+            // 第 1 轮无条件执行：历史遗留的 V1 密文没有 MDK|/V2|/C2| 前缀，不能用
+            // 「长得像不像密文」判断，否则会漏解老数据。
+            // 第 2 轮起先做前缀快筛：只有仍是 Bastion 密文才继续解下一层。绝大多数条目
+            // 只有一层，少了这个判断每个条目都会多做 1~2 次注定原样返回的 decryptData，
+            // 而每次 decryptData 都可能碰一次 Keystore。
+            if (round > 0 && !securityManager.looksLikeBastionCiphertext(current)) {
+                return current
+            }
             val decrypted = synchronized(decryptLock) {
                 securityManager.decryptData(current)
             }
