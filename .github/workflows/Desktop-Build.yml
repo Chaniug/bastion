@@ -186,8 +186,11 @@ jobs:
             desktop/desktop/build/compose/binaries/main/exe/**/*.exe
           if-no-files-found: warn
           # 保留期（2026-08-29）：安装包单个约 169 MB，是所有 artifact 里最大的一类，
-          # 此前用默认 90 天。Desktop 构建频率低但单份极大，14 天足以覆盖验证窗口。
-          retention-days: 14
+          # 此前用默认 90 天。Desktop 构建频率低但单份极大。
+          # （2026-08-31）仓库允许的最大保留期为 3 天，填更大的值会被 GitHub 自动降级为 3
+          # 并打一条 warning，因此显式写 3。若确实需要更长的验证窗口，应先调高仓库
+          # Settings → Actions → Artifact 保留上限，否则这里写多大都不生效。
+          retention-days: 3
 
       - name: Resolve release version & tag
         if: github.event_name == 'workflow_dispatch'

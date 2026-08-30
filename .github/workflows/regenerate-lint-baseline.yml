@@ -77,9 +77,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: lint-debug-log
-          path: /tmp/lint-debug.log
+          path:             /tmp/lint-debug.log
           if-no-files-found: warn
-          retention-days: 7
+          # 保留期（2026-08-31）：仓库最大保留期为 3 天，填更大值会被自动降级并告警，故显式写 3。
+          retention-days: 3
 
       # 兜底：万一自动提交失败，仍可手动从 artifact 取回
       - name: Upload baseline as artifact (fallback)
@@ -87,9 +88,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: lint-baseline
-          path: Bastion/app/lint-baseline.xml
+          path:             Bastion/app/lint-baseline.xml
           if-no-files-found: warn
-          retention-days: 30
+          # 保留期（2026-08-31）：这里原本想留 30 天供手动取回兜底，但仓库最大保留期只有 3 天，
+          # 填更大值会被 GitHub 自动降级为 3 并打一条 warning，故显式写 3，避免注释与实际不符。
+          # 若真需要 30 天兜底，须先调高仓库 Settings → Actions → Artifact 保留上限。
+          retention-days: 3
 
       # 自动提交回触发分支（默认 dev）。无变化则跳过，避免空提交触发额外构建。
       - name: Commit baseline back to branch

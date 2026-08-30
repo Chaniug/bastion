@@ -174,8 +174,10 @@ jobs:
           if-no-files-found: error
           # 保留期（2026-08-29）：此前用仓库默认 90 天，累积到 48 份约 2.2 GB。
           # preview 包只供短期真机验证，旧的没有留存价值；同时 preview Release 也每次重建，
-          # 故 14 天足够回溯，到期由 GitHub 自动清理。
-          retention-days: 14
+          # 故短期留存即可，到期由 GitHub 自动清理。
+          # （2026-08-31）仓库允许的最大保留期为 3 天，填更大的值会被 GitHub 自动降级为 3
+          # 并打一条 warning，因此这里显式写 3，让配置与实际生效值保持一致。
+          retention-days: 3
 
       # 2.5) push 到 dev 时，把 debug APK 发布到 preview Release，方便直接从 Release 页下载真机验证。
       #      main 不触发本工作流（触发分支仅 dev）：dev 合并到 main 后代码一致，main 不再重复构建/发布，
@@ -274,7 +276,8 @@ jobs:
           if-no-files-found: ignore
           # 保留期（2026-08-29）：单测报告只在排错当下有用（每份约 0.3 MB），
           # 且失败名单已由后面的基线闸门打进 run summary，不必长期留存。
-          retention-days: 7
+          # （2026-08-31）仓库最大保留期为 3 天，填更大值会被自动降级并告警，故显式写 3。
+          retention-days: 3
 
       # 3.5) Compose 编译器报告 / 指标：此前生成在 runner 上即随 job 结束丢弃，白生成。
       #     上传后可每次 push 直接下载，用于定位重组热点：
@@ -292,7 +295,8 @@ jobs:
           path: |
             Bastion/build/compose-reports
           if-no-files-found: ignore
-          retention-days: 14
+          # 保留期（2026-08-31）：仓库最大保留期为 3 天，填更大值会被自动降级并告警，故显式写 3。
+          retention-days: 3
 
       # 4) 回归基线闸门
       #    背景：单测步骤 continue-on-error，CI 恒绿，存量 22 个失效守卫无告警，
