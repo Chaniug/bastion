@@ -48,7 +48,12 @@ class AutofillParserNg {
         return AutofillRequest.Fillable(
             ignoreAutofillIds = emptyList(),
             inlinePresentationSpecs = inlineSpecs,
-            maxInlineSuggestionsCount = inlineRequest?.maxSuggestionCount ?: 0,
+            // getMaxSuggestionCount 自 API 30 (R) 起提供，低版本直接按 0 处理。
+            maxInlineSuggestionsCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                inlineRequest?.maxSuggestionCount ?: 0
+            } else {
+                0
+            },
             isCompatMode = isCompatMode,
             packageName = packageName,
             partition = partition,

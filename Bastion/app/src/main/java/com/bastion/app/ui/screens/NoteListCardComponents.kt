@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -51,7 +53,6 @@ import com.bastion.app.util.ImageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
-import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -261,7 +262,7 @@ fun ExpressiveNoteCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(note.updatedAt),
+                    text = SimpleDateFormat("yyyy-MM-dd", LocalConfiguration.current.locales[0]).format(note.updatedAt),
                     style = MaterialTheme.typography.labelSmall,
                     color = secondaryContentColor.copy(alpha = 0.8f)
                 )

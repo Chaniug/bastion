@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
@@ -57,7 +59,6 @@ import com.bastion.app.R
 import com.bastion.app.data.PredefinedSecurityQuestions
 import com.bastion.app.data.SecurityQuestion
 import com.bastion.app.security.SecurityManager
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -68,7 +69,7 @@ fun SecurityQuestionsSetupScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val isZh = Locale.getDefault().language == "zh"
+    val isZh = LocalConfiguration.current.locales[0].language == "zh"
     val questions = PredefinedSecurityQuestions.getQuestions(isZh)
     val isExistingSetup = securityManager.areSecurityQuestionsSet()
 

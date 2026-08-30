@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -449,7 +451,7 @@ private fun groupAndAggregateEvents(events: List<TimelineEvent>): List<TimelineG
             timestamp >= yesterday -> stringResource(R.string.timeline_date_yesterday)
             timestamp >= thisWeekStart -> stringResource(R.string.timeline_date_this_week)
             else -> {
-                val sdf = SimpleDateFormat(stringResource(R.string.timeline_date_month_day), Locale.getDefault())
+                val sdf = SimpleDateFormat(stringResource(R.string.timeline_date_month_day), LocalConfiguration.current.locales[0])
                 sdf.format(Date(timestamp))
             }
         }

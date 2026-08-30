@@ -43,7 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -126,9 +127,12 @@ fun MultiStorageTargetPickerBottomSheet(
 ) {
     if (!visible) return
 
-    val configuration = LocalConfiguration.current
-    val maxSheetHeight = configuration.screenHeightDp.dp * 0.82f
-    val minSheetHeight = (configuration.screenHeightDp.dp * 0.45f)
+    // 用窗口实际高度（多窗口/折叠屏下更准确）替代 Configuration.screenHeightDp
+    val windowHeightDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+    val maxSheetHeight = windowHeightDp * 0.82f
+    val minSheetHeight = (windowHeightDp * 0.45f)
         .coerceIn(300.dp, 430.dp)
     val effectiveMinSheetHeight = if (minSheetHeight > maxSheetHeight) {
         maxSheetHeight

@@ -1,5 +1,7 @@
 package com.bastion.app.ui.components
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -216,7 +218,7 @@ fun formatRelativeTime(timestamp: Long): String {
         diff < 60 * 60 * 1000 -> stringResource(R.string.time_minutes_ago, diff / (60 * 1000))
         diff < 24 * 60 * 60 * 1000 -> stringResource(R.string.time_hours_ago, diff / (60 * 60 * 1000))
         else -> {
-            val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+            val sdf = SimpleDateFormat("MM-dd HH:mm", LocalConfiguration.current.locales[0])
             sdf.format(Date(timestamp))
         }
     }

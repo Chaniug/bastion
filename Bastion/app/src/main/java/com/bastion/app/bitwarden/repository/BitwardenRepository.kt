@@ -1,5 +1,6 @@
 package com.bastion.app.bitwarden.repository
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -92,6 +93,9 @@ class BitwardenRepository(private val context: Context) : BitwardenApiFactory.Bi
         private const val SEND_UPLOAD_REQUEST_HEADROOM_BYTES = 16L * 1024L
         private val vaultSyncMutexes = ConcurrentHashMap<Long, Mutex>()
         
+        // 单例持有的是 applicationContext（见 getInstance 中的 context.applicationContext），
+        // 不会泄漏 Activity；lint StaticFieldLeak 为误报。
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var instance: BitwardenRepository? = null
         

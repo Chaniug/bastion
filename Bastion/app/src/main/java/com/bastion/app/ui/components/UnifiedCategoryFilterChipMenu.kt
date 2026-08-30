@@ -56,7 +56,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -109,7 +110,10 @@ private val UnifiedCategoryFilterChipMenuShape = RoundedCornerShape(16.dp)
 
 @Composable
 fun rememberUnifiedCategoryFilterChipMenuWidth(): androidx.compose.ui.unit.Dp {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    // 用窗口实际宽度（多窗口/折叠屏下更准确）替代 Configuration.screenWidthDp
+    val screenWidth = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
     return minOf(
         UnifiedCategoryFilterChipMenuMaxWidth,
         maxOf(

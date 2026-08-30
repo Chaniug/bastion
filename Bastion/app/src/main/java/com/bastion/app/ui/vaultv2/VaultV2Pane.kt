@@ -2,6 +2,7 @@ package com.bastion.app.ui.vaultv2
 
 import com.bastion.app.logging.runCatchingObserved
 import android.icu.text.Transliterator
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -359,8 +360,13 @@ private const val VAULT_V2_EMPTY_STATE_DEBOUNCE_MS = 220L
 private const val VAULT_V2_CATEGORY_FILTER_SCOPE = "vault_v2"
 private const val MONICA_MANUAL_STACK_GROUP_FIELD_TITLE = "__bastion_manual_stack_group"
 private const val MONICA_NO_STACK_FIELD_TITLE = "__bastion_no_stack"
-private val vaultV2Transliterator: Transliterator by lazy(LazyThreadSafetyMode.NONE) {
-	Transliterator.getInstance("Any-Latin; Latin-ASCII")
+private val vaultV2Transliterator: Transliterator? by lazy(LazyThreadSafetyMode.NONE) {
+	// android.icu.text.Transliterator 自 API 29 (Q) 起提供，低版本返回 null，调用方用原字符串兜底。
+	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+		Transliterator.getInstance("Any-Latin; Latin-ASCII")
+	} else {
+		null
+	}
 }
 
 internal fun shouldShowVaultV2InitialLoading(
@@ -4108,7 +4114,7 @@ internal fun normalizeAsciiVaultV2SortKey(raw: String): String? {
 private fun normalizedVaultV2SortKey(raw: String): String {
 	normalizeAsciiVaultV2SortKey(raw)?.let { return it }
 	val trimmed = raw.trim()
-	val latin = vaultV2Transliterator.transliterate(trimmed)
+	val latin = vaultV2Transliterator?.transliterate(trimmed) ?: trimmed
 	val normalized = buildString(latin.length) {
 		latin.forEach { char ->
 			when {

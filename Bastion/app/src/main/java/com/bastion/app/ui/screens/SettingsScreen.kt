@@ -27,7 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -1287,9 +1288,9 @@ fun SettingsScreen(
     if (showUpdateCheckDialog) {
         val result = updateCheckResult
         val updateDialogScrollState = rememberScrollState()
-        val updateDialogContentMaxHeight = (
-            LocalConfiguration.current.screenHeightDp * 0.52f
-        ).dp.coerceIn(180.dp, 520.dp)
+        val updateDialogContentMaxHeight = with(LocalDensity.current) {
+            (LocalWindowInfo.current.containerSize.height.toDp() * 0.52f).coerceIn(180.dp, 520.dp)
+        }
         AlertDialog(
             onDismissRequest = { showUpdateCheckDialog = false },
             icon = {
@@ -1423,7 +1424,9 @@ fun SettingsScreen(
     
     // 预览功能对话框
     if (previewFeaturesExpanded) {
-        val previewDialogContentMaxHeight = (LocalConfiguration.current.screenHeightDp * 0.58f).dp
+        val previewDialogContentMaxHeight = with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp() * 0.58f
+        }
         AlertDialog(
             onDismissRequest = { previewFeaturesExpanded = false },
             icon = {

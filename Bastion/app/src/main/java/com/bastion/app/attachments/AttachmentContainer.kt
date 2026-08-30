@@ -1,5 +1,6 @@
 package com.bastion.app.attachments
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.bastion.app.attachments.executor.BitwardenAttachmentExecutor
 import com.bastion.app.attachments.executor.BitwardenAttachmentReconciler
@@ -31,6 +32,12 @@ import com.bastion.app.utils.KeePassKdbxService
  * - `KeePassKdbxService` 用来注入 [KeePassAttachmentExecutor]，如果业务侧已经通过别的
  *   路径创建了 service，可通过 [registerKeePassService] 替换默认实例。
  */
+/**
+ * 说明：所有缓存对象都通过 [ensureContext] 传入 **applicationContext** 构造，
+ * 不存在 Activity 泄漏；lint 的 StaticFieldLeak 只看到静态字段里含 Context 引用，
+ * 属误报，故在 object 上统一抑制。
+ */
+@SuppressLint("StaticFieldLeak")
 object AttachmentContainer {
 
     @Volatile private var appContext: Context? = null

@@ -1,5 +1,7 @@
 package com.bastion.app.ui.components
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
@@ -304,7 +306,7 @@ private fun formatSyncRelativeTime(timestamp: Long): String {
         diff < 86400_000 -> stringResource(R.string.time_hours_ago, diff / 3600_000)
         diff < 604800_000 -> stringResource(R.string.time_days_ago, diff / 86400_000)
         else -> {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", LocalConfiguration.current.locales[0])
             sdf.format(java.util.Date(timestamp))
         }
     }

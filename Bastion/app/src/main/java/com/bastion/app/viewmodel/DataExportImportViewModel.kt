@@ -1,6 +1,7 @@
 package com.bastion.app.viewmodel
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -71,6 +72,8 @@ class DataExportImportViewModel(
     ctx: Context
 ) : ViewModel() {
 
+    // 已经取 applicationContext，不会泄漏 Activity；lint StaticFieldLeak 为误报。
+    @SuppressLint("StaticFieldLeak")
     private val context = ctx.applicationContext
 
     private data class ImportedAuthenticatorDraft(

@@ -166,7 +166,12 @@ class AutofillServiceChecker(private val context: Context) {
 
             // 主路径：AutofillManager
             val hasEnabledServices = autofillManager?.hasEnabledAutofillServices() == true
-            val managerComponent = autofillManager?.autofillServiceComponentName
+            // getAutofillServiceComponentName 自 API 28 (P) 起提供，低版本回退到 Settings.Secure 兜底。
+            val managerComponent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                autofillManager?.autofillServiceComponentName
+            } else {
+                null
+            }
             val managerMatches = managerComponent != null && targetComponents.contains(managerComponent)
 
             // 兜底路径：Settings.Secure（部分 ROM 上 manager 返回会延迟/空值）

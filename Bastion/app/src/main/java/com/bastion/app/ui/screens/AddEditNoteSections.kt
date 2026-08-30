@@ -60,7 +60,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextRange
@@ -108,14 +109,18 @@ internal fun NoteEditorSection(
     editorTakesRemainingSpace: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
+    // 用窗口实际高度（多窗口/折叠屏下更准确）替代 Configuration.screenHeightDp
+    val windowHeightPx = LocalWindowInfo.current.containerSize.height
+    val density = LocalDensity.current
     val titleBringIntoViewRequester = remember { BringIntoViewRequester() }
     val contentBringIntoViewRequester = remember { BringIntoViewRequester() }
     val tagsBringIntoViewRequester = remember { BringIntoViewRequester() }
     var titleFocused by remember { mutableStateOf(false) }
     var contentFocused by remember { mutableStateOf(false) }
     var tagsFocused by remember { mutableStateOf(false) }
-    val compactEditorViewportHeight = (configuration.screenHeightDp.dp * 0.38f).coerceIn(220.dp, 420.dp)
+    val compactEditorViewportHeight = with(density) {
+        (windowHeightPx.toDp() * 0.38f).coerceIn(220.dp, 420.dp)
+    }
 
     LaunchedEffect(titleFocused) {
         if (titleFocused) {

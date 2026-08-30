@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import com.bastion.app.logging.runCatchingObserved
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -2378,7 +2380,7 @@ private fun GeneratorHistorySheet(
                                 Text(
                                     text = java.text.SimpleDateFormat(
                                         "yyyy-MM-dd HH:mm:ss",
-                                        java.util.Locale.getDefault()
+                                        LocalConfiguration.current.locales[0]
                                     ).format(java.util.Date(historyItem.timestamp)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),

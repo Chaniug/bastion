@@ -50,7 +50,13 @@ class CredentialProviderRefreshReceiver : BroadcastReceiver() {
     }
 
     private fun logCredentialProviderComponentState(context: Context, action: String) {
-        val componentName = ComponentName(context, BastionCredentialProviderService::class.java)
+        // 用字符串构造 ComponentName：避免直接引用 @RequiresApi(34) 的
+        // BastionCredentialProviderService 类（本 Receiver 在 < 34 时已提前 return），
+        // 同时 ComponentName 只需要类名，不需要加载该类。
+        val componentName = ComponentName(
+            context,
+            "com.bastion.app.passkey.BastionCredentialProviderService"
+        )
         val pm = context.packageManager
         val currentState = pm.getComponentEnabledSetting(componentName)
         val stateLabel = when (currentState) {

@@ -2,6 +2,7 @@ package com.bastion.app.passkey
 
 import com.bastion.app.logging.runCatchingObserved
 import android.content.Context
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import androidx.credentials.provider.CallingAppInfo
@@ -111,6 +112,8 @@ object PasskeyOriginResolver {
     }
 
     private fun getCallingAppSigningHash(callingAppInfo: CallingAppInfo): String? {
+        // SigningInfo / PackageInfo#signingInfo 自 API 28 (P) 起提供。
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
         return try {
             val signatures = callingAppInfo.signingInfo.apkContentsSigners
             if (signatures.isNotEmpty()) {
@@ -131,6 +134,8 @@ object PasskeyOriginResolver {
     }
 
     private fun getAppSigningHash(context: Context): String? {
+        // GET_SIGNING_CERTIFICATES / PackageInfo#signingInfo 自 API 28 (P) 起提供。
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
         return try {
             val packageInfo = context.packageManager.getPackageInfo(
                 context.packageName,

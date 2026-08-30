@@ -43,7 +43,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -4213,9 +4214,13 @@ private fun PasswordGeneratorDialog(
     onPasswordGenerated: (String) -> Unit
 ) {
     val passwordGenerator = remember { PasswordGenerator() }
-    val configuration = LocalConfiguration.current
-    val contentViewportHeight = remember(configuration.screenHeightDp) {
-        (configuration.screenHeightDp.dp * 0.46f).coerceIn(280.dp, 420.dp)
+    // 用窗口实际高度（多窗口/折叠屏下更准确）替代 Configuration.screenHeightDp
+    val windowHeightPx = LocalWindowInfo.current.containerSize.height
+    val density = LocalDensity.current
+    val contentViewportHeight = remember(windowHeightPx, density) {
+        with(density) {
+            (windowHeightPx.toDp() * 0.46f).coerceIn(280.dp, 420.dp)
+        }
     }
     val generatorScrollState = rememberScrollState()
     var length by remember { mutableStateOf(16) }

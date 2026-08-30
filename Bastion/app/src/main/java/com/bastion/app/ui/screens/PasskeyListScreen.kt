@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
@@ -2133,7 +2135,7 @@ private fun PasskeyListItem(
                     // 创建时间
                     DetailRow(
                         label = stringResource(R.string.passkey_created_at),
-                        value = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                        value = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", LocalConfiguration.current.locales[0])
                             .format(java.util.Date(passkey.createdAt)),
                         icon = Icons.Default.Schedule
                     )
@@ -2144,7 +2146,7 @@ private fun PasskeyListItem(
                         // 最后使用时间
                         DetailRow(
                             label = stringResource(R.string.passkey_last_used),
-                            value = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                            value = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", LocalConfiguration.current.locales[0])
                                 .format(java.util.Date(passkey.lastUsedAt)),
                             icon = Icons.Default.History
                         )

@@ -1,5 +1,7 @@
 package com.bastion.app.ui.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +50,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.security.SecurityManager
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,7 @@ fun SecurityQuestionsVerificationScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val isZh = Locale.getDefault().language == "zh"
+    val isZh = LocalConfiguration.current.locales[0].language == "zh"
 
     var answer1 by remember { mutableStateOf("") }
     var answer2 by remember { mutableStateOf("") }

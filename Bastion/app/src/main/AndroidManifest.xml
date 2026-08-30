@@ -231,19 +231,23 @@
             </intent-filter>
         </receiver>
         
-        <!-- Passkey Create Activity -->
+        <!-- Passkey Create Activity
+             类上有 @RequiresApi(34)，且仅在 API 34+ 的调用路径里启动，
+             故清单声明本身不会产生低版本实例化，抑制 lint NewApi。 -->
         <activity
             android:name=".passkey.PasskeyCreateActivity"
             android:theme="@style/Theme.Bastion.Passkey"
             android:exported="false"
-            android:excludeFromRecents="true" />
+            android:excludeFromRecents="true"
+            tools:ignore="NewApi" />
         
-        <!-- Passkey Auth Activity -->
+        <!-- Passkey Auth Activity（同上，@RequiresApi(34)） -->
         <activity
             android:name=".passkey.PasskeyAuthActivity"
             android:theme="@style/Theme.Bastion.Passkey"
             android:exported="false"
-            android:excludeFromRecents="true" />
+            android:excludeFromRecents="true"
+            tools:ignore="NewApi" />
 
         <!-- Passkey Settings Activity (for system settings entry) -->
         <activity
