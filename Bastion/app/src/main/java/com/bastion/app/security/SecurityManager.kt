@@ -44,6 +44,23 @@ class SecurityManager(private val context: Context) {
 
     private val logTag = "SecurityManager"
 
+    /**
+     * 解锁 / 冷启动耗时剖析的统一 tag。
+     *
+     * 真机上一行拿到全部分段耗时：
+     * `adb logcat | grep BASTION-PROFILE`
+     */
+    private val profileTag = "BASTION-PROFILE"
+
+    private fun profileElapsed(phase: String, startedAt: Long, extra: String = "") {
+        android.util.Log.i(
+            profileTag,
+            "$phase costMs=${System.currentTimeMillis() - startedAt} " +
+                "thread=${Thread.currentThread().name}" +
+                if (extra.isNotEmpty()) " $extra" else ""
+        )
+    }
+
     @Volatile
     private var mdkAuthUnavailableUntilMillis: Long = 0L
     @Volatile
@@ -282,18 +299,37 @@ class SecurityManager(private val context: Context) {
         android.util.Log.d("SecurityManager", "Vault unlock requested")
 
         return try {
+            val startedAt = System.currentTimeMillis()
             val storedHash = sharedPreferences.getString(MASTER_PASSWORD_HASH_KEY, null) ?: return false
             val storedSalt = sharedPreferences.getString(MASTER_PASSWORD_SALT_KEY, null)?.let { saltStr ->
                 decodeHex(saltStr)
             } ?: return false
 
-            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, getStoredMasterPasswordIterations())
+            // 主密码验证的代价几乎全在 PBKDF2 上：迭代次数直接决定耗时
+            // （600k 次在本机上通常是秒级）。单独计时以便与 MDK 初始化区分开。
+            val iterations = getStoredMasterPasswordIterations()
+            val hashStartedAt = System.currentTimeMillis()
+            val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, iterations)
+            profileElapsed(
+                "passwordUnlock.hashMasterPassword",
+                hashStartedAt,
+                "iterations=$iterations"
+            )
             if (computedHash != storedHash) {
+                profileElapsed("passwordUnlock.total", startedAt, "result=badPassword")
                 return false
             }
 
+            val mdkStartedAt = System.currentTimeMillis()
             ensureMdkInitializedWithPassword(inputPassword)
+            profileElapsed("passwordUnlock.ensureMdkInitializedWithPassword", mdkStartedAt)
+
+            // 存量参数升级会再跑 1~2 次 PBKDF2（600k），是密码解锁偏慢的常见放大器
+            val upgradeStartedAt = System.currentTimeMillis()
             upgradePbkdf2ParamsIfNeeded(inputPassword)
+            profileElapsed("passwordUnlock.upgradePbkdf2ParamsIfNeeded", upgradeStartedAt)
+
+            profileElapsed("passwordUnlock.total", startedAt, "result=ok")
             true
         } catch (e: Exception) {
             android.util.Log.w("SecurityManager", "Vault password unlock failed: ${e.message}")
@@ -307,13 +343,24 @@ class SecurityManager(private val context: Context) {
         }
 
         return try {
+            // 注意：本方法由 Compose 侧（AuthComponents / PasswordListTopSection）
+            // 直接同步调用，默认跑在**主线程**。Keystore 的 getEntry / Cipher.init
+            // 都是跨进程 Binder 调用，主线程上做会直接卡住 UI —— 所以这里打上线程名，
+            // 若日志显示 thread=main 且 costMs 偏大，就该把它挪到后台线程。
+            val startedAt = System.currentTimeMillis()
             // A previous failed keystore read can set a short cooldown. Once the
             // user has just passed biometric auth, retry immediately instead of
             // reporting that the vault key is still unavailable.
             mdkAuthUnavailableUntilMillis = 0L
+            val wrapperStartedAt = System.currentTimeMillis()
             ensureMdkKeystoreWrapper()
+            profileElapsed("biometricUnlock.ensureMdkKeystoreWrapper", wrapperStartedAt)
+            val mdkStartedAt = System.currentTimeMillis()
             val mdk = getMdkForCrypto()
-            mdk != null && mdk.isNotEmpty()
+            profileElapsed("biometricUnlock.getMdkForCrypto", mdkStartedAt)
+            val ok = mdk != null && mdk.isNotEmpty()
+            profileElapsed("biometricUnlock.total", startedAt, "ok=$ok")
+            ok
         } catch (e: Exception) {
             android.util.Log.w("SecurityManager", "Vault biometric unlock failed: ${e.message}")
             false

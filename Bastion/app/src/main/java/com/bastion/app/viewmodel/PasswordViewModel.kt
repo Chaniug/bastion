@@ -546,9 +546,19 @@ class PasswordViewModel(
                 } else {
                     dedupeExactEntries(filtered)
                 }
+                // 逐条解密只为「是否有密码」指示与隐藏态显示。对 Bitwarden 条目，
+                // inspectSecret 还会顺手 remember()（加密 + SharedPreferences.apply 写盘），
+                // 因此这里是列表首屏延迟的主要来源 —— 先计时证伪/证实。
+                val decryptStartedAt = System.currentTimeMillis()
                 val decrypted = exactDeduped.map { entry ->
                     entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())
                 }
+                Log.i(
+                    "BASTION-PROFILE",
+                    "passwordEntriesSource.decryptAll " +
+                        "costMs=${System.currentTimeMillis() - decryptStartedAt} " +
+                        "entries=${exactDeduped.size}"
+                )
                 if (shouldKeepRawDisplay) {
                     decrypted
                 } else {
@@ -573,9 +583,17 @@ class PasswordViewModel(
 
     private val allPasswordsSource: Flow<List<PasswordEntry>> = repository.getAllPasswordEntries()
         .map { entries ->
-            entries.map { entry ->
+            val decryptStartedAt = System.currentTimeMillis()
+            val decrypted = entries.map { entry ->
                 entry.copy(password = inspectSecretState(entry).plainValueOrEmpty())
             }
+            Log.i(
+                "BASTION-PROFILE",
+                "allPasswordsSource.decryptAll " +
+                    "costMs=${System.currentTimeMillis() - decryptStartedAt} " +
+                    "entries=${entries.size}"
+            )
+            decrypted
         }
         .flowOn(kotlinx.coroutines.Dispatchers.Default)
     val allPasswordsReady: StateFlow<Boolean> = allPasswordsSource
