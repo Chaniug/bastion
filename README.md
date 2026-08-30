@@ -1,7 +1,8 @@
 # bastion
 
 <p align="center">
-  <img src="image/bastion-hero.svg" alt="Bastion — local-first, open-source password fortress" width="100%" />
+  <img src="image/bastion-hero-light.svg#gh-light-mode-only" alt="Bastion — local-first, open-source password fortress" width="100%" />
+  <img src="image/bastion-hero-dark.svg#gh-dark-mode-only" alt="Bastion — local-first, open-source password fortress" width="100%" />
 </p>
 
 <p align="center">
