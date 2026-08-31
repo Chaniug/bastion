@@ -95,32 +95,16 @@ jobs:
           # 若真需要 30 天兜底，须先调高仓库 Settings → Actions → Artifact 保留上限。
           retention-days: 3
 
-      # 调试：把 gradle 崩溃栈提取成文件，提交回 dev，便于在本地读取崩溃签名
-      # （results-receiver 网关导致 gh run view --log 拿不到日志，故用仓库文件兜底）。
-      # 诊断完成后删除本步骤与 baseline_crash_debug.txt。
-      - name: Extract crash signature (debug)
-        if: always()
-        working-directory: ${{ github.workspace }}
-        run: |
-          OUT=Bastion/baseline_crash_debug.txt
-          {
-            echo "===== crash signature extract ====="
-            grep -E "Exception in thread|java\.lang\.|Caused by|NegativeArraySize|OutOfMemory|Analysis API|BUILD FAILED|FAILED" /tmp/lint-debug.log 2>/dev/null | tail -60
-            echo "===== last 150 lines of gradle log ====="
-            tail -150 /tmp/lint-debug.log 2>/dev/null
-          } > "$OUT" || true
-          wc -l "$OUT"
-
       # 自动提交回触发分支（默认 dev）。无变化则跳过，避免空提交触发额外构建。
-      - name: Commit baseline / debug back to branch
+      - name: Commit baseline back to branch
         working-directory: ${{ github.workspace }}
         run: |
           git config user.email "actions@github.com"
           git config user.name "github-actions[bot]"
-          git add Bastion/app/lint-baseline.xml Bastion/baseline_crash_debug.txt
+          git add Bastion/app/lint-baseline.xml
           if git diff --cached --quiet; then
             echo "No baseline changes; nothing to commit."
           else
-            git commit -m "chore(lint): 重生成 baseline / 捕获崩溃签名（debug）"
+            git commit -m "chore(lint): 重生成 lint-baseline.xml（navigation 2.10 升级引入的新 lint 问题）"
             git push origin "${{ github.event.inputs.ref }}"
           fi
