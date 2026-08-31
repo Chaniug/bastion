@@ -290,6 +290,11 @@ Text(stringResource(R.string.foo))
 |------|------|------|-----:|---------------|
 | Modifier 规范 | `4b325f05` | `ModifierParameter` 33 处参数重排到首位；`ModifierFactoryExtensionFunction` 4 处改为 `Modifier` 扩展函数 | 37 | 僵尸（待重生 baseline 清理） |
 | UI 渲染 | `58bc5ce9` | `LocalContextGetResourceValueCall` 中「在 @Composable 内且为 composable 直接文本参数」的 `context.getString` → `stringResource` | 85 | 僵尸 |
+| UI 渲染修正 | `96352d9a` | 还原 3 处 **biometric `() -> Unit` 回调**内误改的 `stringResource` → `context.getString`（`DeleteConfirmDialog` 的 `biometricAction`、`AddEditNoteScreen` 的 `biometricAction`、`MasterPasswordLockingSettingsScreen` 的 `startBiometricEnable`） | 8 行 | — |
+
+**最终状态（2026-08-31）**：P1 + P2 全部合入 `main`（PR #21 已 MERGED）。
+dev 上手动 lint 运行 `33362621331`：**Run lint = success + Build Debug APK = success**，CI 全绿。
+preview 预览包已发布：`Development Preview (build.202608310607)`。
 
 **抽取方法论（避免误改非 composable 场景）**：
 - 用 composable 作用域感知扫描：只在 `@Composable fun` 的 body 区间内、且为
@@ -298,7 +303,15 @@ Text(stringResource(R.string.foo))
 - 排除 Activity / autofill 构建器 / 状态赋值（`x = context.getString(...)`）；
 - 排除事件 lambda 内调用（实测 `PasswordSuggestionActivity` 的 `onClick` 里
   `ClipboardUtils.copyToClipboard(..., label = context.getString(...))` 是假阳性，
-  那里 `stringResource` 不可用，已剔除）。
+  那里 `stringResource` 不可用，已剔除）；
+- **⚠️ 排除所有 `() -> Unit` 类型的具名回调 lambda**（不仅限于 `onClick`）：
+  `biometricHelper.authenticate(...)` 常包在 `val biometricAction = if (...) { { ... } }`
+  或 `val startBiometricEnable = { ... }` 里，这些 lambda 签名是 `() -> Unit`，
+  **不能调用可组合函数 `stringResource`**，必须用 `context.getString`。本次 `58bc5ce9`
+  的机械替换漏了这一类，导致 `assembleDebug` 编译失败，已用 `96352d9a` 还原。
+  判定口诀：凡是 `stringResource` 出现在 `onClick` / `onDismissRequest` / `remember {}` /
+  `clickable {}` / `val xxx = { ... }` 这类 **`() -> Unit` 或非 composable lambda** 体内，
+  一律改回 `context.getString`。
 
 **暂挂项（baseline 仍抑制，CI 不阻塞，运行时切换语言/主题不影响核心功能）**：
 - `Toast` 类（约 47 条）：值被立即消费，无需重组 → 非 bug；
@@ -382,6 +395,7 @@ cd Bastion
 | **release 不受 UnusedResources 影响** | 已开 `shrinkResources`，别拿"减小包体积"当理由 |
 | **`CustomX509TrustManager` 是误报** | 别把正确的委托实现"修"坏了，见 3.2 |
 | **改 `ModifierParameter` 单独一批** | 函数签名改动大，混在一起 review 不动 |
+| **`stringResource` 不能进 `() -> Unit` 回调** | `biometricHelper.authenticate` / `onClick` / `remember {}` / `clickable {}` / `val x = { }` 等普通 lambda 内只能用 `context.getString`，否则 `assembleDebug` 编译失败（本次 `58bc5ce9` 误伤 3 处 biometric 回调，已 `96352d9a` 还原） |
 | **P3 与依赖升级联动** | 单独改完，下次升级依赖可能又冒出来 |
 
 ---
@@ -400,6 +414,9 @@ cd Bastion
    `ModifierParameter`/`ModifierFactoryExtensionFunction` 共 37 处。
    剩余约 463 条（Toast / 一次性消费 / 待复核 lambda）属非重组场景或需逐文件复核，
    **暂挂 baseline 抑制**，不阻塞 CI，待后续按屏幕分批或配合本地编译环境再清。
+   ✅ **执行状态（2026-08-31）**：本子集已完成并经 CI 验证（build + lint 全绿），
+   随 PR #21 合入 `main`。仅中途在 `58bc5ce9` 误伤 3 处 biometric `() -> Unit` 回调，
+   已由 `96352d9a` 还原（详见 Phase 3 执行记录与方法论补充）。
 
 3. **Phase 5 的 887 条无用资源做不做？**
    不影响体积，纯整洁度。可以先只清理 `drawable` 那 2 条，`strings.xml` 的 852 条暂缓。
