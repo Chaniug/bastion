@@ -13,17 +13,6 @@
     </issue>
 
     <issue
-        id="NewApi"
-        message="Call requires API level 29 (current min is 26): `android.icu.text.Transliterator#transliterate`"
-        errorLine1=" val latin = vaultV2Transliterator?.transliterate(trimmed) ?: trimmed"
-        errorLine2="                                    ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="4117"
-            column="37"/>
-    </issue>
-
-    <issue
         id="PrivateApi"
         message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
         errorLine1="            val clazz = Class.forName(&quot;android.app.ActivityThread&quot;)"
@@ -32,17 +21,6 @@
             file="src/main/java/com/bastion/app/security/SessionManager.kt"
             line="169"
             column="25"/>
-    </issue>
-
-    <issue
-        id="StartActivityAndCollapseDeprecated"
-        message="TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead."
-        errorLine1="            startActivityAndCollapse(intent)"
-        errorLine2="                                     ~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/autofill_ng/service/AutofillTileService.kt"
-            line="47"
-            column="38"/>
     </issue>
 
     <issue
@@ -978,50 +956,6 @@
             file="src/main/java/com/bastion/app/utils/LocaleHelper.kt"
             line="29"
             column="9"/>
-    </issue>
-
-    <issue
-        id="IntentFilterUniqueDataAttributes"
-        message="Consider splitting data tag into multiple tags with individual attributes to avoid confusion"
-        errorLine1="                &lt;data android:scheme=&quot;otpauth&quot; android:host=&quot;totp&quot; />"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="85"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IntentFilterUniqueDataAttributes"
-        message="Consider splitting data tag into multiple tags with individual attributes to avoid confusion"
-        errorLine1="                &lt;data android:scheme=&quot;otpauth&quot; android:host=&quot;hotp&quot; />"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="86"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IntentFilterUniqueDataAttributes"
-        message="Consider splitting data tag into multiple tags with individual attributes to avoid confusion"
-        errorLine1="                &lt;data android:scheme=&quot;otpauth&quot; android:host=&quot;yaotp&quot; />"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="87"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="RedundantLabel"
-        message="Redundant label can be removed"
-        errorLine1="            android:label=&quot;@string/app_name&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="76"
-            column="13"/>
     </issue>
 
     <issue
@@ -7554,7 +7488,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2462"
+            line="2463"
             column="13"/>
     </issue>
 
@@ -7565,7 +7499,7 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2481"
+            line="2482"
             column="15"/>
     </issue>
 
@@ -7576,7 +7510,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2497"
+            line="2498"
             column="13"/>
     </issue>
 
@@ -7587,7 +7521,7 @@
         errorLine2="             ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2575"
+            line="2576"
             column="14"/>
     </issue>
 
@@ -7598,7 +7532,7 @@
         errorLine2="       ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2732"
+            line="2733"
             column="8"/>
     </issue>
 
@@ -7609,7 +7543,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2740"
+            line="2741"
             column="8"/>
     </issue>
 
@@ -7620,7 +7554,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2761"
+            line="2762"
             column="11"/>
     </issue>
 
@@ -7631,7 +7565,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2767"
+            line="2768"
             column="11"/>
     </issue>
 
@@ -7642,7 +7576,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2777"
+            line="2778"
             column="11"/>
     </issue>
 
@@ -7653,7 +7587,7 @@
         errorLine2="            ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2812"
+            line="2813"
             column="13"/>
     </issue>
 
@@ -7664,7 +7598,7 @@
         errorLine2="            ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2822"
+            line="2823"
             column="13"/>
     </issue>
 
@@ -7675,7 +7609,7 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3118"
+            line="3119"
             column="12"/>
     </issue>
 
@@ -7686,7 +7620,7 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3127"
+            line="3128"
             column="12"/>
     </issue>
 
@@ -7697,7 +7631,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3171"
+            line="3172"
             column="8"/>
     </issue>
 
@@ -7708,7 +7642,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3186"
+            line="3187"
             column="8"/>
     </issue>
 
@@ -8359,17 +8293,6 @@
 
     <issue
         id="DiscouragedApi"
-        message="Use of `scheduleAtFixedRate` is strongly discouraged because it can lead to unexpected behavior when Android processes become cached (tasks may unexpectedly execute hundreds or thousands of times in quick succession when a process changes from cached to uncached); prefer using `scheduleWithFixedDelay`"
-        errorLine1="        executor.scheduleAtFixedRate("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/com/bastion/app/perf/MainThreadStallMonitor.kt"
-            line="64"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="DiscouragedApi"
         message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
         errorLine1="                    val resId = ctx.resources.getIdentifier(&quot;eff_short_wordlist&quot;, &quot;raw&quot;, ctx.packageName)"
         errorLine2="                                              ~~~~~~~~~~~~~">
@@ -8377,6 +8300,17 @@
             file="src/main/java/com/bastion/app/util/PasswordGenerator.kt"
             line="444"
             column="47"/>
+    </issue>
+
+    <issue
+        id="UseRequiresApi"
+        message="Use `@RequiresApi(Build.VERSION_CODES.Q)` instead of `@TargetApi` to propagate the requirement to callers of `normalizedVaultV2SortKey`"
+        errorLine1="@TargetApi(Build.VERSION_CODES.Q)"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
+            line="4115"
+            column="1"/>
     </issue>
 
     <issue
