@@ -91,11 +91,11 @@ fun SelectiveBackupCard(
     documentCount: Int,
     bankCardCount: Int,
     noteCount: Int,
+    modifier: Modifier = Modifier,
     trashCount: Int = 0,
     passkeyCount: Int = 0,  // ✅ 新增：验证密钥数量
     localKeePassCount: Int = 0,
-    isWebDavConfigured: Boolean = false,
-    modifier: Modifier = Modifier
+    isWebDavConfigured: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     

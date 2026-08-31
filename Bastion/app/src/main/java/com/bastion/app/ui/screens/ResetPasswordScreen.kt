@@ -29,9 +29,9 @@ fun ResetPasswordScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val currentPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
-    val newPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
-    val confirmPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
+    val currentPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
+    val newPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
+    val confirmPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
     
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }

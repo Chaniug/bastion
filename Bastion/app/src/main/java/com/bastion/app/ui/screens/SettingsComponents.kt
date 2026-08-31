@@ -54,9 +54,9 @@ fun SettingsItem(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
-    trailingContent: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     Card(
         onClick = onClick,

@@ -136,14 +136,14 @@ import com.bastion.app.passkey.managementRecordIdOrNull
 @Composable
 fun PasskeyListScreen(
     viewModel: PasskeyViewModel,
+    modifier: Modifier = Modifier,
     onPasskeyClick: (PasskeyEntry) -> Unit = {},
     passwordViewModel: PasswordViewModel? = null,
     onNavigateToPasswordDetail: (Long) -> Unit = {},
     hideTopBar: Boolean = false,
     showStandaloneSettingsEntry: Boolean = false,
     onOpenStandaloneSettings: () -> Unit = {},
-    onNavigateToAuthenticator: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onNavigateToAuthenticator: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1844,6 +1844,7 @@ private fun PasskeyListItem(
     passkey: PasskeyEntry,
     boundPassword: PasswordEntry?,
     currentCategoryName: String,
+    modifier: Modifier = Modifier,
     isCategoryLocked: Boolean = false,
     iconCardsEnabled: Boolean = false,
     unmatchedIconHandlingStrategy: UnmatchedIconHandlingStrategy = UnmatchedIconHandlingStrategy.DEFAULT_ICON,
@@ -1856,8 +1857,7 @@ private fun PasskeyListItem(
     onBindPassword: () -> Unit = {},
     onUnbindPassword: () -> Unit = {},
     onOpenBoundPassword: (Long) -> Unit = {},
-    onChangeCategory: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onChangeCategory: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }

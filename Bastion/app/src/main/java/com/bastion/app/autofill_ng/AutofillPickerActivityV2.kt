@@ -3835,8 +3835,8 @@ private fun AutofillFilterTrigger(
     activeFilterCount: Int,
     expanded: Boolean,
     onClick: () -> Unit,
-    panelContent: (@Composable ColumnScope.() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    panelContent: (@Composable ColumnScope.() -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val triggerShape = RoundedCornerShape(16.dp)

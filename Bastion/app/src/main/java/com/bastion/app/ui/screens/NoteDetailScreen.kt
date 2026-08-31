@@ -60,11 +60,11 @@ import java.text.DateFormat
 fun NoteDetailScreen(
     viewModel: NoteViewModel,
     noteId: Long,
+    modifier: Modifier = Modifier,
     initialHighlightQuery: String? = null,
     onNavigateBack: () -> Unit,
     onEditNote: (Long) -> Unit,
-    onCreateSend: (title: String, text: String) -> Unit,
-    modifier: Modifier = Modifier
+    onCreateSend: (title: String, text: String) -> Unit
 ) {
     val detailImageMaxDimension = 1440
     val context = LocalContext.current

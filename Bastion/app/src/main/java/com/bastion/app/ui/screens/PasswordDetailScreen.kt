@@ -181,6 +181,7 @@ private fun resolvePasswordDetailGroupPasswords(
 @Composable
 fun PasswordDetailScreen(
     viewModel: PasswordViewModel,
+    modifier: Modifier = Modifier,
     passkeyViewModel: PasskeyViewModel? = null,
     noteViewModel: NoteViewModel? = null,
     passwordId: Long,
@@ -192,8 +193,7 @@ fun PasswordDetailScreen(
     onOpenBoundNote: (Long) -> Unit = {},
     onOpenPassword: (Long) -> Unit = {},
     onCreateSend: ((title: String, text: String) -> Unit)? = null,
-    onEditPassword: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    onEditPassword: (Long) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

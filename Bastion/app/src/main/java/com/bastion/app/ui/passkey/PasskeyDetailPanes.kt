@@ -124,13 +124,13 @@ internal fun PasskeyOverviewPane(
 internal fun PasskeyDetailPane(
     passkey: PasskeyEntry,
     boundPasswordTitle: String?,
+    modifier: Modifier = Modifier,
     onBindPassword: (() -> Unit)? = null,
     onChangeBinding: (() -> Unit)? = null,
     onOpenBoundPassword: (() -> Unit)?,
     onUnbindPassword: (() -> Unit)?,
     onDeletePasskey: () -> Unit,
-    onEditRemark: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onEditRemark: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val createdTime = remember(passkey.createdAt) {

@@ -63,6 +63,7 @@ import com.bastion.app.ui.components.OutlinedTextField
 @Composable
 fun AddEditDocumentScreen(
     viewModel: DocumentViewModel,
+    modifier: Modifier = Modifier,
     documentId: Long? = null,
     onNavigateBack: () -> Unit,
     initialCategoryId: Long? = null,
@@ -77,8 +78,7 @@ fun AddEditDocumentScreen(
     onFavoriteStateChanged: ((Boolean) -> Unit)? = null,
     onCanSaveChanged: ((Boolean) -> Unit)? = null,
     onSaveActionChanged: (((() -> Unit)) -> Unit)? = null,
-    onToggleFavoriteActionChanged: (((() -> Unit)) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onToggleFavoriteActionChanged: (((() -> Unit)) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

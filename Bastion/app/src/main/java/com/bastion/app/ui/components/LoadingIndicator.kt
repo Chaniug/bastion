@@ -17,8 +17,8 @@ import com.bastion.app.R
  */
 @Composable
 fun LoadingIndicator(
-    message: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    message: String? = null
 ) {
     val resolvedMessage = message ?: stringResource(R.string.loading_default)
     Column(

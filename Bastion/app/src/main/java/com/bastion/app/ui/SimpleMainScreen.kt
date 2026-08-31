@@ -239,12 +239,12 @@ fun UnifiedWalletAddScreen(
     documentViewModel: DocumentViewModel,
     billingAddressViewModel: BillingAddressViewModel,
     stateHolder: androidx.compose.runtime.saveable.SaveableStateHolder,
+    modifier: Modifier = Modifier,
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
     initialBitwardenVaultId: Long? = null,
-    initialBitwardenFolderId: String? = null,
-    modifier: Modifier = Modifier
+    initialBitwardenFolderId: String? = null
 ) {
     val context = LocalContext.current
     var isFavorite by remember { mutableStateOf(false) }

@@ -54,6 +54,7 @@ import com.bastion.app.data.NoteCodeBlockCollapseMode
 fun MarkdownPreviewText(
     markdown: String,
     imageBitmaps: Map<String, Bitmap>,
+    modifier: Modifier = Modifier,
     onInlineImageClick: ((String) -> Unit)? = null,
     onTaskItemToggle: ((lineIndex: Int, checked: Boolean) -> Unit)? = null,
     onOpenExternalLink: ((String) -> Unit)? = null,
@@ -64,8 +65,7 @@ fun MarkdownPreviewText(
     maxElements: Int? = null,
     searchHighlightQuery: String? = null,
     showSearchHighlight: Boolean = false,
-    autoBringSearchHighlightIntoView: Boolean = false,
-    modifier: Modifier = Modifier
+    autoBringSearchHighlightIntoView: Boolean = false
 ) {
     if (enableCodeHighlight) {
         // Reserved for future syntax-highlight mode in Compose renderer.

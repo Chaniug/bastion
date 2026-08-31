@@ -124,16 +124,16 @@ fun rememberUnifiedCategoryFilterChipMenuWidth(): androidx.compose.ui.unit.Dp {
 }
 
 @Composable
-private fun unifiedCategoryFilterChipMenuLayoutModifier(): Modifier {
+private fun Modifier.unifiedCategoryFilterChipMenuLayoutModifier(): Modifier {
     val resolvedMenuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
-    return Modifier
+    return this
         .widthIn(min = resolvedMenuWidth, max = resolvedMenuWidth)
         .heightIn(max = 460.dp)
 }
 
 @Composable
-fun unifiedCategoryFilterChipMenuModifier(): Modifier {
-    return unifiedCategoryFilterChipMenuLayoutModifier()
+fun Modifier.unifiedCategoryFilterChipMenuModifier(): Modifier {
+    return this.unifiedCategoryFilterChipMenuLayoutModifier()
         .shadow(10.dp, UnifiedCategoryFilterChipMenuShape)
         .clip(UnifiedCategoryFilterChipMenuShape)
         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -165,7 +165,7 @@ fun UnifiedCategoryFilterChipMenuDropdown(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shadowElevation = 10.dp,
             tonalElevation = 0.dp,
-            modifier = unifiedCategoryFilterChipMenuModifier()
+            modifier = Modifier.unifiedCategoryFilterChipMenuModifier()
         ) {
             content()
         }

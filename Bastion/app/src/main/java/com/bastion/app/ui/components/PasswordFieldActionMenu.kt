@@ -105,11 +105,11 @@ fun PasswordFieldActionMenuButton(
     value: String,
     displayValue: String,
     context: Context,
+    modifier: Modifier = Modifier,
     includeVisibilityToggle: Boolean = false,
     isVisible: Boolean = true,
     onToggleVisibility: (() -> Unit)? = null,
     onCreateSend: ((title: String, text: String) -> Unit)? = null,
-    modifier: Modifier = Modifier,
     iconSize: androidx.compose.ui.unit.Dp = 20.dp
 ) {
     Box(modifier = modifier) {

@@ -172,11 +172,11 @@ fun CardWalletScreen(
     onTabSelected: (CardWalletTab) -> Unit,
     onSelectionModeChange: (Boolean, Int, () -> Unit, () -> Unit, () -> Unit, () -> Unit) -> Unit,
     onBankCardSelectionModeChange: (Boolean, Int, () -> Unit, () -> Unit, () -> Unit, () -> Unit, () -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
     showStandaloneSettingsEntry: Boolean = false,
     onOpenStandaloneSettings: () -> Unit = {},
     onBitwardenScopeChanged: (Long?) -> Unit = {},
-    bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel? = null,
-    modifier: Modifier = Modifier
+    bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel? = null
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity

@@ -50,8 +50,8 @@ import kotlin.math.PI
 @Composable
 fun PasswordStrengthIndicator(
     strength: Int,
-    showScore: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showScore: Boolean = true
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
