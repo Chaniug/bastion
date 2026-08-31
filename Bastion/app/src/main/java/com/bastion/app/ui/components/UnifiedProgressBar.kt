@@ -130,8 +130,8 @@ private fun LinearProgressBar(
     progress: Float,
     progressColor: Color,
     trackColor: Color,
-    smoothProgress: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    smoothProgress: Boolean = true
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -188,8 +188,8 @@ private fun WaveProgressBar(
     progress: Float,
     progressColor: Color,
     trackColor: Color,
-    smoothProgress: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    smoothProgress: Boolean = true
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),

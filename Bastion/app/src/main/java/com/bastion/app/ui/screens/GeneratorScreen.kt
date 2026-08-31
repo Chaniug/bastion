@@ -1708,10 +1708,10 @@ private fun FilterChipTab(
 @Composable
 private fun ResultCard(
     result: String,
+    modifier: Modifier = Modifier,
     title: String? = null,
     showStrengthSection: Boolean = true,
     supportingInfo: String? = null,
-    modifier: Modifier = Modifier,
     compactMode: Boolean = false,
     onCopy: (String) -> Unit
 ) {

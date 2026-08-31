@@ -11,13 +11,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun rememberBringIntoViewOnFocusModifier(
+fun Modifier.rememberBringIntoViewOnFocusModifier(
     delayMillis: Long = 120L
 ): Modifier {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
 
-    return Modifier
+    return this
         .bringIntoViewRequester(bringIntoViewRequester)
         .onFocusChanged { focusState ->
             if (focusState.isFocused) {

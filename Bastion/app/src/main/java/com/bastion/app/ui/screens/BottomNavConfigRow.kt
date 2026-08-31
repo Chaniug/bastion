@@ -1,5 +1,6 @@
 package com.bastion.app.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -13,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.BottomNavContentTab
 
+// dragHandleModifier 是「拖拽手柄」自己的 Modifier，与整行的 modifier 语义不同，
+// 无法也不该改名为 modifier，故抑制 lint 的「Modifier 参数必须叫 modifier」告警。
+@SuppressLint("ModifierParameter")
 @Composable
 internal fun BottomNavConfigRow(
     icon: ImageVector,
@@ -21,9 +25,9 @@ internal fun BottomNavConfigRow(
     checked: Boolean,
     switchEnabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     showDragHandle: Boolean = true,
-    dragHandleModifier: Modifier = Modifier,
-    modifier: Modifier = Modifier
+    dragHandleModifier: Modifier = Modifier
 ) {
     Card(
         modifier = Modifier

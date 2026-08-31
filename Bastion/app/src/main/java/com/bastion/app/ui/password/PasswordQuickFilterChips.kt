@@ -88,11 +88,11 @@ internal fun PasswordQuickFilterChipItem(
     onQuickFilterNeverStackChange: (Boolean) -> Unit,
     quickFilterUnstacked: Boolean,
     onQuickFilterUnstackedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     aggregateSelectedTypes: Set<PasswordPageContentType> = emptySet(),
     aggregateVisibleTypes: List<PasswordPageContentType> = emptyList(),
     onToggleAggregateType: ((PasswordPageContentType) -> Unit)? = null,
-    interactionSource: MutableInteractionSource? = null,
-    modifier: Modifier = Modifier
+    interactionSource: MutableInteractionSource? = null
 ) {
     when (item) {
         PasswordListQuickFilterItem.FAVORITE -> {

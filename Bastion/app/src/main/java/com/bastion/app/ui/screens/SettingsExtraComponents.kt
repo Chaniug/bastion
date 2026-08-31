@@ -184,7 +184,7 @@ fun ProgressBarStyleDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(context.getString(R.string.validator_progress_bar_style)) },
+        title = { Text(stringResource(R.string.validator_progress_bar_style)) },
         text = {
             Column {
                 com.bastion.app.data.ProgressBarStyle.values().forEach { style ->
@@ -208,7 +208,7 @@ fun ProgressBarStyleDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(context.getString(R.string.ok))
+                Text(stringResource(R.string.ok))
             }
         }
     )

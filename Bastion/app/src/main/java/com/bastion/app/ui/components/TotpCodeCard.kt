@@ -69,8 +69,8 @@ import com.bastion.app.ui.rememberTotpTickerMillis
 fun TotpCodeCard(
     item: SecureItem,
     onCopyCode: (String) -> Unit,
-    onToggleSelect: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onToggleSelect: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onToggleFavorite: ((Long, Boolean) -> Unit)? = null,
     onMoveUp: (() -> Unit)? = null,

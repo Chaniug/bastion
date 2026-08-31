@@ -128,13 +128,13 @@ fun NoteListScreen(
     viewModel: NoteViewModel,
     settingsViewModel: SettingsViewModel,
     onNavigateToAddNote: (Long?) -> Unit,
+    modifier: Modifier = Modifier,
     onNavigateToSearchedNote: (Long, String) -> Unit = { noteId, _ -> onNavigateToAddNote(noteId) },
     securityManager: SecurityManager,
     passwordViewModel: com.bastion.app.viewmodel.PasswordViewModel,
     onSelectionModeChange: (Boolean) -> Unit = {},
     showStandaloneSettingsEntry: Boolean = false,
-    onOpenStandaloneSettings: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onOpenStandaloneSettings: () -> Unit = {}
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedTag by remember { mutableStateOf<String?>(null) }

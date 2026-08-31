@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.ui.components.M3IdentityVerifyDialog
 import com.bastion.app.viewmodel.PasswordViewModel
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +38,10 @@ fun ForgotPasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(context.getString(R.string.forgot_password_title)) },
+                title = { Text(stringResource(R.string.forgot_password_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = context.getString(R.string.back))
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -67,7 +68,7 @@ fun ForgotPasswordScreen(
             
             // Title
             Text(
-                text = context.getString(R.string.forgot_password_title),
+                text = stringResource(R.string.forgot_password_title),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
@@ -82,7 +83,7 @@ fun ForgotPasswordScreen(
                     modifier = Modifier.padding(20.dp)
                 ) {
                     Text(
-                        text = context.getString(R.string.forgot_password_warning),
+                        text = stringResource(R.string.forgot_password_warning),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         textAlign = TextAlign.Center
@@ -103,7 +104,7 @@ fun ForgotPasswordScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = context.getString(R.string.select_data_types_to_clear),
+                        text = stringResource(R.string.select_data_types_to_clear),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
@@ -118,7 +119,7 @@ fun ForgotPasswordScreen(
                             onCheckedChange = { clearPasswords = it }
                         )
                         Text(
-                            text = context.getString(R.string.clear_passwords),
+                            text = stringResource(R.string.clear_passwords),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -134,7 +135,7 @@ fun ForgotPasswordScreen(
                             onCheckedChange = { clearAuthenticators = it }
                         )
                         Text(
-                            text = context.getString(R.string.clear_authenticators),
+                            text = stringResource(R.string.clear_authenticators),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -150,7 +151,7 @@ fun ForgotPasswordScreen(
                             onCheckedChange = { clearDocuments = it }
                         )
                         Text(
-                            text = context.getString(R.string.clear_documents),
+                            text = stringResource(R.string.clear_documents),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -166,7 +167,7 @@ fun ForgotPasswordScreen(
                             onCheckedChange = { clearBankCards = it }
                         )
                         Text(
-                            text = context.getString(R.string.clear_bank_cards),
+                            text = stringResource(R.string.clear_bank_cards),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -182,7 +183,7 @@ fun ForgotPasswordScreen(
                             onCheckedChange = { clearGeneratorHistory = it }
                         )
                         Text(
-                            text = context.getString(R.string.clear_generator_history),
+                            text = stringResource(R.string.clear_generator_history),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 8.dp)
                         )
@@ -212,7 +213,7 @@ fun ForgotPasswordScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(
-                    text = context.getString(R.string.reset_all_data),
+                    text = stringResource(R.string.reset_all_data),
                     color = MaterialTheme.colorScheme.onError
                 )
             }
@@ -223,7 +224,7 @@ fun ForgotPasswordScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isResetting
             ) {
-                Text(context.getString(R.string.cancel))
+                Text(stringResource(R.string.cancel))
             }
             
             Spacer(modifier = Modifier.weight(1f))
@@ -236,7 +237,7 @@ fun ForgotPasswordScreen(
         var passwordError by remember { mutableStateOf(false) }
 
         M3IdentityVerifyDialog(
-            title = context.getString(R.string.forgot_password_confirm),
+            title = stringResource(R.string.forgot_password_confirm),
             message = context.getString(R.string.forgot_password_warning),
             passwordValue = passwordInput,
             onPasswordChange = {

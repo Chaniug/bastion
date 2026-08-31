@@ -24,7 +24,14 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- 不申请 READ_MEDIA_IMAGES（Android 13+ 读图权限）。原因：
+         1) 读取图片全部走系统选择器（PickVisualMedia / ACTION_GET_CONTENT / ACTION_PICK），
+            返回的 Uri 自带临时读授权，不需要任何读权限；
+         2) 写入相册走 MediaStore.insert()，API 29+ 分区存储下写入自有媒体同样不需要权限；
+         3) 保留反而有害：Android 13+ 用户一旦拒绝该权限，“保存二维码到相册”会被错误拦死，
+            而这个功能本身并不需要读权限。
+         移除后同时消除 lint SelectedPhotoAccess（Android 14 部分访问权限）告警 ——
+         本应用不批量查询 MediaStore，不存在“部分授权”语义。 -->
     
     <!-- Autofill permission -->
     <uses-permission android:name="android.permission.BIND_AUTOFILL_SERVICE"

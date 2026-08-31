@@ -52,9 +52,9 @@ import kotlin.math.abs
 fun SwipeActions(
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
+    modifier: Modifier = Modifier,
     isSwiped: Boolean = false,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier,
     allowSwipeLeft: Boolean = true,
     allowSwipeRight: Boolean = true,
     content: @Composable () -> Unit

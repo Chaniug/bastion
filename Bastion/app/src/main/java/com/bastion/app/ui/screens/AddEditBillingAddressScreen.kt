@@ -79,6 +79,7 @@ import com.bastion.app.viewmodel.BillingAddressViewModel
 @Composable
 fun AddEditBillingAddressScreen(
     viewModel: BillingAddressViewModel,
+    modifier: Modifier = Modifier,
     addressId: Long? = null,
     onNavigateBack: () -> Unit,
     initialCategoryId: Long? = null,
@@ -87,8 +88,7 @@ fun AddEditBillingAddressScreen(
     onFavoriteStateChanged: ((Boolean) -> Unit)? = null,
     onCanSaveChanged: ((Boolean) -> Unit)? = null,
     onSaveActionChanged: (((() -> Unit)) -> Unit)? = null,
-    onToggleFavoriteActionChanged: (((() -> Unit)) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onToggleFavoriteActionChanged: (((() -> Unit)) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

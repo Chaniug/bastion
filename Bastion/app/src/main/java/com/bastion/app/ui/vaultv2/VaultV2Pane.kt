@@ -1205,6 +1205,7 @@ fun VaultV2Pane(
 	onOpenHistory: () -> Unit,
 	onOpenTrashPage: () -> Unit,
 	onOpenArchivePage: () -> Unit,
+	modifier: Modifier = Modifier,
 	onManageKeePassDatabase: (Long) -> Unit = {},
 	onOpenCommonAccountTemplates: () -> Unit,
 	onScanFidoQr: () -> Unit = {},
@@ -1214,7 +1215,6 @@ fun VaultV2Pane(
 	appSettings: AppSettings = AppSettings(),
 	securityManager: SecurityManager? = null,
 	biometricEnabled: Boolean = false,
-	modifier: Modifier = Modifier,
 ) {
 	// 内嵌历史/回收站页面状态（不切换底部 tab）
 	// 0 = 无, 1 = 时间线, 2 = 回收站

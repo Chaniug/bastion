@@ -89,13 +89,13 @@ sealed class PasswordItemAction {
 @Composable
 fun PasswordListItem(
     password: PasswordEntry,
+    modifier: Modifier = Modifier,
     showDropdownMenu: Boolean = false,
     iconCardsEnabled: Boolean = false,
     showSmartCopyOptions: Boolean = false,
     onPrepareAutofill: ((PasswordEntry) -> Unit)? = null,
     onAction: ((PasswordItemAction) -> Unit)? = null,
-    onItemClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onItemClick: (() -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     val displayTitle = password.title.ifEmpty { password.username }.toSafeComposeText()
@@ -455,11 +455,11 @@ fun AppIcon(
 @Composable
 fun SuggestedPasswordListItem(
     password: PasswordEntry,
+    modifier: Modifier = Modifier,
     iconCardsEnabled: Boolean = false,
     showSmartCopyOptions: Boolean = false,
     onPrepareAutofill: ((PasswordEntry) -> Unit)? = null,
-    onAction: (PasswordItemAction) -> Unit,
-    modifier: Modifier = Modifier
+    onAction: (PasswordItemAction) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val displayTitle = password.title.ifEmpty { password.username }.toSafeComposeText()

@@ -95,11 +95,11 @@ fun AutofillScaffold(
 fun AutofillScaffold(
     packageName: String?,
     webDomain: String?,
+    modifier: Modifier = Modifier,
     appIcon: Drawable? = null,
     appName: String? = null,
     showClose: Boolean = false,
     onClose: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     AutofillScaffold(

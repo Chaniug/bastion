@@ -102,6 +102,7 @@ fun AddEditTotpScreen(
     initialData: TotpData?,
     initialTitle: String,
     initialNotes: String,
+    modifier: Modifier = Modifier,
     initialCategoryId: Long? = null,
     initialKeePassDatabaseId: Long? = null,
     initialKeePassGroupPath: String? = null,
@@ -124,8 +125,7 @@ fun AddEditTotpScreen(
     onNavigateBack: () -> Unit,
     onScanQrCode: () -> Unit,
     pendingQrResult: String? = null,
-    onConsumePendingQrResult: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onConsumePendingQrResult: () -> Unit = {}
 ) {
     val resolvedInitialData = remember(initialData) {
         initialData?.let(TotpDataResolver::normalizeTotpData)

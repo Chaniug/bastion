@@ -51,11 +51,11 @@ internal fun BottomSheetAnimatedVisibility(
 @Composable
 internal fun BastionModalBottomSheet(
     onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     tonalElevation: Dp = 0.dp,
     showDragHandle: Boolean = true,
-    modifier: Modifier = Modifier,
     contentWindowInsets: @Composable () -> WindowInsets = {
         BottomSheetDefaults.modalWindowInsets
     },

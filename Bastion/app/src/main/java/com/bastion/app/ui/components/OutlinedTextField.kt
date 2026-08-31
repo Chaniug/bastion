@@ -80,7 +80,7 @@ fun OutlinedTextField(
                 onValueChange(newValue.text)
             }
         },
-        modifier = modifier.then(rememberBringIntoViewOnFocusModifier()),
+        modifier = modifier.then(Modifier.rememberBringIntoViewOnFocusModifier()),
         enabled = enabled,
         readOnly = readOnly,
         textStyle = textStyle,
@@ -133,7 +133,7 @@ fun OutlinedTextField(
     MaterialOutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.then(rememberBringIntoViewOnFocusModifier()),
+        modifier = modifier.then(Modifier.rememberBringIntoViewOnFocusModifier()),
         enabled = enabled,
         readOnly = readOnly,
         textStyle = textStyle,

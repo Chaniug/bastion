@@ -76,9 +76,9 @@ fun ChangePasswordScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
-    val currentPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
-    val newPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
-    val confirmPasswordImeModifier = rememberBringIntoViewOnFocusModifier()
+    val currentPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
+    val newPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
+    val confirmPasswordImeModifier = Modifier.rememberBringIntoViewOnFocusModifier()
 
     val sharedTransitionScope = com.bastion.app.ui.LocalSharedTransitionScope.current
     val animatedVisibilityScope = com.bastion.app.ui.LocalAnimatedVisibilityScope.current

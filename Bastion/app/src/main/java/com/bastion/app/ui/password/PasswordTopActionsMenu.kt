@@ -35,9 +35,7 @@ import com.bastion.app.R
 internal val PasswordTopActionsMenuOffset = DpOffset(x = 48.dp, y = 6.dp)
 private val PasswordTopActionsMenuShape = RoundedCornerShape(16.dp)
 
-private fun passwordTopActionsMenuLayoutModifier(modifier: Modifier): Modifier {
-    return modifier.widthIn(min = 220.dp, max = 260.dp)
-}
+private fun Modifier.passwordTopActionsMenuLayout(): Modifier = widthIn(min = 220.dp, max = 260.dp)
 
 @Composable
 internal fun PasswordTopActionsDropdownMenu(
@@ -62,7 +60,7 @@ internal fun PasswordTopActionsDropdownMenu(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shadowElevation = 10.dp,
             tonalElevation = 0.dp,
-            modifier = passwordTopActionsMenuLayoutModifier(modifier)
+            modifier = modifier.passwordTopActionsMenuLayout()
                 .shadow(10.dp, PasswordTopActionsMenuShape)
                 .clip(PasswordTopActionsMenuShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
