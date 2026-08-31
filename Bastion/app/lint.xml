@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- 以下为构建/分发相关、非功能风险的信息级检查。
+         本项目通过 GitHub 发布（非 Play Store），按实际分发方式忽略：
+         - ChromeOsAbiSupport：仅出 arm64 APK，ChromeOS 走原生桥接，无需 x86 ABI
+         - AndroidGradlePluginVersion：Gradle 升级单独排期，不在此阻塞
+         - AppBundleLocaleChanges：非 Play 分发，语言分包不生效，动态切语已可用 -->
+    <issue id="ChromeOsAbiSupport" severity="ignore"/>
+    <issue id="AndroidGradlePluginVersion" severity="ignore"/>
+    <issue id="AppBundleLocaleChanges" severity="ignore"/>
+    <!-- NewerVersionAvailable：联网查 MavenCentral 版本提示，项目版本单独排期；
+         忽略后既消提示也避免每次 lint 联网拖慢（尤其低配机器） -->
+    <issue id="NewerVersionAvailable" severity="ignore"/>
+</lint>

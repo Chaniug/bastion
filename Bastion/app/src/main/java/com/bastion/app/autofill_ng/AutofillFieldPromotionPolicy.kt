@@ -44,30 +44,45 @@ internal object AutofillFieldPromotionPolicy {
      * 提升需同时满足三个条件，缺一不可：
      * 1. **存在密码框** —— 孤立的搜索栏没有密码框相伴，因此永远不会被提升；
      * 2. **尚无账号框** —— 已经识别出账号框时不再画蛇添足；
-     * 3. **位于首个密码框之前且离它最近** —— 只认这一个，不波及页面上其它文本框。
+     * 3. **紧邻密码框之上**（候选列表下标 +1 即密码框）—— 只认这一个。
      *
      * 另要求候选可见，避免把已隐藏的历史输入框错认成当前账号框（与账号类字段的
      * 可见性要求保持一致）。
+     *
+     * 第 3 条严格对齐 bitwarden `AutofillParserImpl.updateForMissingUsernameFields` 原文：
+     * ```
+     * if (autofillView is AutofillView.Unused && passwordPositions.contains(index + 1))
+     * ```
+     * 早期实现用的是「首个密码框之前、**离它最近**」——不限距离，于是 Edge 访问 GitHub 时
+     * 顶部搜索框（离页面内某个密码框最近但并不相邻）被提升成账号框，聚焦它就弹出密码条目。
+     *
+     * 实现要点：bitwarden 直接比较 `autofillViews` 的列表下标，因为那份列表天然按
+     * 遍历顺序构建。**本仓库不能照抄** —— 调用方传入的 `candidates` 顺序并不保证等于
+     * `traversalIndex` 顺序（见 `returnsListIndexNotTraversalIndex` 用例），
+     * 直接拿列表下标判 `+1` 会漏提升。
+     * 因此这里**先按 traversalIndex 排序**，在排序后的序列上判「紧邻」，
+     * 再返回该候选在**原始列表中的下标**（调用方用它去取 `items[promotionIndex]`）。
+     *
+     * 另注意：不能用 `traversalIndex + 1 == passwordTraversalIndex` 判相邻 ——
+     * 两个输入框之间隔着容器 / 标签等非字段节点，traversalIndex 差值远大于 1，
+     * 那样判定永远不成立，会直接废掉整条召回路径（Via 登录页会崩）。
      */
     fun selectUsernameNeighborIndex(candidates: List<Candidate>): Int {
-        val firstPasswordIndex = candidates
-            .filter { it.isPassword }
-            .minOfOrNull { it.traversalIndex }
-            ?: return NO_PROMOTION
-
+        if (candidates.none { it.isPassword }) return NO_PROMOTION
         if (candidates.any { it.isAccount }) return NO_PROMOTION
 
-        var bestIndex = NO_PROMOTION
-        var bestTraversalIndex = Int.MIN_VALUE
-        candidates.forEachIndexed { index, candidate ->
-            if (!candidate.isUnknown) return@forEachIndexed
-            if (!candidate.isVisible) return@forEachIndexed
-            if (candidate.traversalIndex >= firstPasswordIndex) return@forEachIndexed
-            if (candidate.traversalIndex > bestTraversalIndex) {
-                bestTraversalIndex = candidate.traversalIndex
-                bestIndex = index
+        // 按遍历顺序（即视觉上的先后）排序，保留原始列表下标以便返回。
+        val ordered = candidates
+            .mapIndexed { listIndex, candidate -> listIndex to candidate }
+            .sortedBy { (_, candidate) -> candidate.traversalIndex }
+
+        for (i in 0 until ordered.lastIndex) {
+            val (listIndex, candidate) = ordered[i]
+            val (_, next) = ordered[i + 1]
+            if (candidate.isUnknown && candidate.isVisible && next.isPassword) {
+                return listIndex
             }
         }
-        return bestIndex
+        return NO_PROMOTION
     }
 }

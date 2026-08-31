@@ -249,6 +249,10 @@ private fun decodeFrameZxing(imageProxy: ImageProxy, formats: Collection<Barcode
  * camera-core 1.5.x 未提供 ImageProxy.toBitmap() 扩展，这里手动完成
  * YUV -> NV21 -> JPEG -> Bitmap 的转换，并按传感器旋转角校正方向。
  */
+// lint 的 UnsafeOptInUsageError 不识别 Kotlin 的 @OptIn，属冗余告警。
+// 与文件内其它位置（如上方 decodeFrame 相关声明）保持一致：@OptIn 对编译期真正生效，
+// @SuppressLint 仅用于安抚 lint，不改变任何运行行为。
+@SuppressLint("UnsafeOptInUsageError")
 @OptIn(ExperimentalGetImage::class)
 private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
     val mediaImage = imageProxy.image ?: return null

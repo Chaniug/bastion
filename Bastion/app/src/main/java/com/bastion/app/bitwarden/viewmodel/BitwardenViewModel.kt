@@ -1,6 +1,7 @@
 package com.bastion.app.bitwarden.viewmodel
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.Uri
@@ -201,6 +202,7 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
+    @SuppressLint("EmptySuperCall")
     override fun onCleared() {
         BitwardenMutationSyncBridge.unregister(this)
         super.onCleared()

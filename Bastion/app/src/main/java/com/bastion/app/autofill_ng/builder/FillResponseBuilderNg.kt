@@ -332,30 +332,29 @@ class FillResponseBuilderNg(
             menuPresentation = menuPresentation,
             fields = fields
         ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // WebView 兜底：Via 等浏览器对 menu 建议回写不兼容，但 inline（IME commitText）
-                // 100% 可靠。partition.inlinePresentationSpec 可能为 null（inline 开关关闭时），
-                // 此时从 request.inlinePresentationSpecs 取第一个兼容 spec 构建 inline。
-                val spec = partition.inlinePresentationSpec
-                    ?: request.inlinePresentationSpecs?.firstOrNull()
-                    ?: return@create null
-                AutofillDatasetBuilder.InlinePresentationBuilder.tryCreate(
+            // 此处无需再判 `SDK_INT >= R`：本 lambda 只会被 AutofillDatasetBuilder.create
+            // 在 API >= 30 时回调（createForTiramisu 要求 33；createPreTiramisu 内部先以
+            // `SDK_INT >= R` 守卫后才回调本 lambda），该判断恒为真，lint 报 ObsoleteSdkInt。
+            // WebView 兜底：Via 等浏览器对 menu 建议回写不兼容，但 inline（IME commitText）
+            // 100% 可靠。partition.inlinePresentationSpec 可能为 null（inline 开关关闭时），
+            // 此时从 request.inlinePresentationSpecs 取第一个兼容 spec 构建 inline。
+            val spec = partition.inlinePresentationSpec
+                ?: request.inlinePresentationSpecs?.firstOrNull()
+                ?: return@create null
+            AutofillDatasetBuilder.InlinePresentationBuilder.tryCreate(
+                context = context,
+                spec = spec,
+                specs = request.inlinePresentationSpecs,
+                index = index,
+                pendingIntent = inlinePendingIntent ?: return@create null,
+                title = partition.autofillCipher.name,
+                subtitle = partition.autofillCipher.subtitle,
+                icon = AutofillDatasetBuilder.InlinePresentationBuilder.createAppIcon(
                     context = context,
-                    spec = spec,
-                    specs = request.inlinePresentationSpecs,
-                    index = index,
-                    pendingIntent = inlinePendingIntent ?: return@create null,
-                    title = partition.autofillCipher.name,
-                    subtitle = partition.autofillCipher.subtitle,
-                    icon = AutofillDatasetBuilder.InlinePresentationBuilder.createAppIcon(
-                        context = context,
-                        packageName = request.packageName
-                    ),
-                    contentDescription = partition.autofillCipher.name
-                )
-            } else {
-                null
-            }
+                    packageName = request.packageName
+                ),
+                contentDescription = partition.autofillCipher.name
+            )
         }
         // 仅 vault 锁定时挂 setAuthentication，对齐 Bitwarden 行为。
         // vault 解锁时走纯直填 dataset：框架直接写值进输入框，Via 等 WebView 无需无障碍。
@@ -410,25 +409,22 @@ class FillResponseBuilderNg(
             menuPresentation = menuPresentation,
             fields = fields
         ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val spec = request.inlinePresentationSpecs?.firstOrNull() ?: return@create null
-                AutofillDatasetBuilder.InlinePresentationBuilder.tryCreate(
+            // 同上：本 lambda 仅在 API >= 30 时被回调，无需再判 SDK_INT。
+            val spec = request.inlinePresentationSpecs?.firstOrNull() ?: return@create null
+            AutofillDatasetBuilder.InlinePresentationBuilder.tryCreate(
+                context = context,
+                spec = spec,
+                specs = request.inlinePresentationSpecs,
+                index = 0,
+                pendingIntent = pendingIntent,
+                title = context.getString(R.string.password_suggestion_title),
+                subtitle = context.getString(R.string.password_suggestion_subtitle),
+                icon = AutofillDatasetBuilder.InlinePresentationBuilder.createAppIcon(
                     context = context,
-                    spec = spec,
-                    specs = request.inlinePresentationSpecs,
-                    index = 0,
-                    pendingIntent = pendingIntent,
-                    title = context.getString(R.string.password_suggestion_title),
-                    subtitle = context.getString(R.string.password_suggestion_subtitle),
-                    icon = AutofillDatasetBuilder.InlinePresentationBuilder.createAppIcon(
-                        context = context,
-                        packageName = request.packageName
-                    ),
-                    contentDescription = context.getString(R.string.password_suggestion_title)
-                )
-            } else {
-                null
-            }
+                    packageName = request.packageName
+                ),
+                contentDescription = context.getString(R.string.password_suggestion_title)
+            )
         }
         datasetBuilder.setAuthentication(pendingIntent.intentSender)
         return datasetBuilder.build()

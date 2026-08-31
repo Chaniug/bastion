@@ -32,6 +32,8 @@ class EnhancedAutofillStructureParserV2 {
         val webScheme: String? = null,
         val webDomain: String? = null,
         val webView: Boolean = false,
+        /** 从浏览器地址栏直接读到的网址原文（仅命中 [URL_BARS] 时非空）。 */
+        val urlBarWebsite: String? = null,
         val items: List<ParsedItem>,
     )
 
@@ -148,6 +150,36 @@ class EnhancedAutofillStructureParserV2 {
         val traversalIndex: Int,
     )
 
+    /**
+     * 浏览器包名 → 地址栏控件资源 id（`ViewNode.idEntry`）映射，对齐 bitwarden
+     * `AutofillParserImpl.URL_BARS`。
+     *
+     * 用途：Edge / Opera / Brave / 三星等浏览器的 WebView 不总会上报 `webDomain`，
+     * 此时**直接读地址栏文本**即可拿到权威网址，优于无障碍服务跟踪的 60s 启发式兜底
+     * （BrowserAutofillContextStore），让条目匹配拿到正确域名。
+     * Chrome 不在表内 —— 它通过 WebView 正常上报 webDomain，无需此路径。
+     *
+     * 新增浏览器时：用 `adb shell dumpsys` 或布局检查工具确认该浏览器地址栏的
+     * `idEntry` 即可，注意同一浏览器不同渠道（beta/canary/nightly）包名不同。
+     */
+    private val URL_BARS: Map<String, String> = mapOf(
+        // Edge 浏览器各渠道
+        "com.microsoft.emmx" to "url_bar",
+        "com.microsoft.emmx.beta" to "url_bar",
+        "com.microsoft.emmx.canary" to "url_bar",
+        "com.microsoft.emmx.dev" to "url_bar",
+        // 三星浏览器
+        "com.sec.android.app.sbrowser" to "location_bar_edit_text",
+        "com.sec.android.app.sbrowser.beta" to "location_bar_edit_text",
+        // Opera
+        "com.opera.browser" to "url_bar",
+        "com.opera.browser.beta" to "url_bar",
+        // Brave
+        "com.brave.browser" to "url_bar",
+        "com.brave.browser_beta" to "url_bar",
+        "com.brave.browser_nightly" to "url_bar",
+    )
+
     private data class ParseContext(
         var traversalIndex: Int = 0,
         var nodesWithAutofillId: Int = 0,
@@ -158,6 +190,11 @@ class EnhancedAutofillStructureParserV2 {
         // 摆脱对「单个 input 自身 placeholder/htmlInfo 是否在本轮 AssistStructure 捕获中序列化」的依赖。
         // 直接修复「搜索框偶尔仍弹密码条目」的间歇性问题（捕获时序导致自身文本信号偶发缺失）。
         var searchContainerDepth: Int = 0,
+        /**
+         * 地址栏文本（当前网址）。命中 [URL_BARS] 的节点收集，取首个为准
+         * （对齐 bitwarden `traversalDataList.flatMap { it.urlBarWebsites }.firstOrNull()`）。
+         */
+        val urlBarWebsites: MutableList<String> = mutableListOf(),
     )
 
     private class AutofillHintMatcher(
@@ -897,6 +934,7 @@ class EnhancedAutofillStructureParserV2 {
                 "withAutofillId=${parseContext.nodesWithAutofillId}, " +
                 "withoutAutofillId=${parseContext.nodesWithoutAutofillId}, " +
                 "webDomain=$effectiveWebDomain, webScheme=${rawStructure?.webScheme}, " +
+                "urlBar=${parseContext.urlBarWebsites.firstOrNull() ?: "none"}, " +
                 "itemHints=[${items.joinToString { "${it.hint}:${it.accuracy.name}" }}]"
         )
 
@@ -905,6 +943,7 @@ class EnhancedAutofillStructureParserV2 {
             webDomain = effectiveWebDomain,
             webScheme = rawStructure?.webScheme.takeUnless { isInSelfHostedServer },
             webView = if (isInSelfHostedServer) false else rawStructure?.webView == true,
+            urlBarWebsite = parseContext.urlBarWebsites.firstOrNull(),
             items = items.sortedBy { it.traversalIndex },
         )
     }
@@ -977,6 +1016,20 @@ class EnhancedAutofillStructureParserV2 {
         // 使容器内 input 即便自身 placeholder/htmlInfo 在捕获中缺失，也能稳定排除凭据填充。
         val isSearchContainerNode = isSearchContainerNode(node)
         if (isSearchContainerNode) context.searchContainerDepth++
+
+        // 地址栏识别（对齐 bitwarden URL_BARS）：浏览器包名与地址栏资源 id 同时命中时，
+        // 该节点文本即当前网址。注意不能只判 idEntry——不同 App 可能复用同名资源 id，
+        // 必须包名 + idEntry 双重匹配（bitwarden 原实现即如此）。
+        // OS 有时会把 idPackage 默认成 "android"，该值不是合法包名，需排除。
+        val urlBarPackage = node.idPackage?.takeUnless { it.isBlank() || it == "android" }
+        val urlBarEntryId = urlBarPackage?.let { URL_BARS[it] }
+        if (urlBarEntryId != null && urlBarEntryId == node.idEntry) {
+            node.text
+                ?.toString()
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?.let { context.urlBarWebsites.add(it) }
+        }
 
         if (context.traversalIndex == 0) {
             Log.d(
@@ -1852,6 +1905,10 @@ class EnhancedAutofillStructureParserV2 {
             add(node.hint?.toString().orEmpty())
             add(node.idEntry?.toString().orEmpty())
             add(node.className?.toString().orEmpty())
+            // contentDescription：Edge/Chromium 系常不填 node.hint，而是把占位文案或
+            // 无障碍标签挂在这里。漏掉它时，仅有 contentDescription 的搜索框会判不出来，
+            // 进而被"账号字段邻居提升"扶正成 USERNAME 而误弹密码条目。
+            add(node.contentDescription?.toString().orEmpty())
             val html = node.htmlInfo
             if (html != null) {
                 val attrs = html.attributes

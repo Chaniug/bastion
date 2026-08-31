@@ -2,35 +2,13 @@
 <issues format="6" by="lint 9.3.2" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.2)" variant="all" version="9.3.2">
 
     <issue
-        id="EmptySuperCall"
-        message="No need to call `super.onCleared`; the super method is defined to be empty"
-        errorLine1="        super.onCleared()"
-        errorLine2="              ~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/bitwarden/viewmodel/BitwardenViewModel.kt"
-            line="206"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="PrivateApi"
-        message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
-        errorLine1="            val clazz = Class.forName(&quot;android.app.ActivityThread&quot;)"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/security/SessionManager.kt"
-            line="169"
-            column="25"/>
-    </issue>
-
-    <issue
         id="UnusedAttribute"
         message="Attribute `enableOnBackInvokedCallback` is only used in API level 33 and higher (current min is 31)"
         errorLine1="        android:enableOnBackInvokedCallback=&quot;true&quot;"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="65"
+            line="67"
             column="9"/>
     </issue>
 
@@ -948,28 +926,6 @@
     </issue>
 
     <issue
-        id="AppBundleLocaleChanges"
-        message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="        config.setLocale(locale)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/utils/LocaleHelper.kt"
-            line="29"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="AndroidGradlePluginVersion"
-        message="A newer version of Gradle than 9.5.1 is available: 9.7.1"
-        errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-9.5.1-bin.zip"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="$HOME/work/bastion/bastion/Bastion/gradle/wrapper/gradle-wrapper.properties"
-            line="7"
-            column="17"/>
-    </issue>
-
-    <issue
         id="GradleDependency"
         message="A newer version of androidx.compose:compose-bom than 2026.03.00 is available: 2026.08.00"
         errorLine1="composeBom = &quot;2026.03.00&quot;"
@@ -1022,39 +978,6 @@
             file="$HOME/work/bastion/bastion/Bastion/gradle/libs.versions.toml"
             line="80"
             column="15"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.compose than 2.3.21 is available: 2.4.10"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="$HOME/work/bastion/bastion/Bastion/gradle/libs.versions.toml"
-            line="9"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.parcelize than 2.3.21 is available: 2.4.10"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="$HOME/work/bastion/bastion/Bastion/gradle/libs.versions.toml"
-            line="9"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.21 is available: 2.4.10"
-        errorLine1="kotlin = &quot;2.3.21&quot;"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="$HOME/work/bastion/bastion/Bastion/gradle/libs.versions.toml"
-            line="9"
-            column="10"/>
     </issue>
 
     <issue
@@ -7488,7 +7411,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2463"
+            line="2464"
             column="13"/>
     </issue>
 
@@ -7499,7 +7422,7 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2482"
+            line="2483"
             column="15"/>
     </issue>
 
@@ -7510,7 +7433,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2498"
+            line="2499"
             column="13"/>
     </issue>
 
@@ -7521,7 +7444,7 @@
         errorLine2="             ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2576"
+            line="2577"
             column="14"/>
     </issue>
 
@@ -7532,7 +7455,7 @@
         errorLine2="       ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2733"
+            line="2734"
             column="8"/>
     </issue>
 
@@ -7543,7 +7466,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2741"
+            line="2742"
             column="8"/>
     </issue>
 
@@ -7554,7 +7477,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2762"
+            line="2763"
             column="11"/>
     </issue>
 
@@ -7565,7 +7488,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2768"
+            line="2769"
             column="11"/>
     </issue>
 
@@ -7576,7 +7499,7 @@
         errorLine2="          ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2778"
+            line="2779"
             column="11"/>
     </issue>
 
@@ -7587,7 +7510,7 @@
         errorLine2="            ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2813"
+            line="2814"
             column="13"/>
     </issue>
 
@@ -7598,7 +7521,7 @@
         errorLine2="            ^">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="2823"
+            line="2824"
             column="13"/>
     </issue>
 
@@ -7609,7 +7532,7 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3119"
+            line="3120"
             column="12"/>
     </issue>
 
@@ -7620,7 +7543,7 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3128"
+            line="3129"
             column="12"/>
     </issue>
 
@@ -7631,7 +7554,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3172"
+            line="3173"
             column="8"/>
     </issue>
 
@@ -7642,7 +7565,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="3187"
+            line="3188"
             column="8"/>
     </issue>
 
@@ -8285,57 +8208,6 @@
     </issue>
 
     <issue
-        id="PrivateResource"
-        message="Overriding `@drawable/ic_passkey` which is marked as private in androidx.credentials:credentials:1.3.0. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name.">
-        <location
-            file="src/main/res/drawable/ic_passkey.xml"/>
-    </issue>
-
-    <issue
-        id="DiscouragedApi"
-        message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
-        errorLine1="                    val resId = ctx.resources.getIdentifier(&quot;eff_short_wordlist&quot;, &quot;raw&quot;, ctx.packageName)"
-        errorLine2="                                              ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/util/PasswordGenerator.kt"
-            line="444"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.Q)` instead of `@TargetApi` to propagate the requirement to callers of `normalizedVaultV2SortKey`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.Q)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/ui/vaultv2/VaultV2Pane.kt"
-            line="4115"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="Typos"
-        message="Did you mean &quot;DNS!&quot; instead of &quot;DNS1&quot;?"
-        errorLine1="    &lt;string name=&quot;wifi_ip_dns1&quot;>DNS1&lt;/string>"
-        errorLine2="                                ~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="316"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="ChromeOsAbiSupport"
-        message="Missing x86_64 ABI support for ChromeOS"
-        errorLine1="            include &apos;arm64-v8a&apos;"
-        errorLine2="                    ~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="187"
-            column="21"/>
-    </issue>
-
-    <issue
         id="HardwareIds"
         message="Using `getString` to get device identifiers is not recommended"
         errorLine1="        deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: &quot;unknown&quot;"
@@ -8355,39 +8227,6 @@
             file="src/main/res/xml/network_security_config.xml"
             line="30"
             column="13"/>
-    </issue>
-
-    <issue
-        id="CustomX509TrustManager"
-        message="Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android&apos;s default implementation."
-        errorLine1="    private class CompositeX509TrustManager("
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/bitwarden/api/BitwardenApiFactory.kt"
-            line="442"
-            column="19"/>
-    </issue>
-
-    <issue
-        id="ExportedContentProvider"
-        message="Exported content providers can provide access to potentially sensitive data"
-        errorLine1="        &lt;provider"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="src/debug/AndroidManifest.xml"
-            line="13"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="DataExtractionRules"
-        message="The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher."
-        errorLine1="        android:allowBackup=&quot;false&quot;"
-        errorLine2="                             ~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="64"
-            column="30"/>
     </issue>
 
     <issue
@@ -8417,33 +8256,6 @@
         message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`.">
         <location
             file="src/main/res/mipmap-anydpi-v26"/>
-    </issue>
-
-    <issue
-        id="LaunchActivityFromNotification"
-        message="Notifications should only launch a `BroadcastReceiver` from notification actions (`addAction`)"
-        errorLine1="            .setContentIntent(pendingIntent)"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bastion/app/autofill_ng/utils/SmartCopyNotificationHelper.kt"
-            line="88"
-            column="14"/>
-        <location
-            file="src/main/java/com/bastion/app/autofill_ng/utils/SmartCopyNotificationHelper.kt"
-            line="68"
-            column="29"
-            message="This `BroadcastReceiver` intent is launched from a notification; this is discouraged except as notification actions"/>
-    </issue>
-
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?android:attr/windowBackground` with a theme that also paints a background (inferred theme is `@style/Theme.Bastion`)"
-        errorLine1="    android:background=&quot;?android:attr/windowBackground&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/autofill_manual_card.xml"
-            line="5"
-            column="5"/>
     </issue>
 
     <issue
@@ -9336,7 +9148,7 @@
     <issue
         id="UnusedResources"
         message="The resource `R.string.wifi_ip_dns1` appears to be unused"
-        errorLine1="    &lt;string name=&quot;wifi_ip_dns1&quot;>DNS1&lt;/string>"
+        errorLine1="    &lt;string name=&quot;wifi_ip_dns1&quot; tools:ignore=&quot;Typos&quot;>DNS1&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
@@ -19042,7 +18854,7 @@
         errorLine2="        ~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/security/SessionManager.kt"
-            line="112"
+            line="113"
             column="9"/>
     </issue>
 

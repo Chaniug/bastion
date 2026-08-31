@@ -1,6 +1,7 @@
 package com.bastion.app.security
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -164,6 +165,7 @@ object SessionManager {
      * 个别 ROM 上该反射路径可能失效，回退到读取 /proc/self/cmdline（内容即进程名）。
      * 两者都失败时返回 null，交由调用方保守处理。
      */
+    @SuppressLint("PrivateApi")
     private fun resolveCurrentProcessName(): String? {
         runCatchingObserved {
             val clazz = Class.forName("android.app.ActivityThread")

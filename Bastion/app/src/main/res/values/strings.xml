@@ -313,7 +313,7 @@
     <string name="wifi_ip_address">IP地址</string>
     <string name="wifi_ip_gateway">网关</string>
     <string name="wifi_ip_prefix">网络前缀长度</string>
-    <string name="wifi_ip_dns1">DNS1</string>
+    <string name="wifi_ip_dns1" tools:ignore="Typos">DNS1</string>
     <string name="wifi_ip_dns2">DNS2</string>
     <string name="wifi_detail_title">WIFI详情</string>
     <string name="wifi_detail_copy_password">复制密码</string>
@@ -364,8 +364,8 @@
     <string name="uppercase_az">大写字母 (A-Z)</string>
     <string name="lowercase_letters">小写字母 (a-z)</string>
     <string name="lowercase_az">小写字母 (a-z)</string>
-    <string name="numbers">数字 (0-9)</string>
-    <string name="numbers_09">数字 (0-9)</string>
+    <string name="numbers">数字 (0–9)</string>
+    <string name="numbers_09">数字 (0–9)</string>
     <string name="symbols">符号 (!@#$…)</string>
     <string name="exclude_similar">排除相似字符</string>
     <string name="analyze_common_passwords">常用密码分析</string>
@@ -979,7 +979,7 @@
     <string name="generator_length">长度</string>
     <string name="generator_include_uppercase">包含大写字母 (A-Z)</string>
     <string name="generator_include_lowercase">包含小写字母 (a-z)</string>
-    <string name="generator_include_numbers">包含数字 (0-9)</string>
+    <string name="generator_include_numbers">包含数字 (0–9)</string>
     <string name="generator_include_symbols">包含符号 (!@#$…)</string>
     <string name="generator_exclude_similar">排除相似字符 (0,O,l,I)</string>
     <string name="generator_exclude_ambiguous">排除不明确字符</string>
@@ -1765,7 +1765,7 @@
     <string name="suggestion_use_12_chars">建议使用 12 个以上字符以提高安全性</string>
     <string name="suggestion_add_lowercase">添加小写字母 (a-z)</string>
     <string name="suggestion_add_uppercase">添加大写字母 (A-Z)</string>
-    <string name="suggestion_add_digits">添加数字 (0-9)</string>
+    <string name="suggestion_add_digits">添加数字 (0–9)</string>
     <string name="suggestion_add_special">添加特殊字符 (!@#$%^&amp;*)</string>
     <string name="suggestion_avoid_repeating">避免重复字符 (如 aaa, 111)</string>
     <string name="suggestion_avoid_sequential">避免连续字符 (如 abc, 123)</string>
@@ -1819,7 +1819,7 @@
     <string name="character_types">字符类型</string>
     <string name="include_uppercase">包含大写字母 (A-Z)</string>
     <string name="include_lowercase">包含小写字母 (a-z)</string>
-    <string name="include_numbers">包含数字 (0-9)</string>
+    <string name="include_numbers">包含数字 (0–9)</string>
     <string name="include_symbols">包含符号 (!@#$%)</string>
     <string name="generator_custom_symbols_label">自定义符号</string>
     <string name="generator_custom_symbols_placeholder">例如: *_-.@</string>
@@ -2415,7 +2415,7 @@
     <string name="send_content_label">发送内容</string>
     <string name="send_access_password_optional">访问密码（可选）</string>
     <string name="send_max_access_count">最大访问次数</string>
-    <string name="send_valid_days">有效天数(1-30)</string>
+    <string name="send_valid_days">有效天数(1–30)</string>
     <string name="send_hide_email">隐藏邮箱</string>
     <string name="send_hide_email_desc">收件方不会看到发送者邮箱</string>
     <string name="send_hide_text">隐藏文本内容</string>
@@ -3595,7 +3595,9 @@
     <string name="import_data_keepass_tip_kdf_memory">KDF memory is too high for this device. Lower Argon2 memory/parallelism and retry.</string>
     <string name="import_data_keepass_tip_legacy_kdb">Open this file in KeePassDX or KeePassXC and save it as .kdbx, then import again.</string>
     <string name="import_data_keepass_tip_permission">Re-select the database or key file and grant read permission again.</string>
-    <string name="import_data_keepass_tip_format_version_too_new">This database uses a KDBX version or cipher this version does not support yet. Update Bastion, or re-save it as standard KDBX 3.1 / 4.x in KeePassXC and retry.</string>
+    <!-- lint TypographyFractions 误报：这里 "3.1 / 4.x" 是 KDBX 版本号区间，并非分数 1/4，
+         不能替换成 ¼ 字符（会破坏语义），故忽略该项。 -->
+    <string name="import_data_keepass_tip_format_version_too_new" tools:ignore="TypographyFractions">This database uses a KDBX version or cipher this version does not support yet. Update Bastion, or re-save it as standard KDBX 3.1 / 4.x in KeePassXC and retry.</string>
     <string name="import_data_keepass_tip_format_not_kdbx">This is not a valid KDBX database. Make sure you selected a .kdbx file and re-fetch a complete copy from its source.</string>
     <string name="import_data_keepass_tip_format_corrupted">The database file is damaged (content parsing failed). Use a backup copy, or repair it in KeePassXC and retry.</string>
     <string name="import_data_keepass_tip_challenge_response">This database is encrypted with hardware-key (YubiKey etc.) Challenge-Response, which is not supported yet. Re-save it with "password + key file" in KeePassXC and retry.</string>

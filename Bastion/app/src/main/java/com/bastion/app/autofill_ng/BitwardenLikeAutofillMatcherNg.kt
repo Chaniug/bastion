@@ -23,6 +23,8 @@ class BitwardenLikeAutofillMatcherNg {
     private enum class Reason {
         EXACT_PACKAGE,
         EXACT_DOMAIN,
+        /** 等价域名命中（同账号体系），对齐 bitwarden 的 `MatchResult.EXACT`。 */
+        EQUIVALENT_DOMAIN,
         SUBDOMAIN,
         BASE_DOMAIN,
         PACKAGE_DOMAIN_COMBO,
@@ -93,13 +95,35 @@ class BitwardenLikeAutofillMatcherNg {
 
         return bestByEntry.values
             .sortedWith(
-                compareByDescending<ScoredMatch> { it.score }
+                // 对齐 bitwarden `filterCiphersForMatches` 的 `exactMatches + fuzzyMatches`：
+                // **先按 EXACT / FUZZY 硬分层，再在层内按分数排序**。
+                // 纯分数排序会让「模糊匹配 + 组合加分」反超精确匹配
+                // （例：SUBDOMAIN 115 + PACKAGE_DOMAIN_COMBO 30 = 145 > EXACT_DOMAIN 140），
+                // 导致派生关系的条目排在精确命中之前。
+                compareBy<ScoredMatch> { matchTier(it.reasons) }
+                    .thenByDescending { it.score }
                     .thenByDescending { it.entry.isFavorite }
                     .thenByDescending { it.entry.updatedAt.time },
             )
             .take(config.maxSuggestions.coerceAtLeast(1))
             .map { it.entry }
     }
+
+    /**
+     * 匹配档位，对齐 bitwarden `MatchResult`：
+     * - `0` = EXACT —— 权威轴上的「直接相等」：域名完全相等、包名完全相等。
+     * - `1` = FUZZY —— 派生关系或启发式：子域、基域、应用标题、包名 token、兜底。
+     *
+     * 精确档永远排在模糊档之前，与 bitwarden 一致（它甚至只在 androidapp:// 场景
+     * 才产生 FUZZY，网页侧零模糊）。
+     */
+    private fun matchTier(reasons: Set<Reason>): Int =
+        if (reasons.any {
+                it == Reason.EXACT_DOMAIN ||
+                    it == Reason.EQUIVALENT_DOMAIN ||
+                    it == Reason.EXACT_PACKAGE
+            }
+        ) 0 else 1
 
     private fun scoreEntry(
         entry: PasswordEntry,
@@ -158,11 +182,22 @@ class BitwardenLikeAutofillMatcherNg {
 
         if (!targetHost.isNullOrBlank() && entryHosts.isNotEmpty()) {
             val hasExactDomain = entryHosts.any { it == targetHost }
+            // 等价域名（对齐 bitwarden equivalentDomains）：同属一个账号体系的不同域名
+            // 视为精确匹配 —— bitwarden 对等价域名返回 MatchResult.EXACT。
+            // 比较用**基域**（已归约），避免 www./子域前缀导致比较不出结果。
+            val hasEquivalentDomain = !targetRoot.isNullOrBlank() &&
+                entryRoots.any { EquivalentDomains.isEquivalent(it, targetRoot) }
             val hasSubdomainRelation = entryHosts.any { isSubdomainRelation(it, targetHost) }
             when {
                 hasExactDomain -> {
                     score += 140
                     reasons += Reason.EXACT_DOMAIN
+                }
+
+                hasEquivalentDomain -> {
+                    // 略低于"域名完全相等"，保证同等条件下真·精确仍排在前面
+                    score += 139
+                    reasons += Reason.EQUIVALENT_DOMAIN
                 }
 
                 hasSubdomainRelation && !config.exactDomainOnly && config.allowSubdomainMatch -> {
@@ -214,6 +249,7 @@ class BitwardenLikeAutofillMatcherNg {
             val hasStrongReason = reasons.any {
                 it == Reason.EXACT_PACKAGE ||
                     it == Reason.EXACT_DOMAIN ||
+                    it == Reason.EQUIVALENT_DOMAIN ||
                     it == Reason.SUBDOMAIN ||
                     it == Reason.BASE_DOMAIN ||
                     it == Reason.EXACT_APP_TITLE ||
@@ -322,21 +358,18 @@ class BitwardenLikeAutofillMatcherNg {
         return host
     }
 
-    private fun extractBaseDomain(host: String): String {
-        val parts = host.split(".").filter { it.isNotBlank() }
-        if (parts.size < 2) return host
-
-        val twoPartTlds = setOf(
-            "co.uk", "com.cn", "net.cn", "org.cn", "gov.cn", "ac.uk",
-            "co.jp", "ne.jp", "or.jp", "com.au", "net.au", "org.au",
-        )
-        val lastTwo = parts.takeLast(2).joinToString(".")
-        return if (parts.size >= 3 && lastTwo in twoPartTlds) {
-            parts.takeLast(3).joinToString(".")
-        } else {
-            lastTwo
-        }
-    }
+    /**
+     * 归约 [host] 到基域（public suffix + 1 段）。
+     *
+     * 原实现只硬编码了 12 条双段后缀（co.uk / com.cn / ...），**连 `org.uk` 都没覆盖**，
+     * 遇到 com.br / co.kr / com.hk / github.io 之类会把基域算错，从而产生跨站误匹配
+     * （`a.example.org.uk` 与 `b.example.org.uk` 被当成同一基域而互相匹配）。
+     *
+     * 现改为查公共后缀表 [PublicSuffixList]（由 `image/gen_public_suffix_list.py` 生成，
+     * 数据取自 publicsuffix.org，收录 2~3 段规则 7747 条），与 Bitwarden 用 PSL 做
+     * `getDomainOrNull(resourceCacheManager)` 的做法对齐。
+     */
+    private fun extractBaseDomain(host: String): String = PublicSuffixList.baseDomain(host)
 
     private fun isSubdomainRelation(left: String, right: String): Boolean {
         if (left == right) return false
