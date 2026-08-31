@@ -70,9 +70,9 @@ fun MasterPasswordLockingSettingsScreen(
         if (activity != null) {
             biometricHelper.authenticate(
                 activity = activity,
-                title = stringResource(R.string.biometric_login_title),
-                subtitle = stringResource(R.string.biometric_subtitle),
-                description = stringResource(R.string.biometric_login_description),
+                title = context.getString(R.string.biometric_login_title),
+                subtitle = context.getString(R.string.biometric_subtitle),
+                description = context.getString(R.string.biometric_login_description),
                 negativeButtonText = context.getString(R.string.cancel),
                 onSuccess = {
                     biometricSwitchState = true
