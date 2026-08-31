@@ -12,6 +12,7 @@
         -->
         <provider
             android:name="androidx.startup.InitializationProvider"
+            android:exported="false"
             tools:node="merge">
             <meta-data
                 android:name="androidx.profileinstaller.ProfileInstallerInitializer"

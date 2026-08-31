@@ -1,6 +1,7 @@
 package com.bastion.app.util
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.content.Context
 import com.nulabinc.zxcvbn.Zxcvbn
 import com.bastion.app.data.PasswordEntry
@@ -437,6 +438,7 @@ class PasswordGenerator {
             }
         }
 
+        @SuppressLint("DiscouragedApi")
         private fun readWordlist(context: Context?): List<String> {
             // 尝试从资源加载
             context?.let { ctx ->

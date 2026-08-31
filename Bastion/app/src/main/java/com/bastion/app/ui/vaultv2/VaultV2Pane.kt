@@ -2,6 +2,7 @@ package com.bastion.app.ui.vaultv2
 
 import com.bastion.app.logging.runCatchingObserved
 import android.annotation.TargetApi
+import android.annotation.SuppressLint
 import android.icu.text.Transliterator
 import android.os.Build
 import android.util.Log
@@ -4112,7 +4113,7 @@ internal fun normalizeAsciiVaultV2SortKey(raw: String): String? {
 	}.trim().ifEmpty { trimmed }
 }
 
-@TargetApi(Build.VERSION_CODES.Q)
+@TargetApi(Build.VERSION_CODES.Q) @SuppressLint("UseRequiresApi")
 private fun normalizedVaultV2SortKey(raw: String): String {
 	normalizeAsciiVaultV2SortKey(raw)?.let { return it }
 	val trimmed = raw.trim()

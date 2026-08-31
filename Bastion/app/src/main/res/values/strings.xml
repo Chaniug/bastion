@@ -313,7 +313,7 @@
     <string name="wifi_ip_address">IP地址</string>
     <string name="wifi_ip_gateway">网关</string>
     <string name="wifi_ip_prefix">网络前缀长度</string>
-    <string name="wifi_ip_dns1">DNS1</string>
+    <string name="wifi_ip_dns1" tools:ignore="Typos" xmlns:tools="http://schemas.android.com/tools">DNS1</string>
     <string name="wifi_ip_dns2">DNS2</string>
     <string name="wifi_detail_title">WIFI详情</string>
     <string name="wifi_detail_copy_password">复制密码</string>

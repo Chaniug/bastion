@@ -4,6 +4,7 @@ import com.bastion.app.logging.runCatchingObserved
 import kotlinx.serialization.json.Json
 import android.util.Base64
 import android.util.Log
+import android.annotation.SuppressLint
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Authenticator
 import okhttp3.Interceptor
@@ -439,6 +440,10 @@ object BitwardenApiFactory {
         return kmf.keyManagers
     }
 
+    // 委托实现（非「信任一切」空实现）：仅当用户主动导入自签 CA 时才将其与系统默认组合，
+    // 否则回退系统默认信任链。lint 的 CustomX509TrustManager 检查是启发式，无法区分委托与空实现，
+    // 故在此抑制，避免后来者误删。（见 docs/lint债务清理计划.md §三.3.2）
+    @SuppressLint("CustomX509TrustManager")
     private class CompositeX509TrustManager(
         private val delegates: List<X509TrustManager>
     ) : X509TrustManager {

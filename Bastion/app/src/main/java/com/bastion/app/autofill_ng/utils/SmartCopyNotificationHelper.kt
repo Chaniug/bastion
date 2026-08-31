@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.annotation.SuppressLint
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.bastion.app.R
@@ -50,6 +51,7 @@ object SmartCopyNotificationHelper {
         return showCopyNotification(context, secondValue, secondLabel)
     }
 
+    @SuppressLint("LaunchActivityFromNotification")
     private fun showCopyNotification(context: Context, valueToCopy: String, label: String): Boolean {
         createNotificationChannel(context)
 
