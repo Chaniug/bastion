@@ -50,21 +50,33 @@ fun SupportAuthorScreen(
     var imageBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
-    val storagePermission = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
+    // 保存二维码到相册到底需不需要权限，取决于系统版本：
+    //   · API 29+（分区存储）：应用往 MediaStore 写入“自己的”媒体无需任何权限；
+    //     以前这里申请的是 READ_MEDIA_IMAGES（读权限），用户一旦拒绝，保存功能就被无谓拦死。
+    //   · API <= 28：仍需要 WRITE_EXTERNAL_STORAGE（manifest 中 maxSdkVersion=28）。
+    // 因此这里返回 null 表示“无需申请，直接保存”。
+    val storagePermission: String? = remember {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
+        } else {
+            null
         }
     }
     var hasStoragePermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, storagePermission) == PackageManager.PERMISSION_GRANTED
+            storagePermission == null ||
+                ContextCompat.checkSelfPermission(context, storagePermission!!) == PackageManager.PERMISSION_GRANTED
         )
     }
 
     fun requestStoragePermission(onGranted: () -> Unit) {
-        onRequestPermission(storagePermission) { granted ->
+        val permission = storagePermission
+        if (permission == null) {
+            // 无需权限，直接保存
+            onGranted()
+            return
+        }
+        onRequestPermission(permission) { granted ->
             hasStoragePermission = granted
             if (granted) {
                 onGranted()
@@ -95,7 +107,8 @@ fun SupportAuthorScreen(
 
     // 加载assets中的图片
     LaunchedEffect(Unit) {
-        hasStoragePermission = ContextCompat.checkSelfPermission(context, storagePermission) == PackageManager.PERMISSION_GRANTED
+        hasStoragePermission = storagePermission == null ||
+            ContextCompat.checkSelfPermission(context, storagePermission!!) == PackageManager.PERMISSION_GRANTED
         try {
             // 先探测尺寸并按目标边长(1024)采样，避免超大资源图全尺寸驻留内存
             val assetPath = "support_author.webp"

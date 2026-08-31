@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
 import android.util.Size
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -248,6 +249,7 @@ private fun decodeFrameZxing(imageProxy: ImageProxy, formats: Collection<Barcode
  * camera-core 1.5.x 未提供 ImageProxy.toBitmap() 扩展，这里手动完成
  * YUV -> NV21 -> JPEG -> Bitmap 的转换，并按传感器旋转角校正方向。
  */
+@OptIn(ExperimentalGetImage::class)
 private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
     val mediaImage = imageProxy.image ?: return null
     val width = mediaImage.width

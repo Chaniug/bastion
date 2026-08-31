@@ -1,6 +1,7 @@
 package com.bastion.app.repository
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -57,10 +58,16 @@ class PermissionRepository(private val context: Context) {
         // 以下“普通权限”在安装时自动授予且全项目无功能依赖，列为卡片纯属噪声，已移除：
         //   INTERNET / ACCESS_NETWORK_STATE / VIBRATE（永远 GRANTED）
         //   READ_PHONE_STATE（无人使用）
+        // 存储权限卡片（原 id = STORAGE）也已移除：
+        //   · 读图一律走系统选择器（PickVisualMedia / ACTION_GET_CONTENT），返回 Uri 自带临时读授权；
+        //   · 保存到相册走 MediaStore.insert()，API 29+ 无需权限，API <= 28 由 WRITE_EXTERNAL_STORAGE 覆盖，
+        //     后者属于安装时授予的普通权限，运行时无需用户操作，列为卡片没有意义。
+        //   保留这张卡片反而有害：它申请的是 READ_MEDIA_IMAGES（读权限），
+        //   Android 13+ 用户一旦拒绝，会把“保存二维码到相册”一并拦死，而该功能并不需要读权限。
+        // 注：manifest 中的 READ_EXTERNAL_STORAGE（maxSdk 32）暂留作老设备兜底，待真机验证后再决定是否一并移除。
         return listOf(
             createBiometricPermission(),
             createCameraPermission(),
-            createStoragePermission(),
             createNotificationPermission(),
             createLocalNetworkPermission(),
             createAutofillPermission(),
@@ -231,6 +238,8 @@ class PermissionRepository(private val context: Context) {
     // 创建各个权限信息的私有方法
     // Private methods to create permission info
 
+    // USE_BIOMETRIC 为 API 28 常量，编译期内联；低版本设备声明未知权限会被系统忽略。
+    @SuppressLint("InlinedApi")
     private fun createBiometricPermission() = PermissionInfo(
         id = "BIOMETRIC",
         androidPermission = Manifest.permission.USE_BIOMETRIC,
@@ -251,19 +260,8 @@ class PermissionRepository(private val context: Context) {
         importance = PermissionImportance.RECOMMENDED
     )
 
-    private fun createStoragePermission() = PermissionInfo(
-        id = "STORAGE",
-        androidPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        },
-        icon = Icons.Default.Storage,
-        nameResId = R.string.permission_storage_name,
-        descriptionResId = R.string.permission_storage_description,
-        category = PermissionCategory.STORAGE,
-        importance = PermissionImportance.RECOMMENDED
-    )
+    // createStoragePermission() 已移除：读写图片均不再需要用户手动授予存储权限，
+    // 详见 loadPermissions() 的说明与 AndroidManifest 中 READ_MEDIA_IMAGES 的注释。
 
     private fun createNotificationPermission() = PermissionInfo(
         id = "NOTIFICATION",

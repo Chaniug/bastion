@@ -1,5 +1,6 @@
 package com.bastion.app.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -174,6 +175,8 @@ class BiometricHelper(private val context: Context) {
      * FEATURE_FACE 为 API 29+ 常量；在更低版本设备上编译期内联为字符串，
      * hasSystemFeature 仅返回 false，不会崩溃。
      */
+    // FEATURE_FACE 为 API 29 常量，编译期内联为字符串，低版本设备仅返回 false，不会崩溃。
+    @SuppressLint("InlinedApi")
     private fun hasBiometricHardware(): Boolean {
         return context.packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) ||
                 context.packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)

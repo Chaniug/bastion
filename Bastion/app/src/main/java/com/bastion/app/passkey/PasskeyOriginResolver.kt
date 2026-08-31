@@ -1,6 +1,7 @@
 package com.bastion.app.passkey
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.util.Base64
@@ -133,6 +134,8 @@ object PasskeyOriginResolver {
         }
     }
 
+    // GET_SIGNING_CERTIFICATES 为 API 28 常量，编译期内联；下方已有 SDK_INT < P 的版本判断。
+    @SuppressLint("InlinedApi")
     private fun getAppSigningHash(context: Context): String? {
         // GET_SIGNING_CERTIFICATES / PackageInfo#signingInfo 自 API 28 (P) 起提供。
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null

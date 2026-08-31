@@ -525,8 +525,11 @@ private object DeveloperLogDebugHelper {
         "SmartFieldDetector:V",
         "*:S"
     )
-    private val timeFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    private val fileFormatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+    // 固定 Locale.US 而非 Locale.getDefault()：
+    // 这两处分别是日志时间戳与导出文件名，均为纯数字格式，与界面语言无关。
+    // 固定 Locale 既符合 lint 的 ConstantLocale 要求，也避免日志/文件名随系统语言漂移。
+    private val timeFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    private val fileFormatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
 
     suspend fun collectLogs(context: Context): DeveloperLogSnapshot = withContext(Dispatchers.IO) {
         runCatchingObserved { AutofillLogger.initialize(context.applicationContext) }

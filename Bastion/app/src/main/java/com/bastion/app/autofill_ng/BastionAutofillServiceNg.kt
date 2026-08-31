@@ -1,6 +1,7 @@
 package com.bastion.app.autofill_ng
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.assist.AssistStructure
 import android.content.BroadcastReceiver
@@ -462,6 +463,8 @@ class BastionAutofillServiceNg : AutofillService() {
             AutofillLogger.i("AF", "Skip fill request for Bastion itself: $packageName")
             return null
         }
+        // FLAG_COMPATIBILITY_MODE_REQUEST 为 API 29 常量，编译期内联为 int，低版本设备不会崩溃。
+        @SuppressLint("InlinedApi")
         val isCompatMode = (request.flags or FillRequest.FLAG_COMPATIBILITY_MODE_REQUEST) == request.flags
         AutofillLogger.i(
             "AF",

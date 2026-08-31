@@ -44,6 +44,7 @@ import com.bastion.app.sync.SyncTrigger
 import com.bastion.app.utils.OperationLogger
 import com.bastion.app.utils.FieldChange
 import com.bastion.app.utils.KeePassKdbxService
+import java.util.Locale
 import java.util.Date
 import java.util.UUID
 
@@ -488,7 +489,7 @@ class BankCardViewModel(
                             FieldChange(
                                 "更新",
                                 "编辑于",
-                                java.text.SimpleDateFormat("HH:mm").format(java.util.Date())
+                                java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date())
                             )
                         )
                     } else {

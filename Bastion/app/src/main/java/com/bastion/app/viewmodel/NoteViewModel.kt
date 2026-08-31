@@ -42,6 +42,7 @@ import com.bastion.app.util.ImageManager
 import com.bastion.app.utils.OperationLogger
 import com.bastion.app.utils.FieldChange
 import com.bastion.app.utils.KeePassKdbxService
+import java.util.Locale
 import java.util.Date
 import java.util.UUID
 
@@ -440,7 +441,7 @@ class NoteViewModel(
                         FieldChange(
                             "更新",
                             "编辑于",
-                            java.text.SimpleDateFormat("HH:mm").format(Date())
+                            java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                         )
                     )
                 } else {

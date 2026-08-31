@@ -1,6 +1,7 @@
 package com.bastion.app.ui.components
 
 import com.bastion.app.logging.runCatchingObserved
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -737,6 +738,10 @@ private fun ManualInputDialog(
  * - 错误处理：更详细的错误信息
  * - 文件优化：更清晰的报告格式
  */
+// Android 11 (API 30) 起受包可见性限制，getInstalledApplications 返回的列表可能不包含全部应用。
+// 这是诊断报告导出功能（非核心路径），申请 QUERY_ALL_PACKAGES 会引入应用商店审核风险，
+// 故此处只抑制告警，并在报告头部明确标注该限制。
+@SuppressLint("QueryPermissionsNeeded")
 private suspend fun exportAppListToFile(context: Context, currentList: List<AppInfo>) = withContext(Dispatchers.IO) {
     try {
         // 显示加载提示
@@ -760,6 +765,8 @@ private suspend fun exportAppListToFile(context: Context, currentList: List<AppI
         sb.appendLine("╔════════════════════════════════════════════════════════╗")
         sb.appendLine("║           Bastion 应用列表诊断报告                      ║")
         sb.appendLine("╚════════════════════════════════════════════════════════╝")
+        sb.appendLine()
+        sb.appendLine("⚠️ Android 11 (API 30) 起受包可见性限制，本列表可能不包含全部已安装应用。")
         sb.appendLine()
         sb.appendLine("📅 生成时间: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}")
         sb.appendLine("📱 设备品牌: ${android.os.Build.BRAND}")

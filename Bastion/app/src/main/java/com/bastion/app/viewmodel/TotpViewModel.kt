@@ -1373,7 +1373,7 @@ class TotpViewModel(
                     itemId = id,
                     itemTitle = title,
                     changes = if (changes.isEmpty()) {
-                        listOf(FieldChange("更新", "编辑于", java.text.SimpleDateFormat("HH:mm").format(Date())))
+                        listOf(FieldChange("更新", "编辑于", java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())))
                     } else {
                         changes
                     }

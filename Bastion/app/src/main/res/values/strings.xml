@@ -1,4 +1,4 @@
-    <resources>
+    <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Bastion</string>
     <string name="app_label">Bastion</string>
     
@@ -1897,7 +1897,6 @@
     <!-- Permission Names -->
     <string name="permission_biometric_name">生物识别认证</string>
     <string name="permission_camera_name">相机</string>
-    <string name="permission_storage_name">存储访问</string>
     <string name="permission_internet_name">互联网访问</string>
     <string name="permission_network_state_name">网络状态</string>
     <string name="permission_vibrate_name">振动</string>
@@ -1910,7 +1909,6 @@
     <!-- Permission Descriptions -->
     <string name="permission_biometric_description">用于：指纹/面部解锁</string>
     <string name="permission_camera_description">用于：扫描TOTP验证器的二维码</string>
-    <string name="permission_storage_description">用于：保存导出的数据和图片</string>
     <string name="permission_internet_description">用于：WebDAV备份和同步</string>
     <string name="permission_network_state_description">用于：检查网络连接状态</string>
     <string name="permission_vibrate_description">用于：验证器的触觉反馈</string>
@@ -3568,8 +3566,8 @@
     <string name="autofill_v2_default_bitwarden_desc">Limit default suggestions and list items to one Bitwarden vault.</string>
     <string name="autofill_v2_default_bitwarden_title">Default Bitwarden vault</string>
     <string name="bank_cards">Bank Cards</string>
-    <string name="batch_delete_message">Delete %d items?</string>
-    <string name="batch_delete_notes_message">Delete %1$d selected notes?</string>
+    <string name="batch_delete_message" tools:ignore="PluralsCandidate">确定删除选中的 %d 项吗？</string>
+    <string name="batch_delete_notes_message" tools:ignore="PluralsCandidate">确定删除选中的 %1$d 条笔记吗？</string>
     <string name="batch_delete_notes_title">Delete Notes</string>
     <string name="batch_delete_title">Batch Delete</string>
     <string name="category_all">All</string>
@@ -3660,9 +3658,9 @@
     <string name="previous">Previous</string>
     <string name="qr_authenticator_added">Authenticator added: %1$s</string>
     <string name="qr_authenticator_duplicate">Authenticator already exists: %1$s</string>
-    <string name="qr_authenticator_migration_result">Imported %1$d authenticators, skipped %2$d duplicates, failed %3$d items.</string>
+    <string name="qr_authenticator_migration_result" tools:ignore="PluralsCandidate">已导入 %1$d 个验证器，跳过 %2$d 个重复项，%3$d 项导入失败。</string>
     <string name="qr_invalid_authenticator">Invalid QR code. Please scan a valid authenticator QR code.</string>
-    <string name="qr_migration_multiple_fill_first">This migration QR contains %1$d authenticators. Filled the first one only.</string>
+    <string name="qr_migration_multiple_fill_first" tools:ignore="PluralsCandidate">该迁移二维码包含 %1$d 个验证器，本次仅填入第一个。</string>
     <string name="qr_phonefactor_not_supported">PhoneFactor QR code is not supported yet.</string>
     <string name="reset_all_data">Reset All Data</string>
     <string name="search_notes">Search notes</string>
@@ -3674,8 +3672,8 @@
     <string name="sso_login_btn">登录</string>
     <string name="sso_login_title">第三方账号登录</string>
     <string name="sso_ref_account">关联账号</string>
-    <string name="timeline_restore_snapshot_result">Snapshot restored: %1$d passwords and %2$d items deleted; %3$d passwords and %4$d items restored</string>
-    <string name="timeline_restore_snapshot_result_legacy">Snapshot restored (legacy mode): deleted %1$d passwords, %2$d secure items</string>
+    <string name="timeline_restore_snapshot_result" tools:ignore="PluralsCandidate">快照已恢复：删除 %1$d 条密码、%2$d 个条目；恢复 %3$d 条密码、%4$d 个条目</string>
+    <string name="timeline_restore_snapshot_result_legacy" tools:ignore="PluralsCandidate">快照已恢复（兼容模式）：删除 %1$d 条密码、%2$d 个凭据条目</string>
     <string name="use_sso">使用</string>
     <string name="v2_create_card">Card</string>
     <string name="v2_create_identity">Identity</string>
