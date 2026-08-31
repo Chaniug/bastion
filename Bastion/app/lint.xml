@@ -8,4 +8,7 @@
     <issue id="ChromeOsAbiSupport" severity="ignore"/>
     <issue id="AndroidGradlePluginVersion" severity="ignore"/>
     <issue id="AppBundleLocaleChanges" severity="ignore"/>
+    <!-- NewerVersionAvailable：联网查 MavenCentral 版本提示，项目版本单独排期；
+         忽略后既消提示也避免每次 lint 联网拖慢（尤其低配机器） -->
+    <issue id="NewerVersionAvailable" severity="ignore"/>
 </lint>
