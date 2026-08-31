@@ -38,7 +38,7 @@ object BitwardenSyncNotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(summary.buildHeadline(context))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

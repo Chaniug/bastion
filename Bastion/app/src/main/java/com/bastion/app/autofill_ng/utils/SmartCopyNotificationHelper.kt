@@ -79,7 +79,7 @@ object SmartCopyNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(context.getString(R.string.smart_copy_notification_title))
             .setContentText(notificationText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -61,7 +61,7 @@ object MainThreadStallMonitor {
         }
         mainHandler.post(heartbeat)
 
-        executor.scheduleAtFixedRate(
+        executor.scheduleWithFixedDelay(
             ::checkMainThread,
             CHECK_INTERVAL_MS,
             CHECK_INTERVAL_MS,

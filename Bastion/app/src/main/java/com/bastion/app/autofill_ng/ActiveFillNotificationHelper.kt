@@ -74,7 +74,7 @@ object ActiveFillNotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(context.getString(R.string.autofill_active_fill_notification_content_title))
             .setContentText(
                 context.getString(R.string.autofill_active_fill_notification_content_text, appName)
