@@ -247,7 +247,7 @@ fun BarcodeDetailScreen(
                                 ClipboardUtils.copyToClipboard(
                                     context = context,
                                     text = payload,
-                                    label = stringResource(R.string.barcode_payload_label),
+                                    label = context.getString(R.string.barcode_payload_label),
                                     sensitive = true
                                 )
                                 Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
