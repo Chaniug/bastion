@@ -3595,7 +3595,9 @@
     <string name="import_data_keepass_tip_kdf_memory">KDF memory is too high for this device. Lower Argon2 memory/parallelism and retry.</string>
     <string name="import_data_keepass_tip_legacy_kdb">Open this file in KeePassDX or KeePassXC and save it as .kdbx, then import again.</string>
     <string name="import_data_keepass_tip_permission">Re-select the database or key file and grant read permission again.</string>
-    <string name="import_data_keepass_tip_format_version_too_new">This database uses a KDBX version or cipher this version does not support yet. Update Bastion, or re-save it as standard KDBX 3.1 / 4.x in KeePassXC and retry.</string>
+    <!-- lint TypographyFractions 误报：这里 "3.1 / 4.x" 是 KDBX 版本号区间，并非分数 1/4，
+         不能替换成 ¼ 字符（会破坏语义），故忽略该项。 -->
+    <string name="import_data_keepass_tip_format_version_too_new" tools:ignore="TypographyFractions">This database uses a KDBX version or cipher this version does not support yet. Update Bastion, or re-save it as standard KDBX 3.1 / 4.x in KeePassXC and retry.</string>
     <string name="import_data_keepass_tip_format_not_kdbx">This is not a valid KDBX database. Make sure you selected a .kdbx file and re-fetch a complete copy from its source.</string>
     <string name="import_data_keepass_tip_format_corrupted">The database file is damaged (content parsing failed). Use a backup copy, or repair it in KeePassXC and retry.</string>
     <string name="import_data_keepass_tip_challenge_response">This database is encrypted with hardware-key (YubiKey etc.) Challenge-Response, which is not supported yet. Re-save it with "password + key file" in KeePassXC and retry.</string>
