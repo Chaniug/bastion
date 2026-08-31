@@ -49,7 +49,7 @@ internal object PasswordBatchTransferNotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(notificationTitle(context, action))
             .setContentText(contentText)
             .setStyle(NotificationCompat.BigTextStyle().bigText("$progressText\n$contentText"))
@@ -98,7 +98,7 @@ internal object PasswordBatchTransferNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(completedTitle(context, action))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

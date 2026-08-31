@@ -42,7 +42,7 @@ internal object PasswordBatchDeleteNotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(context.getString(R.string.batch_delete_settings_card_title))
             .setContentText(progressText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(progressText))
@@ -90,7 +90,7 @@ internal object PasswordBatchDeleteNotificationHelper {
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(context))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle(context.getString(R.string.batch_delete_notification_done))
             .setContentText(detailText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))

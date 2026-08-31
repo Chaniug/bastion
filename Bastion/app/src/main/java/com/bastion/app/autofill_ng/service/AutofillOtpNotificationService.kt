@@ -235,7 +235,7 @@ class AutofillOtpNotificationService : Service() {
         }.getOrDefault(getString(R.string.copy))
 
         return builder
-            .setSmallIcon(AppLauncherIconManager.resolveBrandingIconRes(this))
+            .setSmallIcon(AppLauncherIconManager.resolveNotificationSmallIconRes())
             .setContentTitle("$title (${remainingSeconds}s)")
             .setContentText(spannable)
             .setStyle(Notification.BigTextStyle().bigText(spannable))

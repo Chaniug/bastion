@@ -51,6 +51,20 @@ object AppLauncherIconManager {
         }
     }
 
+    /**
+     * 通知小图标专用资源。
+     *
+     * Android 状态栏/通知的小图标只取 alpha 通道做单色化：alpha 覆盖到的区域被整体涂成
+     * 主题色，RGB 一律忽略。自适应图标（`@mipmap/ic_launcher_modern`）合成后至少覆盖背景
+     * 层的整个正方形，旧版背景层是纯透明（alpha 全 0）时小图标恰好只剩爪印轮廓；
+     * 「琥珀守护」方案的背景层是**不透明**的深色玻璃底，若继续用它当 smallIcon，
+     * 小图标会被单色化成一块实心方块。
+     *
+     * 因此通知小图标改用 monochrome 层——它本就是「纯白剪影 + alpha」，
+     * 正是 smallIcon 需要的形态。
+     */
+    fun resolveNotificationSmallIconRes(): Int = R.drawable.ic_launcher_monochrome
+
     fun applyBiometricPromptBranding(context: Context, promptInfoBuilder: Any) {
         val builderClass = promptInfoBuilder.javaClass
         val iconRes = resolveBrandingIconRes(context)
