@@ -1,7 +1,8 @@
 # Lint 债务清理计划
 
 > 生成时间：2026-08-31
-> 数据来源：`Bastion/app/lint-baseline.xml`（快照提交 `a4e77a8e`，2026-08-31 00:07）
+> 数据来源：`Bastion/app/lint-baseline.xml`（初版快照 `a4e77a8e`）
+> **最新状态（2026-08-31 晚更新）：baseline 已重生两次，现存 1734 条 / 13 种，见 [八、执行进度](#八执行进度总览2026-08-31-晚更新)**。
 > 相关文档：[分支合并与发版流程](./分支合并与发版流程.md) · [依赖升级计划](./dependency-upgrade-plan-2026-08.md)
 
 ---
@@ -25,9 +26,9 @@
 
 | 事实 | 值 | 影响 |
 |------|-----|------|
-| baseline 条目总数 | 1925 | 存量债规模 |
-| issue 种类 | 42 | — |
-| baseline 快照提交 | `a4e77a8e`（08-31 00:07，bot 生成） | **早于** 08-31 00:35 的 `2361b3eb` 修复批次 |
+| baseline 条目总数 | **1723**（regen#2 后实测，commit `c90916d`） | 存量债规模 |
+| issue 种类 | **9**（初版 42 → regen#1 后 13 → regen#2 后 9） | 大量小类已清零 |
+| baseline 快照提交 | regen#2 → `c90916d`（08-31，bot 生成） | 已晚于全部修复批次，**当前无僵尸条目** |
 | lint 触发时机 | `github.event_name != 'push'` | **PR / 手动触发才跑**，push 到 dev 跳过 |
 | release `shrinkResources` | `!disableMinify`（已开） | 无用资源不进最终 APK |
 | lint 失败是否阻断 | 是（PR 门禁） | 新增问题会卡 PR，存量被 baseline 压住不报 |
@@ -39,21 +40,23 @@
 - 反过来，代码修好了但 baseline 没更新 → 条目会变成"僵尸条目"，统计虚高。
   **这正是当前的状态。**
 
-### 1.3 ⚠️ 已修复但 baseline 未更新的 38 条
+### 1.3 ✅ 那 38 条僵尸已清除；当前新一批僵尸 11 条（等 regen#2）
 
-`2361b3eb`（fix(lint): 修复 38 处正确性问题）改动的 4 类问题，与 baseline 中的条目**逐条对应、数量完全吻合**：
+`2361b3eb` 的 38 条（`NewApi` 13 / `StaticFieldLeak` 8 / `NonObservableLocale` 9 / `ConfigurationScreenWidthHeight` 8）
+已在 **regen#1**（`13a5cf5`）被剪除，无需再动。
 
-| issue id | baseline 条数 | 说明 |
-|----------|--------------|------|
-| `NewApi` | 13 | 未判版本调用 API 34/30/29/28/27 |
-| `StaticFieldLeak` | 8 | 静态字段持有 Context |
-| `NonObservableLocale` | 9 | Compose 中非可观察方式读 locale |
-| `ConfigurationScreenWidthHeight` | 8 | 用 `screenHeightDp` 而非 `LocalWindowInfo` |
-| **合计** | **38** | 与提交信息「修复 38 处」一致 |
+之后又做了 4 批修复，代码已改但 baseline 未重生 → 形成**新一批僵尸条目 11 条**：
 
-已验证：**38/38 条**所在文件全部出现在 `2361b3eb` 的改动清单里。
+| issue id | 当前 baseline 条数 | 修复提交 |
+|----------|------------------:|----------|
+| `TypographyDashes` | 6 | `065c2d8`（数字范围连字符改 en dash U+2013） |
+| `ObsoleteSdkInt` | 3 | `736b096`（`FillResponseBuilderNg` 两处恒真判断 + `mipmap-anydpi-v26`→`mipmap-anydpi`） |
+| `UnsafeOptInUsageError` | 1 | `736b096`（`imageProxyToBitmap` 补 `@SuppressLint`） |
+| `TypographyFractions` | 1 | `736b096`（`KDBX 3.1 / 4.x` 是版本号，加 `tools:ignore`） |
+| **合计** | **11** | regen#2（`33406203977`）跑完即清零 |
 
-> **结论：这 38 条不需要再动，重生成 baseline 即可消失。**
+> **结论：这 11 条不需要再动，regen#2 重生成 baseline 即可消失。**
+> 判据：都在「代码已改 / baseline 未重生」状态，不是漏改。
 
 ---
 
@@ -61,64 +64,116 @@
 
 按「风险 × 收益」排序，不是按数量排序。
 
-### P0 — 安全（2 条，其中 1 条是误报）
+### P0 — 安全（当前 1 条）
 
 | issue id | 数量 | 位置 | 结论 |
 |----------|-----:|------|------|
-| `AcceptsUserCertificates` | 1 | `res/xml/network_security_config.xml:30` | **真问题**，见 3.1 |
-| `CustomX509TrustManager` | 1 | `bitwarden/api/BitwardenApiFactory.kt:442` | **误报**，已核实，见 3.2 |
+| `AcceptsUserCertificates` | 1 | `res/xml/network_security_config.xml:30` | **真问题**，用户明确**跳过**（会影响自签 CA 抓包），见 3.1 |
+| `CustomX509TrustManager` | 0 | — | ✅ 已加 `@SuppressLint` + 说明注释（`25c43cb`），已清零 |
 
-### P1 — 真功能问题（19 条，量小收益高）
+### P1 — 真功能问题（✅ 已全部清零）
 
-| issue id | 数量 | 风险 |
-|----------|-----:|------|
-| `QueryPermissionsNeeded` | 1 | Android 11+ 应用列表拿不全 → 选不到目标 App |
-| `SelectedPhotoAccess` | 1 | Android 14+ 部分照片访问未适配 |
-| `PluralsCandidate` | 6 | 英文单复数写死，本地化错误 |
-| `SimpleDateFormat` | 4 | 未走本地化格式 |
-| `ConstantLocale` | 2 | 硬编码 Locale |
-| `UnsafeOptInUsageError` | 1 | CameraX `ExperimentalGetImage` 未标注 |
-| `InlinedApi` | 4 | 内联 API 常量，需版本判断或抑制 |
+baseline 重生后 P1 **已归零**（原 19 条全部消灭）。清单保留作历史记录：
 
-### P2 — Compose 正确性（约 678 条，机械替换）
+| issue id | 原数量 | 现状 |
+|----------|-------:|------|
+| `QueryPermissionsNeeded` | 1 | ✅ 已修 |
+| `SelectedPhotoAccess` | 1 | ✅ 已修 |
+| `PluralsCandidate` | 6 | ✅ 已修 |
+| `SimpleDateFormat` | 4 | ✅ 已修 |
+| `ConstantLocale` | 2 | ✅ 已修 |
+| `UnsafeOptInUsageError` | 1 | ⚠️ 代码已加 `@SuppressLint`，baseline 剩 1 条僵尸（regen#2 剪除） |
+| `InlinedApi` | 4 | ✅ 已修 |
 
-| issue id | 数量 | 说明 |
-|----------|-----:|------|
-| `LocalContextGetResourceValueCall` | 641 | `LocalContext.current` 取资源，不随语言/主题重组 |
-| `ModifierParameter` | 33 | Modifier 应为首个可选参数、命名 `modifier` |
-| `ModifierFactoryExtensionFunction` | 4 | Modifier 扩展函数规范 |
+### P2 — Compose 正确性（当前 565 条，机械替换）
+
+| issue id | 当前数量 | 说明 |
+|----------|---------:|------|
+| `LocalContextGetResourceValueCall` | 565 | `LocalContext.current` 取资源，不随语言/主题重组（原 641） |
+| `ModifierParameter` | 0 | ✅ 已修 33 处（`4b325f05`） |
+| `ModifierFactoryExtensionFunction` | 0 | ✅ 已修 4 处（`4b325f05`） |
+
+`LocalContextGetResourceValueCall` 的 565 条按处置策略分三档（**仅第三档值得动手**）：
+- **Toast 类 ~47 条**：值被立即消费，无需重组 → **非 bug，保留抑制**；
+- **一次性消费 ~43 条**（保存 / 比较 / 回调）：同上 → **保留抑制**；
+- **待人工复核 ~373 条**：需逐文件确认 `stringResource` 作用域后再改。
+
+集中度很高，适合按文件切批（前 5 个文件占 258/565 = 46%）：
+
+| 文件 | 条数 |
+|------|-----:|
+| `ui/screens/SettingsScreen.kt` | 122 |
+| `ui/screens/WebDavBackupScreen.kt` | 56 |
+| `ui/screens/ImportDataScreen.kt` | 29 |
+| `ui/screens/PasskeyListScreen.kt` | 28 |
+| `ui/screens/OneDriveBackupScreen.kt` | 23 |
 
 ### P3 — API 规范（184 条）
 
 | issue id | 数量 | 说明 |
 |----------|-----:|------|
-| `RestrictedApi` | 91 | 用了 `@RestrictTo` API，升级可能失效 |
-| `UseKtx` | 87 | 可用 KTX 扩展替代 |
-| `TypographyDashes` | 6 | 排版连字符规范 |
+| `RestrictedApi` | 91 | 用了 `@RestrictTo` API，**89/91 集中在单个文件**，见下方专节 |
+| `UseKtx` | 87 | 可用 KTX 扩展替代 → **本项目不可修**，见下方专节 |
+| `TypographyDashes` | 6 | ⚠️ 僵尸：`065c2d8` 已修，regen#2 剪除 |
 
-### P4 — 清理噪音（982 条，**不影响 APK 体积**）
+#### `RestrictedApi` 专节（重要发现：不是"等依赖升级"，而是可就地消解）
+
+按文件分布统计：
+
+| 文件 | 条数 | 涉及 API |
+|------|-----:|----------|
+| `ui/theme/CustomColorSchemeGenerator.kt` | **89** | Material 内部配色 API：`Hct` / `TonalPalette` / `DynamicScheme` / `DynamicColor` / `MaterialDynamicColors.*` |
+| `autofill_ng/builder/AutofillDatasetBuilder.kt` | 2 | `SlicedContent.getSlice`（`androidx.autofill` internal） |
+
+**结论修正（推翻原 Phase 4「与依赖升级联动」的判断）**：
+这些 API 是 `@RestrictTo(LIBRARY_GROUP)` 的**永久性限制**，升级 Material 版本**不会**把它们变公开 —— 等依赖升级是等不到的。
+且 Compose 的"由种子色生成 Material3 配色"官方并无公开 API（`dynamicXxxColorScheme` 只吃系统壁纸色），
+社区通行做法就是直接调 `Hct`/`TonalPalette`。
+
+故 **91 条的正确处置 = 就地 `@SuppressLint("RestrictedApi")` + 注释说明**（零行为变更，仅失去一条升级预警）：
+- `CustomColorSchemeGenerator.kt` 加 `@file:SuppressLint("RestrictedApi")`；
+- `AutofillDatasetBuilder.kt` 加方法级抑制；
+- 注释里写明"Material 版本升级时须回归自定义配色"，把预警从 lint 转移到注释。
+
+#### `UseKtx`（87）— 本项目**不可修**
+
+`app/build.gradle:474` 有 `exclude group: 'androidx.core', module: 'core-ktx'`，
+`:app` 故意排除了 core-ktx → `toUri` / `scale` / `toColorInt` / `createBitmap` / `SharedPreferences.edit`
+等扩展**不在编译路径上**。曾尝试转换 8 个文件，编译直接报 `Unresolved reference 'toUri'`，已全部回滚。
+
+> **结论：UseKtx 保持 baseline 抑制。要修需先引入 core-ktx（架构级改动，须单独决策）。**
+
+### P4 — 清理噪音（当前 978 条，**不影响 APK 体积**）
 
 | issue id | 数量 | 说明 |
 |----------|-----:|------|
-| `UnusedResources` | 887 | 其中 `values/strings.xml` 852 条 |
-| `UnusedAttribute` | 84 | XML 未使用属性 |
-| 依赖类（`GradleDependency` / `NewerVersionAvailable` / `UseTomlInstead` / `AndroidGradlePluginVersion`） | 11 | 见[依赖升级计划](./dependency-upgrade-plan-2026-08.md) |
+| `UnusedResources` | 887 | 其中 `values/strings.xml` 852 条 → **决策：保持抑制，不动**（见 七.3） |
+| `UnusedAttribute` | 84 | 前向兼容属性（`maxLongVersionCode` / `enableOnBackInvokedCallback` / `supportsInlineSuggestions`），删则丢特性 → **保持抑制** |
+| 依赖类（`GradleDependency` 5 / `UseTomlInstead` 2） | 7 | 见[依赖升级计划](./dependency-upgrade-plan-2026-08.md)。`NewerVersionAvailable` 与 `AndroidGradlePluginVersion` 已在 `app/lint.xml` 忽略 |
 
-### 零散杂项（22 条，17 种，每种 1~3 条）
+### 零散杂项（当前 6 条；原 22 条 17 种已消掉 11 种）
 
-都是零散单项，单独看都不紧急，攒到某一批顺手清掉即可：
+| 已清零（✅） | 原数量 | 处置 |
+|-------------|-------:|------|
+| `IntentFilterUniqueDataAttributes` | 3 | ✅ |
+| `PrivateApi` / `DiscouragedApi` / `EmptySuperCall` / `LaunchActivityFromNotification` | 1+2+1+1 | ✅ `25c43cb` 加 `@SuppressLint` |
+| `StartActivityAndCollapseDeprecated` | 1 | ✅ |
+| `AppBundleLocaleChanges` / `ChromeOsAbiSupport` / `AndroidGradlePluginVersion` | 各 1 | ✅ `app/lint.xml` 忽略（非 Play 分发） |
+| `RedundantLabel` / `PrivateResource` | 各 1 | ✅ |
+| `ExportedContentProvider` / `DataExtractionRules` | 各 1 | ✅ debug manifest 补 `exported=false` + 新建 `backup_rules.xml` / `data_extraction_rules.xml` |
+| `Overdraw` | 1 | ✅ `autofill_manual_card.xml` 去冗余 `windowBackground` |
+| `Typos`（DNS1 误报） | 1 | ✅ `strings.xml` 加 `tools:ignore` |
+| `RedundantNamespace` | 1 | ✅ `828f9b2` 去冗余 `xmlns:tools` |
+| `NewApi` / `StaticFieldLeak` / `NonObservableLocale` / `ConfigurationScreenWidthHeight` | 38 | ✅ `2361b3eb` + regen#1 剪除 |
 
-| issue id | 数量 | issue id | 数量 |
-|----------|-----:|----------|-----:|
-| `IntentFilterUniqueDataAttributes` | 3 | `EmptySuperCall` | 1 |
-| `ObsoleteSdkInt` | 3 | `PrivateApi` | 1 |
-| `DiscouragedApi` | 2 | `StartActivityAndCollapseDeprecated` | 1 |
-| `AppBundleLocaleChanges` | 1 | `RedundantLabel` | 1 |
-| `PrivateResource` | 1 | `Typos` | 1 |
-| `ChromeOsAbiSupport` | 1 | `HardwareIds` | 1 |
-| `ExportedContentProvider` | 1 | `DataExtractionRules` | 1 |
-| `LaunchActivityFromNotification` | 1 | `Overdraw` | 1 |
-| `TypographyFractions` | 1 | | |
+**剩余 6 条**：
+
+| issue id | 数量 | 处置 |
+|----------|-----:|------|
+| `ObsoleteSdkInt` | 3 | ⚠️ 僵尸（`736b096` 已修），regen#2 剪除 |
+| `UnsafeOptInUsageError` | 1 | ⚠️ 僵尸（`736b096` 加 `@SuppressLint`），regen#2 剪除 |
+| `TypographyFractions` | 1 | ⚠️ 僵尸（`736b096` 加 `tools:ignore`），regen#2 剪除 |
+| `HardwareIds` | 1 | 用户决策**跳过**（操作日志带设备 ID 属隐私取舍） |
 
 其中两个值得单独看一眼：
 
@@ -128,19 +183,23 @@
 
 ### 总账（重生成 baseline 后可据此自查）
 
+**当前实际分布（2026-08-31 晚，regen#2 后实测 baseline 1723 条，僵尸已清零）**：
+
 ```
-P0 安全          2
-P1 功能         19
-P2 Compose     678
-P3 API 规范    184
-P4 清理        982
-零散杂项        22
+P0 安全          1   ← AcceptsUserCertificates（用户决策跳过）
+P1 功能          0   ← ✅ 全部清零（PluralsCandidate / SimpleDateFormat / ConstantLocale /
+                        QueryPermissionsNeeded / SelectedPhotoAccess / InlinedApi 等已消灭）
+P2 Compose     565   ← LocalContextGetResourceValueCall（ModifierParameter 33 已清零）
+P3 API 规范    178   ← RestrictedApi 91 + UseKtx 87
+P4 清理        978   ← UnusedResources 887 + UnusedAttribute 84 + 依赖类 7
+零散杂项          1   ← HardwareIds（用户决策跳过）
 ──────────────────
-真实剩余      1887
-已修待重生成     38
-──────────────────
-baseline 总计 1925
+baseline 总计 1723   ← 全部为"已决策保留"或"待排期"，无僵尸
 ```
+
+9 个 issue 种类：`UnusedResources` 887 / `LocalContextGetResourceValueCall` 565 /
+`RestrictedApi` 91 / `UseKtx` 87 / `UnusedAttribute` 84 / `GradleDependency` 5 /
+`UseTomlInstead` 2 / `HardwareIds` 1 / `AcceptsUserCertificates` 1。
 
 自查脚本（在 `Bastion/app` 目录下跑）：
 
@@ -272,19 +331,21 @@ cd Bastion
 
 ### Phase 1 — P0 安全（2 条）
 
-- [ ] 3.1 `network_security_config.xml` 改 `debug-overrides`
-- [ ] 3.2 `BitwardenApiFactory` 加 `@SuppressLint` + 说明注释
-- [ ] 真机验证：release 包 + 用户 CA 抓包，确认不再信任
+- [x] 3.2 `BitwardenApiFactory` 加 `@SuppressLint` + 说明注释（`25c43cb`，误报已核实）→ **已清零**
+- [ ] 3.1 `network_security_config.xml` 改 `debug-overrides` → **用户决策：跳过**
+      理由：会改变 release 信任行为，影响自签 CA 连自托管 Bitwarden 抓包。
+      若日后要收窄，替代方案见 3.1 末段（保留 user CA 但只在自托管域名放行）。
 
-### Phase 2 — P1 功能（约 15 条）
+### Phase 2 — P1 功能（✅ 已全部清零）
 
-- [ ] `QueryPermissionsNeeded`：`AndroidManifest.xml` 补 `<queries>`，否则 Android 11+ 的
-      `AppSelector` 拿不全应用列表（影响自动填充/关联 App）
-- [ ] `SelectedPhotoAccess`：适配 Android 14+ Photo Picker
-- [ ] `UnsafeOptInUsageError`：`QrCameraScanSession.kt:252` 加 `@OptIn(ExperimentalGetImage::class)`
-- [ ] `PluralsCandidate`（6）：改 `<plurals>`
-- [ ] `SimpleDateFormat`（4）+ `ConstantLocale`（2）：改 `DateFormat.getDateTimeInstance()` / 去掉硬编码 Locale
-- [ ] `InlinedApi`（4）：补版本判断或抑制
+- [x] `QueryPermissionsNeeded`：`AndroidManifest.xml` 补 `<queries>`
+- [x] `SelectedPhotoAccess`：适配 Android 14+ Photo Picker
+- [x] `PluralsCandidate`（6）：改 `<plurals>`
+- [x] `SimpleDateFormat`（4）+ `ConstantLocale`（2）
+- [x] `InlinedApi`（4）：补版本判断或抑制
+- [x] `UnsafeOptInUsageError`：`736b096` 补 `@SuppressLint`（lint 不识别 `@OptIn`）→ 剩 1 条僵尸，regen#2 剪除
+
+> 以上均在 regen#1 之前的批次完成，regen#1 后 baseline 中 P1 已归零。
 
 ### Phase 3 — P2 Compose 正确性（约 678 条）
 
@@ -345,11 +406,15 @@ preview 预览包已发布：`Development Preview (build.202608310607)`。
 > 注：5.2「必须走 PR」已过时——`gh workflow run "Android CI debug" --ref dev`
 > （manual dispatch）同样会跑 lint，本批次即用此法在 push 后验证。
 
-### Phase 4 — P3 API 规范（约 178 条）
+### Phase 4 — P3 API 规范（184 条）
 
-`RestrictedApi`（91）+ `UseKtx`（87）。
-建议**与依赖升级联动**做——升级 androidx/material 版本时顺带处理，
-单独做的话改完可能下次升级又冒出来。参考[依赖升级计划](./dependency-upgrade-plan-2026-08.md)。
+- [x] `TypographyDashes`（6）→ `065c2d8` 已修，剩僵尸，regen#2 剪除
+- [ ] **`RestrictedApi`（91）→ ✅ 下一批就做这个（见 P3 专节）**
+      89 条集中在一个文件 `CustomColorSchemeGenerator.kt`，是 Material 内部配色 API
+      （`Hct` / `TonalPalette` / `MaterialDynamicColors.*`），属 `@RestrictTo(LIBRARY_GROUP)`
+      **永久限制，升依赖也不会变公开** → 处置是就地 `@SuppressLint` + 注释，零行为变更、一次性清 91 条。
+- [ ] `UseKtx`（87）→ **不可修**：`:app` 排除了 `core-ktx`（`build.gradle:474`），
+      改了编译不过（`Unresolved reference 'toUri'`）。要修需先引入 core-ktx，属架构级改动，须单独决策。
 
 ### Phase 5 — P4 清理（约 971 条，可低优先）
 
@@ -419,7 +484,11 @@ cd Bastion
 | **`CustomX509TrustManager` 是误报** | 别把正确的委托实现"修"坏了，见 3.2 |
 | **改 `ModifierParameter` 单独一批** | 函数签名改动大，混在一起 review 不动 |
 | **`stringResource` 不能进 `() -> Unit` 回调** | `biometricHelper.authenticate` / `onClick` / `remember {}` / `clickable {}` / `val x = { }` 等普通 lambda 内只能用 `context.getString`，否则 `assembleDebug` 编译失败（本次 `58bc5ce9` 误伤 3 处 biometric 回调，已 `96352d9a` 还原） |
-| **P3 与依赖升级联动** | 单独改完，下次升级依赖可能又冒出来 |
+| **P3 与依赖升级联动** | ⚠️ **此条已过时**：`RestrictedApi` 89 条是 Material `@RestrictTo(LIBRARY_GROUP)` 永久限制，升依赖也不会变公开 → 改为就地 `@SuppressLint` 消解（见 P3 专节）。仅 `UseKtx` 87 确实依赖 core-ktx 引入决策 |
+| **8GB 机器别本地跑 `lintDebug`** | 完整 `lintDebug` 需 ~5.5GB 堆，本机只有 8GB → swap/OOM 假死。迭代期用 `compileDebugKotlin`（~23s），baseline 重生交给 CI |
+| **本机 CRLF 会让 `*GuardTest` 假失败** | `core.autocrlf = true` 导致多行文本断言读到 `\r\n`。判别法：失败集中在多行断言 + 对应源文件 `git diff` 为空 → 假象，以 CI（LF）为准 |
+| **Kotlin LSP 不可信** | LSP 对「逗号分隔 import」等语法错误不报。改 Kotlin 后必须用真实 `gradle` 编译验证 |
+| **don't 查 lint 剩余项前先重新统计 baseline** | regen 之后各项计数与旧记录差异很大，拿旧数字排期会做无用功 |
 
 ---
 
@@ -449,3 +518,62 @@ cd Bastion
 
 4. **`raw/eff_short_wordlist.txt` 未使用**——是历史遗留该删，还是有功能没接上？
    这个需要你确认，我不敢擅自删。
+
+---
+
+## 八、执行进度总览（2026-08-31 晚更新）
+
+### 8.1 baseline 演进
+
+| 节点 | baseline 条目 | 说明 |
+|------|-------------:|------|
+| 初版快照 `a4e77a8e` | 1925 | 含 38 条僵尸 |
+| regen#1（`13a5cf5`，run `33389229711`） | ~1751 | 剪 38 条僵尸 + P1/P2 修复生效 |
+| 后续 4 批修复后 | **1734** | 代码已改、baseline 未重生 → 新一批 11 条僵尸 |
+| **regen#2（`c90916d`，run `33406203977`）** | **1723** ✅ | 6m31s 完成，净减 117 行。剪除 `TypographyDashes` 6 / `ObsoleteSdkInt` 3 / `UnsafeOptInUsageError` 1 / `TypographyFractions` 1，**僵尸全部清零** |
+
+**regen#2 后的 9 个种类**（合计 1723）：
+`UnusedResources` 887、`LocalContextGetResourceValueCall` 565、`RestrictedApi` 91、`UseKtx` 87、
+`UnusedAttribute` 84、`GradleDependency` 5、`UseTomlInstead` 2、`HardwareIds` 1、`AcceptsUserCertificates` 1。
+
+### 8.2 批次执行记录（regen#1 之后）
+
+| 提交 | 内容 | 条目影响 |
+|------|------|---------:|
+| `25c43cb` | 6 处 Kotlin `@SuppressLint`（CustomX509TrustManager / LaunchActivityFromNotification / EmptySuperCall / PrivateApi / DiscouragedApi / UseRequiresApi）+ `VaultV2Pane` 逗号 import 修复；Manifest 补 `InitializationProvider exported=false` + `dataExtractionRules`；新建 `app/lint.xml`（忽略 ChromeOS ABI / AGP 版本 / AppBundle 语言）；`ic_passkey` 加 `tools:override`；`autofill_manual_card` 去 `windowBackground`；`strings` DNS1 加 `Typos` 忽略 | ~13 |
+| `828f9b2` | 5 个 warning 清零：去冗余 `xmlns:tools`、补 `fullBackupContent` + `backup_rules.xml`、`lint.xml` 忽略 `NewerVersionAvailable` | 5 |
+| `065c2d8` | `TypographyDashes` 6 处数字范围连字符改 en dash（U+2013） | 6 |
+| `736b096` | `ObsoleteSdkInt` ×2（删除 `createForTiramisu`/`createPreTiramisu` 内恒真判断）+ `mipmap-anydpi-v26`→`mipmap-anydpi`；`TypographyFractions`、`UnsafeOptInUsageError` 加抑制 | 3 |
+| `8bc326a` | （非 lint）autofill 邻居提升回归修复 | — |
+| `fddd4e5` | （非 lint）启动器图标改为灰白玻璃底 + 金黄棱堡爪印 | — |
+
+### 8.3 环境约束（决定了"能验什么"）
+
+- 本机 **8GB 物理内存**，完整 `lintDebug` 需 ~5.5GB 堆 → **不要本地跑 `lintDebug`**（会 swap/OOM 假死）。
+- 迭代期用 `./gradlew.bat :app:compileDebugKotlin`（~23~45s）验语法即可。
+- `updateLintBaselineDebug` 交给 CI 的 `regenerate-lint-baseline.yml`（云端内存足）。
+- 本机 `core.autocrlf = true`，`*GuardTest` 有多行文本断言，**本地单测可能假失败**；
+  CI（Linux/LF）为准。判别法：失败集中在多行断言 + `git diff` 对应源文件无改动 → 是 CRLF 假象。
+
+### 8.4 下一步任务（已排定）
+
+**Next-1：`RestrictedApi`（91 条）就地抑制** —— 本批**收益最高、风险最低**。
+
+| 项 | 内容 |
+|----|------|
+| 目标 | `ui/theme/CustomColorSchemeGenerator.kt` 加 `@file:SuppressLint("RestrictedApi")` + 说明注释（89 条）；`autofill_ng/builder/AutofillDatasetBuilder.kt` 加方法级抑制（2 条） |
+| 风险 | **零行为变更**。仅把"Material 内部配色 API"的升级预警从 lint 转移到注释，需在注释里写明「Material 版本升级时须回归自定义配色」 |
+| 验证 | `:app:compileDebugKotlin` 通过即可（本机可跑） |
+| 收益 | 一次性清 91 条 → baseline 从 ~1723 降到 ~1632 |
+
+**Next-2（待 Next-1 之后）：`LocalContextGetResourceValueCall` 按文件切批**
+
+- 只动「待人工复核」档，跳过 Toast / 一次性消费（非 bug，见 P2 专节）。
+- 建议**单文件单批**，从集中度最高的 `ui/screens/SettingsScreen.kt`（122 条）开始。
+- ⚠️ **硬约束**：`stringResource` **不能**出现在 `() -> Unit` 回调 / `onClick` / `remember {}` / `clickable {}` / `val x = { }` 内，
+  否则 `assembleDebug` 编译失败（`58bc5ce9` 已踩、`96352d9a` 已还原）。
+- 每批改完必须 `compileDebugKotlin` 验证，攒 3~5 批再 regen。
+
+**不做（已决策）**：
+- `UnusedResources` 887、`UnusedAttribute` 84、`UseKtx` 87、`AcceptsUserCertificates` 1、`HardwareIds` 1 → 保持抑制。
+- 依赖升级类 7 条 → 走[依赖升级计划](./dependency-upgrade-plan-2026-08.md)，不与 lint 批次混做。
