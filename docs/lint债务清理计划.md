@@ -282,6 +282,33 @@ Text(stringResource(R.string.foo))
 `ModifierParameter`（33 条）同理，纯签名调整，风险低但会大面积改动函数签名，
 建议单独一批，避免与上面混在一起导致 review 困难。
 
+#### Phase 3 执行记录（2026-08-31）
+
+按用户「P2 你推荐来弄吧」的授权，**已完成可安全机械化的子集**，剩余项按风险分级暂挂：
+
+| 批次 | 提交 | 内容 | 数量 | baseline 处理 |
+|------|------|------|-----:|---------------|
+| Modifier 规范 | `4b325f05` | `ModifierParameter` 33 处参数重排到首位；`ModifierFactoryExtensionFunction` 4 处改为 `Modifier` 扩展函数 | 37 | 僵尸（待重生 baseline 清理） |
+| UI 渲染 | `58bc5ce9` | `LocalContextGetResourceValueCall` 中「在 @Composable 内且为 composable 直接文本参数」的 `context.getString` → `stringResource` | 85 | 僵尸 |
+
+**抽取方法论（避免误改非 composable 场景）**：
+- 用 composable 作用域感知扫描：只在 `@Composable fun` 的 body 区间内、且为
+  `Text()` / `label=` / `contentDescription=` / `title=` / `text=` / `placeholder=` 等
+  **直接参数值**的行替换；
+- 排除 Activity / autofill 构建器 / 状态赋值（`x = context.getString(...)`）；
+- 排除事件 lambda 内调用（实测 `PasswordSuggestionActivity` 的 `onClick` 里
+  `ClipboardUtils.copyToClipboard(..., label = context.getString(...))` 是假阳性，
+  那里 `stringResource` 不可用，已剔除）。
+
+**暂挂项（baseline 仍抑制，CI 不阻塞，运行时切换语言/主题不影响核心功能）**：
+- `Toast` 类（约 47 条）：值被立即消费，无需重组 → 非 bug；
+- 一次性消费（保存 / 比较 / 回调，约 43 条）：同上；
+- 待人工复核（约 373 条）：基线行号已过期 + 部分在 lambda / 非 UI 位置，
+  需逐文件 `stringResource` 作用域复核后再改，避免破坏编译。
+
+> 注：5.2「必须走 PR」已过时——`gh workflow run "Android CI debug" --ref dev`
+> （manual dispatch）同样会跑 lint，本批次即用此法在 push 后验证。
+
 ### Phase 4 — P3 API 规范（约 178 条）
 
 `RestrictedApi`（91）+ `UseKtx`（87）。
@@ -369,8 +396,10 @@ cd Bastion
    替代方案：保留 user CA，但只在自托管域名上放行。
 
 2. **Phase 3 的 641 条 `LocalContextGetResourceValueCall` 做不做？**
-   量大、机械、不崩溃（只是语言/主题切换时可能不重组）。
-   收益是正确性，成本是 600+ 处改动的大 diff。也可以只修**用户会切换语言/主题的高频页面**。
+   ✅ 已按推荐执行安全子集（见上「Phase 3 执行记录」）：改了 85 处 UI 渲染真 bug，
+   `ModifierParameter`/`ModifierFactoryExtensionFunction` 共 37 处。
+   剩余约 463 条（Toast / 一次性消费 / 待复核 lambda）属非重组场景或需逐文件复核，
+   **暂挂 baseline 抑制**，不阻塞 CI，待后续按屏幕分批或配合本地编译环境再清。
 
 3. **Phase 5 的 887 条无用资源做不做？**
    不影响体积，纯整洁度。可以先只清理 `drawable` 那 2 条，`strings.xml` 的 852 条暂缓。
