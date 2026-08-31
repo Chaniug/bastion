@@ -44,30 +44,33 @@ internal object AutofillFieldPromotionPolicy {
      * 提升需同时满足三个条件，缺一不可：
      * 1. **存在密码框** —— 孤立的搜索栏没有密码框相伴，因此永远不会被提升；
      * 2. **尚无账号框** —— 已经识别出账号框时不再画蛇添足；
-     * 3. **位于首个密码框之前且离它最近** —— 只认这一个，不波及页面上其它文本框。
+     * 3. **紧邻密码框之上**（候选列表下标 +1 即密码框）—— 只认这一个。
      *
      * 另要求候选可见，避免把已隐藏的历史输入框错认成当前账号框（与账号类字段的
      * 可见性要求保持一致）。
+     *
+     * 第 3 条严格对齐 bitwarden `AutofillParserImpl.updateForMissingUsernameFields` 原文：
+     * ```
+     * if (autofillView is AutofillView.Unused && passwordPositions.contains(index + 1))
+     * ```
+     * 早期实现用的是「首个密码框之前、**离它最近**」——不限距离，于是 Edge 访问 GitHub 时
+     * 顶部搜索框（离页面内某个密码框最近但并不相邻）被提升成账号框，聚焦它就弹出密码条目。
+     *
+     * 注意：这里用**候选列表下标**（等价 bitwarden 的 `autofillViews` 下标），**不是**
+     * `traversalIndex`。两个输入框之间隔着容器 / 标签等非字段节点，traversalIndex 差值
+     * 远大于 1，拿它做 `+1` 判定会永远不成立、直接废掉整条召回路径（Via 登录页会崩）。
      */
     fun selectUsernameNeighborIndex(candidates: List<Candidate>): Int {
-        val firstPasswordIndex = candidates
-            .filter { it.isPassword }
-            .minOfOrNull { it.traversalIndex }
-            ?: return NO_PROMOTION
+        val passwordIndices = candidates.indices.filter { candidates[it].isPassword }
+        if (passwordIndices.isEmpty()) return NO_PROMOTION
 
         if (candidates.any { it.isAccount }) return NO_PROMOTION
 
-        var bestIndex = NO_PROMOTION
-        var bestTraversalIndex = Int.MIN_VALUE
-        candidates.forEachIndexed { index, candidate ->
-            if (!candidate.isUnknown) return@forEachIndexed
-            if (!candidate.isVisible) return@forEachIndexed
-            if (candidate.traversalIndex >= firstPasswordIndex) return@forEachIndexed
-            if (candidate.traversalIndex > bestTraversalIndex) {
-                bestTraversalIndex = candidate.traversalIndex
-                bestIndex = index
-            }
-        }
-        return bestIndex
+        // 只提升「紧邻密码框之上」的那一个：index + 1 必须是密码框。
+        return candidates.indices.firstOrNull { index ->
+            candidates[index].isUnknown &&
+                candidates[index].isVisible &&
+                (index + 1) in passwordIndices
+        } ?: NO_PROMOTION
     }
 }

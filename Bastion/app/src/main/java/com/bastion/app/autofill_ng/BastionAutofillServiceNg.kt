@@ -71,7 +71,6 @@ class BastionAutofillServiceNg : AutofillService() {
         private const val PARSED_ITEM_ACCURACY_THRESHOLD = 1.5f
         private const val PASSWORD_ONLY_DIRECT_FILL_WINDOW_MS = 120_000L
         private const val RESPONSE_STABILITY_WINDOW_MS = 2_000L
-        private const val DIRECT_OTP_COPY_THROTTLE_MS = 3_000L
         private val fillRequestSequence = AtomicLong(0L)
         // SHA-256 digest 复用：避免每次 onFillRequest 都 MessageDigest.getInstance（含 Provider 查找）。
         // ThreadLocal 保证线程安全（autofill 服务回调可能并发）。digest() 调用后自动 reset。
@@ -115,15 +114,6 @@ class BastionAutofillServiceNg : AutofillService() {
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-
-    // 直填路径 OTP 自动复制去重：该副作用由服务层按「每次构建 FillResponse」触发，
-    // 而 onFillRequest 在同一登录屏可能多次回调，需按 (passwordId, 时间窗) 节流，
-    // 避免反复刷剪贴板 / 重复弹通知（对齐「用户点选一次复制一次」的预期）。
-    @Volatile
-    private var lastDirectOtpCopyPasswordId: Long = -1L
-
-    @Volatile
-    private var lastDirectOtpCopyMs: Long = 0L
 
     private lateinit var passwordRepository: PasswordRepository
     private lateinit var autofillPreferences: AutofillPreferences
@@ -532,7 +522,26 @@ class BastionAutofillServiceNg : AutofillService() {
             return null
         }
         val parsedWebDomain = parsed.webDomain?.takeIf { it.isNotBlank() }
-        val browserFallbackDomain = if (parsedWebDomain == null) {
+        // 地址栏网址（对齐 bitwarden `AutofillParserImpl.URL_BARS`）：WebView 未上报
+        // webDomain 时，直接读浏览器地址栏拿到**权威**网址，优先级高于无障碍服务跟踪的
+        // 60s 启发式兜底（后者在原生 App 里可能残留无关域名）。
+        val urlBarDomain = if (parsedWebDomain == null) {
+            parsed.urlBarWebsite?.let { extractHostFromUrlBarWebsite(it) }.also { host ->
+                AutofillLogger.i(
+                    "AF",
+                    "url bar website resolved",
+                    metadata = mapOf(
+                        "requestId" to requestId,
+                        "packageName" to packageName,
+                        "rawUrlBar" to (parsed.urlBarWebsite ?: "none"),
+                        "resolvedHost" to (host ?: "none"),
+                    ),
+                )
+            }
+        } else {
+            null
+        }
+        val browserFallbackDomain = if (parsedWebDomain == null && urlBarDomain == null) {
             val fallback = BrowserAutofillContextStore.getRecentDomain(packageName)
             AutofillLogger.i(
                 "AF",
@@ -548,7 +557,7 @@ class BastionAutofillServiceNg : AutofillService() {
         } else {
             null
         }
-        val webDomain = parsedWebDomain ?: browserFallbackDomain
+        val webDomain = parsedWebDomain ?: urlBarDomain ?: browserFallbackDomain
         val allowPackageMatch = AutofillRequestContextPolicy.allowPackageMatching(
             packageName = packageName,
             webDomain = webDomain,
@@ -594,6 +603,7 @@ class BastionAutofillServiceNg : AutofillService() {
                 "packageMatchAllowed" to allowPackageMatch,
                 "domainSource" to when {
                     parsedWebDomain != null -> "assist_structure"
+                    urlBarDomain != null -> "browser_url_bar"
                     browserFallbackDomain != null -> "accessibility_browser_context"
                     else -> "none"
                 },
@@ -843,15 +853,24 @@ class BastionAutofillServiceNg : AutofillService() {
         // WebView 单条匹配对齐 Bitwarden：挂 setAuthentication 走"点选→回调→回填"路径，
         // 该路径对系统 WebView 密码框虚拟节点回填比纯直填更可靠（Bitwarden 始终挂 auth）。
         // forceDatasetAuth：挂 auth 但 vault 解锁态不触发指纹，filledItems 保留真实值，
-        // 回调直接回填不重新映射，避免 Edge 账户名失配。原生 App（无 webDomain）仍纯直填。
-        val forceDatasetAuthForWeb = isWebViewFill && passwordsForResponse.size == 1
+        // 回调直接回填不重新映射，避免 Edge 账户名失配。
+        // 追加条件：单条匹配且该条目带 TOTP 时同样挂 auth。原因：纯直填（setAuthentication
+        // 为空）时框架直接 setValue 回填，不经过任何 Activity 回调，服务层无从感知"用户到底是
+        // 否点选了条目"；只有走「点选 → AutofillCipherCallbackActivity → 回填」这条路径，
+        // 才能保证 TOTP 复制发生在真正填充之后（对齐 Bitwarden：TOTP 复制是"填充"的副作用，
+        // 而不是"展示建议"的副作用，避免在条目刚可见时就污染剪贴板）。
+        val singleMatch = passwordsForResponse.size == 1
+        val singleMatchHasTotp =
+            passwordsForResponse.singleOrNull()?.authenticatorKey?.isNotBlank() == true
+        val forceDatasetAuth = singleMatch && (isWebViewFill || singleMatchHasTotp)
         AutofillLogger.i(
             "AUTH",
             "Dataset auth policy for fill",
             metadata = mapOf(
                 "isWebViewFill" to isWebViewFill,
-                "singleMatch" to (passwordsForResponse.size == 1),
-                "forceDatasetAuthForWeb" to forceDatasetAuthForWeb,
+                "singleMatch" to singleMatch,
+                "singleMatchHasTotp" to singleMatchHasTotp,
+                "forceDatasetAuth" to forceDatasetAuth,
                 "a11yAvailable" to BastionAccessibilityService.isCredentialFillAvailable(applicationContext),
             )
         )
@@ -866,7 +885,7 @@ class BastionAutofillServiceNg : AutofillService() {
             preferDirectAutoFill = isPasswordOnlyLogin && passwordsForResponse.size == 1,
             passwordSuggestionEnabled = AutofillConfigCache.isPasswordSuggestionEnabled,
             requireAuthentication = effectiveAuthenticationRequired,
-            forceDatasetAuthForWeb = forceDatasetAuthForWeb,
+            forceDatasetAuthForWeb = forceDatasetAuth,
         )
 
         if (response == null) {
@@ -903,37 +922,12 @@ class BastionAutofillServiceNg : AutofillService() {
                 )
             )
 
-            // 唯一条目 → 框架填充（直填或 dataset 级认证回灌），OTP 自动复制在服务层触发。
-            // 不论认证状态如何（settingEnabled=true/false），单条匹配都应触发 OTP 复制，
-            // 因为 buildLockedResponse（response 级认证）没有 OTP 复制逻辑，
-            // 而单条直填路径不经过 Activity 回调。
+            // TOTP 复制**不**在这里触发：此处只是在"构建 FillResponse"，条目刚对用户可见、
+            // 用户尚未点选。带 TOTP 的单条匹配已通过 forceDatasetAuth 改为走
+            // 「点选 → AutofillCipherCallbackActivity → 回填」路径，由回调内的
+            // performOtpAutofillSideEffects 在真正填充完成后再复制到剪贴板，
+            // 从而避免"条目一可见就往剪贴板堆验证码"。
             if (passwordsForResponse.size == 1) {
-                val passwordId = passwordsForResponse.first().id
-                val now = System.currentTimeMillis()
-                val shouldCopyOtp = passwordId != lastDirectOtpCopyPasswordId ||
-                    now - lastDirectOtpCopyMs >= DIRECT_OTP_COPY_THROTTLE_MS
-                if (shouldCopyOtp) {
-                    scope.launch(Dispatchers.IO) {
-                        runCatching {
-                            generateOtpCodeForPassword(applicationContext, passwordsForResponse.first())
-                        }.onSuccess { otp ->
-                            if (!otp.isNullOrBlank()) {
-                                // 复制到剪贴板 + 显示通知，对齐 Bitwarden 体验
-                                performOtpAutofillSideEffects(
-                                    context = applicationContext,
-                                    password = passwordsForResponse.first(),
-                                    autofillHints = fillableTargets.map { it.hint.name },
-                                )
-                                lastDirectOtpCopyPasswordId = passwordId
-                                lastDirectOtpCopyMs = System.currentTimeMillis()
-                                Log.d(TAG, "Direct-fill OTP side effect triggered: " +
-                                    "passwordId=$passwordId, pkg=$packageName")
-                            }
-                        }.onFailure { error ->
-                            Log.w(TAG, "Direct-fill OTP side effect failed: ${error.message}", error)
-                        }
-                    }
-                }
 
                 // WebView 场景（如 Via + PayPal）的 menu 建议回写不可靠，inline 建议
                 // 又受 ROM 限制（HarmonyOS / MIUI < 12 等）不可用。此时走无障碍直接注入兜底：
@@ -1166,6 +1160,25 @@ class BastionAutofillServiceNg : AutofillService() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
         if (!DeviceUtils.supportsInlineSuggestions()) return null
         return request.inlineSuggestionsRequest
+    }
+
+    /**
+     * 从浏览器地址栏文本提取主机名。
+     *
+     * 地址栏内容形态不定：可能是完整 URL（`https://github.com/foo?a=1`）、纯域名
+     * （`github.com`），也可能是用户正在输入的搜索词。
+     * 只在能解析出「含点的合法主机」时返回，否则返回 null 交给后续兜底，不强行猜测。
+     */
+    private fun extractHostFromUrlBarWebsite(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isBlank()) return null
+        val candidate = if (trimmed.contains("://")) trimmed else "https://$trimmed"
+        return runCatching {
+            java.net.URI(candidate)
+                .host
+                ?.lowercase(java.util.Locale.ROOT)
+                ?.takeIf { it.isNotBlank() && it.contains('.') }
+        }.getOrNull()
     }
 
     private fun selectFillableTargets(
