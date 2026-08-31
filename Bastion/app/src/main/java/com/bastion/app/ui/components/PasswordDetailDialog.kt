@@ -24,6 +24,7 @@ import com.bastion.app.utils.ClipboardUtils
 import com.bastion.app.utils.FieldValidation
 import com.bastion.app.ui.icons.BastionIcons
 import com.bastion.app.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * 密码详情对话框
@@ -101,26 +102,26 @@ fun PasswordDetailDialog(
                             IconButton(onClick = onAddPassword) {
                                 Icon(
                                     Icons.Default.Add,
-                                    contentDescription = context.getString(R.string.add_password),
+                                    contentDescription = stringResource(R.string.add_password),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
                         // 编辑按钮
                         IconButton(onClick = onEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = context.getString(R.string.edit))
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                         }
                         // 删除按钮
                         IconButton(onClick = onDelete) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = context.getString(R.string.delete),
+                                contentDescription = stringResource(R.string.delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
                         // 关闭按钮
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = context.getString(R.string.close))
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -137,34 +138,34 @@ fun PasswordDetailDialog(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // 基本信息
-                    InfoSection(title = context.getString(R.string.basic_info)) {
+                    InfoSection(title = stringResource(R.string.basic_info)) {
                         if (passwordEntry.website.isNotEmpty()) {
-                            InfoItem(label = context.getString(R.string.website), value = passwordEntry.website)
+                            InfoItem(label = stringResource(R.string.website), value = passwordEntry.website)
                         }
                         if (passwordEntry.username.isNotEmpty()) {
                             InfoItemWithCopy(
-                                label = context.getString(R.string.username),
+                                label = stringResource(R.string.username),
                                 value = passwordEntry.username,
                                 context = context
                             )
                         }
                         PasswordItem(
-                            label = context.getString(R.string.password),
+                            label = stringResource(R.string.password),
                             value = passwordEntry.password,
                             context = context
                         )
                         if (passwordEntry.notes.isNotEmpty()) {
-                            InfoItem(label = context.getString(R.string.notes), value = passwordEntry.notes)
+                            InfoItem(label = stringResource(R.string.notes), value = passwordEntry.notes)
                         }
                         if (passwordEntry.appName.isNotEmpty()) {
-                            InfoItem(label = context.getString(R.string.linked_app), value = passwordEntry.appName)
+                            InfoItem(label = stringResource(R.string.linked_app), value = passwordEntry.appName)
                         }
                     }
                     
                     // 个人信息（如果有）
                     if (hasPersonalInfo(passwordEntry)) {
                         CollapsibleInfoSection(
-                            title = context.getString(R.string.personal_info),
+                            title = stringResource(R.string.personal_info),
                             icon = BastionIcons.General.person,
                             expanded = personalInfoExpanded,
                             onToggle = { personalInfoExpanded = !personalInfoExpanded },
@@ -172,14 +173,14 @@ fun PasswordDetailDialog(
                         ) {
                             if (passwordEntry.email.isNotEmpty()) {
                                 InfoItemWithCopy(
-                                    label = context.getString(R.string.email),
+                                    label = stringResource(R.string.email),
                                     value = passwordEntry.email,
                                     context = context
                                 )
                             }
                             if (passwordEntry.phone.isNotEmpty()) {
                                 InfoItemWithCopy(
-                                    label = context.getString(R.string.phone),
+                                    label = stringResource(R.string.phone),
                                     value = FieldValidation.formatPhone(passwordEntry.phone),
                                     context = context
                                 )
@@ -190,14 +191,14 @@ fun PasswordDetailDialog(
                     // 地址信息（如果有）
                     if (hasAddressInfo(passwordEntry)) {
                         CollapsibleInfoSection(
-                            title = context.getString(R.string.address_info),
+                            title = stringResource(R.string.address_info),
                             icon = Icons.Default.Home,
                             expanded = addressInfoExpanded,
                             onToggle = { addressInfoExpanded = !addressInfoExpanded },
                             context = context
                         ) {
                             if (passwordEntry.addressLine.isNotEmpty()) {
-                                InfoItem(label = context.getString(R.string.address_line), value = passwordEntry.addressLine)
+                                InfoItem(label = stringResource(R.string.address_line), value = passwordEntry.addressLine)
                             }
                             
                             // 城市和省份
@@ -208,12 +209,12 @@ fun PasswordDetailDialog(
                                 ) {
                                     if (passwordEntry.city.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            InfoItem(label = context.getString(R.string.city), value = passwordEntry.city)
+                                            InfoItem(label = stringResource(R.string.city), value = passwordEntry.city)
                                         }
                                     }
                                     if (passwordEntry.state.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            InfoItem(label = context.getString(R.string.state), value = passwordEntry.state)
+                                            InfoItem(label = stringResource(R.string.state), value = passwordEntry.state)
                                         }
                                     }
                                 }
@@ -227,12 +228,12 @@ fun PasswordDetailDialog(
                                 ) {
                                     if (passwordEntry.zipCode.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            InfoItem(label = context.getString(R.string.zip_code), value = passwordEntry.zipCode)
+                                            InfoItem(label = stringResource(R.string.zip_code), value = passwordEntry.zipCode)
                                         }
                                     }
                                     if (passwordEntry.country.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            InfoItem(label = context.getString(R.string.country), value = passwordEntry.country)
+                                            InfoItem(label = stringResource(R.string.country), value = passwordEntry.country)
                                         }
                                     }
                                 }
@@ -243,7 +244,7 @@ fun PasswordDetailDialog(
                     // 支付信息（如果有）
                     if (hasPaymentInfo(passwordEntry)) {
                         CollapsibleInfoSection(
-                            title = context.getString(R.string.payment_info),
+                            title = stringResource(R.string.payment_info),
                             icon = BastionIcons.Data.creditCard,
                             expanded = paymentInfoExpanded,
                             onToggle = { paymentInfoExpanded = !paymentInfoExpanded },
@@ -251,14 +252,14 @@ fun PasswordDetailDialog(
                         ) {
                             if (passwordEntry.creditCardNumber.isNotEmpty()) {
                                 InfoItemWithCopy(
-                                    label = context.getString(R.string.credit_card_number),
+                                    label = stringResource(R.string.credit_card_number),
                                     value = FieldValidation.maskCreditCard(passwordEntry.creditCardNumber),
                                     copyValue = passwordEntry.creditCardNumber,
                                     context = context
                                 )
                             }
                             if (passwordEntry.creditCardHolder.isNotEmpty()) {
-                                InfoItem(label = context.getString(R.string.card_holder), value = passwordEntry.creditCardHolder)
+                                InfoItem(label = stringResource(R.string.card_holder), value = passwordEntry.creditCardHolder)
                             }
                             
                             // 有效期和CVV
@@ -269,13 +270,13 @@ fun PasswordDetailDialog(
                                 ) {
                                     if (passwordEntry.creditCardExpiry.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
-                                            InfoItem(label = context.getString(R.string.expiry_date), value = passwordEntry.creditCardExpiry)
+                                            InfoItem(label = stringResource(R.string.expiry_date), value = passwordEntry.creditCardExpiry)
                                         }
                                     }
                                     if (passwordEntry.creditCardCVV.isNotEmpty()) {
                                         Box(modifier = Modifier.weight(1f)) {
                                             PasswordItem(
-                                                label = context.getString(R.string.cvv),
+                                                label = stringResource(R.string.cvv),
                                                 value = passwordEntry.creditCardCVV,
                                                 context = context
                                             )

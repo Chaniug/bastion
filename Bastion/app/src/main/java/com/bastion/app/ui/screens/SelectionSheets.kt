@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.ThemeMode
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,11 +46,11 @@ fun AppearanceSelectionSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = context.getString(R.string.theme),
+                text = stringResource(R.string.theme),
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(
-                text = context.getString(R.string.appearance_sheet_description),
+                text = stringResource(R.string.appearance_sheet_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -82,7 +83,7 @@ fun AppearanceSelectionSheet(
                                 Text(getThemeDisplayName(theme, context))
                                 if (theme == ThemeMode.DARK) {
                                     Text(
-                                        text = context.getString(R.string.oled_pure_black_dark_mode_hint),
+                                        text = stringResource(R.string.oled_pure_black_dark_mode_hint),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -109,12 +110,12 @@ fun AppearanceSelectionSheet(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = context.getString(R.string.oled_pure_black),
+                            text = stringResource(R.string.oled_pure_black),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = context.getString(R.string.oled_pure_black_description),
+                            text = stringResource(R.string.oled_pure_black_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -132,7 +133,7 @@ fun AppearanceSelectionSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text(context.getString(R.string.close))
+                Text(stringResource(R.string.close))
             }
         }
     }
@@ -170,15 +171,15 @@ fun AutoLockSelectionSheet(
                         onMinutesSelected(value)
                     }
                 }) {
-                    Text(context.getString(R.string.save))
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCustomDialog = false }) {
-                    Text(context.getString(R.string.cancel))
+                    Text(stringResource(R.string.cancel))
                 }
             },
-            title = { Text(context.getString(R.string.auto_lock_custom_title)) },
+            title = { Text(stringResource(R.string.auto_lock_custom_title)) },
             text = {
                 OutlinedTextField(
                     value = customText,
@@ -187,10 +188,10 @@ fun AutoLockSelectionSheet(
                         customText = it.filter { ch -> ch.isDigit() }.take(6)
                         customError = false
                     },
-                    label = { Text(context.getString(R.string.auto_lock_custom_hint)) },
+                    label = { Text(stringResource(R.string.auto_lock_custom_hint)) },
                     isError = customError,
                     supportingText = if (customError) {
-                        { Text(context.getString(R.string.auto_lock_custom_invalid)) }
+                        { Text(stringResource(R.string.auto_lock_custom_invalid)) }
                     } else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -212,7 +213,7 @@ fun AutoLockSelectionSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = context.getString(R.string.auto_lock),
+                text = stringResource(R.string.auto_lock),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp),
                 color = MaterialTheme.colorScheme.onSurface

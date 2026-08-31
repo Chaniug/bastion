@@ -43,9 +43,9 @@ fun DeleteConfirmDialog(
         {
             biometricHelper.authenticate(
                 activity = activity,
-                title = context.getString(R.string.verify_identity),
-                subtitle = context.getString(R.string.verify_to_delete),
-                description = context.getString(R.string.biometric_login_description),
+                title = stringResource(R.string.verify_identity),
+                subtitle = stringResource(R.string.verify_to_delete),
+                description = stringResource(R.string.biometric_login_description),
                 onSuccess = {
                     onConfirmWithBiometric()
                 },

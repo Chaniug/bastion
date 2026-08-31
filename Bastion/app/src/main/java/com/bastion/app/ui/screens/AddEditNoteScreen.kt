@@ -1076,8 +1076,8 @@ fun AddEditNoteScreen(
             {
                 biometricHelper.authenticate(
                     activity = fragmentActivity,
-                    title = context.getString(R.string.verify_identity),
-                    subtitle = context.getString(R.string.verify_to_delete),
+                    title = stringResource(R.string.verify_identity),
+                    subtitle = stringResource(R.string.verify_to_delete),
                     onSuccess = { performDelete() },
                     onError = { error ->
                         android.widget.Toast.makeText(

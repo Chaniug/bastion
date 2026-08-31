@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.bastion.app.utils.PasswordStrengthAnalyzer
 import kotlin.math.sin
 import kotlin.math.PI
+import androidx.compose.ui.res.stringResource
 
 /**
  * 密码强度指示器组件
@@ -94,7 +95,7 @@ fun PasswordStrengthIndicator(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = context.getString(com.bastion.app.R.string.password_strength),
+                    text = stringResource(com.bastion.app.R.string.password_strength),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -244,7 +245,7 @@ fun PasswordSuggestionsList(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = context.getString(com.bastion.app.R.string.improvement_suggestions),
+            text = stringResource(com.bastion.app.R.string.improvement_suggestions),
             style = MaterialTheme.typography.bodySmall.copy(
                 fontWeight = FontWeight.SemiBold
             ),

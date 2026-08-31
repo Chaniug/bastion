@@ -24,6 +24,7 @@ import com.bastion.app.ui.LocalSharedTransitionScope
 import com.bastion.app.viewmodel.SettingsViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.ui.res.stringResource
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun BottomNavSettingsScreen(
@@ -54,12 +55,12 @@ fun BottomNavSettingsScreen(
         modifier = sharedModifier,
         topBar = {
             TopAppBar(
-                title = { Text(text = context.getString(R.string.bottom_nav_settings)) },
+                title = { Text(text = stringResource(R.string.bottom_nav_settings)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = context.getString(R.string.back)
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -72,7 +73,7 @@ fun BottomNavSettingsScreen(
                 .padding(paddingValues)
         ) {
             Text(
-                text = context.getString(R.string.bottom_nav_reorder_hint),
+                text = stringResource(R.string.bottom_nav_reorder_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -110,8 +111,8 @@ fun BottomNavSettingsScreen(
                         val switchEnabled = !isVisible || bottomNavVisibility.visibleCount() > 1
                         BottomNavConfigRow(
                             icon = tab.toIcon(),
-                            title = context.getString(tab.toLabelRes()),
-                            subtitle = context.getString(R.string.bottom_nav_toggle_subtitle),
+                            title = stringResource(tab.toLabelRes()),
+                            subtitle = stringResource(R.string.bottom_nav_toggle_subtitle),
                             checked = isVisible,
                             switchEnabled = switchEnabled,
                             onCheckedChange = { checked ->
@@ -126,8 +127,8 @@ fun BottomNavSettingsScreen(
                 item(key = "bottom_nav_auto_hide_single_tab") {
                     BottomNavConfigRow(
                         icon = Icons.Default.VisibilityOff,
-                        title = context.getString(R.string.bottom_nav_auto_hide_single_tab_title),
-                        subtitle = context.getString(R.string.bottom_nav_auto_hide_single_tab_subtitle),
+                        title = stringResource(R.string.bottom_nav_auto_hide_single_tab_title),
+                        subtitle = stringResource(R.string.bottom_nav_auto_hide_single_tab_subtitle),
                         checked = settings.autoHideBottomNavWhenSingleTab,
                         switchEnabled = true,
                         onCheckedChange = viewModel::updateAutoHideBottomNavWhenSingleTab,
@@ -138,8 +139,8 @@ fun BottomNavSettingsScreen(
                 item(key = "bottom_nav_draggable") {
                     BottomNavConfigRow(
                         icon = Icons.Default.SwipeUp,
-                        title = context.getString(R.string.draggable_bottom_nav),
-                        subtitle = context.getString(R.string.draggable_bottom_nav_description),
+                        title = stringResource(R.string.draggable_bottom_nav),
+                        subtitle = stringResource(R.string.draggable_bottom_nav_description),
                         checked = settings.useDraggableBottomNav,
                         switchEnabled = true,
                         onCheckedChange = viewModel::updateUseDraggableBottomNav,

@@ -18,6 +18,7 @@ import com.bastion.app.security.MasterPasswordPolicy
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.MasterPasswordTextField
 import com.bastion.app.ui.components.rememberBringIntoViewOnFocusModifier
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -66,10 +67,10 @@ fun ResetPasswordScreen(
         modifier = sharedModifier,
         topBar = {
             TopAppBar(
-                title = { Text(context.getString(R.string.reset_password_title)) },
+                title = { Text(stringResource(R.string.reset_password_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = context.getString(R.string.back))
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -122,12 +123,12 @@ fun ResetPasswordScreen(
                     },
                     label = { 
                         Text(
-                            text = context.getString(R.string.current_password),
+                            text = stringResource(R.string.current_password),
                             maxLines = 2,
                             style = MaterialTheme.typography.bodySmall
                         ) 
                     },
-                    placeholder = { Text(context.getString(R.string.enter_current_password)) },
+                    placeholder = { Text(stringResource(R.string.enter_current_password)) },
                     leadingIcon = {
                         Icon(Icons.Default.Lock, contentDescription = null)
                     },
@@ -154,12 +155,12 @@ fun ResetPasswordScreen(
                 },
                 label = { 
                     Text(
-                        text = context.getString(R.string.new_password),
+                        text = stringResource(R.string.new_password),
                         maxLines = 2,
                         style = MaterialTheme.typography.bodySmall
                     ) 
                 },
-                placeholder = { Text(context.getString(R.string.enter_new_password)) },
+                placeholder = { Text(stringResource(R.string.enter_new_password)) },
                 leadingIcon = {
                     Icon(Icons.Default.VpnKey, contentDescription = null)
                 },
@@ -174,7 +175,7 @@ fun ResetPasswordScreen(
             
             if (newPassword.isNotEmpty() && !MasterPasswordPolicy.meetsMinLength(newPassword)) {
                 Text(
-                    text = context.getString(R.string.password_too_short),
+                    text = stringResource(R.string.password_too_short),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp)
@@ -193,12 +194,12 @@ fun ResetPasswordScreen(
                 },
                 label = { 
                     Text(
-                        text = context.getString(R.string.confirm_new_password),
+                        text = stringResource(R.string.confirm_new_password),
                         maxLines = 2,
                         style = MaterialTheme.typography.bodySmall
                     ) 
                 },
-                placeholder = { Text(context.getString(R.string.enter_confirm_password)) },
+                placeholder = { Text(stringResource(R.string.enter_confirm_password)) },
                 leadingIcon = {
                     Icon(Icons.Default.VpnKey, contentDescription = null)
                 },
@@ -213,7 +214,7 @@ fun ResetPasswordScreen(
             
             if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
                 Text(
-                    text = context.getString(R.string.passwords_do_not_match),
+                    text = stringResource(R.string.passwords_do_not_match),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp)
@@ -299,7 +300,7 @@ fun ResetPasswordScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Text(context.getString(R.string.reset_password))
+                Text(stringResource(R.string.reset_password))
             }
         }
     }
@@ -319,10 +320,10 @@ fun ResetPasswordScreen(
                 )
             },
             title = {
-                Text(context.getString(R.string.password_reset_success))
+                Text(stringResource(R.string.password_reset_success))
             },
             text = {
-                Text(context.getString(R.string.password_reset_success_message))
+                Text(stringResource(R.string.password_reset_success_message))
             },
             confirmButton = {
                 TextButton(
@@ -331,7 +332,7 @@ fun ResetPasswordScreen(
                         onResetSuccess()
                     }
                 ) {
-                    Text(context.getString(R.string.ok))
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
