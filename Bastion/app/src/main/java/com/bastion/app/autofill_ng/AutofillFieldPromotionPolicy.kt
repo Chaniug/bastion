@@ -56,21 +56,33 @@ internal object AutofillFieldPromotionPolicy {
      * 早期实现用的是「首个密码框之前、**离它最近**」——不限距离，于是 Edge 访问 GitHub 时
      * 顶部搜索框（离页面内某个密码框最近但并不相邻）被提升成账号框，聚焦它就弹出密码条目。
      *
-     * 注意：这里用**候选列表下标**（等价 bitwarden 的 `autofillViews` 下标），**不是**
-     * `traversalIndex`。两个输入框之间隔着容器 / 标签等非字段节点，traversalIndex 差值
-     * 远大于 1，拿它做 `+1` 判定会永远不成立、直接废掉整条召回路径（Via 登录页会崩）。
+     * 实现要点：bitwarden 直接比较 `autofillViews` 的列表下标，因为那份列表天然按
+     * 遍历顺序构建。**本仓库不能照抄** —— 调用方传入的 `candidates` 顺序并不保证等于
+     * `traversalIndex` 顺序（见 `returnsListIndexNotTraversalIndex` 用例），
+     * 直接拿列表下标判 `+1` 会漏提升。
+     * 因此这里**先按 traversalIndex 排序**，在排序后的序列上判「紧邻」，
+     * 再返回该候选在**原始列表中的下标**（调用方用它去取 `items[promotionIndex]`）。
+     *
+     * 另注意：不能用 `traversalIndex + 1 == passwordTraversalIndex` 判相邻 ——
+     * 两个输入框之间隔着容器 / 标签等非字段节点，traversalIndex 差值远大于 1，
+     * 那样判定永远不成立，会直接废掉整条召回路径（Via 登录页会崩）。
      */
     fun selectUsernameNeighborIndex(candidates: List<Candidate>): Int {
-        val passwordIndices = candidates.indices.filter { candidates[it].isPassword }
-        if (passwordIndices.isEmpty()) return NO_PROMOTION
-
+        if (candidates.none { it.isPassword }) return NO_PROMOTION
         if (candidates.any { it.isAccount }) return NO_PROMOTION
 
-        // 只提升「紧邻密码框之上」的那一个：index + 1 必须是密码框。
-        return candidates.indices.firstOrNull { index ->
-            candidates[index].isUnknown &&
-                candidates[index].isVisible &&
-                (index + 1) in passwordIndices
-        } ?: NO_PROMOTION
+        // 按遍历顺序（即视觉上的先后）排序，保留原始列表下标以便返回。
+        val ordered = candidates
+            .mapIndexed { listIndex, candidate -> listIndex to candidate }
+            .sortedBy { (_, candidate) -> candidate.traversalIndex }
+
+        for (i in 0 until ordered.lastIndex) {
+            val (listIndex, candidate) = ordered[i]
+            val (_, next) = ordered[i + 1]
+            if (candidate.isUnknown && candidate.isVisible && next.isPassword) {
+                return listIndex
+            }
+        }
+        return NO_PROMOTION
     }
 }
