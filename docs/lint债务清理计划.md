@@ -233,16 +233,39 @@ lint 这个检查是启发式的，只要实现了 `X509TrustManager` 就报，�
 
 ## 四、分批执行计划
 
-### Phase 0 — 重生成 baseline（前置，阻塞后续所有统计）
+### Phase 0 — 重生成 baseline（前置，已 ✅ 完成于 2026-08-31）
 
 ```bash
 cd Bastion
 ./gradlew :app:updateLintBaselineDebug
 ```
 
-**验收**：条目数从 1925 降到约 1887（−38），且 `NewApi` / `StaticFieldLeak` /
-`NonObservableLocale` / `ConfigurationScreenWidthHeight` 四类归零。
-把新数字回填到本文档**第二节的表格**，再往下做。
+**执行记录（2026-08-31）**：
+- 此前 `updateLintBaselineDebug` 在 Kotlin 2.x + nav 2.10 下全量分析 JVM 崩溃，
+  导致基线一直没重生、P1/P2 改完代码后条目全是"陈旧僵尸"。
+- 本次通过 `Regenerate lint baseline` 工作流（`33366951289`）成功重生，
+  并由 `Android CI debug`（`33367954207`，含 Run lint）验证 **build + lint 全绿**，
+  证明重生完整、无遗漏（间歇性崩溃本次未触发）。
+- **重生前后对比**（baseline 条目）：
+
+  | 类别 | 重生前 | 重生后 | 说明 |
+  |------|------:|------:|------|
+  | ModifierParameter | 33 | 0 | P2 修复生效 |
+  | PluralsCandidate | 6 | 0 | P1 修复生效 |
+  | SimpleDateFormat | 4 | 0 | P1 修复生效 |
+  | ConstantLocale | 2 | 0 | P1 修复生效 |
+  | InlinedApi | 4 | 0 | P1 修复生效 |
+  | QueryPermissionsNeeded | 1 | 0 | P1 修复生效 |
+  | SelectedPhotoAccess | 1 | 0 | P1 修复生效 |
+  | LocalContextGetResourceValueCall | 641 | 565 | P2 的 stringResource 改造减 76 |
+  | UnusedResources | 887 | 887 | 按约定保留 baseline 抑制，不动 |
+  | 其它（RestrictedApi/UseKtx/UnusedAttribute/小类） | ~408 | ~408 | 基本不变 |
+  | **合计** | **~1887** | **~1757** | 陈旧条目已清、行号重新锚定 |
+
+- **收益**：漂移风险消除（所有条目重新锚定当前行号）；P1/P2 修复已反映在基线。
+- **残留风险**：`updateLintBaselineDebug` 崩溃为**间歇性**，将来若再重生失败，
+  可临时在 `regenerate-lint-baseline.yml` 加"崩溃签名提取步骤"（已验证可行，
+  见 `59c93f28`/`fcd15eea` 调试提交，事后已清理）来抓取崩溃栈定位 detector。
 
 > 任务名注意：CI 里已改用 `updateLintBaselineDebug`（见 `e9f0be48`），
 > 不要用老的 `lintDebug -DupdateBaseline` 写法。
@@ -420,6 +443,9 @@ cd Bastion
 
 3. **Phase 5 的 887 条无用资源做不做？**
    不影响体积，纯整洁度。可以先只清理 `drawable` 那 2 条，`strings.xml` 的 852 条暂缓。
+   ✅ **决定（2026-08-31）**：务实降噪范围内，**UnusedResources 887 保持 baseline 抑制、不动**。
+   理由：`shrinkResources`/R8 下不影响 APK 体积；删除存在反射/webview/拼接名引用资源导致运行时崩溃的风险，
+   需配合资源引用审计 + 真机回归，投入产出不划算。若日后要"零未用资源"洁癖再单独排期。
 
 4. **`raw/eff_short_wordlist.txt` 未使用**——是历史遗留该删，还是有功能没接上？
    这个需要你确认，我不敢擅自删。
