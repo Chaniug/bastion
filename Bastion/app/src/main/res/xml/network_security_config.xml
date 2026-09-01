@@ -21,13 +21,27 @@
   - 公网服务默认使用 HTTPS，无需额外配置
 -->
 <network-security-config>
-    <!-- 全局默认：禁止明文流量 -->
+    <!--
+      调试构建（debuggable=true）：额外信任用户安装的 CA 证书，
+      便于 Charles / mitmproxy 抓包与自签名证书联调。
+      仅作用于 debug 构建；release 走 base-config，不受影响。
+
+      安全说明（2026-09-01 修正）：用户 CA 此前误放在 <base-config> 中，
+      导致 release 也信任用户安装的 CA——攻击者在设备上植入一个恶意 CA
+      即可对同步流量做中间人解密。Android 7+ 默认并不信任用户 CA，
+      此处改为 debug 专属，release 恢复默认安全基线（仅信任系统 CA）。
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- 全局默认：禁止明文流量；仅信任系统 CA 证书 -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
-            <!-- 信任系统 CA 证书 -->
             <certificates src="system" />
-            <!-- 信任用户安装的 CA 证书（开发调试用） -->
-            <certificates src="user" />
         </trust-anchors>
     </base-config>
 
