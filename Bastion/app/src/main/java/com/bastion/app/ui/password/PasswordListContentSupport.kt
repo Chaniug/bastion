@@ -455,14 +455,17 @@ internal fun filterPreStackPasswordEntries(
     if (quickFilterAttachments && PasswordListQuickFilterItem.ATTACHMENTS in configuredQuickFilterItems) {
         filtered = filtered.filter { it.id in activeAttachmentParentIds }
     }
-    if (quickFilterWifi) {
-        filtered = filtered.filter { it.isWifiEntry() }
-    }
-    if (quickFilterSshKey) {
-        filtered = filtered.filter { it.isSshKeyEntry() }
-    }
-    if (quickFilterBarcode) {
-        filtered = filtered.filter { it.isBarcodeEntry() }
+    // WIFI / SSH / 二维码 是「条目类型」判定，彼此互斥——一个条目不可能同时是 WIFI 和 SSH。
+    // 之前写成三条链式 AND：先筛出 WIFI，再在其中找 SSH，结果必然为空，
+    // 导致用户同时勾选多个类型时列表全空。改为同组内 OR：
+    // 勾选多个类型时取并集（显示 WIFI 或 SSH 或二维码），
+    // 与其他筛选组（收藏 / 2FA / 仅本地…）之间仍是 AND，所以「WIFI + 收藏」= 收藏的 WIFI。
+    if (quickFilterWifi || quickFilterSshKey || quickFilterBarcode) {
+        filtered = filtered.filter { entry ->
+            (quickFilterWifi && entry.isWifiEntry()) ||
+                (quickFilterSshKey && entry.isSshKeyEntry()) ||
+                (quickFilterBarcode && entry.isBarcodeEntry())
+        }
     }
     if (quickFilterUncategorized && PasswordListQuickFilterItem.UNCATEGORIZED in configuredQuickFilterItems) {
         filtered = filtered.filter { entry ->
