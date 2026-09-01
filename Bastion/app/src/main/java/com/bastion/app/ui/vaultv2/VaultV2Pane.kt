@@ -1049,11 +1049,16 @@ private fun VaultV2Item.matchesPasswordQuickFilters(
 	) {
 		return false
 	}
+	// 通行秘钥筛选的判定：是 PASSKEY 类型 OR 有通行秘钥绑定。
+	// 之前的写法是 `type != PASSKEY && bindings.isEmpty()`，逻辑反了——
+	// 这意味着"非 passkey 且无绑定"才排除，结果普通密码条目全部被过滤掉，
+	// 导致勾选后看不到原本就存在的密码（用户反馈"没效果"）。
+	val isPasskeyEntry = type == VaultV2ItemType.PASSKEY ||
+		PasskeyBindingCodec.decodeList(passwordEntry?.passkeyBindings.orEmpty()).isNotEmpty()
 	if (
 		quickFilterPasskey &&
 		PasswordListQuickFilterItem.PASSKEY in configuredQuickFilterItems &&
-		type != VaultV2ItemType.PASSKEY &&
-		PasskeyBindingCodec.decodeList(passwordEntry?.passkeyBindings.orEmpty()).isEmpty()
+		!isPasskeyEntry
 	) {
 		return false
 	}

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Key
@@ -242,6 +243,8 @@ internal fun PasswordQuickFilterChipItem(
         PasswordListQuickFilterItem.PASSKEY -> {
             val type = PasswordPageContentType.PASSKEY
             val useAggregateFilter = type in aggregateVisibleTypes
+            // 不用 type.icon()（Icons.Default.VpnKey，盾牌+钥匙视觉上和仅本地的钥匙图标混淆），
+            // 直接用指纹图标——这是 passkey 的标准视觉符号，与「仅本地」的钥匙图标明显区分。
             PasswordQuickFilterChip(
                 selected = if (useAggregateFilter) aggregateSelectedTypes.contains(type) else quickFilterPasskey,
                 onClick = {
@@ -256,7 +259,7 @@ internal fun PasswordQuickFilterChipItem(
                 label = stringResource(type.labelRes()),
                 modifier = modifier,
                 interactionSource = interactionSource,
-                leadingIcon = type.icon()
+                leadingIcon = Icons.Default.Fingerprint
             )
         }
 
