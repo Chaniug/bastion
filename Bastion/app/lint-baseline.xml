@@ -3946,7 +3946,7 @@
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/screens/QrScannerScreen.kt"
-            line="260"
+            line="267"
             column="62"/>
     </issue>
 
@@ -3957,7 +3957,7 @@
         errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/bastion/app/ui/screens/QrScannerScreen.kt"
-            line="265"
+            line="272"
             column="45"/>
     </issue>
 

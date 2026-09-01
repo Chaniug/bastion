@@ -6,6 +6,22 @@ internal enum class QrScanRestartReason {
     RepeatedDecoderFailure
 }
 
+/**
+ * 一帧解码流水线的最终结局，用于 [QrScanHealthPolicy.onFrameCompleted]。
+ *
+ * 区分「没扫到码」和「解码失败」很关键：长时间对着一帧无码的画面是正常场景，
+ * 不应被计数为「解码管线反复出错」。旧版用单 Boolean 表达"成功"，
+ * 实现里"成功 = 这帧扫到码"，结果冷启动后只要前几帧没码就触发重启循环。
+ */
+internal enum class QrFrameOutcome {
+    /** 解到至少一个候选码。 */
+    Detected,
+    /** 管线跑通但视野里没码，正常。 */
+    Empty,
+    /** 解码异常（ImageProxy.image == null、YUV 转换抛错、ZXing decode 抛错等）。 */
+    Failed
+}
+
 internal sealed interface QrScanHealthAction {
     data object None : QrScanHealthAction
     data object Refocus : QrScanHealthAction
@@ -17,7 +33,8 @@ internal sealed interface QrScanHealthAction {
  *
  * Long periods without a barcode are healthy as long as camera frames continue to complete.
  * The policy periodically refreshes focus/metering, and only rebuilds the session when the
- * frame stream stalls or ML Kit repeatedly fails to process frames.
+ * frame stream stalls or [QrFrameOutcome.Failed] repeats, which signals a real pipeline
+ * fault rather than a frame that simply contained no barcode.
  */
 internal class QrScanHealthPolicy(
     private val refocusIntervalMs: Long = DEFAULT_REFOCUS_INTERVAL_MS,
@@ -52,16 +69,21 @@ internal class QrScanHealthPolicy(
     }
 
     @Synchronized
-    fun onFrameCompleted(nowMs: Long, succeeded: Boolean) {
+    fun onFrameCompleted(nowMs: Long, outcome: QrFrameOutcome) {
         activeFrameStartedAtMs = null
         lastFrameCompletedAtMs = nowMs
-        consecutiveDecoderFailures = if (succeeded) {
-            0
-        } else {
-            consecutiveDecoderFailures + 1
-        }
-        if (consecutiveDecoderFailures >= decoderFailureThreshold) {
-            pendingRestartReason = QrScanRestartReason.RepeatedDecoderFailure
+        when (outcome) {
+            QrFrameOutcome.Detected, QrFrameOutcome.Empty -> {
+                // 管线健康（要么扫到码，要么确认没码），把累计失败清零。
+                consecutiveDecoderFailures = 0
+                pendingRestartReason = null
+            }
+            QrFrameOutcome.Failed -> {
+                consecutiveDecoderFailures += 1
+                if (consecutiveDecoderFailures >= decoderFailureThreshold) {
+                    pendingRestartReason = QrScanRestartReason.RepeatedDecoderFailure
+                }
+            }
         }
     }
 
@@ -101,9 +123,9 @@ internal class QrScanHealthPolicy(
     }
 
     companion object {
-        const val DEFAULT_REFOCUS_INTERVAL_MS = 4_000L
-        const val DEFAULT_FRAME_STALL_TIMEOUT_MS = 2_500L
-        const val DEFAULT_FRAME_STREAM_TIMEOUT_MS = 2_500L
-        const val DEFAULT_DECODER_FAILURE_THRESHOLD = 3
+        const val DEFAULT_REFOCUS_INTERVAL_MS = 8_000L
+        const val DEFAULT_FRAME_STALL_TIMEOUT_MS = 5_000L
+        const val DEFAULT_FRAME_STREAM_TIMEOUT_MS = 4_000L
+        const val DEFAULT_DECODER_FAILURE_THRESHOLD = 8
     }
 }

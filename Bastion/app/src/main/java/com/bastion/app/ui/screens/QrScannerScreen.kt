@@ -196,7 +196,10 @@ private fun QrCodeScanner(
     val currentInvalidResultMessage = rememberUpdatedState(invalidResultMessage)
     var scanGeneration by remember { mutableIntStateOf(0) }
     var pendingRestartReason by remember { mutableStateOf<QrScanRestartReason?>(null) }
-    val previewView = remember(context, scanGeneration) {
+    var lastRestartAtMs by remember { mutableLongStateOf(0L) }
+    // PreviewView 故意不把 scanGeneration 放进 key —— 重启只重建 QrCameraScanSession，
+    // Surface/TextureView 复用，避免画面反复销毁/创建造成「卡顿 + 镜头跟不住」。
+    val previewView = remember(context) {
         PreviewView(context).apply {
             scaleType = PreviewView.ScaleType.FILL_CENTER
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
@@ -233,7 +236,11 @@ private fun QrCodeScanner(
                 value != null
             },
             onRestartRequested = { reason ->
-                if (!scanConsumed.get() && pendingRestartReason == null) {
+                val now = SystemClock.elapsedRealtime()
+                if (!scanConsumed.get() &&
+                    pendingRestartReason == null &&
+                    now - lastRestartAtMs >= QR_SCAN_SESSION_RESTART_COOLDOWN_MS
+                ) {
                     pendingRestartReason = reason
                 }
             }
@@ -283,6 +290,7 @@ private fun QrCodeScanner(
     LaunchedEffect(pendingRestartReason) {
         pendingRestartReason ?: return@LaunchedEffect
         delay(QR_SCAN_SESSION_RESTART_DELAY_MS)
+        lastRestartAtMs = SystemClock.elapsedRealtime()
         scanGeneration += 1
         pendingRestartReason = null
     }
@@ -619,3 +627,4 @@ private fun processImageWithZxing(
 private const val QR_SCAN_DIAG_HEARTBEAT_MS = 30_000L
 private const val QR_SCAN_HEALTH_TICK_MS = 500L
 private const val QR_SCAN_SESSION_RESTART_DELAY_MS = 450L
+private const val QR_SCAN_SESSION_RESTART_COOLDOWN_MS = 3_000L
