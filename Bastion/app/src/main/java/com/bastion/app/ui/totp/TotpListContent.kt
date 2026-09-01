@@ -228,7 +228,10 @@ fun TotpListContent(
         onDelete: () -> Unit
     ) -> Unit,
     showStandaloneSettingsEntry: Boolean = false,
-    onOpenStandaloneSettings: () -> Unit = {}
+    onOpenStandaloneSettings: () -> Unit = {},
+    // 验证器 → 通行秘钥 的快捷入口。通行秘钥是托管在验证器 tab 下的子页，
+    // 与 PasskeyListScreen 的 onNavigateToAuthenticator 构成对称互跳。
+    onNavigateToPasskeys: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val securityManager = remember(context) { SecurityManager(context.applicationContext) }
@@ -845,16 +848,43 @@ fun TotpListContent(
             }
         )
         
+        // 验证器 → 通行秘钥 的快捷入口。默认挂在倒计时进度条右侧；
+        // 进度条被关闭或当前无 TOTP 条目时改为独立成行兜底显示，
+        // 否则用户会在空列表等场景下彻底失去进入通行秘钥页的路径。
+        val passkeyEntryButton: @Composable () -> Unit = {
+            IconButton(
+                onClick = onNavigateToPasskeys,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Fingerprint,
+                    contentDescription = stringResource(R.string.nav_passkey),
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
         // 统一进度条 - 在顶栏下方显示
-        if (appSettings.validatorUnifiedProgressBar == com.bastion.app.data.UnifiedProgressBarMode.ENABLED && 
+        if (appSettings.validatorUnifiedProgressBar == com.bastion.app.data.UnifiedProgressBarMode.ENABLED &&
             filteredTotpItems.isNotEmpty()) {
             com.bastion.app.ui.components.UnifiedProgressBar(
                 style = appSettings.validatorProgressBarStyle,
                 currentSeconds = sharedTickSeconds,
                 period = 30,
                 smoothProgress = appSettings.validatorSmoothProgress,
-                timeOffset = (appSettings.totpTimeOffset * 1000).toLong() // 传递时间偏移(毫秒)
+                timeOffset = (appSettings.totpTimeOffset * 1000).toLong(), // 传递时间偏移(毫秒)
+                trailingContent = passkeyEntryButton
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                passkeyEntryButton()
+            }
         }
 
         val contentPullOffset = if (enableBitwardenPullSync) 0 else pullAction.currentOffset.toInt()

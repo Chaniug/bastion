@@ -45,7 +45,9 @@ fun UnifiedProgressBar(
     currentSeconds: Long = System.currentTimeMillis() / 1000,
     period: Int = 30,
     smoothProgress: Boolean = true,
-    timeOffset: Long = 0 // 新增：时间偏移量（毫秒）以同步 TOTP 生成
+    timeOffset: Long = 0, // 新增：时间偏移量（毫秒）以同步 TOTP 生成
+    // 倒计时右侧的可选插槽，用于放置页面级快捷入口（如验证器页的「通行秘钥」）。
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     val currentMillis = rememberTotpTickerMillis(smoothProgress)
     
@@ -118,6 +120,11 @@ fun UnifiedProgressBar(
             ),
             color = progressColor
         )
+
+        if (trailingContent != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            trailingContent()
+        }
     }
 }
 

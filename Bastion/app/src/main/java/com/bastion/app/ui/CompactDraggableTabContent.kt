@@ -98,6 +98,7 @@ internal fun CompactDraggableTabContent(
     passkeyViewModel: PasskeyViewModel,
     onNavigateToPasswordDetail: (Long) -> Unit,
     onNavigateToAuthenticator: () -> Unit,
+    onNavigateToPasskeys: () -> Unit,
     bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel,
     onSendBitwardenEvent: (com.bastion.app.bitwarden.viewmodel.BitwardenViewModel.BitwardenEvent) -> Boolean,
     onNavigateToChangePassword: () -> Unit,
@@ -287,7 +288,8 @@ internal fun CompactDraggableTabContent(
                     onQuickScanTotp = onNavigateToQuickTotpScan,
                     onSelectionModeChange = onTotpSelectionModeChange,
                     showStandaloneSettingsEntry = showStandaloneSettingsEntry,
-                    onOpenStandaloneSettings = onOpenStandaloneSettings
+                    onOpenStandaloneSettings = onOpenStandaloneSettings,
+                    onNavigateToPasskeys = onNavigateToPasskeys
                 )
             }
             BottomNavItem.CardWallet -> {

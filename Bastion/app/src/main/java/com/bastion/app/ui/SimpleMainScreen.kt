@@ -1871,6 +1871,9 @@ fun SimpleMainScreen(
                     onNavigateToAuthenticator = {
                         selectedTabKey = BottomNavItem.Authenticator.key
                     },
+                    onNavigateToPasskeys = {
+                        selectedTabKey = BottomNavItem.Passkey.key
+                    },
                     bitwardenViewModel = bitwardenViewModel,
                     onSendBitwardenEvent = handleSendBitwardenEvent,
                     onNavigateToChangePassword = onNavigateToChangePassword,
@@ -2235,7 +2238,10 @@ fun SimpleMainScreen(
                         totpNewItemDefaults = pendingInlineTotpAddStorageDefaults ?: totpNewItemDefaults,
                         onInlineTotpEditorBack = handleInlineTotpEditorBack,
                         showStandaloneSettingsEntry = shouldHideBottomNavigation,
-                        onOpenStandaloneSettings = onNavigateToStandaloneSettings
+                        onOpenStandaloneSettings = onNavigateToStandaloneSettings,
+                        onNavigateToPasskeys = {
+                            selectedTabKey = BottomNavItem.Passkey.key
+                        }
                     )
                 }
                 BottomNavItem.CardWallet -> {
@@ -2633,7 +2639,10 @@ fun SimpleMainScreen(
                             totpNewItemDefaults = pendingInlineTotpAddStorageDefaults ?: totpNewItemDefaults,
                             onInlineTotpEditorBack = handleInlineTotpEditorBack,
                             showStandaloneSettingsEntry = shouldHideBottomNavigation,
-                            onOpenStandaloneSettings = onNavigateToStandaloneSettings
+                            onOpenStandaloneSettings = onNavigateToStandaloneSettings,
+                            onNavigateToPasskeys = {
+                                selectedTabKey = BottomNavItem.Passkey.key
+                            }
                         )
                     }
                     BottomNavItem.CardWallet -> {

@@ -34,7 +34,8 @@ internal fun AuthenticatorTabPane(
     totpNewItemDefaults: NewItemStorageDefaults,
     onInlineTotpEditorBack: () -> Unit,
     showStandaloneSettingsEntry: Boolean,
-    onOpenStandaloneSettings: () -> Unit
+    onOpenStandaloneSettings: () -> Unit,
+    onNavigateToPasskeys: () -> Unit = {}
 ) {
     val listPaneContent: @Composable ColumnScope.() -> Unit = {
         TotpListContent(
@@ -47,7 +48,8 @@ internal fun AuthenticatorTabPane(
             onQuickScanTotp = onNavigateToQuickTotpScan,
             onSelectionModeChange = onSelectionModeChange,
             showStandaloneSettingsEntry = showStandaloneSettingsEntry,
-            onOpenStandaloneSettings = onOpenStandaloneSettings
+            onOpenStandaloneSettings = onOpenStandaloneSettings,
+            onNavigateToPasskeys = onNavigateToPasskeys
         )
     }
 
