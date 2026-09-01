@@ -128,3 +128,6 @@ CLI-WeChat-Bridge-main/
 **/certs/
 **/release-signing/
 
+# 图标脚本产生的原始图备份（二进制，git 历史可随时还原，无需入库）
+image/icon_backup_*/
+
