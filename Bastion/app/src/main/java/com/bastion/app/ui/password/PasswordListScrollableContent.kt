@@ -107,7 +107,7 @@ internal fun PasswordListScrollableContent(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(filterSectionSpacing)
                     ) {
-                        if (hasVisibleQuickFilters) {
+                        if (hasVisibleQuickFilters && !appSettings.experimentalCollapsedQuickFilters) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

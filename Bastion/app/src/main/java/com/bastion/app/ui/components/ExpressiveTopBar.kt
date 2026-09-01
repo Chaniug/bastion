@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,9 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -77,6 +81,11 @@ fun ExpressiveTopBar(
     navigationIcon: @Composable (() -> Unit)? = null,
     onActionPillBoundsChanged: ((Rect) -> Unit)? = null,
     collapsedTitleEndPadding: Dp = 180.dp,
+    /**
+     * 若非空，则标题区变为可点击（外加 ExpandMore 箭头），用于「点标题弹出筛选菜单」等场景。
+     * 为 null 时标题保持纯文本，行为与原有调用方完全一致。
+     */
+    onTitleClick: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -119,6 +128,10 @@ fun ExpressiveTopBar(
     }
     val pillReserve = if (isSearchExpanded) 0.dp else collapsedTitleEndPadding
 
+    // 当 onTitleClick 非空时，提前解析「点击展开快捷筛选」的本地化字符串，
+    // 避免在非 Composable 的 .semantics { } 块里再调用 stringResource。
+    val titleClickHint = stringResource(R.string.topbar_title_filter_hint)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -136,15 +149,44 @@ fun ExpressiveTopBar(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             navigationIcon?.invoke()
-            
-            Text(
-                text = title,
-                style = titleStyle,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = if (isLongTitle) 2 else 1,
-                overflow = TextOverflow.Clip
-            )
+
+            if (onTitleClick == null) {
+                Text(
+                    text = title,
+                    style = titleStyle,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = if (isLongTitle) 2 else 1,
+                    overflow = TextOverflow.Clip
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(role = Role.Button, onClick = onTitleClick)
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .semantics {
+                            contentDescription = title + ", " + titleClickHint
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = titleStyle,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = if (isLongTitle) 2 else 1,
+                        overflow = TextOverflow.Clip
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (titleStyle.fontSize.value > 24f) 22.dp else 18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         // 2. 搜索/操作胶囊 (在右侧，覆盖在标题之上)
