@@ -2,19 +2,4 @@
 <resources>
     <!-- 系统 Splash 使用 Material 3 浅色低层容器色，降低冷启动亮度 -->
     <color name="bastion_startup_background">#F7F2FA</color>
-    
-    <!-- 自动填充相关颜色 - 日间模式 -->
-    
-    <!-- 背景色 -->
-    
-    <!-- 文字颜色 -->
-    
-    <!-- 内联卡片颜色 -->
-    
-    <!-- 横幅方案2颜色 -->
-
-    <!-- Autofill authentication dialog (dark) -->
-    <color name="autofill_auth_dialog_surface">#1C1B1F</color>
-    <color name="autofill_auth_dialog_on_surface">#FFFFFFFF</color>
-    <color name="autofill_auth_dialog_accent">#FF8AB4F8</color>
 </resources>
