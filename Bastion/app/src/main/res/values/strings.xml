@@ -23,7 +23,6 @@
     <string name="settings">设置</string>
     <string name="back">返回</string>
     <string name="close">关闭</string>
-    <string name="logout">退出登录</string>
     <string name="yes">是</string>
     <string name="no">否</string>
     <string name="share">分享</string>
@@ -45,8 +44,6 @@
     <string name="open_bound_note">打开笔记</string>
     <string name="bound_note_missing_message">已绑定的笔记当前不可用，你可以重新绑定或移除此引用。</string>
     <string name="password_bound_note_empty">暂未绑定笔记。</string>
-    <string name="note_mode_plain">纯文本</string>
-    <string name="note_mode_markdown">Markdown</string>
     <string name="note_mode_edit">编辑</string>
     <string name="note_mode_preview">预览</string>
     <string name="note_markdown_preview_empty">Markdown 预览为空。</string>
@@ -65,18 +62,9 @@
     <string name="note_bitwarden_move_warning_title">Bitwarden 图片兼容提示</string>
     <string name="note_bitwarden_move_warning_message">你选择的 %1$d 条笔记包含图片。移动/复制到 Bitwarden 后，图片会继续保留在 Bastion 本地，但不会同步到 Bitwarden，且后续无法在 Bitwarden 目标笔记中新增图片。是否继续？</string>
     <string name="continue_action">继续</string>
-    <string name="note_detail_title">笔记</string>
     <string name="note_detail_not_found_title">笔记不可用</string>
     <string name="note_detail_not_found_message">你查看的笔记可能已被删除或移动。</string>
-    <string name="note_detail_copied">笔记已复制到剪贴板</string>
-    <string name="note_detail_share_title">分享笔记</string>
-    <string name="note_detail_tags_label">标签</string>
-    <string name="note_detail_preview_tab">预览</string>
-    <string name="note_detail_raw_tab">纯文本</string>
-    <string name="note_detail_preview_fullscreen">全屏预览</string>
-    <string name="note_detail_preview_fullscreen_title">Markdown 预览</string>
     <string name="note_detail_empty_content">这条笔记暂无内容。</string>
-    <string name="note_detail_additional_notes">附加说明</string>
     <string name="note_detail_updated_at">最后更新 %1$s</string>
     
     <!-- Login Screen -->
@@ -88,7 +76,6 @@
     <string name="unlock">解锁</string>
     <string name="vault_locked_message">密码库已锁定，请先解锁后继续。</string>
     <string name="use_biometric">使用生物识别认证</string>
-    <string name="biometric_title">生物识别认证</string>
     <string name="biometric_subtitle">使用您的指纹或面部识别来解锁 Bastion</string>
     <string name="use_master_password">使用主密码</string>
     <string name="show_password">显示密码</string>
@@ -105,7 +92,6 @@
     <string name="biometric_not_available">生物识别认证不可用</string>
     <string name="biometric_error">生物识别认证错误: %s</string>
     <string name="biometric_requires_password_reentry">生物识别已通过，但安全密钥尚未完成初始化。请先使用主密码解锁一次，随后即可继续使用生物识别。</string>
-    <string name="biometric_success">认证成功</string>
     <string name="biometric_unlock">指纹解锁</string>
     <string name="biometric_unlock_enabled">指纹解锁已启用</string>
     <string name="biometric_unlock_disabled">指纹解锁已禁用</string>
@@ -122,7 +108,6 @@
     <string name="autofill_auth_description">验证后将自动填充密码</string>
     
     <!-- 🔐 Password Suggestion -->
-    <string name="password_suggestion">强密码建议</string>
     <string name="password_suggestion_title">生成强密码</string>
     <string name="password_suggestion_subtitle">Bastion 将为您创建一个安全的强密码</string>
     <string name="password_suggestion_accept">使用</string>
@@ -137,7 +122,6 @@
     <string name="no_passwords_found">没有找到匹配的密码</string>
     <string name="add_password">添加密码</string>
     <string name="clear_search">清除搜索</string>
-    <string name="logout_confirmation">确定要退出登录吗？</string>
     <string name="copy_username">复制用户名</string>
     <string name="copy_password">复制密码</string>
     <string name="copy">复制</string>
@@ -159,27 +143,23 @@
     <string name="autofill_auth_required">自动填充验证</string>
     <string name="autofill_auth_required_desc">进入自动填充前需要生物识别或密码验证</string>
     <string name="autofill_auth_required_via_hint">关闭后，可在 Via 等浏览器中直接填充而无需开启无障碍权限；开启则会多一步验证以提高安全性。</string>
-    <string name="autofill_auth_waiting">正在等待验证…</string>
 
     
     <!-- Form Fields -->
     <string name="field_email">邮箱</string>
     <string name="field_phone">手机号</string>
     <string name="field_address">详细地址</string>
-    <string name="field_address_placeholder">街道、门牌号等</string>
     <string name="field_city">城市</string>
     <string name="field_state">省份</string>
     <string name="field_postal_code">邮编</string>
     <string name="field_country">国家</string>
     <string name="field_card_number">信用卡号</string>
-    <string name="field_card_valid">✓ 卡号有效</string>
     <string name="field_cardholder">持卡人姓名</string>
     <string name="field_expiry">有效期</string>
     <string name="field_cvv">CVV</string>
     
     <!-- Password Group Actions -->
     <string name="collapse">收起</string>
-    <string name="collapse_group">收起 %d 个密码</string>
     <string name="passwords_count">%d 个密码</string>
 
     <!-- Stack card modes -->
@@ -197,7 +177,6 @@
     <string name="archive_password_confirmation_title">确认归档此条目？</string>
     <string name="archive_password_confirmation_message">归档后该条目会移动到“归档”列表，之后可随时恢复。</string>
     <string name="archive_empty_hint">暂无归档密码</string>
-    <string name="archive_item_subtitle_empty">无用户名或网站信息</string>
     <string name="smart_deduplication">智能去重</string>
     <string name="smart_deduplication_desc">在“全部”视图中合并来自不同来源的重复条目</string>
     <string name="separate_username_account_title">用户名/账号分离</string>
@@ -246,7 +225,6 @@
     <string name="ssh_key_comment">备注</string>
     <string name="ssh_key_generate">生成</string>
     <string name="ssh_key_generating">正在生成 SSH 密钥…</string>
-    <string name="ssh_key_regenerate">重新生成</string>
     <string name="ssh_key_empty_placeholder">尚未生成密钥，点击「生成」即可创建。</string>
     <string name="ssh_key_rsa_description">所有 SSH 客户端都支持的算法。RSA 推荐至少 2048 位，使用 3072 位或更高更安全。</string>
     <string name="ssh_key_ed25519_description">现代、紧凑、比 RSA 更快更安全，需要较新的 SSH 客户端。</string>
@@ -272,15 +250,10 @@
     <string name="add_wifi_title">添加WIFI</string>
     <string name="edit_wifi_title">编辑WIFI</string>
     <string name="wifi_section_basic">基础信息</string>
-    <string name="wifi_section_security">安全性</string>
-    <string name="wifi_section_privacy">隐私</string>
-    <string name="wifi_section_proxy">代理</string>
-    <string name="wifi_section_ip">IP设置</string>
     <string name="wifi_ssid_label">网络名称 (SSID)</string>
     <string name="wifi_ssid_required">网络名称 *</string>
     <string name="wifi_password_label">密码</string>
     <string name="wifi_hidden_network">隐藏网络</string>
-    <string name="wifi_bssid_label">BSSID (可选)</string>
     <string name="wifi_security_label">安全性</string>
     <string name="wifi_security_none">无</string>
     <string name="wifi_security_wep">WEP</string>
@@ -289,37 +262,8 @@
     <string name="wifi_security_wpa3">WPA3-Personal</string>
     <string name="wifi_security_wpa2_enterprise">WPA2-Enterprise</string>
     <string name="wifi_security_wpa3_enterprise">WPA3-Enterprise</string>
-    <string name="wifi_eap_method">EAP方法</string>
-    <string name="wifi_eap_phase2">阶段2身份验证</string>
-    <string name="wifi_eap_identity">身份</string>
-    <string name="wifi_eap_anonymous_identity">匿名身份</string>
-    <string name="wifi_eap_ca_certificate">CA证书</string>
-    <string name="wifi_eap_domain">域</string>
-    <string name="wifi_privacy_label">MAC地址</string>
-    <string name="wifi_privacy_default">使用系统默认</string>
-    <string name="wifi_privacy_randomized">使用随机MAC</string>
-    <string name="wifi_privacy_device_mac">使用设备MAC</string>
-    <string name="wifi_proxy_label">代理</string>
-    <string name="wifi_proxy_none">无</string>
-    <string name="wifi_proxy_manual">手动</string>
-    <string name="wifi_proxy_auto">自动配置 (PAC)</string>
-    <string name="wifi_proxy_host">代理主机</string>
-    <string name="wifi_proxy_port">代理端口</string>
-    <string name="wifi_proxy_bypass">绕过列表</string>
-    <string name="wifi_proxy_pac_url">PAC网址</string>
-    <string name="wifi_ip_label">IP分配</string>
-    <string name="wifi_ip_dhcp">DHCP</string>
-    <string name="wifi_ip_static">静态</string>
-    <string name="wifi_ip_address">IP地址</string>
-    <string name="wifi_ip_gateway">网关</string>
-    <string name="wifi_ip_prefix">网络前缀长度</string>
-    <string name="wifi_ip_dns1" tools:ignore="Typos">DNS1</string>
-    <string name="wifi_ip_dns2">DNS2</string>
     <string name="wifi_detail_title">WIFI详情</string>
     <string name="wifi_detail_copy_password">复制密码</string>
-    <string name="wifi_detail_copy_ssid">复制SSID</string>
-    <string name="wifi_list_subtitle_security_none">开放网络</string>
-    <string name="wifi_list_subtitle_format">%1$s · %2$s</string>
     <string name="wifi_scan_qr">扫描 Wi-Fi 二维码</string>
     <string name="wifi_scan_success">已从二维码填入：%1$s</string>
     <string name="wifi_scan_invalid">不是有效的 Wi-Fi 二维码</string>
@@ -327,7 +271,6 @@
 
     <!-- WIFI 一键连接 -->
     <string name="wifi_connect_button">连接</string>
-    <string name="wifi_connect_prefilled_hint">已提交到系统 Wi-Fi 建议，在弹窗里点"加入"即可连接</string>
     <string name="wifi_connect_fallback_copied">密码已复制，打开 Wi-Fi 设置后粘贴即可</string>
     <string name="wifi_connect_fallback_no_copy">已打开 Wi-Fi 设置页，请手动添加网络</string>
     <string name="wifi_connect_failed">当前设备无法打开 Wi-Fi 设置</string>
@@ -344,7 +287,6 @@
     <string name="password_required">密码 *</string>
     <string name="notes">备注</string>
     <string name="generate_password">生成密码</string>
-    <string name="password_strength_very_weak">非常弱</string>
     <string name="password_strength_weak">弱</string>
     <string name="password_strength_moderate">中等</string>
     <string name="password_strength_strong">强</string>
@@ -358,13 +300,9 @@
     <string name="password_fill_mode_common">填充</string>
     <string name="password_fill_no_templates">暂无常用密码模板</string>
     <string name="password_fill_no_templates_hint">请先在“常用账号信息”里创建密码类型模板。</string>
-    <string name="length">长度：%d</string>
     <string name="length_value">长度：%d</string>
-    <string name="uppercase_letters">大写字母 (A-Z)</string>
     <string name="uppercase_az">大写字母 (A-Z)</string>
-    <string name="lowercase_letters">小写字母 (a-z)</string>
     <string name="lowercase_az">小写字母 (a-z)</string>
-    <string name="numbers">数字 (0–9)</string>
     <string name="numbers_09">数字 (0–9)</string>
     <string name="symbols">符号 (!@#$…)</string>
     <string name="exclude_similar">排除相似字符</string>
@@ -372,7 +310,6 @@
     <string name="analyze_common_passwords_desc">分析已保存的密码并生成相似且易记的密码</string>
     <string name="analyze_weight_label">关联强度：%d</string>
     <string name="use_password">使用密码</string>
-    <string name="generate_new_password">生成新密码</string>
     <string name="show">显示</string>
     <string name="hide">隐藏</string>
     
@@ -385,7 +322,6 @@
     <string name="secret_key_required">密钥 *</string>
     <string name="secret_key_example">ABCD EFGH IJKL MNOP</string>
     <string name="secret_key_hint">Base32编码的密钥，通常在二维码下方显示</string>
-    <string name="enter_secret_key">请输入密钥</string>
     <string name="scan_qr_code">扫描二维码</string>
     <string name="totp_import_uri_action">导入链接</string>
     <string name="totp_import_uri_dialog_title">导入验证器链接</string>
@@ -403,8 +339,6 @@
     <string name="usually_30_seconds">通常为30秒</string>
     <string name="code_digits">验证码位数</string>
     <string name="usually_6_digits">通常为6位</string>
-    <string name="how_to_get_secret_key">如何获取密钥？</string>
-    <string name="secret_key_instructions">1. 在要启用2FA的网站上找到"两步验证"设置\n2. 选择"使用验证器应用"\n3. 复制显示的密钥或扫描二维码\n4. 将密钥粘贴到上方输入框</string>
     
     <!-- OTP Types -->
     <string name="otp_type">OTP类型</string>
@@ -419,9 +353,6 @@
     <string name="counter_value">计数器: %d</string>
     <string name="generate_next">生成下一个</string>
     <string name="pin_code">PIN码</string>
-    <string name="pin_code_hint">Mobile-OTP所需的PIN码</string>
-    <string name="pin_code_example">例如：1234</string>
-    <string name="enter_pin_code">请输入PIN码</string>
     <string name="hotp_counter_hint">每次使用后计数器自动加1</string>
     <string name="motp_pin_hint">4位数字PIN码，用于Mobile-OTP加密</string>
     <string name="otp_type_description_totp">标准的基于时间验证码，每30秒刷新一次</string>
@@ -430,8 +361,6 @@
     <string name="otp_type_description_motp">带PIN码保护的Mobile-OTP验证码</string>
     
     <!-- Bank Card -->
-    <string name="add_bank_card_title">添加银行卡</string>
-    <string name="edit_bank_card_title">编辑银行卡</string>
     <string name="no_bank_cards_title">还没有银行卡</string>
     <string name="no_bank_cards_description">点击右下角的 + 按钮添加您的第一张银行卡</string>
     <string name="card_name">卡片名称</string>
@@ -450,30 +379,6 @@
     <string name="cvv">CVV</string>
     <string name="billing_address">账单地址</string>
     <string name="payment_account">支付方式</string>
-    <string name="payment_account_empty">尚未保存支付方式</string>
-    <string name="add_payment_account">添加支付方式</string>
-    <string name="edit_payment_account">编辑支付方式</string>
-    <string name="payment_account_type">支付类型</string>
-    <string name="payment_account_type_digital_wallet">数字钱包</string>
-    <string name="payment_account_type_bank_account">银行账户</string>
-    <string name="payment_account_type_payment_app">支付应用</string>
-    <string name="payment_account_type_buy_now_pay_later">先买后付</string>
-    <string name="payment_account_type_crypto_wallet">加密钱包</string>
-    <string name="payment_account_type_other">其他</string>
-    <string name="payment_account_provider">服务商</string>
-    <string name="payment_account_identity">身份信息</string>
-    <string name="payment_account_holder">账户持有人</string>
-    <string name="payment_account_numbers">账户号码</string>
-    <string name="payment_account_id">账户 ID</string>
-    <string name="payment_account_masked_number">脱敏账户号码</string>
-    <string name="payment_account_linked_card_last4">关联卡片后四位</string>
-    <string name="payment_account_bank_transfer">银行转账</string>
-    <string name="payment_account_iban">IBAN</string>
-    <string name="payment_account_swift_bic">SWIFT / BIC</string>
-    <string name="payment_account_online_and_billing">在线与账单</string>
-    <string name="payment_account_default">默认支付方式</string>
-    <string name="delete_payment_account_title">删除支付方式？</string>
-    <string name="delete_payment_account_message">此支付方式将被移入回收站。</string>
     <string name="add_billing_address">添加账单地址</string>
     <string name="edit_billing_address">编辑账单地址</string>
     <string name="billing_address_empty">尚未保存账单地址</string>
@@ -484,24 +389,16 @@
     <string name="remove_billing_address">移除账单地址</string>
     <string name="billing_address_removed">已移除账单地址</string>
     <string name="street_address">街道地址</string>
-    <string name="street_address_placeholder">如：中山路123号</string>
     <string name="apartment">公寓/单元号（可选）</string>
-    <string name="apartment_placeholder">如：2号楼501室</string>
     <string name="city">城市</string>
-    <string name="city_placeholder">如：北京市</string>
     <string name="state_province">省/州</string>
-    <string name="state_province_placeholder">如：北京</string>
     <string name="postal_code">邮政编码</string>
-    <string name="postal_code_placeholder">如：100000</string>
     <string name="country">国家</string>
-    <string name="country_placeholder">如：中国</string>
     <string name="billing_address_saved">账单地址已保存</string>
     <string name="notes_placeholder">添加备注信息…</string>
     <string name="bottom_nav_settings">底部导航栏</string>
     <string name="bottom_nav_toggle_subtitle">在底部栏中显示或隐藏该页签</string>
     <string name="bottom_nav_reorder_hint">长按拖动可调整顺序，设置页始终位于最后。</string>
-    <string name="bottom_nav_move_up">上移标签</string>
-    <string name="bottom_nav_move_down">下移标签</string>
     <string name="bottom_nav_settings_entry_subtitle">选择要显示的页签并调整顺序</string>
     <string name="bottom_nav_auto_hide_single_tab_title">仅剩一个页签时隐藏导航栏</string>
     <string name="bottom_nav_auto_hide_single_tab_subtitle">当底部导航只启用一个页签时，自动隐藏导航栏，并改为通过右上角菜单进入设置。</string>
@@ -522,13 +419,11 @@
     <string name="social_security_card">社保卡</string>
     <string name="other_document">其他证件</string>
     <string name="document_number_required">证件号码 *</string>
-    <string name="holder_name">持有人姓名</string>
     <string name="holder_name_example">张三</string>
     <string name="issue_date">签发日期</string>
     <string name="expiry_date_label">有效期至</string>
     <string name="issuing_authority">签发机关</string>
     <string name="issuing_authority_example">例如: XX市公安局</string>
-    <string name="document_encryption_notice">所有证件信息和照片将加密存储在本地设备</string>
     <string name="document_photo_front">%s照片（正面）</string>
     <string name="document_photo_back">%s照片（反面，可选）</string>
     
@@ -565,8 +460,6 @@
     <string name="clear">清除</string>
     <string name="no_authenticators_title">暂无验证器</string>
     <string name="no_authenticators_description">点击右下角 + 按钮添加验证器</string>
-    <string name="delete_authenticator_title">删除验证器</string>
-    <string name="delete_authenticator_message">确定要删除 \"%s\" 吗？此操作无法撤销。</string>
     <string name="delete_document_title">删除证件</string>
     <string name="delete_document_message">确定要删除 \"%s\" 吗？此操作无法撤销。</string>
     <string name="delete_bank_card_title">删除银行卡</string>
@@ -581,29 +474,15 @@
     <!-- Image Picker -->
     <string name="gallery">相册</string>
     <string name="camera">拍照</string>
-    <string name="download">下载</string>
-    <string name="download_success">图片已成功保存到相册</string>
-    <string name="download_failed">保存图片失败</string>
-    <string name="camera_permission_needed">需要相机权限才能进行拍照</string>
-    <string name="error_launch_gallery">打开相册失败：%1$s</string>
-    <string name="error_launch_camera">打开相机失败：%1$s</string>
     
     <!-- Export/Import Data -->
     <string name="export_data_title">导出数据</string>
     <string name="exporting">导出中…</string>
     <string name="start_export">开始导出</string>
-        <string name="error_export_failed">导出失败</string>
         <string name="error_launch_export">无法打开文件选择器：%1$s</string>
     <string name="import_data_title">导入数据</string>
     <string name="importing">导入中…</string>
     <string name="start_import">开始导入</string>
-    <string name="export_data_select_type">选择要导出的数据类型：</string>
-    <string name="export_data_type_passwords">密码</string>
-    <string name="export_data_type_totp">TOTP验证码</string>
-    <string name="export_data_type_bank_cards">银行卡</string>
-    <string name="export_data_type_documents">证件</string>
-    <string name="export_data_type_all">所有数据</string>
-    <string name="export_data_button">导出</string>
     <string name="export_data_success">数据导出成功</string>
     <string name="export_data_error">导出失败</string>
     <string name="export_data_warning">明文 JSON 未被加密，请妥善保管导出文件，避免敏感信息泄露</string>
@@ -635,23 +514,11 @@
     <string name="export_success_bitwarden_encrypted_json">已导出 Bitwarden 加密 JSON</string>
     <string name="import_data_btn">导入</string>
     
-    <string name="import_data_warning_title">警告</string>
-    <string name="import_data_warning_message">导入数据可能会覆盖现有数据。请在导入前确保备份当前数据。</string>
     <string name="import_data_select_file">选择文件</string>
-    <string name="import_data_button">导入</string>
-    <string name="import_data_success">数据导入成功</string>
     <string name="import_data_error">导入失败</string>
-    <string name="import_data_supported_formats">支持应用备份、KeePass、Bitwarden（CSV / JSON）、Aegis、Proton Pass、Chrome 等格式</string>
     <string name="import_data_select_type">选择导入类型</string>
-    <string name="import_data_type_normal">应用数据</string>
-    <string name="import_data_type_alipay">支付宝账单</string>
     <string name="import_data_file_selected">已选择文件</string>
-    <string name="import_data_file_hint">点击选择 .csv 文件</string>
-    <string name="import_data_file_hint_csv">点击选择 .csv 文件</string>
-    <string name="import_data_file_hint_csv_alipay">点击选择支付宝 .csv 文件</string>
-    <string name="import_data_file_hint_json">点击选择 .json 文件</string>
     <string name="import_data_success_normal">成功导入 %d 条数据</string>
-    <string name="import_data_success_alipay">成功导入 %d 条支付宝交易</string>
     <string name="import_data_error_exception">导入失败：%s</string>
     <string name="import_data_notice">导入的数据将添加到现有数据中，不会删除当前数据</string>
     
@@ -675,21 +542,13 @@
     <!-- Password Entry Card -->
     <string name="username">用户名</string>
     <string name="password">密码</string>
-    <string name="password_hidden">••••••••</string>
-    <string name="delete_password_title">删除密码</string>
-    <string name="delete_password_message">确定要删除「%s」吗？</string>
     
     <!-- Error Messages -->
     <string name="error_password_too_short">主密码至少需要3个字符</string>
-    <string name="error_password_must_be_6_digits">主密码至少需要3个字符</string>
-    <string name="error_password_min_6_digits">主密码至少需要3个字符</string>
-    <string name="error_password_must_be_numeric">主密码包含不支持的字符</string>
     <string name="error_password_contains_unsupported_characters">主密码包含不支持的字符</string>
     <string name="error_passwords_not_match">密码不匹配</string>
     <string name="error_invalid_password">主密码无效</string>
     <string name="error_authentication_failed">认证失败</string>
-    <string name="error_title_required">标题为必填项</string>
-    <string name="error_password_required">密码为必填项</string>
     <string name="password_min_6_digits">至少需要3个字符</string>
     
     <!-- Settings Screen -->
@@ -699,7 +558,6 @@
     <string name="master_password_and_locking">主密码与锁定</string>
     <string name="master_password_and_locking_description">管理指纹解锁、自动锁定、密保问题与主密码重设。</string>
     <string name="auto_lock">自动锁定</string>
-    <string name="auto_lock_summary">闲置后锁定应用</string>
     <string name="about">关于</string>
     <string name="version">版本</string>
     <string name="cannot_open_browser">无法打开浏览器</string>
@@ -788,8 +646,6 @@
     <string name="verify_master_password_desc">请输入主密码以继续</string>
     <string name="wrong_password">密码错误</string>
     <string name="notes_delete_selected_confirm">确定要删除选中的 %d 条笔记吗？</string>
-    <string name="vault_batch_delete_title">删除 %d 个条目？</string>
-    <string name="vault_batch_delete_message">选中的条目将移入回收站，之后可以恢复。</string>
     <string name="vault_batch_delete_item_type">条目</string>
     <string name="security_questions_verify_description">请回答您的密保问题以重置密码</string>
     <string name="question_1">问题 1：</string>
@@ -803,11 +659,8 @@
     <!-- Main Screen Bottom Navigation -->
     <string name="nav_passwords">密码</string>
     <string name="nav_authenticator">验证器</string>
-    <string name="nav_documents">证件</string>
-    <string name="nav_bank_cards">银行卡</string>
     <string name="nav_notes">笔记</string>
     <string name="nav_generator">生成器</string>  <!-- 添加生成器导航标签 -->
-    <string name="nav_timeline">时间线</string>
     <string name="nav_passkey">通行密钥</string>
     <string name="nav_settings">设置</string>
     <string name="trash_bin">回收站</string>
@@ -823,7 +676,6 @@
     <string name="nav_card_wallet_short">卡包</string>
     <string name="nav_notes_short">笔记</string>
     <string name="nav_generator_short">生成</string>  <!-- 添加生成器导航短标签 -->
-    <string name="nav_timeline_short">历史</string>
     <string name="nav_passkey_short">通行</string>
     <string name="nav_settings_short">设置</string>
 
@@ -833,23 +685,6 @@
     <string name="nav_v2_vault_short">密码库</string>
     <string name="nav_v2_send">发送</string>
     <string name="nav_v2_send_short">发送</string>
-    <string name="nav_v2_sync">同步</string>
-    <string name="nav_v2_sync_short">同步</string>
-    <string name="v2_vault_title">多源密码库</string>
-    <string name="v2_vault_subtitle">查看和管理多个来源的密码</string>
-    <string name="v2_send_title">安全发送</string>
-    <string name="v2_send_subtitle">安全分享敏感信息</string>
-    <string name="v2_sync_title">同步中心</string>
-    <string name="v2_sync_subtitle">管理 Bitwarden 等服务的同步</string>
-    <string name="v2_source_bitwarden">Bitwarden</string>
-    <string name="v2_source_keepass">KeePass</string>
-    <string name="v2_filter_all">全部</string>
-    <string name="v2_filter_login">登录</string>
-    <string name="v2_filter_card">支付卡</string>
-    <string name="v2_filter_identity">身份</string>
-    <string name="v2_filter_note">笔记</string>
-    <string name="v2_no_items">密码库为空</string>
-    <string name="v2_connect_bitwarden">连接 Bitwarden</string>
     
     <string name="filter_bastion">本地</string>
     <string name="manage_database">管理数据库</string>
@@ -870,22 +705,15 @@
     <!-- Passkey Screen -->
     <string name="passkey_title">通行密钥</string>
     <string name="passkey_count">%1$d 个通行密钥</string>
-    <string name="passkey_view_only_mode">仅查看模式</string>
     <string name="passkey_search_placeholder">搜索通行密钥…</string>
     <string name="passkey_used_count">已使用 %1$d 次</string>
     <string name="passkey_discoverable">可发现</string>
     <string name="passkey_empty_title">暂无通行密钥</string>
     <string name="passkey_empty_message">通行密钥是一种更安全便捷的登录方式。当您在网站或应用中创建通行密钥时，它将显示在这里。</string>
-    <string name="passkey_empty_message_unsupported">您的设备不支持创建通行密钥。您仍可查看从其他设备同步的通行密钥。</string>
-    <string name="passkey_add_hint">通行密钥需要由网站或应用发起创建。请在支持的网站登录时选择"使用通行密钥"。</string>
     <string name="passkey_no_search_results">无结果</string>
     <string name="passkey_no_search_results_hint">请尝试其他搜索词</string>
     <string name="passkey_version_warning_title">通行密钥支持受限</string>
     <string name="passkey_version_warning_message">完整的通行密钥功能需要 Android 14 或更高版本。当前：%1$s。您可以查看同步的通行密钥，但无法创建新的。</string>
-    <string name="passkey_what_is_title">什么是通行密钥？</string>
-    <string name="passkey_feature_1">比密码更安全 - 防钓鱼攻击</string>
-    <string name="passkey_feature_2">使用简便 - 只需指纹或面容</string>
-    <string name="passkey_feature_3">跨设备同步</string>
     <string name="passkey_create_title">创建通行密钥</string>
     <string name="passkey_create_message">为 %1$s 创建通行密钥，以后无需密码即可登录。</string>
     <string name="passkey_create_confirm">创建通行密钥</string>
@@ -900,16 +728,10 @@
     <string name="passkey_qr_open_failed">当前系统无法处理此通行密钥二维码</string>
     
     <!-- Passkey Management -->
-    <string name="passkey">通行密钥</string>
-    <string name="passkey_search_hint">搜索通行密钥…</string>
-    <string name="passkey_search_empty">未找到匹配的通行密钥</string>
-    <string name="passkey_search_empty_hint">尝试其他搜索词</string>
     <string name="passkey_empty_subtitle">在网站和应用中创建通行密钥后将显示在这里</string>
     <string name="passkey_delete_title">删除通行密钥</string>
     <string name="passkey_delete_message">确定要删除 %1$s (%2$s) 的通行密钥吗？删除后将无法使用此通行密钥登录。</string>
     <string name="passkey_delete_button">删除通行密钥</string>
-    <string name="passkey_detail_user">显示名称</string>
-    <string name="passkey_detail_username">用户名</string>
     <string name="passkey_detail_created">创建时间</string>
     <string name="passkey_detail_last_used">最近使用</string>
     <string name="passkey_detail_use_count">使用次数</string>
@@ -971,16 +793,9 @@
     <!-- Generator Screen -->  <!-- 添加生成器页面相关字符串 -->
     <string name="generator_title">生成器</string>
     <string name="random_symbol_generator">随机符号生成器</string>
-    <string name="random_symbol_generator_tab">随机符号</string>
     <string name="password_generator">口令生成器</string>
-    <string name="password_generator_tab">口令</string>
     <string name="pin_generator">PIN码生成器</string>
-    <string name="pin_generator_tab">PIN</string>
     <string name="generator_length">长度</string>
-    <string name="generator_include_uppercase">包含大写字母 (A-Z)</string>
-    <string name="generator_include_lowercase">包含小写字母 (a-z)</string>
-    <string name="generator_include_numbers">包含数字 (0–9)</string>
-    <string name="generator_include_symbols">包含符号 (!@#$…)</string>
     <string name="generator_exclude_similar">排除相似字符 (0,O,l,I)</string>
     <string name="generator_exclude_ambiguous">排除不明确字符</string>
     <string name="generator_first_letter_uppercase">首字母大写</string>
@@ -988,15 +803,10 @@
     <string name="generator_custom_separator">自定义分隔符</string>
     <string name="generator_separator_counts_towards_length">分隔符计入长度</string>
     <string name="generator_segment_length">分段长度</string>
-    <string name="generator_pin_length">PIN码长度</string>
-    <string name="generator_generate">生成</string>
     <string name="generator_result">结果</string>
     <string name="generator_copy">复制</string>
     <string name="generator_copied">已复制到剪贴板</string>
-    <string name="generator_invalid_length">长度无效</string>
-    <string name="generator_action">生成</string>  <!-- 新增：生成按钮文字 -->
-    <string name="generator">生成器</string>
-    <string name="generator_hint">使用生成器创建安全密码</string>
+      <!-- 新增：生成按钮文字 -->
     <string name="add_url">添加 URL</string>
     <string name="bind_app">绑定应用</string>
 
@@ -1024,21 +834,6 @@
 
     <!-- Settings Screen -->
     <string name="settings_detail_placeholder">选择设置项以查看详情</string>
-    <string name="settings_auto_lock_title">自动锁定</string>
-    <string name="settings_auto_lock_description">离开应用后自动锁定</string>
-    <string name="settings_biometric_title">生物识别</string>
-    <string name="settings_biometric_description">使用指纹或面容解锁</string>
-    <string name="settings_change_password">修改主密码</string>
-    <string name="settings_change_password_description">修改登录密码</string>
-    <string name="settings_security_questions">密保问题</string>
-    <string name="settings_security_questions_description">设置密保问题用于找回密码</string>
-    <string name="settings_bottom_sheet_title">底部抽屉模式</string>
-    <string name="settings_bottom_sheet_description">启用可上拉的抽屉式导航</string>
-    <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_description">导出数据到本地文件</string>
-    <string name="settings_import_data">导入数据</string>
-    <string name="settings_import_data_description">从备份文件恢复</string>
-    <string name="settings_version_info">版本信息</string>
     <string name="version_info_dialog_title">版本与链接</string>
     <string name="version_info_github_label">GitHub</string>
     <string name="version_info_website_label">官方网站</string>
@@ -1079,13 +874,8 @@
     <string name="custom_icon_load_more">加载更多图标（剩余 %1$d 个）</string>
     <string name="custom_icon_upload_success">图标上传成功</string>
     <string name="custom_icon_upload_failed">上传失败：%1$s</string>
-    <string name="settings_support_author">支持作者</string>
-    <string name="settings_support_author_description">感谢您的支持</string>
-    <string name="settings_privacy_policy">隐私政策</string>
     
     <!-- Icon Cards -->
-    <string name="icon_cards_title">网站图标</string>
-    <string name="icon_cards_description">在密码卡片上显示网站图标</string>
     
     <!-- Password Card Display Mode -->
     <string name="password_card_display_mode_title">卡片显示内容</string>
@@ -1097,8 +887,6 @@
     <string name="display_mode_title_only_desc">仅显示标题</string>
     
     <!-- Bottom Sheet -->
-    <string name="all_navigation_items">所有导航项</string>
-    <string name="hidden">已隐藏</string>
     
     <!-- Language Selection Dialog -->
     <!-- Change Password Screen -->
@@ -1120,46 +908,12 @@
     <string name="change_password_error_confirm_empty">请确认新密码</string>
     <string name="change_password_error_not_match">两次输入的新密码不一致</string>
     <string name="change_password_error_same_as_current">新密码不能与当前密码相同</string>
-    <string name="show_password_desc">显示密码</string>
-    <string name="hide_password_desc">隐藏密码</string>
     
     <!-- Security Question Screen -->
-    <string name="security_question_title">密保问题</string>
-    <string name="security_question_description">设置密保问题以便在忘记密码时恢复账户。这些问题将帮助验证您的身份。</string>
-    <string name="security_question_label_1">密保问题 1 *</string>
-    <string name="security_question_label_2">密保问题 2 *</string>
-    <string name="security_question_label_3">密保问题 3 *</string>
-    <string name="security_question_select">选择一个问题</string>
-    <string name="security_question_custom">自定义问题</string>
-    <string name="security_question_answer">您的答案 *</string>
-    <string name="security_question_answer_hint">输入您的答案（不区分大小写）</string>
-    <string name="security_question_save">保存密保问题</string>
-    <string name="security_question_success_title">设置成功</string>
-    <string name="security_question_success_message">密保问题已成功设置。您可以使用这些问题来恢复密码。</string>
-    <string name="security_question_error_q1_empty">请选择第一个密保问题</string>
-    <string name="security_question_error_q2_empty">请选择第二个密保问题</string>
-    <string name="security_question_error_q3_empty">请选择第三个密保问题</string>
-    <string name="security_question_error_duplicate">所有问题必须不同</string>
-    <string name="security_question_error_a1_empty">请提供第一个问题的答案</string>
-    <string name="security_question_error_a2_empty">请提供第二个问题的答案</string>
-    <string name="security_question_error_a3_empty">请提供第三个问题的答案</string>
     
     <!-- Preset Security Questions -->
-    <string name="security_question_preset_1">您母亲的娘家姓是什么？</string>
-    <string name="security_question_preset_2">您的第一只宠物叫什么名字？</string>
-    <string name="security_question_preset_3">您在哪个城市出生？</string>
-    <string name="security_question_preset_4">您最喜欢的书是什么？</string>
-    <string name="security_question_preset_5">您的小学叫什么名字？</string>
-    <string name="security_question_preset_6">您最喜欢的食物是什么？</string>
-    <string name="security_question_preset_7">您童年的昵称是什么？</string>
-    <string name="security_question_preset_8">您童年最好的朋友叫什么名字？</string>
-    <string name="security_question_preset_9">您的第一份工作是什么？</string>
-    <string name="security_question_preset_10">您最喜欢的电影是什么？</string>
     
     <!-- Support Author Screen (legacy) -->
-    <string name="support_author_description">如果您觉得这个应用有帮助，请考虑支持作者。您的支持是我们持续改进的最大动力！</string>
-    <string name="support_author_thanks">感谢您！</string>
-    <string name="support_author_thanks_message">感谢您使用Bastion密码管理器。您的支持对我们意义重大！</string>
     
     <!-- Common -->
     <string name="search_passwords_hint">搜索密码</string>
@@ -1176,8 +930,6 @@
     <string name="screenshot_protection_disabled">已禁用 - 允许截屏</string>
     
     <!-- Dynamic Color -->
-    <string name="disable_wallpaper_color_extraction">关闭壁纸取色</string>
-    <string name="disable_wallpaper_color_extraction_description">使用系统默认配色方案而非从壁纸提取颜色</string>
     
     <!-- Color Scheme -->
     <string name="color_scheme">配色方案</string>
@@ -1212,7 +964,6 @@
     <string name="custom_preview_surface_outline">表面 / 描边</string>
     <string name="custom_preview_button">按钮</string>
     <string name="custom_preview_chip">标签</string>
-    <string name="current_colors">当前颜色</string>
     <string name="primary_color">主要颜色</string>
     <string name="secondary_color">次要颜色</string>
     <string name="tertiary_color">第三颜色</string>
@@ -1226,7 +977,6 @@
     <string name="custom_color_hue">色相</string>
     <string name="custom_color_saturation">饱和度</string>
     <string name="custom_color_value">亮度</string>
-    <string name="select_from_preset_colors">从预设颜色中选择</string>
     
     <!-- Validator Progress Bar Style -->
     <string name="validator_progress_bar_style">验证器进度条</string>
@@ -1249,11 +999,8 @@
     <string name="validator_vibration">验证器震动</string>
     <string name="validator_vibration_description">倒计时快结束时震动提醒</string>
 
-
     
     <!-- Support Author -->
-    <string name="support_author">支持作者</string>
-    <string name="support_author_subtitle">软件完全免费，感谢您的支持</string>
     
     <!-- Data Management in Settings -->
     <string name="data_management">数据管理</string>
@@ -1288,16 +1035,8 @@
     <string name="webdav_enable_encryption">启用加密</string>
     <string name="webdav_encryption_description">使用 AES-256 加密备份</string>
     <string name="webdav_encryption_password">加密密码</string>
-    <string name="webdav_encryption_password_hint">输入加密密码</string>
-    <string name="webdav_encryption_password_confirm">确认密码</string>
-    <string name="webdav_encryption_password_mismatch">密码不匹配</string>
-    <string name="webdav_encryption_password_empty">加密密码不能为空</string>
-    <string name="webdav_encryption_password_short">密码长度至少8个字符</string>
     <string name="webdav_backup_encrypted">已加密</string>
-    <string name="webdav_backup_unencrypted">未加密</string>
     <string name="webdav_enter_decrypt_password">输入解密密码</string>
-    <string name="webdav_decrypt_password_hint">用于解密备份的密码</string>
-    <string name="webdav_decryption_failed">解密失败: 密码错误或文件已损坏</string>
     
     <!-- WebDAV Auto Backup -->
     <string name="webdav_auto_backup">自动备份</string>
@@ -1305,8 +1044,6 @@
     <string name="webdav_auto_backup_enabled">已启用自动备份</string>
     <string name="webdav_auto_backup_disabled">已禁用自动备份</string>
     <string name="webdav_last_backup">上次备份</string>
-    <string name="webdav_last_backup_never">从未备份</string>
-    <string name="webdav_last_backup_time">%s 前</string>
     <string name="webdav_backup_now">立即备份</string>
     <string name="webdav_backup_in_progress">正在备份…</string>
     <string name="webdav_backup_success">备份成功</string>
@@ -1330,25 +1067,15 @@
     <string name="webdav_error_precondition_failed">远端文件已被其他设备修改，请先手动同步后再上传。</string>
     <string name="webdav_create_backup_failed">创建备份失败</string>
     <string name="webdav_create_new_backup">创建新备份</string>
-    <string name="webdav_backup_success_detail">备份成功: %s</string>
-    <string name="webdav_backup_passwords">密码: %d 个</string>
-    <string name="webdav_backup_authenticators">验证器: %d 个</string>
-    <string name="webdav_backup_documents">证件: %d 个</string>
-    <string name="webdav_backup_bank_cards">银行卡: %d 个</string>
     
     <!-- Restore Settings -->
-    <string name="webdav_restore_settings">恢复设置</string>
-    <string name="webdav_overwrite_local">覆盖本地数据</string>
-    <string name="webdav_overwrite_local_desc">从备份恢复前清除所有本地数据</string>
 
     <!-- Selection Mode -->
     <string name="selected_items">已选择 %d 项</string>
     <string name="exit_selection_mode">退出选择模式</string>
     <string name="select_all">全选</string>
     <string name="batch_delete">批量删除</string>
-    <string name="batch_delete_passwords_title">批量删除密码</string>
     <string name="batch_delete_passwords_message">确定要删除 %d 个密码吗?</string>
-    <string name="batch_delete_totp_title">批量删除TOTP</string>
     <string name="batch_delete_totp_message">确定要删除 %d 个TOTP项吗?</string>
     <string name="bound_totp_delete_warning_title_single">删除已绑定的验证器？</string>
     <string name="bound_totp_delete_warning_title_multi">删除已绑定的验证器？</string>
@@ -1356,10 +1083,6 @@
     <string name="bound_totp_delete_warning_message_multi">以下验证器已绑定到密码。删除后，也会从这些密码中移除验证器密钥。</string>
     <string name="bound_totp_delete_missing_password">缺失的密码 #%1$d</string>
     <string name="bound_totp_delete_warning_continue">继续</string>
-    <string name="batch_delete_documents_title">批量删除证件</string>
-    <string name="batch_delete_documents_message">确定要删除 %d 个证件吗?</string>
-    <string name="batch_delete_bankcards_title">批量删除银行卡</string>
-    <string name="batch_delete_bankcards_message">确定要删除 %d 张银行卡吗?</string>
     <string name="batch_delete_in_progress_title">正在删除项目</string>
     <string name="batch_delete_in_progress_message">正在删除所选项目，请稍候。</string>
     <string name="batch_delete_in_progress_count">%1$d / %2$d</string>
@@ -1399,8 +1122,6 @@
     <string name="autofill_subtitle">为应用和网站自动填充密码</string>
     
     <!-- Passkey Settings -->
-    <string name="passkey_settings">通行密钥提供者</string>
-    <string name="passkey_settings_subtitle">无需密码即可登录应用和网站</string>
     <string name="passkey_settings_title">通行密钥设置</string>
     <string name="passkey_settings_intro_title">通行密钥提供者</string>
     <string name="passkey_settings_intro_subtitle">Bastion 可以为网站和应用创建和管理通行密钥，提供更安全便捷的登录体验。</string>
@@ -1442,7 +1163,6 @@
     <string name="biometric_subtitle_passkey_create">为 %1$s 创建通行密钥</string>
     
     <string name="autofill_save_password">保存密码</string>
-    <string name="autofill_save_to_bastion">将此密码保存到Bastion</string>
     <string name="autofill_title">标题</string>
     <string name="autofill_username">用户名</string>
     <string name="autofill_password">密码</string>
@@ -1453,7 +1173,6 @@
     <string name="autofill_save_button">保存密码</string>
     <string name="autofill_cancel">取消</string>
     <string name="autofill_never_for_site">从不为此网站保存</string>
-    <string name="autofill_not_this_field">这里不是自动填充字段</string>
     <string name="autofill_mark_not_field_button">标记为非自动填充</string>
     <string name="autofill_mark_not_field_dialog_title">要把这里标记为非自动填充吗？</string>
     <string name="autofill_mark_not_field_dialog_message">标记后，Bastion 以后将不再在这里显示自动填充。</string>
@@ -1461,22 +1180,18 @@
     <string name="autofill_saved_via">通过自动填充保存</string>
     <string name="linked_app">关联应用</string>
     <string name="select_app">选择应用</string>
-    <string name="app_package_name">应用包名</string>
     <string name="no_app_selected">未选择应用</string>
     <string name="search_apps">搜索应用…</string>
     <string name="clear_app_selection">清除</string>
-    <string name="app_icon">应用图标</string>
     
     <!-- Clear All Data -->
     <string name="clear_all_data">清空所有数据</string>
     <string name="clear_all_data_subtitle">删除所有密码、验证器、银行卡和证件数据</string>
-    <string name="clear_all_data_confirm">确认清空所有数据?</string>
     <string name="clear_all_data_warning">此操作将永久删除所有密码、验证器、银行卡和证件数据，且无法恢复。\n\n建议在清空前先导出备份!</string>
     <string name="clearing_data">正在清空数据…</string>
     <string name="password_incorrect">密码错误</string>
     <string name="data_type_passwords">密码</string>
     <string name="data_type_totp">验证器</string>
-    <string name="data_type_ledger">账单</string>
     <string name="data_type_documents">证件</string>
     <string name="data_type_bank_cards">银行卡</string>
     <string name="data_type_generator_history">密码生成历史记录</string>
@@ -1484,24 +1199,13 @@
     <!-- Security Analysis -->
     <string name="security_analysis">安全分析</string>
     <string name="security_analysis_description">检查密码安全性、泄露情况和2FA状态</string>
-    <string name="start_security_analysis">开始安全分析</string>
-    <string name="analysis_may_take_time">分析可能需要几分钟时间</string>
-    <string name="security_overview">安全概览</string>
-    <string name="analyzing_security">正在分析安全性…</string>
     <string name="duplicate_passwords">重复密码</string>
     <string name="duplicate_urls">重复URL</string>
     <string name="compromised_passwords">泄露密码</string>
     <string name="no_twofa">未启用2FA</string>
-    <string name="duplicate_short">重复</string>
-    <string name="duplicate_url_short">重复URL</string>
-    <string name="compromised_short">泄露</string>
-    <string name="no_2fa_short">无2FA</string>
     <string name="inactive_passkeys">可用通行密钥</string>
     <string name="inactive_passkeys_short">通行密钥</string>
-    <string name="security_analysis_realtime">实时</string>
     <string name="security_analysis_in_progress_short">分析中</string>
-    <string name="security_analysis_score">安全得分</string>
-    <string name="security_analysis_score_short">得分</string>
     <string name="security_analysis_auto_toggle_title">自动分析</string>
     <string name="security_analysis_auto_toggle_subtitle">开启后自动分析；关闭后仅手动点击分析。</string>
     <string name="password_detail_security_analysis_title">密码详情安全分析</string>
@@ -1510,7 +1214,6 @@
     <string name="security_strength_medium">中</string>
     <string name="security_strength_very_strong">极强</string>
     <string name="security_analysis_scope_title">分析范围</string>
-    <string name="security_analysis_scope_label">选择数据库</string>
     <string name="security_analysis_scope_all">全部数据库</string>
     <string name="security_analysis_scope_local">Bastion数据库</string>
     <string name="security_analysis_scope_keepass">KeePass 库 #%1$d</string>
@@ -1519,13 +1222,7 @@
     <string name="security_issue_duplicate_password_subtitle">%1$d 组 · %2$d 条</string>
     <string name="security_issue_duplicate_url_subtitle">%1$d 组 · %2$d 条</string>
     <string name="security_issue_simple_count_subtitle">%1$d 条</string>
-    <string name="checking_duplicate_passwords">正在检查重复密码…</string>
-    <string name="checking_duplicate_urls">正在检查重复URL…</string>
-    <string name="checking_compromised_passwords">正在检查密码泄露情况…</string>
-    <string name="checking_2fa_status">正在检查2FA状态…</string>
-    <string name="analysis_complete">分析完成！</string>
     <string name="used_in_accounts">在 %d 个账户中使用</string>
-    <string name="count_accounts">%d 个账户</string>
     <string name="breached_times">泄露 %,d 次</string>
     <string name="supports_twofa">支持双重验证</string>
     <string name="no_duplicate_passwords">太好了！未发现重复密码</string>
@@ -1533,30 +1230,21 @@
     <string name="no_compromised_passwords">非常好！未发现泄露密码</string>
     <string name="all_accounts_have_twofa">所有重要账户都已启用双重验证</string>
     <string name="all_accounts_have_passkeys">太好了！没有待配置通行密钥的账户</string>
-    <string name="pwned_passwords_attribution">技术支持：Have I Been Pwned</string>
-    <string name="twofa_directory_attribution">参考：2FA Directory</string>
-
 
     <!-- Phase 8: 生物识别自动填充 -->
     <string name="biometric_auth_failed">生物识别认证失败,请重试。</string>
     <string name="biometric_auth_error">认证错误: %s</string>
     
     <!-- 自动填充设置 - 通用 -->
-    <string name="autofill_settings_title">自动填充</string>
     <string name="autofill_settings_refresh">刷新状态</string>
     <string name="autofill_settings_back">返回</string>
     
     <!-- 自动填充设置 - 系统设置 -->
     <string name="autofill_system_settings_title">系统设置</string>
-    <string name="autofill_system_set_provider">设置凭据提供商</string>
-    <string name="autofill_system_set_provider_desc">在系统设置中选择Bastion作为自动填充服务</string>
     <string name="autofill_system_passkey_settings">通行密钥和密码设置</string>
     <string name="autofill_system_passkey_settings_desc">管理通行密钥、密码和数据服务</string>
-    <string name="autofill_system_chrome_settings">Chrome自动填充设置</string>
-    <string name="autofill_system_chrome_settings_desc">在Chrome中启用第三方填充服务支持</string>
     
     <!-- 自动填充设置 - 匹配设置 -->
-    <string name="autofill_match_settings_title">匹配设置</string>
     <string name="autofill_domain_strategy_title">域名匹配策略</string>
     
     <!-- 自动填充设置 - 填充行为 -->
@@ -1567,13 +1255,6 @@
     <string name="autofill_active_fill_channel_desc">Bastion 检测到已绑定登录字段时显示通知</string>
     <string name="autofill_active_fill_notification_content_title">Bastion 可以填充当前应用</string>
     <string name="autofill_active_fill_notification_content_text">点击选择用于 %1$s 的登录信息</string>
-    <string name="autofill_active_fill_target_unavailable">请返回检测到的应用后重试</string>
-    <string name="autofill_fill_verify_identity">填充前验证身份</string>
-    <string name="autofill_fill_verify_identity_desc">选择密码后需要指纹或密码验证才能填充</string>
-    <string name="autofill_fill_suggestions">填充建议</string>
-    <string name="autofill_fill_suggestions_desc">自动显示匹配的密码建议</string>
-    <string name="autofill_fill_manual_selection">手动选择</string>
-    <string name="autofill_fill_manual_selection_desc">允许手动选择要填充的密码</string>
     <string name="autofill_password_suggestion_setting_desc">在注册和修改密码表单中显示生成强密码选项</string>
     
     <!-- 自动填充设置 - 保存行为 -->
@@ -1593,8 +1274,6 @@
     
     <!-- 自动填充设置 - 黑名单 -->
     <string name="autofill_blacklist_title">黑名单</string>
-    <string name="autofill_blacklist_enable">启用黑名单</string>
-    <string name="autofill_blacklist_enable_desc">禁止特定应用使用自动填充功能</string>
     <string name="autofill_blacklist_manage">管理黑名单应用</string>
     <string name="autofill_blacklist_manage_desc">已添加 %d 个应用</string>
     <string name="autofill_save_blocked_targets_title">不保存目标</string>
@@ -1614,7 +1293,6 @@
     <string name="autofill_blacklist_no_match">未找到匹配"%s"的应用</string>
     
     <!-- 自动填充设置 - 信息卡片 -->
-    <string name="autofill_info_card_text">自动填充功能需要Android 8.0及以上版本。启用后，Bastion将在您访问应用和网站时自动填充保存的密码。</string>
     
     <!-- 自动填充状态 -->
     <string name="autofill_status_enabled">自动填充已启用</string>
@@ -1631,18 +1309,11 @@
     <string name="autofill_otp_copy_action">复制 %s</string>
     <string name="autofill_otp_notification_channel">自动填充验证码</string>
     
-    <string name="autofill_respect_disabled_flag_title">尊重禁止自动填充标识</string>
-    <string name="autofill_respect_disabled_flag_desc">对标记了禁用自动填充的输入框不进行填充</string>
     
 
     <string name="autofill_status_enabled_desc">Bastion已设置为默认自动填充服务</string>
     <string name="autofill_status_disabled_desc">请在系统设置中启用Bastion</string>
-    <string name="autofill_status_all_functional">所有功能正常</string>
-    <string name="autofill_status_enable_prompt">请在系统设置中启用 Bastion 作为自动填充服务</string>
     <string name="autofill_status_go_to_settings">前往系统设置</string>
-    <string name="autofill_status_compatibility_issues">检测到兼容性问题:</string>
-    <string name="autofill_status_more_issues">还有 %d 个问题…</string>
-    <string name="autofill_status_troubleshoot">故障排查</string>
     <string name="autofill_status_summary_operational">自动填充服务运行正常</string>
     <string name="autofill_status_summary_not_declared">服务未正确声明</string>
     <string name="autofill_status_summary_system_disabled">系统未启用自动填充服务</string>
@@ -1668,51 +1339,8 @@
     <string name="autofill_domain_strategy_dialog_close">关闭</string>
     
     <!-- 故障排查对话框 -->
-    <string name="autofill_troubleshoot_title">自动填充诊断</string>
-    <string name="autofill_troubleshoot_device_info">设备信息</string>
-    <string name="autofill_troubleshoot_manufacturer">制造商</string>
-    <string name="autofill_troubleshoot_model">型号</string>
-    <string name="autofill_troubleshoot_android_version">Android 版本</string>
-    <string name="autofill_troubleshoot_rom_type">ROM 类型</string>
-    <string name="autofill_troubleshoot_inline_support">内联建议支持</string>
-    <string name="autofill_troubleshoot_yes">是</string>
-    <string name="autofill_troubleshoot_no">否</string>
-    <string name="autofill_troubleshoot_service_status">服务状态</string>
-    <string name="autofill_troubleshoot_service_declared">服务已声明</string>
-    <string name="autofill_troubleshoot_system_enabled">系统已启用</string>
-    <string name="autofill_troubleshoot_app_enabled">应用已启用</string>
-    <string name="autofill_troubleshoot_permissions_complete">权限完整</string>
-    <string name="autofill_troubleshoot_status_normal">正常</string>
-    <string name="autofill_troubleshoot_status_abnormal">异常</string>
-    <string name="autofill_troubleshoot_statistics">统计信息</string>
-    <string name="autofill_troubleshoot_stat_total_requests">总请求数</string>
-    <string name="autofill_troubleshoot_stat_successful_requests">成功请求</string>
-    <string name="autofill_troubleshoot_stat_failed_requests">失败请求</string>
-    <string name="autofill_troubleshoot_stat_success_rate">成功率</string>
-    <string name="autofill_troubleshoot_stat_avg_response_time">平均响应时间</string>
-    <string name="autofill_troubleshoot_stat_min_response_time">最快响应</string>
-    <string name="autofill_troubleshoot_stat_max_response_time">最慢响应</string>
-    <string name="autofill_troubleshoot_stat_total_logs">日志条数</string>
-    <string name="autofill_troubleshoot_stat_error_count">错误数</string>
-    <string name="autofill_troubleshoot_stat_warning_count">警告数</string>
-    <string name="autofill_troubleshoot_recent_requests">最近的请求</string>
-    <string name="autofill_troubleshoot_request_details">字段: %1$d, 匹配: %2$d, 数据集: %3$d</string>
-    <string name="autofill_troubleshoot_request_error">错误: %s</string>
-    <string name="autofill_troubleshoot_detected_issues">检测到的问题</string>
-    <string name="autofill_troubleshoot_issue_affected">影响 %d 次请求</string>
-    <string name="autofill_troubleshoot_recommendations">解决建议</string>
-    <string name="autofill_troubleshoot_export_logs">导出日志</string>
-    <string name="autofill_troubleshoot_close">关闭</string>
     
     <!-- 黑名单应用名称 -->
-    <string name="autofill_blacklist_app_wechat">微信</string>
-    <string name="autofill_blacklist_app_alipay">支付宝</string>
-    <string name="autofill_blacklist_app_unionpay">云闪付</string>
-    <string name="autofill_blacklist_app_qq">QQ</string>
-    <string name="autofill_blacklist_app_taobao">淘宝</string>
-    <string name="autofill_blacklist_app_jd">京东</string>
-    <string name="autofill_blacklist_app_wework">企业微信</string>
-    <string name="autofill_blacklist_app_weibo">微博</string>
 
     <!-- 开发者设置 -->
     <string name="preview_features_title">预览功能</string>
@@ -1739,13 +1367,11 @@
     <string name="developer_share_subject">Bastion 应用日志</string>
     <string name="developer_share_title">分享日志</string>
     <string name="developer_system_logs">系统日志</string>
-    <string name="developer_loading_logs">正在加载日志…</string>
     <string name="developer_no_logs">暂无日志\n\n提示: 确保应用已运行过一些操作</string>
     <string name="developer_load_failed">加载失败: %s\n\n可能需要调试权限才能读取日志</string>
     <string name="developer_filter_all">全部</string>
     <string name="developer_filter_errors">错误</string>
     <string name="developer_filter_warnings">警告</string>
-    <string name="developer_share_file_hint">已附加 Bastion 日志报告文件。</string>
     <string name="developer_refresh">刷新</string>
     <string name="developer_close">关闭</string>
 
@@ -1795,7 +1421,6 @@
     <string name="generator_passphrase">短语</string>
     <string name="generator_pin">PIN</string>
     <string name="generator_switch_type">切换生成类型</string>
-    <string name="generator_generate_current">生成当前类型</string>
     <string name="generated_password">生成的密码</string>
     <string name="symbol_password_generator">符号密码生成器</string>
     <string name="history">历史记录</string>
@@ -1873,7 +1498,6 @@
     <!-- Permission Management -->
     <string name="permission_management_title">权限管理</string>
     <string name="permission_management_subtitle">管理应用权限</string>
-    <string name="permission_management_description">查看和管理Bastion使用的权限</string>
     <string name="help">帮助</string>
 
     <!-- Permission Categories -->
@@ -1897,11 +1521,6 @@
     <!-- Permission Names -->
     <string name="permission_biometric_name">生物识别认证</string>
     <string name="permission_camera_name">相机</string>
-    <string name="permission_internet_name">互联网访问</string>
-    <string name="permission_network_state_name">网络状态</string>
-    <string name="permission_vibrate_name">振动</string>
-    <string name="permission_phone_state_name">手机状态</string>
-    <string name="permission_location_name">位置</string>
     <string name="permission_notification_name">通知</string>
     <string name="permission_autofill_name">自动填充服务</string>
     <string name="permission_accessibility_name">无障碍服务</string>
@@ -1909,11 +1528,6 @@
     <!-- Permission Descriptions -->
     <string name="permission_biometric_description">用于：指纹/面部解锁</string>
     <string name="permission_camera_description">用于：扫描TOTP验证器的二维码</string>
-    <string name="permission_internet_description">用于：WebDAV备份和同步</string>
-    <string name="permission_network_state_description">用于：检查网络连接状态</string>
-    <string name="permission_vibrate_description">用于：验证器的触觉反馈</string>
-    <string name="permission_phone_state_description">用于：设备识别</string>
-    <string name="permission_location_description">用于：基于位置的功能（可选）</string>
     <string name="permission_notification_description">用于：在通知栏显示TOTP验证码</string>
     <string name="permission_autofill_description">用于：在应用和浏览器中自动填充密码</string>
     <string name="permission_accessibility_description">用于：从磁贴和选择页面手动填充账号密码</string>
@@ -1921,13 +1535,9 @@
     <string name="permission_local_network_description">用于：连接自托管 WebDAV/Bitwarden 等局域网服务</string>
 
     <!-- Permission Stats -->
-    <string name="permission_stats_title">权限摘要</string>
-    <string name="permission_stats_required">必需权限：已授予 %1$d / %2$d</string>
     <string name="permission_stats_total">总权限：已授予 %1$d / %2$d</string>
 
     <!-- Permission Actions -->
-    <string name="permission_revoke_hint">要撤销此权限，请前往 设置 > 应用 > Bastion > 权限</string>
-    <string name="permission_grant_hint">点击打开系统设置并授予此权限</string>
     <string name="cannot_open_settings">无法打开系统设置</string>
 
     <!-- Permission Help Dialog -->
@@ -1945,8 +1555,6 @@
     <string name="selective_backup_description">选择要包含在备份中的数据类型</string>
     <string name="backup_content_passwords">密码</string>
     <string name="backup_content_authenticators">验证器 (TOTP)</string>
-    <string name="backup_content_documents">证件</string>
-    <string name="backup_content_bank_cards">银行卡</string>
     <string name="backup_content_wallet">卡包（证件与银行卡）</string>
     <string name="backup_content_notes">笔记</string>
     <string name="backup_content_generator_history">密码生成历史</string>
@@ -1959,21 +1567,17 @@
     <string name="backup_content_local_keepass">本地 KeePass 数据库</string>
     <string name="backup_content_local_keepass_hint">包含所有本地 KeePass 数据库（内部和外部存储）。恢复时统一存储到内部存储。</string>
     <string name="backup_content_local_keepass_empty">暂无本地 KeePass 数据库</string>
-    <string name="backup_content_keepass_webdav_config">KeePass WebDAV 配置</string>
-    <string name="backup_content_keepass_webdav_config_hint">包含 KeePass WebDAV 同步配置，便于新设备快速同步。</string>
     <string name="backup_content_webdav_config">Bastion 配置</string>
     <string name="backup_content_webdav_config_hint">包含 WebDAV 连接信息、自动备份设置、非自动填充字段、常用账号信息、页面调整自定义以及 Bitwarden Vault 等 Bastion 配置。WebDAV 连接仅当本地未配置时才会恢复，恢复的 Bitwarden Vault 会保持锁定并需要重新验证。</string>
     
     <!-- 功能拓展页面 -->
     <string name="extensions_title">功能拓展</string>
     <string name="extensions_description">管理各类扩展功能与系统集成</string>
-    <string name="extensions_account_settings">账号信息设置</string>
     <string name="extensions_security_settings">安全</string>
     <string name="clipboard_auto_clear_title">清除剪贴板</string>
     <string name="clipboard_auto_clear_description">复制账号和密码后，自动从剪贴板清除。</string>
     <string name="clipboard_auto_clear_never">永不</string>
     <string name="clipboard_auto_clear_seconds">%1$d 秒</string>
-    <string name="extensions_totp_settings">验证器设置</string>
     <string name="extensions_more_coming_soon">更多功能即将推出…</string>
     <string name="copy_next_code_when_expiring">即将过期时复制新验证码</string>
     <string name="copy_next_code_when_expiring_description">倒计时剩余 5 秒内点击复制时，自动复制下一个验证码</string>
@@ -1981,25 +1585,12 @@
     <!-- 同步与备份页面 -->
     <string name="sync_backup_title">数据库与备份</string>
     <string name="sync_backup_description">管理数据库、文件夹与备份</string>
-    <string name="sync_backup_local">本地备份</string>
-    <string name="sync_backup_cloud">云同步</string>
 
-    <string name="database_folder_management_title">数据库文件夹管理</string>
-    <string name="folder_management_title">文件夹管理</string>
-    <string name="folder_management_description">管理本地/KeePass 文件夹与 Bitwarden 同步</string>
     <string name="database_source_label">数据库来源</string>
     <string name="database_source_local">Bastion 本地</string>
     <string name="database_source_keepass">KeePass 数据库</string>
-    <string name="bitwarden_vault_label">Bitwarden Vault</string>
-    <string name="sync_scope_section_title">同步范围</string>
-    <string name="apply_upload_all">应用到所有数据</string>
-    <string name="bitwarden_folder_section_title">Bitwarden 文件夹</string>
-    <string name="bitwarden_not_logged_in">未登录 Bitwarden</string>
-    <string name="bitwarden_folder_empty">暂无 Bitwarden 文件夹</string>
-    <string name="bitwarden_create_folder_not_supported">暂不支持创建新文件夹</string>
     
     <!-- 本地 KeePass 数据库 -->
-    <string name="local_keepass_section_title">KeePass 数据库</string>
     <string name="local_keepass_database">本地 KeePass 数据库</string>
     <string name="local_keepass_database_description">管理本地 .kdbx KeePass 数据库文件</string>
     <string name="local_keepass_verify_status">验证状态</string>
@@ -2018,10 +1609,8 @@
     <string name="create_new">新建</string>
     <string name="internal_storage">内部存储</string>
     <string name="internal_storage_description">安全存储在 Bastion 应用数据中</string>
-    <string name="internal_storage_option_description">安全加密，仅 Bastion 可访问</string>
     <string name="external_storage">外部存储</string>
     <string name="external_storage_description">存储在用户选择的位置</string>
-    <string name="external_storage_option_description">自选位置，其他应用可访问</string>
     <string name="remote_storage">远端存储</string>
     <string name="remote_storage_description">挂载来自 WebDAV 或其他云盘的工作副本</string>
     <string name="location_selected">已选择位置</string>
@@ -2079,22 +1668,18 @@
     <string name="keepass_operation_unavailable_message">“%1$s” 当前不能正常写入：%2$s。\n\n请先手动刷新/同步这个 KeePass 数据库，然后再重试。</string>
     <string name="keepass_operation_refresh_hint">手动刷新</string>
     <string name="keepass_remote_path">远端路径</string>
-    <string name="keepass_remote_path_placeholder">示例：vault/main.kdbx</string>
     
     <!-- Vault Selector -->
     <string name="vault_bastion_only">仅 Bastion 本地存储</string>
     <string name="vault_bastion_only_desc">安全存储在 Bastion 中</string>
     <string name="vault_sync_to_keepass">同步到 KeePass 数据库</string>
     <string name="vault_sync_hint">本地保留备份</string>
-    <string name="vault_no_folder">暂无文件夹</string>
     <string name="vault_select_storage">选择存储位置</string>
     
     <string name="deselect_all">全不选</string>
     <string name="backup_validation_error">请至少选择一种备份内容</string>
 
     <!-- Notification Validator -->
-    <string name="notification">通知</string>
-    <string name="notification_settings_title">通知设置</string>
     <string name="notification_validator_title">通知栏验证器</string>
     <string name="notification_validator_enabled">已启用</string>
     <string name="notification_validator_disabled">已禁用</string>
@@ -2102,8 +1687,6 @@
     <string name="no_validators_available">暂无验证器</string>
     
     <!-- Support Author Page -->
-    <string name="support_author_page_title">支持作者</string>
-    <string name="support_author_page_description">感谢您使用 Bastion！如果您觉得这个应用对您有帮助，欢迎通过以下方式支持作者的后续开发工作：</string>
     <string name="support_via_kofi">在 Ko-fi 上支持</string>
     <string name="support_via_afdian">在爱发电上支持</string>
     <string name="open_link">打开链接</string>
@@ -2120,7 +1703,6 @@
     <string name="unbind">解除绑定</string>
     <string name="select_password_to_bind">选择要绑定的密码</string>
     <string name="link_example">https://example.com</string>
-    <string name="app_name_placeholder">应用名称</string>
     
     <!-- Password Detail Screen -->
     <string name="password_details">密码详情</string>
@@ -2147,7 +1729,6 @@
     <string name="common_account_saved">已保存</string>
     <string name="fill_common_account">填充</string>
     <string name="common_account_templates_title">常用账号信息</string>
-    <string name="common_account_templates_description">管理可复用的账号模板，支持邮箱、账号、手机号、密码四种类型。</string>
     <string name="common_account_billing_address_title">账单地址</string>
     <string name="common_account_billing_address_desc">保存默认账单地址，用于付款和银行卡表单。</string>
     <string name="common_account_billing_use_saved">使用常用账单地址</string>
@@ -2161,7 +1742,6 @@
     <string name="common_account_template_add">创建模板</string>
     <string name="common_account_template_edit">编辑模板</string>
     <string name="common_account_template_type">类型</string>
-    <string name="common_account_template_title">标题</string>
     <string name="common_account_template_content">内容</string>
     <string name="common_account_template_delete_title">删除模板</string>
     <string name="common_account_template_delete_message">确定删除这条模板吗？</string>
@@ -2178,7 +1758,6 @@
     <string name="common_name_fill_empty_hint">可以先创建姓名模板，或从已有证件和银行卡里保存常用姓名。</string>
     <string name="common_name_fill_from_analysis">根据现有内容推荐</string>
     <string name="common_name_fill_save_template">保存为常用姓名</string>
-    <string name="username_suggestions_multi_title">匹配到已有账号（%1$d）</string>
     <string name="username_suggestions_unique_title">唯一匹配的已有账号</string>
     <string name="username_suggestions_no_match">没有与“%1$s”匹配的已有账号</string>
     <string name="username_suggestions_more_count">还有 %1$d 条匹配</string>
@@ -2193,115 +1772,37 @@
     <string name="sso_ref_entry_none">未选择</string>
     <string name="sso_ref_entry_picker_title">选择关联账号</string>
     <string name="sso_description">使用 %1$s 登录</string>
-    <string name="sso_login_card_title">第三方账号登录</string>
-    <string name="sso_login_using">使用</string>
-    <string name="sso_login_suffix">登录</string>
-    <string name="sso_linked_account">关联账号</string>
     
     <!-- Multi Password Dialog -->
-    <string name="common_info">共同信息</string>
-    <string name="password_list">密码列表 (%d)</string>
     <string name="password_item_title">密码 %d</string>
-    <string name="label_website">网站</string>
-    <string name="label_username">用户名</string>
-    <string name="label_notes">备注</string>
-    <string name="copied_text">已复制 %s</string>
     
     <!-- Quick Actions Panel -->
-    <string name="quick_actions_title">快捷操作</string>
-    <string name="quick_action_add_password">添加密码</string>
-    <string name="quick_action_add_totp">添加验证器</string>
     <string name="quick_action_add_card">添加银行卡</string>
     <string name="quick_action_add_document">添加证件</string>
-    <string name="quick_action_add_note">添加笔记</string>
-    <string name="quick_action_generator">密码生成</string>
     <string name="quick_action_scan_qr">扫描二维码</string>
-    <string name="quick_action_search">搜索</string>
-    <string name="quick_action_settings">设置</string>
-    <string name="quick_action_backup">备份</string>
-    <string name="quick_action_security">安全分析</string>
-    <string name="quick_action_import">导入数据</string>
     
     <!-- Quick Add -->
     <string name="quick_add_not_supported">暂时没想过这里有啥用</string>
-
 
     <string name="multi_del_batch_delete">批量删除</string>
     <string name="multi_del_select_all">全选</string>
     <string name="multi_del_select_items">请选择要删除的项目</string>
 
     <!-- V2 Folder Management -->
-    <string name="v2_folder_management_title">文件夹管理</string>
-    <string name="v2_folder_management_subtitle">整理并同步你的文件夹</string>
-    <string name="v2_sync_all_title">Bitwarden 全量同步</string>
-    <string name="v2_sync_all_desc">按已关联分类同步到 Bitwarden 云端</string>
-    <string name="v2_apply_sync">立即应用</string>
-    <string name="v2_select_database">选择数据库</string>
-    <string name="v2_bitwarden_account">Bitwarden 账户</string>
-    <string name="v2_bitwarden_not_connected">Bitwarden 未连接</string>
-    <string name="v2_bitwarden_connect_hint">登录以启用云端同步</string>
-    <string name="v2_local_folders">本地文件夹</string>
     <string name="v2_keepass_groups">KeePass 组</string>
-    <string name="v2_bitwarden_folders">Bitwarden 文件夹</string>
-    <string name="v2_no_local_folders">暂无本地文件夹</string>
-    <string name="v2_no_keepass_groups">暂无 KeePass 组</string>
-    <string name="v2_no_bitwarden_folders">暂无 Bitwarden 文件夹</string>
-    <string name="v2_create_first_folder">创建第一个文件夹</string>
-    <string name="v2_create_folder">创建文件夹</string>
-    <string name="v2_edit_folder">编辑文件夹</string>
-    <string name="v2_delete_folder">删除文件夹</string>
-    <string name="v2_delete_folder_confirm">确定要删除文件夹 \"%1$s\" 吗？此操作无法撤销。</string>
-    <string name="v2_folder_name">文件夹名称</string>
-    <string name="v2_not_synced">未同步</string>
-    <string name="v2_link">关联</string>
-    <string name="v2_unlink">解除关联</string>
-    <string name="v2_edit">编辑</string>
-    <string name="v2_delete">删除</string>
-    <string name="v2_link_to_bitwarden">关联到 Bitwarden</string>
-    <string name="v2_select_vault">选择保险库</string>
-    <string name="v2_select_folder">选择文件夹</string>
-    <string name="v2_create_new_folder">创建新文件夹</string>
-    <string name="v2_no_folder_root">不关联文件夹（根目录）</string>
 
     <!-- New Folder Management (M3E Design) -->
-    <string name="folder_management_subtitle">整理并同步你的文件夹</string>
-    <string name="sync_all_title">Bitwarden 全量同步</string>
-    <string name="sync_all_desc">按已关联分类同步到 Bitwarden 云端</string>
-    <string name="sync_apply_now">立即应用</string>
-    <string name="bitwarden_account_label">Bitwarden 账户</string>
-    <string name="bitwarden_not_connected">Bitwarden 未连接</string>
-    <string name="bitwarden_connect_hint">登录以启用云端同步</string>
-    <string name="folder_section_local">Bastion 本地文件夹</string>
-    <string name="folder_section_keepass">KeePass 文件夹</string>
-    <string name="folder_section_bitwarden">Bitwarden 文件夹</string>
-    <string name="folder_empty_local">暂无本地文件夹</string>
-    <string name="folder_empty_keepass">暂无 KeePass 组</string>
-    <string name="folder_empty_bitwarden">暂无 Bitwarden 文件夹</string>
-    <string name="folder_create_first">创建第一个文件夹</string>
-    <string name="folder_create">创建文件夹</string>
     <string name="folder_edit">编辑文件夹</string>
     <string name="move_folder_title">移动文件夹</string>
     <string name="move_folder_destination_hint">选择要移动到的数据库或父文件夹。</string>
     <string name="move_folder_root_target">Bastion 根目录</string>
     <string name="move_folder_root_target_hint">将这个文件夹移动到 Bastion 根层级。</string>
     <string name="move_folder_database_root_target">数据库根目录</string>
-    <string name="folder_delete">删除文件夹</string>
-    <string name="folder_delete_confirm">确定要删除文件夹 \"%1$s\" 吗？此操作无法撤销。</string>
     <string name="folder_name_label">文件夹名称</string>
-    <string name="folder_not_synced">未同步</string>
-    <string name="folder_link">关联</string>
-    <string name="folder_unlink">解除关联</string>
-    <string name="folder_link_to_bitwarden">关联到 Bitwarden</string>
-    <string name="folder_select_vault">选择保险库</string>
-    <string name="folder_select_folder">选择文件夹</string>
-    <string name="folder_create_new">创建新文件夹</string>
     <string name="folder_no_folder_root">不关联文件夹（根目录）</string>
     <string name="storage_picker_keepass_root">数据库根目录</string>
     
     <!-- Bitwarden Unlock -->
-    <string name="bitwarden_unlock_title">解锁 Bitwarden</string>
-    <string name="bitwarden_unlock_message">输入主密码解锁 %1$s</string>
-    <string name="bitwarden_master_password">主密码</string>
 
     <!-- Generic delete dialog labels -->
     <string name="item_type_password">密码</string>
@@ -2314,9 +1815,6 @@
     <string name="filter_uncategorized">未分类</string>
     <string name="filter_local_only">仅本地</string>
     <string name="unknown_category">未知分类</string>
-    <string name="group_by_website">按网站分组</string>
-    <string name="group_by_title">按标题分组</string>
-    <string name="group_by_none">不分组</string>
     <string name="new_category">新建</string>
     <string name="edit_category">编辑</string>
     <string name="rename_category">重命名</string>
@@ -2325,20 +1823,13 @@
     <string name="category_rename_mode_leaf_only">仅重命名当前层级</string>
     <string name="category_rename_mode_full_path">编辑完整路径</string>
     <string name="category_parent_path_hint">父级路径：%1$s</string>
-    <string name="menu">菜单</string>
     <string name="single_select">单选</string>
     <string name="multi_select">多选</string>
     <string name="storage_picker_edit_multi_append_hint">编辑已有条目时仅支持多选追加，已有目标会保留。</string>
     
     <!-- 自动填充硬编码修复 -->
-    <string name="autofill_view_all_passwords">查看所有密码</string>
-    <string name="autofill_open_full_list">点击打开完整列表</string>
-    <string name="autofill_open_picker">点击进入选择界面</string>
     <string name="autofill_manual_entry_title">Bastion自动填充</string>
     <string name="autofill_save_for_next_fill">自动保存并在下次填充</string>
-    <string name="autofill_select_password">选择密码</string>
-    <string name="autofill_detected_passwords">检测到 %1$d 个密码</string>
-    <string name="autofill_password_index">密码 %1$d</string>
     <string name="autofill_credentials">凭据</string>
     <string name="autofill_storage_sync_summary">%1$s · %2$s</string>
     <string name="autofill_and_save_uri">自动填充并保存 URI</string>
@@ -2355,9 +1846,6 @@
     <string name="autofill_select_other_password">选择其他密码</string>
     <string name="autofill_for_app">为以下应用自动填充</string>
     <string name="autofill_source_with_value">来源: %1$s</string>
-    <string name="autofill_no_payment_info">未找到账单信息</string>
-    <string name="autofill_adjust_search_or_add_payment">尝试调整搜索条件或添加新的支付信息</string>
-    <string name="autofill_card_expiry">有效期: %1$s</string>
     <string name="autofill_for_display_name">为 %1$s</string>
     <string name="autofill_suggested_strong_password">建议的强密码</string>
     <string name="autofill_generate_password">生成密码</string>
@@ -2434,10 +1922,8 @@
     <!-- 通用/组件硬编码修复 -->
     <string name="topbar_search_hint">搜索…</string>
     <string name="topbar_close_search">关闭搜索</string>
-    <string name="back_to_top">回到顶部</string>
     <string name="loading_default">加载中…</string>
     <string name="common_count_items">%1$d 项</string>
-    <string name="developer_mode_password_disabled">开发者模式: 已关闭密码验证</string>
     <string name="sync_status_synced_short">已同步</string>
     <string name="sync_status_pending_short">等待同步</string>
     <string name="sync_status_syncing_short">正在同步</string>
@@ -2473,9 +1959,6 @@
     <string name="password_owner_conflict_inline">这条数据同时绑定了多个密码库，修复归属冲突前已禁止编辑保存。</string>
     <string name="password_owner_conflict_display">这条数据当前存在存储归属冲突。需要先修复 Bastion 本地、KeePass 与 Bitwarden 的所有权冲突，才能继续编辑。</string>
     <string name="password_owner_conflict_copy">这条数据存在归属冲突，当前不能安全复制密码。</string>
-    <string name="pull_release_to_search">下拉进行搜索</string>
-    <string name="pull_release_to_sync_bitwarden">松手进行 Bitwarden 同步</string>
-    <string name="pull_syncing_bitwarden">正在同步 Bitwarden…</string>
     <string name="pull_sync_requires_bitwarden_login">请先登录并解锁 Bitwarden</string>
     <string name="pull_sync_success">Bitwarden 同步完成</string>
     <string name="bitwarden_sync_success_with_offline_ready">同步完成。本次处理 %1$d 处变更，当前有 %2$d 条密码可离线查看。</string>
@@ -2498,18 +1981,11 @@
     <string name="timeline_title">时间线</string>
     <string name="timeline_and_trash_title">时间线/回收站</string>
     <string name="sync_bitwarden_database_menu">同步bitwarden数据库</string>
-    <string name="cache_bitwarden_database_menu">一键缓存bitwarden数据</string>
     <string name="clear_bitwarden_cache_menu">清除bitwarden缓存</string>
     <string name="reunlock_current_database_menu">重新解锁当前数据库</string>
-    <string name="lock_current_database_menu">锁定当前数据库</string>
     <string name="reunlock_current_database_message">请使用主密码或生物识别重新解锁当前数据库。</string>
     <string name="reunlock_current_database_failed">重新解锁失败，请重试。</string>
-    <string name="current_database_locked">当前数据库已锁定</string>
     <string name="current_database_unlocked">当前数据库已解锁</string>
-    <string name="bitwarden_cache_success_with_count">Bitwarden 缓存完成（同步 %1$d 条，冲突 %2$d 条）</string>
-    <string name="bitwarden_cache_failed">Bitwarden 缓存失败：%1$s</string>
-    <string name="bitwarden_cache_requires_unlock">请先解锁 Bitwarden Vault</string>
-    <string name="bitwarden_cache_blocked_empty_vault">Bitwarden 缓存被阻止：%1$s</string>
     <string name="bitwarden_clear_cache_confirm_title">清除 Bitwarden 缓存？</string>
     <string name="bitwarden_clear_cache_confirm_message">将清除当前 Vault 的本地 Bitwarden 缓存数据，后续可再次同步恢复。</string>
     <string name="bitwarden_clear_cache_confirm_message_with_risk">检测到待同步改动（待处理操作：%1$d，密码本地修改：%2$d，安全项本地修改：%3$d，未解决冲突：%4$d）。你可以仅清除已同步缓存，或强制清除全部本地 Bitwarden 缓存。</string>
@@ -2551,7 +2027,6 @@
     <string name="timeline_sensitive_change_not_stored">敏感内容未记录</string>
     <string name="timeline_snapshot_loading">正在加载加密版本历史…</string>
     <string name="timeline_snapshot_unlock_required">请重新解锁 Bastion 后查看此版本</string>
-    <string name="timeline_field_password">密码</string>
     <string name="timeline_field_batch_move">批量移动</string>
     <string name="timeline_field_batch_copy">批量复制</string>
     <string name="timeline_field_maintenance_snapshot">维护快照</string>
@@ -2573,12 +2048,10 @@
     <string name="password_batch_transfer_notification_done_detail_partial">成功 %1$d 项，失败 %2$d 项</string>
     <string name="password_batch_transfer_continue_in_background">后台继续</string>
     <string name="password_batch_transfer_settings_card_title">批量迁移进行中</string>
-    <string name="timeline_count_suffix_items">项</string>
     <string name="timeline_restore_to_after_edit">恢复到编辑后</string>
     <string name="timeline_restore_to_before_edit">恢复到编辑前</string>
     <string name="timeline_undo_operation">撤销操作</string>
     <string name="timeline_restore_snapshot">恢复快照</string>
-    <string name="timeline_redo_operation">重做操作</string>
     <string name="timeline_save_old_as_new">旧数据另存为新条目</string>
     <string name="timeline_empty_trash_title">清空回收站</string>
     <string name="timeline_empty_trash_message">确定要永久删除回收站中的 %1$d 个条目吗？此操作无法撤销。</string>
@@ -2586,7 +2059,6 @@
     <string name="timeline_exit_selection">退出选择</string>
     <string name="timeline_deleted_items_count">%1$d 个已删除条目</string>
     <string name="timeline_auto_clear_in_days">%1$d 天后自动清空</string>
-    <string name="timeline_auto_clear_never">不会自动清空</string>
     <string name="timeline_dot_separator">·</string>
     <string name="timeline_clear_today">今天清空</string>
     <string name="timeline_clear_after_days_short">%1$d天后</string>
@@ -2626,7 +2098,6 @@
     <string name="custom_field_new_field">新字段</string>
     <string name="custom_field_delete_title">删除自定义字段</string>
     <string name="custom_field_delete_message">确定要删除「%1$s」吗？此操作无法撤销。</string>
-    <string name="custom_field_name">字段名称</string>
     <string name="custom_field_name_placeholder">如：安全问题、备用邮箱</string>
     <string name="custom_field_value">字段内容</string>
     <string name="custom_field_value_placeholder">输入内容…</string>
@@ -2634,7 +2105,6 @@
     <string name="custom_field_show_content">显示内容</string>
     <string name="custom_field_sensitive">敏感数据</string>
     <string name="custom_field_sensitive_hint">开启后内容默认隐藏显示</string>
-    <string name="custom_field_save">保存字段</string>
     <string name="custom_field_preset_not_deletable">预设字段，不可删除</string>
     <string name="custom_field_preset">预设字段</string>
     <string name="custom_field_required">必填</string>
@@ -2651,23 +2121,12 @@
     <string name="photo_import_dialog_estimated_size">预计保存大小：%1$s</string>
     <string name="photo_import_dialog_hint">调低质量可以减小存储占用和备份体积，确认后会按当前质量压缩保存。</string>
     <string name="photo_import_dialog_confirm">导入</string>
-    <string name="photo_cannot_open_gallery">无法启动相册</string>
-    <string name="photo_cannot_open_camera_use_gallery">无法启动相机，将使用图库选择</string>
     <string name="delete_image">删除图片</string>
     <string name="no_image">无图片</string>
     <string name="view_image">查看图片</string>
     <string name="save_to_gallery">保存到相册</string>
     
     <!-- Bitwarden 文件夹选择器 -->
-    <string name="bitwarden_linked_status">已关联到 Bitwarden</string>
-    <string name="bitwarden_not_linked_status">未关联到 Bitwarden</string>
-    <string name="bitwarden_sync_all_types">同步全部类型</string>
-    <string name="bitwarden_configure_sync">配置同步</string>
-    <string name="bitwarden_select_folder_title">选择 Bitwarden 文件夹</string>
-    <string name="bitwarden_selected">已选中</string>
-    <string name="bitwarden_folder_linked_by_other">已被其他分类关联</string>
-    <string name="bitwarden_configure_sync_types_title">配置同步类型</string>
-    <string name="bitwarden_sync_types_description">选择要同步到此文件夹的数据类型</string>
     <string name="create_folder_dialog_title">新建分类/文件夹</string>
     <string name="create_folder_dialog_subtitle">先选择目标，再创建，流程更清晰</string>
     <string name="create_target_local">Bastion 本地</string>
@@ -2685,14 +2144,8 @@
     <string name="create_select_bitwarden_vault">选择 Bitwarden 账户</string>
     <string name="create_select_keepass_database">选择 KeePass 数据库</string>
     <string name="create_target_section_title">目标位置</string>
-    <string name="create_nested_section_title">嵌套位置</string>
     <string name="create_select_local_parent">选择本地父级分类</string>
     <string name="create_select_keepass_parent_group">选择 KeePass 父分组（可选）</string>
-    <string name="create_preview_path_label">预览</string>
-    <string name="bitwarden_folder_flat_hint">Bitwarden 文件夹是单层结构，新建文件夹将创建在根层级。</string>
-    <string name="bitwarden_all_types">全部类型</string>
-    <string name="sync_type_note">笔记</string>
-    <string name="sync_type_identity">身份信息</string>
     
     <!-- 分区标题 / 二维码 / 复制提示 -->
     <string name="section_basic_info">基本信息</string>
@@ -2735,7 +2188,6 @@
     <string name="qr_not_found">未发现二维码</string>
     <string name="qr_align_hint">将二维码对准扫描框</string>
     <string name="qr_pick_from_gallery">从相册选择</string>
-    <string name="copied_sensitive_field">已复制敏感字段: %1$s</string>
     <string name="copied_field_name">已复制: %1$s</string>
     <string name="dynamic_verification_code">动态验证码</string>
     <string name="verification_code">验证码</string>
@@ -2743,26 +2195,18 @@
     <!-- 添加/编辑密码页面 -->
     <string name="section_credentials">凭据</string>
     <string name="section_security_verification">安全验证</string>
-    <string name="section_category_notes">分类与备注</string>
-    <string name="section_app_association">应用关联</string>
     <string name="authenticator_key_optional">验证码密钥（可选）</string>
     <string name="authenticator_key_hint">输入密钥以自动创建验证器</string>
     <string name="category">分类</string>
     <string name="category_none">无分类</string>
-    <string name="bind_website">绑定网址</string>
-    <string name="bind_website_desc">将该应用关联到所有相同网址的密码</string>
-    <string name="bind_title">绑定标题</string>
-    <string name="bind_title_desc">将该应用关联到所有相同标题的密码</string>
     <string name="add_email">添加邮箱</string>
     <string name="add_phone">添加电话</string>
     <string name="import_from_bank_card">从银行卡导入</string>
     <string name="select_bank_card">选择银行卡</string>
     <string name="no_bank_card_data">暂无银行卡数据</string>
     <string name="tail_number_last4">尾号 %1$s</string>
-    <string name="parse_failed">解析失败</string>
     <string name="imported">已导入</string>
     <string name="select">选择</string>
-    <string name="sync_save_to_bitwarden">将同步保存到 Bitwarden</string>
     <string name="saved_to_gallery">已保存到相册</string>
     <string name="switch_to_list">切换到列表</string>
     <string name="switch_to_grid">切换到网格</string>
@@ -2776,93 +2220,10 @@
     <string name="bastion_database_format">数据库格式</string>
     <string name="bastion_format_kdbx">KDBX（Keepass）</string>
     <string name="bastion_format_json">JSON（Bitwarden 兼容，可加密）</string>
-    <string name="bastion_format_csv">CSV（浏览器/扁平明文）</string>
     <string name="bastion_format_json_desc">独立云端库：可同步到 OneDrive/WebDAV，与 Bastion 原生库分开管理。若只想把数据并入本地库，请用「设置 → 导入数据」。</string>
-    <string name="bastion_format_kdbx_desc">KeePass 标准格式，安全性最高，支持密钥文件与高级加密，可作为独立库在设备间同步。</string>
-    <string name="sync_backup_keepass_webdav_title">KeePass WebDAV</string>
-    <string name="sync_backup_keepass_webdav_desc">通过 WebDAV 与 KeePass (.kdbx) 同步数据</string>
     <string name="sync_backup_import_export_low_freq">导入与导出</string>
     <string name="dedup_engine_title">去重引擎</string>
-    <string name="dedup_engine_desc">用规则化方式统一扫描 Bastion、KeePass 和 Bitwarden 的重复数据</string>
     <string name="dedup_engine_entry_desc">集中查看完全重复、跨库镜像和类型级冲突，并按建议治理</string>
-    <string name="dedup_engine_overview_title">去重总控台</string>
-    <string name="dedup_engine_overview_desc">先看清当前重复态势，再锁定保留策略，最后按分组逐步治理，减少误操作。</string>
-    <string name="dedup_engine_overview_actionable">可直接处理</string>
-    <string name="dedup_engine_overview_types">活跃问题类型</string>
-    <string name="dedup_engine_overview_sources">涉及来源</string>
-    <string name="dedup_engine_overview_active_scope">当前保留优先级</string>
-    <string name="dedup_engine_strategy_title">治理策略板</string>
-    <string name="dedup_engine_strategy_desc">先设定主数据库，再收窄本轮审阅范围和问题焦点。</string>
-    <string name="dedup_engine_radar_title">问题雷达</string>
-    <string name="dedup_engine_radar_desc">当分组较多时，可以先跳到一种冲突形态集中处理。</string>
-    <string name="dedup_engine_worklist_title">待治理队列</string>
-    <string name="dedup_engine_worklist_desc">当前视图下还有 %1$d 个分组等待处理</string>
-    <string name="dedup_engine_recommendation_title">建议处理方式</string>
-    <string name="dedup_engine_items_title">涉及条目</string>
-    <string name="dedup_engine_scanning">正在扫描重复分组…</string>
-    <string name="dedup_engine_cluster_count">%1$d 个分组</string>
-    <string name="dedup_engine_selected_count">已选 %1$d 个</string>
-    <string name="dedup_engine_multi_source_hint">多数据源治理</string>
-    <string name="dedup_engine_preferred_source_hint">当前主数据库</string>
-    <string name="dedup_engine_preferred_source_title">主数据库</string>
-    <string name="dedup_engine_preferred_source_desc">先告诉 Bastion 你更常用哪个数据库，去重建议会优先保留它，再处理其他密码副本。</string>
-    <string name="dedup_engine_controls_title">治理策略与筛选</string>
-    <string name="dedup_engine_controls_desc">主数据库、来源范围和问题类型都收在这里，默认保持简洁。</string>
-    <string name="dedup_engine_controls_expand">展开设置</string>
-    <string name="dedup_engine_controls_collapse">收起设置</string>
-    <string name="dedup_engine_controls_scope_desc">限制当前要审阅的来源范围。</string>
-    <string name="dedup_engine_controls_type_desc">只看一种重复类型时，可以在这里切换。</string>
-    <string name="dedup_engine_specific_source_title">具体主数据库</string>
-    <string name="dedup_engine_specific_source_desc">如果当前来源下有多个库，可以继续指定优先保留哪一个。</string>
-    <string name="dedup_engine_specific_scope_title">具体来源库</string>
-    <string name="dedup_engine_specific_scope_desc">如果当前来源下有多个库，可以把本轮审阅范围继续收窄到其中一个。</string>
-    <string name="dedup_engine_specific_keepass_all">全部 KeePass 数据库</string>
-    <string name="dedup_engine_specific_bitwarden_all">全部 Bitwarden 账号</string>
-    <string name="dedup_engine_batch_mode">批量管理</string>
-    <string name="dedup_engine_exit_batch">完成</string>
-    <string name="dedup_engine_selection_title">已选 %1$d 个</string>
-    <string name="dedup_engine_batch_title">批量工具台</string>
-    <string name="dedup_engine_batch_desc">当前已选 %1$d 个分组，可见分组共 %2$d 个</string>
-    <string name="dedup_engine_select_all_visible">全选当前可见</string>
-    <string name="dedup_engine_clear_selection">清空选择</string>
-    <string name="dedup_engine_batch_no_common_action">当前选择还没有共同且安全的批量操作。</string>
-    <string name="dedup_engine_scope_title">来源范围</string>
-    <string name="dedup_engine_type_title">问题类型</string>
-    <string name="dedup_engine_selected_short">已选中</string>
-    <string name="dedup_engine_select_short">选择</string>
-    <string name="dedup_engine_type_all">全部类型</string>
-    <string name="dedup_engine_empty_title">未发现重复分组</string>
-    <string name="dedup_engine_empty_desc">当前范围内看起来比较干净，或者剩余分组已被你主动忽略。</string>
-    <string name="dedup_engine_more_items">还有 %1$d 项</string>
-    <string name="dedup_scope_all">全部来源</string>
-    <string name="dedup_scope_local">Bastion 本地</string>
-    <string name="dedup_scope_keepass">KeePass</string>
-    <string name="dedup_scope_bitwarden">Bitwarden</string>
-    <string name="dedup_type_exact_password">完全重复密码</string>
-    <string name="dedup_type_cross_source_password">跨来源账号镜像</string>
-    <string name="dedup_type_totp">重复验证器</string>
-    <string name="dedup_type_bank_card">重复银行卡</string>
-    <string name="dedup_type_document">重复证件</string>
-    <string name="dedup_type_passkey">Passkey 账号冲突</string>
-    <string name="dedup_source_local">Bastion</string>
-    <string name="dedup_source_keepass">KeePass</string>
-    <string name="dedup_source_bitwarden">Bitwarden</string>
-    <string name="dedup_action_archive_local_passwords">归档 Bastion 副本</string>
-    <string name="dedup_action_keep_source_archive_others">保留 %1$s，归档其他密码副本</string>
-    <string name="dedup_action_keep_one_source_password">保留 1 条 %1$s 记录，归档其余重复项</string>
-    <string name="dedup_action_keep_one_local_item">保留 1 条 Bastion 记录，移入回收站其余项</string>
-    <string name="dedup_action_trash_local_items">移入回收站</string>
-    <string name="dedup_action_ignore">忽略</string>
-    <string name="dedup_cluster_exact_password_desc">同一来源内，账号与密码完全一致，适合在 %1$s 内清理。</string>
-    <string name="dedup_cluster_cross_source_password_desc">同一账号同时存在于 %1$s，建议先治理主次而不是直接删除。</string>
-    <string name="dedup_cluster_exact_password_recommendation">同一来源内发现完全重复的密码。建议保留 1 条 %1$s 记录，归档其余重复项。</string>
-    <string name="dedup_cluster_cross_source_password_recommendation">该账号在多个数据库中都有副本。按当前偏好，建议保留 %1$s 作为主项，归档其他密码副本。</string>
-    <string name="dedup_cluster_cross_source_password_fallback">这组里没有 %1$s 记录。建议先保留 %2$s 作为主项，再归档其他密码副本。</string>
-    <string name="dedup_cluster_totp_desc">验证器密钥或发行方/账号组合在 %1$s 间重叠。</string>
-    <string name="dedup_cluster_bank_card_desc">同一银行卡指纹在 %1$s 中重复出现。</string>
-    <string name="dedup_cluster_document_desc">同一证件号在 %1$s 中重复出现。</string>
-    <string name="dedup_cluster_passkey_desc">同一站点账号在 %1$s 中存在多把 Passkey，删除前请先审阅。</string>
-    <string name="extensions_password_field_customization_title">添加密码页面字段定制</string>
     <string name="extensions_password_field_customization_desc">自定义显示的字段卡片</string>
     <string name="bitwarden_bottom_status_bar_title">Bitwarden 底部状态栏</string>
     <string name="bitwarden_bottom_status_bar_description">在 Bitwarden 页面底部区域上方显示同步状态</string>
@@ -2871,8 +2232,6 @@
     <string name="bitwarden_status_retrying">网络异常，稍后重试</string>
     <string name="bitwarden_status_queued">同步排队中</string>
     <string name="bitwarden_status_synced">已同步</string>
-    <string name="target_account">目标账户</string>
-    <string name="payment_platform_afdian">爱发电</string>
     <string name="password_field_customization_title">添加密码页面字段定制</string>
     <string name="password_field_customization_notice">关闭的字段将不会在添加/编辑密码页面显示。\n\n注意：如果某条密码已有该字段的数据，即使关闭了开关，编辑该条目时仍会显示对应卡片。</string>
     <string name="password_field_customization_system_fields">系统字段</string>
@@ -2976,20 +2335,6 @@
     <string name="import_data_password_incorrect_retry">密码错误，请重试</string>
     <string name="import_data_failed_with_reason">导入失败：%1$s</string>
     <string name="import_data_kdbx_import_success_count">成功导入 %1$d 条记录</string>
-    <string name="webdav_image_optimization_title">图片优化</string>
-    <string name="webdav_image_stats_total">共 %1$d 张图片，总大小 %2$s</string>
-    <string name="webdav_image_stats_optimizable">有 %1$d 张大图片可优化（已优化 %2$d 张）</string>
-    <string name="webdav_image_all_optimized">所有图片已优化 ✓</string>
-    <string name="webdav_image_none">暂无图片</string>
-    <string name="webdav_image_no_need_compress">所有图片已优化，无需压缩</string>
-    <string name="webdav_compress_images_one_tap">一键压缩图片</string>
-    <string name="webdav_compress_dialog_title">压缩图片</string>
-    <string name="webdav_compress_dialog_message">将压缩 %1$d 张大图片以减少备份文件大小。\n\n• 压缩后的图片质量会略有下降\n• 已压缩的图片不会重复压缩\n• 此操作不可撤销\n\n是否继续？</string>
-    <string name="webdav_compress_status_preparing">正在准备…</string>
-    <string name="webdav_compress_status_processing">正在压缩 %1$d/%2$d…</string>
-    <string name="webdav_compress_status_done">完成</string>
-    <string name="webdav_compress_failed">压缩失败: %1$s</string>
-    <string name="webdav_optimizing_images">正在优化图片…</string>
     <string name="webdav_restore_success">数据已成功恢复</string>
     <string name="webdav_tag_permanent">永久</string>
     <string name="webdav_tag_expiring">即将清理</string>
@@ -3000,14 +2345,11 @@
     <string name="webdav_operation_failed">操作失败: %1$s</string>
     <string name="webdav_restore_backup_title">恢复备份</string>
     <string name="webdav_restore_backup_confirm_message">确定要从此备份恢复数据吗?\n\n%1$s\n\n注意: 这将导入备份中的所有数据到当前应用中。</string>
-    <string name="webdav_restore_local_only_dedup">仅与 Bastion 本地数据去重</string>
-    <string name="webdav_restore_local_only_dedup_desc">关闭: 保持旧行为（全数据去重）。开启: 只和本地条目去重。</string>
     <string name="webdav_restore_mode_merge_title">合并到 Bastion 本地库</string>
     <string name="webdav_restore_mode_merge_desc">推荐，不影响 KeePass / Bitwarden。</string>
     <string name="webdav_restore_mode_replace_title">替换 Bastion 本地库</string>
     <string name="webdav_restore_mode_replace_desc">仅替换 Bastion 本地数据。</string>
     <string name="webdav_restore_mode_title">选择恢复方式</string>
-    <string name="webdav_restore_mode_advanced_title">高级去重</string>
     <string name="webdav_restore_mode_global_dedup">与全部数据源一起去重</string>
     <string name="webdav_restore_mode_global_dedup_desc">可能把 KeePass / Bitwarden 条目视为重复。</string>
     <string name="webdav_restore_mode_local_safe_desc">默认只与 Bastion 本地数据去重。</string>
@@ -3036,58 +2378,23 @@
     <string name="webdav_restore_summary_issues_prefix">跳过/失败: %1$s</string>
     <string name="webdav_restore_summary_failed_details">导入失败详情:</string>
     <string name="webdav_restore_summary_more_logs">…查看日志了解更多</string>
-    <string name="keepass_webdav_title">KeePass WebDAV</string>
     <string name="keepass_webdav_load_files_failed">加载文件列表失败</string>
-    <string name="keepass_webdav_refresh_failed">刷新失败</string>
-    <string name="keepass_webdav_enter_database_password">请输入数据库密码</string>
     <string name="keepass_webdav_database_password">KeePass 数据库密码</string>
-    <string name="keepass_webdav_enter_password">请输入密码</string>
-    <string name="keepass_webdav_select_file_first">请先选择文件</string>
-    <string name="keepass_webdav_import_failed">导入失败: %1$s</string>
     <string name="keepass_webdav_user_summary">用户: %1$s</string>
     <string name="keepass_webdav_status_not_connected">未连接</string>
     <string name="keepass_webdav_status_connecting">连接中…</string>
     <string name="keepass_webdav_status_connected">已连接</string>
     <string name="keepass_webdav_status_failed">连接失败</string>
-    <string name="keepass_webdav_actions">操作</string>
     <string name="keepass_webdav_database_password_hint">输入 .kdbx 密码</string>
-    <string name="keepass_webdav_remember_password">记住密码</string>
-    <string name="keepass_webdav_conflict_protection">冲突保护（ETag/If-Match）</string>
-    <string name="keepass_webdav_conflict_mode_auto_title">自动模式（推荐）</string>
-    <string name="keepass_webdav_conflict_mode_auto_desc">接近 KeePassDX 体验：可用时走条件写入，不可用时尽力保存。</string>
-    <string name="keepass_webdav_conflict_mode_strict_title">严格模式</string>
-    <string name="keepass_webdav_conflict_mode_strict_desc">要求服务器提供冲突元数据；更安全，但部分 WebDAV 服务器可能会阻止写入。</string>
-    <string name="keepass_webdav_conflict_protection_enabled_hint">严格模式：若服务器未返回 ETag 或远端已变化，会阻止写入。</string>
-    <string name="keepass_webdav_conflict_protection_disabled_hint">自动模式（推荐）：有 ETag 时使用 If-Match，无 ETag 时尽力保护后再写入。</string>
     <string name="keepass_webdav_create_action">新建远端数据库</string>
-    <string name="keepass_webdav_creating">创建中…</string>
     <string name="keepass_webdav_create_title">新建远端 .kdbx</string>
-    <string name="keepass_webdav_create_message">在 WebDAV 服务器上创建一个空的 KeePass 数据库。</string>
     <string name="keepass_webdav_create_name_label">数据库文件名</string>
     <string name="keepass_webdav_create_name_placeholder">示例：vault-main</string>
-    <string name="keepass_webdav_create_name_required">请输入数据库名称</string>
-    <string name="keepass_webdav_create_exists">同名数据库已存在</string>
-    <string name="keepass_webdav_create_success">创建成功：%1$s</string>
-    <string name="keepass_webdav_create_failed">创建失败：%1$s</string>
     <string name="keepass_webdav_create_confirm">创建</string>
-    <string name="keepass_webdav_attach_hint">在下方选择远端 .kdbx 文件接入后即可直接读写。</string>
-    <string name="keepass_webdav_force_overwrite_action">强制覆盖</string>
-    <string name="keepass_webdav_force_overwrite_title">强制覆盖远端数据库</string>
-    <string name="keepass_webdav_force_overwrite_message">将使用本地数据强制提交到 WebDAV，并覆盖远端文件。远端中未同步到本地的数据将丢失。</string>
-    <string name="keepass_webdav_force_overwrite_confirm">确认强制覆盖</string>
-    <string name="keepass_webdav_force_overwrite_success">强制覆盖完成：已写入 %1$d 条</string>
-    <string name="keepass_webdav_force_overwrite_failed">强制覆盖失败：%1$s</string>
-    <string name="keepass_webdav_force_overwrite_not_attached">该远端数据库尚未接入</string>
     <string name="keepass_webdav_attach_title">接入远端数据库</string>
-    <string name="keepass_webdav_attach_message">将接入以下远端数据库：</string>
     <string name="keepass_webdav_browser_message">先登录 WebDAV，然后浏览文件夹，选择已有的 .kdbx，或在当前目录直接创建新数据库。</string>
-    <string name="keepass_webdav_attach_success">接入成功：%1$d 个条目</string>
-    <string name="keepass_webdav_attach_failed">接入失败：%1$s</string>
-    <string name="keepass_webdav_attach_exception">接入异常：%1$s</string>
     <string name="keepass_webdav_confirm_attach">确认接入</string>
     <string name="keepass_webdav_attach_action">接入</string>
-    <string name="keepass_webdav_attached">已接入</string>
-    <string name="keepass_webdav_database">KeePass WebDAV 数据库</string>
     <string name="keepass_webdav_database_badge">WebDAV</string>
     <string name="keepass_webdav_remote_files_title">云端 .kdbx 文件</string>
     <string name="keepass_webdav_status_title">连接状态</string>
@@ -3102,11 +2409,7 @@
     <string name="keepass_webdav_create_folder_confirm">创建文件夹</string>
     <string name="keepass_webdav_create_folder_failed">创建文件夹失败</string>
     <string name="keepass_webdav_create_target_path">创建位置：%1$s</string>
-    <string name="keepass_webdav_no_files">暂无 .kdbx 文件</string>
     <string name="keepass_webdav_connection_test_failed">连接测试失败</string>
-    <string name="keepass_webdav_not_configured">WebDAV 未配置</string>
-    <string name="keepass_webdav_import_wrong_password">密码错误，无法解密数据库</string>
-    <string name="keepass_webdav_import_invalid_database">无效的 KeePass 数据库文件</string>
     <string name="local_keepass_security_options">安全选项</string>
     <string name="local_keepass_use_key_file">使用密钥文件</string>
     <string name="local_keepass_use_key_file_desc">增加额外的安全层</string>
@@ -3137,13 +2440,11 @@
     <string name="local_keepass_select_key_file">选择密钥文件</string>
     <string name="local_keepass_no_key_file_selected">未选择密钥文件</string>
     <string name="local_keepass_key_file_selected">已选择密钥文件</string>
-    <string name="click_to_pay">点击付款</string>
     <string name="page_adjust_custom_title">页面调整自定义</string>
     <string name="page_adjust_custom_subtitle">自定义页面布局与显示行为</string>
     <string name="password_list_customization_title">密码列表自定义</string>
     <string name="password_list_customization_subtitle">自定义密码列表顶部快捷筛选入口</string>
     <string name="add_button_customization_title">添加按钮设置</string>
-    <string name="add_button_customization_subtitle">自定义密码页面主添加按钮的行为</string>
     <string name="add_button_customization_desc">可选择点击后直接打开添加密码页面，或展开多个添加入口。</string>
     <string name="add_button_preview_title">实时预览</string>
     <string name="add_button_mode_title">点击行为</string>
@@ -3166,15 +2467,8 @@
     <string name="password_page_aggregate_content_desc">可选择密码页允许显示的内容类型，并拖拽调整顶部筛选顺序。密码始终开启。</string>
     <string name="password_list_quick_filters_switch_title">快捷筛选开关</string>
     <string name="password_list_quick_filters_switch_desc">开启后在密码列表顶部显示快捷筛选按钮，支持收藏、2FA、备注、未分类、仅本地、仅自定义堆叠、不堆叠、未堆叠，以及卡片、验证器、通行密钥、笔记内容类型筛选。</string>
-    <string name="password_list_quick_filters_content_title">快捷筛选显示内容</string>
-    <string name="password_list_quick_filters_content_desc">可单独开关筛选项，并拖拽调整显示顺序。</string>
     <string name="password_list_category_quick_filters_switch_title">分类快捷筛选</string>
     <string name="password_list_category_quick_filters_switch_desc">开启后会把密码列表顶部快捷筛选扩展为两行，第二行直接显示分类文件夹。Bastion 文件夹支持返回上一级目录，Bitwarden 文件夹再次点击当前选中项即可取消选中。</string>
-    <string name="password_list_quick_folders_switch_title">快捷文件夹开关</string>
-    <string name="password_list_quick_folders_switch_desc">开启后在密码列表顶部显示快捷文件夹卡片，可快速返回上一级目录或进入子目录。</string>
-    <string name="password_list_quick_folders_style_title">快捷文件夹展示样式</string>
-    <string name="password_list_quick_folders_style_classic">经典样式</string>
-    <string name="password_list_quick_folders_style_m3">卡片样式</string>
     <string name="password_list_quick_folder_path_banner_switch_title">路径横幅</string>
     <string name="password_list_quick_folder_path_banner_switch_desc">在密码列表顶部显示当前目录路径横幅，可独立于快捷文件夹卡片单独使用。</string>
     <string name="password_list_system_back_to_parent_folder_switch_title">系统返回键回到上一级文件夹</string>
@@ -3195,13 +2489,8 @@
     <string name="password_list_quick_filter_unstacked">未堆叠</string>
     <string name="password_list_quick_folder_back">返回上一级目录</string>
     <string name="password_list_quick_folder_back_subtitle">返回到父目录</string>
-    <string name="password_list_quick_folder_subtitle">进入子目录</string>
     <string name="password_list_quick_folder_count">%1$d 条项目</string>
     <string name="password_list_quick_folder_root_label">Bastion</string>
-    <string name="password_list_preview_back_to_parent">返回上一级目录</string>
-    <string name="password_list_preview_current_folder">当前目录</string>
-    <string name="password_list_preview_folder_count">18 条</string>
-    <string name="password_list_preview_folder_name">GitHub</string>
     <string name="password_card_adjust_title">密码卡片调整</string>
     <string name="password_card_adjust_subtitle">重做密码卡片的显示与分组体验</string>
     <string name="authenticator_card_adjust_title">验证器卡片调整</string>
@@ -3214,8 +2503,6 @@
     <string name="icon_settings_app_icon_title">主应用图标</string>
     <string name="icon_settings_app_icon_modern_title">新图标</string>
     <string name="icon_settings_app_icon_modern_subtitle">使用当前这套 Bastion 彩色图标作为桌面主应用图标。</string>
-    <string name="icon_settings_app_icon_classic_title">经典</string>
-    <string name="icon_settings_app_icon_classic_subtitle">切换回之前的 Bastion 经典桌面图标。</string>
     <string name="icon_settings_page_switches_title">页面级图标开关</string>
     <string name="icon_settings_page_switches_desc">按页面分别控制图标显示，不影响其他页面。</string>
     <string name="icon_settings_password_page_title">密码页面</string>
@@ -3227,16 +2514,12 @@
     <string name="icon_settings_third_party_favicon_title">第三方图标补全</string>
     <string name="icon_settings_third_party_favicon_subtitle">用 DuckDuckGo / Google 补全无自带图标的站点（会向第三方暴露访问域名）</string>
     <string name="icon_settings_unmatched_strategy_title">无匹配图标处理策略</string>
-    <string name="icon_settings_unmatched_strategy_desc">当图标源都未命中时，控制卡片图标区域的显示方式。</string>
     <string name="icon_settings_unmatched_strategy_default">显示默认钥匙图标</string>
     <string name="icon_settings_unmatched_strategy_initial">显示网站/标题首字</string>
     <string name="icon_settings_unmatched_strategy_hide">不显示图标</string>
     <string name="icon_settings_priority_title">图标优先级</string>
     <string name="icon_settings_priority_desc">以下顺序按命中优先级从高到低，命中后不再继续向下匹配。</string>
     <string name="icon_settings_priority_unified">自定义 Simple Icon &gt; 自定义上传图标 &gt; 智能匹配 Simple Icon &gt; 网站 favicon &gt; 应用图标 &gt; 默认图标</string>
-    <string name="icon_settings_priority_password">自定义 Simple Icon &gt; 自定义上传图标 &gt; 智能匹配 Simple Icon &gt; 网站 favicon &gt; 应用图标 &gt; 默认图标</string>
-    <string name="icon_settings_priority_authenticator">自定义 Simple Icon &gt; 自定义上传图标 &gt; 智能匹配 Simple Icon &gt; 网站 favicon &gt; 应用图标 &gt; 默认图标</string>
-    <string name="icon_settings_priority_passkey">自定义 Simple Icon（绑定密码）&gt; 自定义上传图标（绑定密码）&gt; 智能匹配 Simple Icon &gt; 网站 favicon &gt; 绑定应用图标 &gt; 默认图标</string>
     <string name="icon_settings_source_title">第三方图标标注</string>
     <string name="icon_settings_source_desc">图标来源与商标归属说明</string>
     <string name="icon_settings_source_line_1">本项目本地打包了来自 Stratum Auth app 的图标资源（v1.4.0，GPL-3.0）：https://github.com/stratumauth/app/releases/tag/v1.4.0</string>
@@ -3266,8 +2549,6 @@
     <string name="password_quick_access_last_opened">最近打开：%1$s</string>
     <string name="password_quick_access_open_count">%1$d 次</string>
     <string name="autofill_v2_title">自动填充</string>
-    <string name="autofill_v2_engine_title">引擎：Bitwarden V2</string>
-    <string name="autofill_v2_engine_desc">自动填充已切换到并行重建的 Bitwarden 风格模型，旧逻辑已冻结。</string>
     <string name="autofill_v2_enable_service">启用应用内自动填充</string>
     <string name="autofill_v2_enable_service_desc">控制 Bastion 在应用内是否提供自动填充能力。</string>
     <string name="autofill_v2_strict_match">严格匹配（推荐）</string>
@@ -3278,8 +2559,6 @@
     <string name="autofill_v2_respect_off_desc">当站点或应用明确禁用自动填充时跳过该字段。</string>
     <string name="autofill_inline_suggestions">输入法内联建议</string>
     <string name="autofill_inline_suggestions_desc">在第三方输入法候选栏中显示自动填充建议。关闭后仅使用传统下拉菜单式建议。</string>
-    <string name="autofill_v2_save_prompt">启用保存提示</string>
-    <string name="autofill_v2_save_prompt_desc">登录/注册后提示保存新凭据。</string>
     <string name="autofill_v2_blacklist">启用黑名单</string>
     <string name="autofill_v2_blacklist_desc">在敏感应用中禁用自动填充（当前 %1$d 个包名）。</string>
     <string name="autofill_blocked_fields_title">非自动填充字段</string>
@@ -3291,11 +2570,8 @@
     <string name="autofill_blocked_fields_badge">此处已禁用自动填充</string>
     <string name="autofill_blocked_fields_clear_all">清空全部</string>
     <string name="autofill_blocked_fields_remove">移除</string>
-    <string name="autofill_blocked_fields_package">应用：%1$s</string>
     <string name="autofill_blocked_fields_package_only">Android 应用目标</string>
-    <string name="autofill_blocked_fields_domain">网站：%1$s</string>
     <string name="autofill_blocked_fields_domain_only">网页目标</string>
-    <string name="autofill_blocked_fields_hints">提示类型：%1$s</string>
     <string name="autofill_blocked_fields_time">标记时间：%1$s</string>
     <string name="autofill_blocked_fields_share">分享</string>
     <string name="autofill_blocked_fields_share_title">分享非自动填充字段</string>
@@ -3304,8 +2580,6 @@
     <string name="autofill_blocked_fields_share_failed">分享失败：%1$s</string>
     <string name="autofill_v2_set_system_service">设置 Bastion 为系统自动填充服务</string>
     <string name="autofill_v2_set_system_service_desc">打开系统设置并将 Bastion 设为默认自动填充提供方。</string>
-    <string name="autofill_v2_privileged_apps">特权 App</string>
-    <string name="autofill_v2_privileged_apps_desc">打开 Android 凭据提供方权限相关设置。</string>
     <string name="autofill_v2_default_scope_title">默认列表范围</string>
     <string name="autofill_v2_default_scope_desc">设置自动填充列表默认展示的数据来源范围。</string>
     <string name="autofill_v2_default_keepass_title">默认 KeePass 数据库</string>
@@ -3421,9 +2695,6 @@
     <string name="qs_autofill_enable_desc">开启后，Bastion 可以在登录表单里提供账号、密码、卡包和验证器相关候选。</string>
     <string name="qs_open_autofill_settings">打开自动填充设置</string>
     <string name="qs_autofill_hint">如果系统已经开启，直接下一步就可以。后续也可以在设置里继续调整自动填充来源和验证方式。</string>
-    <string name="qs_color_scheme">配色</string>
-    <string name="qs_bottom_preview">底部预览</string>
-    <string name="qs_display_items">显示项目</string>
     <string name="qs_keep_at_least_one_tab">至少保留一个常用入口会更顺手</string>
     <string name="qs_data_import_heading">你可以先把数据接进 Bastion</string>
     <string name="qs_data_import_desc">如果你已经在用其他密码库或备份方式，可以从这里先完成连接或导入。</string>
@@ -3437,23 +2708,6 @@
     <string name="qs_manual_import">手动文件导入</string>
     <string name="qs_manual_import_desc">进入导入页面，从文件中手动导入已有数据。</string>
     <string name="qs_go_import">去导入</string>
-    <string name="qs_list_content">列表内容</string>
-    <string name="qs_aggregate_all_items">在密码页面管理所有项目</string>
-    <string name="qs_quick_access">显示最近/常用快捷入口</string>
-    <string name="qs_filter">筛选</string>
-    <string name="qs_quick_filters">显示快捷筛选</string>
-    <string name="qs_category_quick_filters">显示分类快捷筛选</string>
-    <string name="qs_display_fields">显示字段</string>
-    <string name="qs_show_username">显示用户名</string>
-    <string name="qs_show_website">显示网站</string>
-    <string name="qs_authenticator_link">验证器联动</string>
-    <string name="qs_show_bound_authenticator">显示绑定验证器</string>
-    <string name="qs_hide_other_when_authenticator">显示验证器时隐藏其他内容</string>
-    <string name="qs_show_issuer">显示发行方</string>
-    <string name="qs_show_account_name">显示账号名</string>
-    <string name="qs_progress_display">进度显示</string>
-    <string name="qs_unified_progress_bar">启用统一进度条</string>
-    <string name="qs_smooth_progress_animation">启用平滑进度动画</string>
     <string name="qs_live_preview">实时预览</string>
     <string name="qs_preview_note_3_fields">卡片上只会显示已选择字段中的前 3 项。</string>
     <string name="qs_authenticator_preview_note">验证器卡片会按这里的字段和进度设置实时展示。</string>
@@ -3462,19 +2716,10 @@
 
     <!-- 附件 (Bastion_Android_Attachments spec) -->
     <string name="attachment_section_title">附件</string>
-    <string name="attachment_section_title_with_count">附件 (%1$d)</string>
-    <string name="attachment_add">添加附件</string>
-    <string name="attachment_delete">删除</string>
     <string name="attachment_download">下载</string>
     <string name="attachment_save_to_device">保存到设备</string>
     <string name="attachment_open">打开</string>
     <string name="attachment_retry">重试</string>
-    <string name="attachment_state_pending">未下载</string>
-    <string name="attachment_state_downloading">下载中…</string>
-    <string name="attachment_state_failed">下载失败</string>
-    <string name="attachment_source_local">本地</string>
-    <string name="attachment_source_bitwarden">Bitwarden</string>
-    <string name="attachment_source_keepass">KeePass</string>
     <string name="attachments_section_title">附件（%1$d 个）</string>
     <string name="attachments_add">添加附件</string>
     <string name="attachments_delete">移除</string>
@@ -3489,10 +2734,6 @@
     <string name="attachment_error_kdbx_locked">KeePass 数据库未解锁。</string>
     <string name="attachment_error_kdbx_capacity">文件过大，当前 KeePass 数据库无法容纳。</string>
 
-    <string name="attachment_upgrade_bitwarden_action">了解如何升级 Bitwarden</string>
-
-    <string name="attachment_kdbx_soft_limit_title">附件较大</string>
-    <string name="attachment_kdbx_soft_limit_message">该文件（%1$s）超出 KeePass 推荐上限，可能超过设备可加载范围。仍要继续吗？</string>
     <string name="attachment_kdbx_soft_limit_continue">继续</string>
     <string name="attachment_kdbx_soft_limit_cancel">取消</string>
 
@@ -3511,14 +2752,11 @@
     <string name="security_score_fair">仍可改进</string>
     <string name="security_score_needs_attention">需要处理</string>
     <string name="passkey_remark">备注</string>
-    <string name="passkey_add_remark">添加备注</string>
     <string name="passkey_edit_remark">编辑备注</string>
     <string name="passkey_remark_hint">备注会显示在 Bastion 和系统通行密钥选择器中，清空后恢复原名称。</string>
-    <string name="passkey_detail_account">账号信息</string>
     <string name="passkey_detail_security">安全与存储</string>
     <string name="passkey_detail_activity">使用记录</string>
     <string name="passkey_detail_technical">技术信息</string>
-    <string name="passkey_detail_sync_status">同步状态</string>
     <string name="passkey_detail_storage">存储格式</string>
     <string name="passkey_detail_algorithm">算法</string>
     <string name="passkey_detail_transports">传输方式</string>
@@ -3529,61 +2767,23 @@
     <string name="timeline_restore_failed">无法恢复，条目可能在此版本之后又发生了修改。</string>
 
     <!-- 补充缺失的字符串（来自上游英文版，待翻译为中文） -->
-    <string name="add_note_title">Add Note</string>
-    <string name="asset_add">Add Asset</string>
-    <string name="asset_add_title">Add Asset</string>
-    <string name="asset_back">Back</string>
-    <string name="asset_balance">Current Balance</string>
-    <string name="asset_close">Close</string>
-    <string name="asset_count_unit">assets</string>
-    <string name="asset_currency">Currency</string>
-    <string name="asset_delete_message">Are you sure you want to delete this asset? All associated ledger entries will also be affected.</string>
-    <string name="asset_delete_title">Delete Asset</string>
-    <string name="asset_edit_title">Edit Asset</string>
-    <string name="asset_empty">No assets yet. Tap + to add one</string>
-    <string name="asset_management_title">Asset Management</string>
-    <string name="asset_name">Asset Name</string>
-    <string name="asset_save">Save</string>
-    <string name="asset_select_currency">Select Currency</string>
-    <string name="asset_total">Total Assets</string>
-    <string name="asset_type">Asset Type</string>
-    <string name="asset_type_alipay">Alipay</string>
-    <string name="asset_type_bank_card">Bank Card</string>
-    <string name="asset_type_cash">Cash</string>
-    <string name="asset_type_other">Other</string>
-    <string name="asset_type_paypal">PayPal</string>
-    <string name="asset_type_unionpay">UnionPay</string>
-    <string name="asset_type_wechat">WeChat Pay</string>
     <string name="attachment_preview_unsupported">Preview not available for this file type</string>
     <string name="attachment_preview_unsupported_hint">Tap the open button to view with an external app</string>
     <string name="authenticator">Authenticator</string>
-    <string name="autofill_manager_icon">Password Manager Icon</string>
-    <string name="autofill_save_result_saved">Password saved</string>
-    <string name="autofill_save_result_updated">Password updated</string>
     <string name="autofill_service_description">Automatically fill passwords and forms in apps and websites</string>
     <string name="autofill_service_label">Bastion Autofill</string>
-    <string name="autofill_service_summary">Secure autofill from Bastion</string>
     <string name="autofill_v2_default_bitwarden_desc">Limit default suggestions and list items to one Bitwarden vault.</string>
     <string name="autofill_v2_default_bitwarden_title">Default Bitwarden vault</string>
-    <string name="bank_cards">Bank Cards</string>
     <string name="batch_delete_message" tools:ignore="PluralsCandidate">确定删除选中的 %d 项吗？</string>
-    <string name="batch_delete_notes_message" tools:ignore="PluralsCandidate">确定删除选中的 %1$d 条笔记吗？</string>
-    <string name="batch_delete_notes_title">Delete Notes</string>
     <string name="batch_delete_title">Batch Delete</string>
     <string name="category_all">All</string>
     <string name="cd_back">返回</string>
-    <string name="data_reset_complete">All data has been reset. You can now set up a new master password.</string>
     <string name="data_type_notes">Notes</string>
-    <string name="delete_note_message">Are you sure you want to delete "%s"? This action cannot be undone.</string>
-    <string name="delete_note_title">Delete Note</string>
-    <string name="documents">Documents</string>
-    <string name="edit_note_title">Edit Note</string>
     <string name="filter_title">Filter</string>
     <string name="forgot_password">Forgot Password?</string>
     <string name="forgot_password_confirm">Are you sure you want to reset all data?</string>
     <string name="forgot_password_title">Reset Application</string>
     <string name="forgot_password_warning">This permanently deletes saved passwords and resets Bastion. This can\'t be undone.</string>
-    <string name="free_donation_toggle">自由打赏</string>
     <string name="import_data_keepass_error_code_value">Error code: %1$s</string>
     <string name="import_data_keepass_error_suggestion_label">Suggested action</string>
     <string name="import_data_keepass_error_title">KeePass import failed</string>
@@ -3601,62 +2801,17 @@
     <string name="import_data_keepass_tip_format_not_kdbx">This is not a valid KDBX database. Make sure you selected a .kdbx file and re-fetch a complete copy from its source.</string>
     <string name="import_data_keepass_tip_format_corrupted">The database file is damaged (content parsing failed). Use a backup copy, or repair it in KeePassXC and retry.</string>
     <string name="import_data_keepass_tip_challenge_response">This database is encrypted with hardware-key (YubiKey etc.) Challenge-Response, which is not supported yet. Re-save it with "password + key file" in KeePassXC and retry.</string>
-    <string name="keepass_webdav_removed">KeePass WebDAV has been removed. Please use local KeePass database management.</string>
-    <string name="ledger_add_entry">Add Entry</string>
-    <string name="ledger_amount">Amount</string>
-    <string name="ledger_balance">Balance</string>
-    <string name="ledger_cancel">Cancel</string>
-    <string name="ledger_category">Category</string>
-    <string name="ledger_category_none">No category</string>
-    <string name="ledger_delete">Delete</string>
-    <string name="ledger_delete_confirm_message">Are you sure you want to delete this entry?</string>
-    <string name="ledger_delete_confirm_title">Delete Entry</string>
-    <string name="ledger_edit_entry">Edit Entry</string>
-    <string name="ledger_empty">No entries yet. Tap + to add one</string>
-    <string name="ledger_entry_detail">Entry Detail</string>
-    <string name="ledger_entry_type">Type</string>
-    <string name="ledger_expense">Expense</string>
-    <string name="ledger_income">Income</string>
-    <string name="ledger_no_category_available">No category available for this type</string>
-    <string name="ledger_note">Note</string>
-    <string name="ledger_payment_alipay">Alipay</string>
-    <string name="ledger_payment_method">Payment Method</string>
-    <string name="ledger_payment_unionpay">UnionPay</string>
-    <string name="ledger_payment_wechat">WeChat</string>
-    <string name="ledger_time">Time</string>
-    <string name="ledger_title">Ledger</string>
-    <string name="ledger_transfer">Transfer</string>
-    <string name="ledger_view_all">All Data</string>
-    <string name="ledger_view_daily">Daily View</string>
-    <string name="ledger_view_monthly">Monthly View</string>
-    <string name="ledger_view_switch">View Switch</string>
-    <string name="ledger_view_weekly">Weekly View</string>
-    <string name="ledger_view_yearly">Yearly View</string>
-    <string name="nav_ledger">Ledger</string>
-    <string name="nav_ledger_short">Ledger</string>
     <string name="next">Next</string>
-    <string name="no_notes_description">Tap the + button to create your first secure note</string>
-    <string name="no_notes_title">No notes yet</string>
-    <string name="note_content">Content</string>
-    <string name="note_content_placeholder">Write something meaningful…</string>
     <string name="note_has_image">Has image attachment</string>
-    <string name="note_markdown_label">Markdown formatting</string>
     <string name="note_tags">Tags</string>
-    <string name="note_title_label">Title</string>
-    <string name="note_title_placeholder">e.g. Project ideas</string>
     <string name="notification_validator_no_match">No matching authenticator yet</string>
     <string name="notification_validator_ready">Authenticator notification is starting…</string>
-    <string name="passkey_category_empty">No categories yet. You can create one in folder management.</string>
     <string name="passkey_category_follow_binding">Category is inherited from the bound password.</string>
     <string name="passkey_category_updated">Category updated: %1$s</string>
     <string name="passkey_format_keepass">KeePass format</string>
     <string name="passkey_format_keepass_hint">Stored as Bastion-only KeePass passkey data. Syncs with Bastion/KeePass, not Bitwarden.</string>
     <string name="passkey_keepass_create_failed">Failed to create KeePass-format passkey.</string>
     <string name="passkey_update_failed">Failed to update passkey.</string>
-    <string name="passwords_title">Passwords</string>
-    <string name="payment_kofi_link">ko-fi.com/joyinjoester</string>
-    <string name="payment_page_title">支持作者</string>
-    <string name="payment_qr_code_title">收款二维码</string>
     <string name="previous">Previous</string>
     <string name="qr_authenticator_added">Authenticator added: %1$s</string>
     <string name="qr_authenticator_duplicate">Authenticator already exists: %1$s</string>
@@ -3665,23 +2820,13 @@
     <string name="qr_migration_multiple_fill_first" tools:ignore="PluralsCandidate">该迁移二维码包含 %1$d 个验证器，本次仅填入第一个。</string>
     <string name="qr_phonefactor_not_supported">PhoneFactor QR code is not supported yet.</string>
     <string name="reset_all_data">Reset All Data</string>
-    <string name="search_notes">Search notes</string>
-    <string name="select_bank_card_hint">Select a bank card to view details</string>
-    <string name="select_document_hint">Select a document to view details</string>
-    <string name="select_password_hint">Select a password to view details</string>
-    <string name="select_totp_hint">Select an authenticator to view details</string>
-    <string name="settings_description">Configure your Bastion settings</string>
     <string name="sso_login_btn">登录</string>
     <string name="sso_login_title">第三方账号登录</string>
     <string name="sso_ref_account">关联账号</string>
     <string name="timeline_restore_snapshot_result" tools:ignore="PluralsCandidate">快照已恢复：删除 %1$d 条密码、%2$d 个条目；恢复 %3$d 条密码、%4$d 个条目</string>
     <string name="timeline_restore_snapshot_result_legacy" tools:ignore="PluralsCandidate">快照已恢复（兼容模式）：删除 %1$d 条密码、%2$d 个凭据条目</string>
     <string name="use_sso">使用</string>
-    <string name="v2_create_card">Card</string>
-    <string name="v2_create_identity">Identity</string>
-    <string name="v2_create_login">Login</string>
     <string name="v2_create_note">Note</string>
-    <string name="v2_search_placeholder">Search vault…</string>
     <string name="verify_identity_to_delete">Verify identity to delete</string>
     <string name="version_code_max">9223372036854775807</string>
 </resources>

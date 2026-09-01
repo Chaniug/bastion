@@ -74,33 +74,5 @@
     </style>
 
     <!-- 深色认证对话框配色 -->
-    <style name="ThemeOverlay.Bastion.AutofillAuth" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="colorSurface">@color/autofill_auth_dialog_surface</item>
-        <item name="colorOnSurface">@color/autofill_auth_dialog_on_surface</item>
-        <item name="colorPrimary">@color/autofill_auth_dialog_accent</item>
-        <item name="colorSecondary">@color/autofill_auth_dialog_accent</item>
-        <item name="colorOutline">@color/autofill_auth_dialog_accent</item>
-        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Bastion.AutofillDialog</item>
-        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.Bastion.AutofillDialog.Title</item>
-        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.Bastion.AutofillDialog.Body</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Bastion.Dialog.FadeUp</item>
-    </style>
 
-    <style name="ShapeAppearance.Bastion.AutofillDialog" parent="ShapeAppearance.Material3.Corner.Medium">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">20dp</item>
-    </style>
-
-    <style name="TextAppearance.Bastion.AutofillDialog.Title" parent="TextAppearance.Material3.TitleLarge">
-        <item name="android:textColor">@color/autofill_auth_dialog_on_surface</item>
-    </style>
-
-    <style name="TextAppearance.Bastion.AutofillDialog.Body" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:textColor">@color/autofill_auth_dialog_on_surface</item>
-    </style>
-
-    <style name="Animation.Bastion.Dialog.FadeUp" parent="@style/Animation.AppCompat.Dialog">
-        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
-        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
-    </style>
 </resources>
