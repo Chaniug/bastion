@@ -2041,9 +2041,22 @@ fun SimpleMainScreen(
                         }
                     }
 
+                    // 底栏悬浮胶囊：Surface 提供圆角 + 阴影 + 半透明 + 离屏边内边距，
+// NavigationBar 在内层透明显示。这样既有「浮起来」的层次感，又不依赖第三方库。
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 10.dp
+                    ) {
                     NavigationBar(
+                        modifier = Modifier.fillMaxWidth(),
                         tonalElevation = 0.dp,
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                     ) {
                         // 底栏布局：左侧 2 个 + 中间「添加」+ 右侧 2 个。
                         // 两侧各固定 2 个槽位，不足时用 Spacer 占位，保证中间的 + 始终居中。
@@ -2102,13 +2115,7 @@ fun SimpleMainScreen(
                                     }
                                 }
                             },
-                            label = {
-                                Text(
-                                    text = addLabel,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Clip
-                                )
-                            },
+                            label = { /* 中间 + 号不显示文字（label 留空） */ },
                             selected = false,
                             onClick = {
                                 when (currentTab) {
@@ -2132,7 +2139,8 @@ fun SimpleMainScreen(
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
-                }
+                    }  // 关闭 NavigationBar
+                }  // 关闭 Surface 胶囊包装
             }
         },
         floatingActionButton = {} // FAB 移至外层 Overlay
