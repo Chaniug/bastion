@@ -46,7 +46,21 @@ MASTER = "xxxhdpi"
 SIZE = DENSITIES[MASTER]
 
 # —— 设计参数（多色方案：深蓝垫 + 青趾）——
-PAW_SCALE = 0.73          # 爪子缩放（沿用，与现状一致）
+# 黄金分割：爪子整体对角线 = 安全圈直径 (264) × 1/φ，其中 φ = (1+√5)/2。
+# 这样爪子既"小而精致"又自然落在黄金比上，并且安全圈也按同样的 φ 反向关系
+# 留出外壳（玻璃底外边到系统遮罩边缘 ≈ 264-163 = 101px）。
+PHI = (1 + 5 ** 0.5) / 2
+# 在 432 画布上以"安全圈直径"为基准（Android 自适应图标 66dp 安全圈对应
+# 432 × 66/108 = 264px），爪子整体对角占安全圈直径的 1/φ ≈ 0.618。
+# 旧值 PAW_SCALE=0.73 拍脑袋定的，竖高 ≈ 197px 偏胖；新值精确按黄金分割推算。
+SAFE_CIRCLE_DIAMETER = 264
+PAW_TARGET_DIAGONAL = SAFE_CIRCLE_DIAMETER / PHI  # ≈ 163.2px
+
+# 安全圈几何：
+#   自适应图标 (Adaptive Icon) 在 432×432 画布上：可见安全区 = 中心 264px 圆。
+#   圆外的部分会被 launcher 切成不同形状（圆/方/水滴/圆角方），必须留出。
+#   爪子整体外接矩形对角线 ≤ 264，且 4 部件组合质心与画布中心重合 (cx, cy)。
+# —— 设计参数（多色方案：深蓝垫 + 青趾）——
 
 # 爪垫（最大连通域）：深蓝竖向渐变 + 顶部柔光。深底保证深色桌面下爪子仍清晰。
 PAD_TOP = (37, 99, 235)    # 顶部受光（亮一点的电光蓝）
@@ -124,10 +138,19 @@ def _split_paw_parts() -> dict:
     pad, toes = comps[0], comps[1:4]
 
     def to_mask(px):
-        m = Image.new("L", (w, h), 0)
-        d = ImageDraw.Draw(m)
-        d.point(px, fill=255)
-        return m.point(lambda v: 255 if v > 0 else 0)
+        """把连通域点集栅格化成 L 模式 mask。
+
+        注意坐标顺序：comps 里存的是 (y, x)，而 PIL 的 ImageDraw.point() 按
+        (x, y) 解释。早期版本直接 `d.point(px)` 导致整张图被转置（爪子侧躺），
+        且源图 h > w 时超出画布宽度的部分会被静默裁掉、肉垫缺角。
+        这里改用 numpy 直接按 arr[y, x] 赋值，坐标语义显式、无歧义。
+        """
+        arr = np.zeros((h, w), dtype=np.uint8)
+        if px:
+            ys = np.fromiter((p[0] for p in px), dtype=np.intp, count=len(px))
+            xs = np.fromiter((p[1] for p in px), dtype=np.intp, count=len(px))
+            arr[ys, xs] = 255
+        return Image.fromarray(arr, mode="L")
 
     pad_mask = to_mask(pad)
     # 3 个趾按中心 x 排序 → 左 / 中 / 右
@@ -145,29 +168,73 @@ def _split_paw_parts() -> dict:
     }
 
 
-def paw_masks_for_canvas(scale: float = PAW_SCALE) -> dict:
-    """从固化的爪印轮廓源文件读取，连通域拆分后等比缩放居中放回画布。
+def _paw_group_centroid_and_bbox(masks: dict) -> tuple:
+    """4 个 mask 的质心 + 组合 bbox。
 
-    注意：必须读 paw_outline_source.png，绝不能读 drawable 里的 foreground。
-    foreground 是本脚本的输出，若以它为输入，每次运行都会在上一次结果上
-    再缩放一次，爪子会越跑越小（曾发生 0.74 × 0.73 ≈ 0.54 的叠加事故）。
+    质心用 alpha 能量作权重，避开「窄长 + 短粗」部件的 bbox 平均被错算到中间。
+    公式: cx = Σ(i·alpha) / Σ(alpha)，cy 类同。
+    """
+    rs = [np.array(m, dtype=np.float32) / 255.0 for m in masks.values()]
+    h, w = rs[0].shape
+    total = sum(r.sum() for r in rs)
+    if total <= 0:
+        return (w / 2, h / 2), (0, 0, w - 1, h - 1)
+    xx, yy = np.meshgrid(np.arange(w), np.arange(h))
+    cx = sum(r * xx for r in rs).sum() / total
+    cy = sum(r * yy for r in rs).sum() / total
+    union = np.maximum.reduce(rs)
+    ys, xs = np.where(union > 0.01)
+    bbox = (int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max()))
+    return (cx, cy), bbox
+
+
+def paw_masks_for_canvas() -> dict:
+    """从固化的爪印轮廓源文件读取，连通域拆分后整组按黄金分割缩放并居中。
+
+    关键修正：旧实现对每个 mask 各自 resize + 各自 bbox 居中，会让趾与爪垫的
+    相对位置丢失（趾被各自拉到画布中心，爪垫被独立居中，组装后错位）。
+    新实现：先合并 4 个 mask 算整体 alpha 质心 → 按整体对角占安全圈 φ⁻¹
+    缩放 → 把整体放到 432 画布中心 → 4 个 mask 在源图坐标系下保持原相对位置
+    paste 到目标画布，部件互不复位。
+
+    注意：必须读 paw_outline_source.png，绝不能读 drawable 里的 foreground，
+    否则每次运行会在上一次的输出上再缩放，爪子越跑越小。
     固化轮廓源可保证本脚本幂等、可重复执行。
     """
     parts = _split_paw_parts()
+    (src_cx, src_cy), (bx0, by0, bx1, by1) = _paw_group_centroid_and_bbox(parts)
+    src_w = bx1 - bx0 + 1
+    src_h = by1 - by0 + 1
+    src_diag = (src_w ** 2 + src_h ** 2) ** 0.5
+    if src_diag <= 0:
+        raise RuntimeError("paw source has no foreground pixels")
+
+    # 黄金分割缩放：整体对角 → SAFE_CIRCLE_DIAMETER / φ
+    scale = PAW_TARGET_DIAGONAL / src_diag
+    new_w = max(1, int(round(src_w * scale)))
+    new_h = max(1, int(round(src_h * scale)))
+
+    # 整体以 alpha 质心为中心 paste 到 432 画布：
+    # 源图里质心位置 (src_cx, src_cy)，缩放后对应 (src_cx*scale, src_cy*scale)
+    # 平移到画布中心需要 (SIZE/2 - src_cx*scale, SIZE/2 - src_cy*scale)
+    offset_x = int(round(SIZE / 2 - src_cx * scale))
+    offset_y = int(round(SIZE / 2 - src_cy * scale))
+
     out = {}
     for k, mask in parts.items():
-        nw = int(round(mask.size[0] * scale))
-        nh = int(round(mask.size[1] * scale))
-        crop = mask.resize((nw, nh), Image.LANCZOS)
         canvas = Image.new("L", (SIZE, SIZE), 0)
-        canvas.paste(crop, ((SIZE - nw) // 2, (SIZE - nh) // 2))
+        # 只 crop + resize 源图里"4 部件整体 bbox 区域"，避免对全 239×269 源图
+        # 做 LANCZOS（包含大量透明 padding，会模糊边缘）。
+        sub = mask.crop((bx0, by0, bx1 + 1, by1 + 1))
+        scaled = sub.resize((new_w, new_h), Image.LANCZOS)
+        canvas.paste(scaled, (offset_x, offset_y))
         out[k] = canvas
     return out
 
 
-# 向后兼容：旧 API 单 mask 版
-def paw_mask(scale: float = PAW_SCALE) -> Image.Image:
-    parts = paw_masks_for_canvas(scale)
+# 向后兼容：旧 API 单 mask 版（仅在 main() 之外被引用过；保留兼容）
+def paw_mask(scale: float = 0.0) -> Image.Image:
+    parts = paw_masks_for_canvas()
     return parts["pad"]
 
 
@@ -269,9 +336,21 @@ def downsample_premultiplied(img: Image.Image, size: int) -> Image.Image:
     return Image.fromarray(np.concatenate([out_rgb, out_a], -1).astype(np.uint8), "RGBA")
 
 
+def enforce_white_silhouette(img: Image.Image) -> Image.Image:
+    """主题图标层规范化：RGB 拉回纯白，只用 alpha 表达剪影。
+
+    downsample_premultiplied 反预乘时会有 ±2 的舍入误差（纯白 255 → 253），
+    规范要求 monochrome 层为「白色 + alpha」，部分启动器对非纯白像素会渲染
+    出极淡暗边。这里统一把 RGB 恢复成 255。
+    """
+    a = np.array(img)
+    a[..., :3] = 255
+    return Image.fromarray(a, "RGBA")
+
+
 def main() -> None:
     backup()
-    parts = paw_masks_for_canvas(PAW_SCALE)
+    parts = paw_masks_for_canvas()
 
     masters = {
         "background": glass_background(),
@@ -282,24 +361,34 @@ def main() -> None:
     for kind, img in masters.items():
         for density, size in DENSITIES.items():
             out = img if density == MASTER else downsample_premultiplied(img, size)
+            if kind == "monochrome":
+                out = enforce_white_silhouette(out)
             dst = path_of(kind, density)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             out.save(dst, "PNG", optimize=True)
         print(f"  {kind:11s} 已写入 {len(DENSITIES)} 个密度")
 
     # 验收：爪子整体尺寸是否落在 66dp 安全圈内（432 画布上直径为 432*66/108 = 264px）
-    # 4 个部件合并后取 bbox
-    combined = np.zeros((SIZE, SIZE), dtype=np.uint8)
+    combined = np.zeros((SIZE, SIZE), dtype=np.float32)
     for m in parts.values():
-        combined = np.maximum(combined, np.array(m))
-    ys, xs = np.where(combined > 30)
+        combined = np.maximum(combined, np.array(m) / 255.0)
+    ys, xs = np.where(combined > 0.05)
     if len(xs) == 0:
         print("\n警告：合并后无前景像素")
     else:
         w, h = xs.max() - xs.min(), ys.max() - ys.min()
         diag = (w ** 2 + h ** 2) ** 0.5
+        # 用 alpha 能量算质心（不只用 bbox），避免把短粗部件错算到中间
+        yy, xx = np.indices((SIZE, SIZE))
+        total = combined.sum()
+        cx = (combined * xx).sum() / total
+        cy = (combined * yy).sum() / total
+        off_x = cx - SIZE / 2
+        off_y = cy - SIZE / 2
         print(f"\n爪子尺寸: {w}×{h}px（占画布 {w/SIZE*100:.1f}%×{h/SIZE*100:.1f}%）"
               f"  对角 {diag:.0f}px / 安全圈直径 264px  →  {'✅ 安全' if diag <= 264 else '⚠️ 超出'}")
+        print(f"整体质心: ({cx:.1f}, {cy:.1f})  画布中心: ({SIZE/2:.1f}, {SIZE/2:.1f})  偏心: ({off_x:+.1f}, {off_y:+.1f})px"
+              f"  →  {'✅ 居中' if abs(off_x) < 1.5 and abs(off_y) < 1.5 else '⚠️ 偏心'}")
 
 
 if __name__ == "__main__":
