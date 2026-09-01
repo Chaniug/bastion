@@ -1987,14 +1987,17 @@ fun SimpleMainScreen(
 
                     // 底栏悬浮胶囊：Surface 提供圆角 + 阴影 + 半透明 + 离屏边内边距，
 // NavigationBar 在内层透明显示。这样既有「浮起来」的层次感，又不依赖第三方库。
-                    androidx.compose.material3.Surface(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                        tonalElevation = 6.dp,
-                        shadowElevation = 10.dp
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 3.dp,
+                        shadowElevation = 12.dp
                     ) {
                     NavigationBar(
                         modifier = Modifier.fillMaxWidth(),
@@ -2085,6 +2088,7 @@ fun SimpleMainScreen(
                     }
                     }  // 关闭 NavigationBar
                 }  // 关闭 Surface 胶囊包装
+                    }  // 关闭 Box 留白
             }
         },
         floatingActionButton = {} // FAB 移至外层 Overlay
@@ -2136,8 +2140,8 @@ fun SimpleMainScreen(
                     biometricEnabled = appSettings.biometricEnabled,
                     modifier = Modifier.fillMaxSize(),
                 )
-                }
-                BottomNavItem.Passwords -> {
+            }
+            BottomNavItem.Passwords -> {
                     PasswordTabPane(
                         isCompactWidth = isCompactWidth,
                         wideListPaneWidth = wideListPaneWidth,
