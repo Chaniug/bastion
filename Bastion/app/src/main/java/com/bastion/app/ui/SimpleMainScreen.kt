@@ -2045,7 +2045,13 @@ fun SimpleMainScreen(
                         tonalElevation = 0.dp,
                         containerColor = MaterialTheme.colorScheme.surface
                     ) {
-                        tabs.forEach { item ->
+                        // 底栏布局：左侧 2 个 + 中间「添加」+ 右侧 2 个。
+                        // 两侧各固定 2 个槽位，不足时用 Spacer 占位，保证中间的 + 始终居中。
+                        val leftTabs = tabs.take(2)
+                        val rightTabs = tabs.drop(2).take(2)
+
+                        @Composable
+                        fun tabItem(item: BottomNavItem) {
                             val label = stringResource(item.shortLabelRes())
                             NavigationBarItem(
                                 icon = {
@@ -2067,6 +2073,63 @@ fun SimpleMainScreen(
                                     indicatorColor = Color.Transparent
                                 )
                             )
+                        }
+
+                        leftTabs.forEach { item -> tabItem(item) }
+                        repeat(2 - leftTabs.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+
+                        // 中间「添加」按钮：主色实心圆形 + 白色加号，比两侧 tab 更显眼。
+                        // 行为沿用原 FAB：按当前 tab 跳到对应的添加页。
+                        val addLabel = stringResource(R.string.add)
+                        NavigationBarItem(
+                            icon = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = addLabel
+                                        )
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = addLabel,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip
+                                )
+                            },
+                            selected = false,
+                            onClick = {
+                                when (currentTab) {
+                                    BottomNavItem.VaultV2,
+                                    BottomNavItem.Passwords -> handlePasswordAddOpen()
+                                    BottomNavItem.Authenticator -> handleTotpAddOpen()
+                                    BottomNavItem.CardWallet -> handleWalletAddOpen()
+                                    BottomNavItem.Notes -> handleNoteOpen(null)
+                                    BottomNavItem.Send -> handleSendAddOpen()
+                                    BottomNavItem.Generator -> generatorRefreshRequestKey++
+                                    else -> handlePasswordAddOpen()
+                                }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = Color.Transparent
+                            )
+                        )
+
+                        rightTabs.forEach { item -> tabItem(item) }
+                        repeat(2 - rightTabs.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -2915,7 +2978,9 @@ fun SimpleMainScreen(
         isAddingNoteInline = isAddingNoteInline,
         inlineNoteEditorId = inlineNoteEditorId,
         isAddingSendInline = isAddingSendInline,
-        isFabVisible = isFabVisible,
+        // 中间的「添加」已接管原 FAB 的职责，这里不再显示悬浮 FAB
+        // （Overlay 仍保留：回到顶部 / 快捷访问 / 快速滚动条 等功能）。
+        isFabVisible = false,
         isFabExpanded = isFabExpanded,
         onFabExpandedChange = { expanded -> isFabExpanded = expanded },
         fastScrollStripVisible = isFastScrollStripVisible,
