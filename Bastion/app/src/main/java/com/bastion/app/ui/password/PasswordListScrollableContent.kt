@@ -40,6 +40,7 @@ internal fun PasswordListScrollableContent(
     modifier: Modifier,
     isPasswordPageListModelReady: Boolean,
     hasVisibleQuickFilters: Boolean,
+    quickFiltersExpanded: Boolean = true,
     hasVisibleCategoryQuickFilters: Boolean,
     appSettings: AppSettings,
     configuredQuickFilterItems: List<PasswordListQuickFilterItem>,
@@ -107,7 +108,9 @@ internal fun PasswordListScrollableContent(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(filterSectionSpacing)
                     ) {
-                        if (hasVisibleQuickFilters && !appSettings.experimentalCollapsedQuickFilters) {
+                        // 实验：开启 experimentalCollapsedQuickFilters 后，点 TopBar 标题可收起本行，
+// 为密码列表腾出一行空间；未开启时 quickFiltersExpanded 恒为 true，行为不变。
+                        if (hasVisibleQuickFilters && quickFiltersExpanded) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

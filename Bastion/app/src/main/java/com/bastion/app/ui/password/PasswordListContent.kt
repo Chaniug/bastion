@@ -1319,6 +1319,12 @@ fun PasswordListContent(
         // WIFI / SSH chip 无需 quickFilters 设置开关——"有数据就冒出来"语义。
         hasConfiguredChips || hasAnyWifiEntry || hasAnySshKeyEntry || hasAnyBarcodeEntry
     }
+
+    // 实验功能（AppSettings.experimentalCollapsedQuickFilters）：快捷筛选条的展开/收起。
+    // 状态必须由这里（共同父级）持有：chip 横排在 PasswordListScrollableContent，
+    // 触发按钮在 PasswordListTopSection 的标题，两者是兄弟组件，无法直接共享状态。
+    // 默认展开，保证不开实验开关时行为与现状一致。
+    var quickFiltersExpanded by rememberSaveable { mutableStateOf(true) }
     val hasVisibleCategoryQuickFilters = remember(
         effectiveCategoryQuickFilterShortcuts
     ) {
@@ -1576,7 +1582,12 @@ fun PasswordListContent(
             onOpenCommonAccountTemplates = onOpenCommonAccountTemplates,
             onOpenHistory = onOpenHistory,
             onOpenTrash = onOpenTrash,
-            onScanFidoQr = onScanFidoQr
+            onScanFidoQr = onScanFidoQr,
+            // 实验：开启后点标题可收起/展开快捷筛选条，收起后为列表腾出一行
+            onTitleClick = if (appSettings.experimentalCollapsedQuickFilters) {
+                { quickFiltersExpanded = !quickFiltersExpanded }
+            } else null,
+            quickFiltersExpanded = quickFiltersExpanded
         )
     }
 
@@ -1621,6 +1632,7 @@ fun PasswordListContent(
             showEmptyState = showEmptyStateWithHeaders,
             hasScrollableHeaderContent = hasScrollableHeaderContent,
             hasVisibleQuickFilters = hasVisibleQuickFilters,
+            quickFiltersExpanded = quickFiltersExpanded,
             hasVisibleCategoryQuickFilters = hasVisibleCategoryQuickFilters,
             aggregateUiState = aggregateUiState,
             emptyStateMessage = emptyStateMessage,
@@ -1867,6 +1879,7 @@ private fun PasswordListMainPaneHost(
     showEmptyState: Boolean,
     hasScrollableHeaderContent: Boolean,
     hasVisibleQuickFilters: Boolean,
+    quickFiltersExpanded: Boolean = true,
     hasVisibleCategoryQuickFilters: Boolean,
     aggregateUiState: PasswordListAggregateUiState,
     emptyStateMessage: PasswordListEmptyStateMessage,
@@ -1972,6 +1985,7 @@ private fun PasswordListMainPaneHost(
         showEmptyState = showEmptyState,
         hasScrollableHeaderContent = hasScrollableHeaderContent,
         hasVisibleQuickFilters = hasVisibleQuickFilters,
+        quickFiltersExpanded = quickFiltersExpanded,
         hasVisibleCategoryQuickFilters = hasVisibleCategoryQuickFilters,
         aggregateUiState = aggregateUiState,
         emptyStateMessage = emptyStateMessage,

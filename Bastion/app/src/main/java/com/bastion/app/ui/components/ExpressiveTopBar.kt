@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -82,10 +83,15 @@ fun ExpressiveTopBar(
     onActionPillBoundsChanged: ((Rect) -> Unit)? = null,
     collapsedTitleEndPadding: Dp = 180.dp,
     /**
-     * 若非空，则标题区变为可点击（外加 ExpandMore 箭头），用于「点标题弹出筛选菜单」等场景。
+     * 若非空，则标题区变为可点击（外加展开/收起箭头）。
      * 为 null 时标题保持纯文本，行为与原有调用方完全一致。
      */
     onTitleClick: (() -> Unit)? = null,
+    /**
+     * 配合 onTitleClick 使用：true=展开态（显示 ExpandLess），false=收起态（显示 ExpandMore）。
+     * 为 null 时视为收起态。仅当 onTitleClick 非空时箭头才会渲染。
+     */
+    titleExpanded: Boolean? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -180,7 +186,11 @@ fun ExpressiveTopBar(
                         overflow = TextOverflow.Clip
                     )
                     Icon(
-                        imageVector = Icons.Default.ExpandMore,
+                        imageVector = if (titleExpanded == true) {
+                            Icons.Default.ExpandLess
+                        } else {
+                            Icons.Default.ExpandMore
+                        },
                         contentDescription = null,
                         modifier = Modifier.size(if (titleStyle.fontSize.value > 24f) 22.dp else 18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant

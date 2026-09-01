@@ -10,23 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.NoteAlt
-import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.VpnKey
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -66,8 +56,6 @@ import com.bastion.app.ui.components.M3IdentityVerifyDialog
 import com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuDropdown
 import com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuOffset
 import com.bastion.app.ui.components.UnifiedCategoryFilterSelection
-import com.bastion.app.ui.components.VaultQuickFilterMenuItem
-import com.bastion.app.ui.components.VaultQuickFiltersMenu
 import com.bastion.app.utils.BiometricHelper
 import com.bastion.app.utils.KeePassKdbxService
 import com.bastion.app.utils.decodeKeePassPathForDisplay
@@ -162,7 +150,15 @@ internal fun PasswordListTopSection(
     onOpenCommonAccountTemplates: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenTrash: () -> Unit,
-    onScanFidoQr: () -> Unit
+    onScanFidoQr: () -> Unit,
+    /**
+     * 实验功能（AppSettings.experimentalCollapsedQuickFilters）：
+     * 点击标题切换「快捷筛选条」的展开/收起，收起后为密码列表腾出一行空间。
+     * 为 null 时标题不可点击，行为与原有调用方完全一致。
+     * 状态由调用方持有（PasswordListContent），因为 chip 横排不在本组件内。
+     */
+    onTitleClick: (() -> Unit)? = null,
+    quickFiltersExpanded: Boolean = true
 ) {
     val appSettings by settingsViewModel.settings.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
@@ -174,8 +170,7 @@ internal fun PasswordListTopSection(
     var clearCacheRiskSummary by remember { mutableStateOf<BitwardenRepository.VaultCacheRiskSummary?>(null) }
     var isBitwardenMaintenanceActionRunning by remember { mutableStateOf(false) }
 
-    // 实验功能：把快捷筛选收拢进 TopBar 标题菜单
-    var quickFilterMenuExpanded by remember { mutableStateOf(false) }
+    // 实验功能：点击标题收纳/展开快捷筛选条
     val introShownPref = remember(context) {
         context.getSharedPreferences("experimental_prefs", Context.MODE_PRIVATE)
     }
@@ -217,82 +212,6 @@ internal fun PasswordListTopSection(
             is CategoryFilter.BitwardenVaultUncategorized -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_uncategorized)}"
         }
 
-        // 实验功能：把首页密码页快捷筛选 chip 收拢进 TopBar 标题菜单。
-        // 仅当 AppSettings.experimentalCollapsedQuickFilters 为 true 时挂出下拉菜单，
-        // 并让 chip 横排（PasswordListScrollableContent 内）根据同一开关同步隐藏。
-        val quickFilterMenuItems = remember(
-            quickFilterFavorite, quickFilter2fa, quickFilterPasskey,
-            quickFilterAttachments, quickFilterUncategorized, quickFilterLocalOnly,
-            quickFilterWifi, quickFilterSshKey, quickFilterBarcode
-        ) {
-            listOf(
-                VaultQuickFilterMenuItem(
-                    key = "favorite",
-                    labelRes = R.string.password_list_quick_filter_favorite,
-                    icon = Icons.Default.Favorite,
-                    selected = quickFilterFavorite,
-                    onToggle = onQuickFilterFavoriteChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "2fa",
-                    labelRes = R.string.password_list_quick_filter_2fa,
-                    icon = Icons.Default.VpnKey,
-                    selected = quickFilter2fa,
-                    onToggle = onQuickFilter2faChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "passkey",
-                    labelRes = R.string.passkey_title,
-                    icon = Icons.Default.Key,
-                    selected = quickFilterPasskey,
-                    onToggle = onQuickFilterPasskeyChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "attachments",
-                    labelRes = R.string.attachment_section_title,
-                    icon = Icons.Default.AttachFile,
-                    selected = quickFilterAttachments,
-                    onToggle = onQuickFilterAttachmentsChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "wifi",
-                    labelRes = R.string.entry_type_wifi,
-                    icon = Icons.Default.Wifi,
-                    selected = quickFilterWifi,
-                    onToggle = onQuickFilterWifiChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "ssh_key",
-                    labelRes = R.string.password_list_quick_filter_ssh_key,
-                    icon = Icons.Default.Key,
-                    selected = quickFilterSshKey,
-                    onToggle = onQuickFilterSshKeyChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "barcode",
-                    labelRes = R.string.password_list_quick_filter_barcode,
-                    icon = Icons.Default.QrCode2,
-                    selected = quickFilterBarcode,
-                    onToggle = onQuickFilterBarcodeChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "uncategorized",
-                    labelRes = R.string.password_list_quick_filter_uncategorized,
-                    icon = Icons.Default.Label,
-                    selected = quickFilterUncategorized,
-                    onToggle = onQuickFilterUncategorizedChange
-                ),
-                VaultQuickFilterMenuItem(
-                    key = "local_only",
-                    labelRes = R.string.password_list_quick_filter_local_only,
-                    icon = Icons.Default.NoteAlt,
-                    selected = quickFilterLocalOnly,
-                    onToggle = onQuickFilterLocalOnlyChange
-                )
-            )
-        }
-
-        Box(modifier = Modifier.fillMaxWidth()) {
         ExpressiveTopBar(
             title = title,
             searchQuery = searchQuery,
@@ -301,9 +220,8 @@ internal fun PasswordListTopSection(
             onSearchExpandedChange = onSearchExpandedChange,
             searchHint = stringResource(R.string.search_passwords_hint),
             onActionPillBoundsChanged = if (isArchiveView) null else onCategoryPillBoundsChange,
-            onTitleClick = if (appSettings.experimentalCollapsedQuickFilters) {
-                { quickFilterMenuExpanded = !quickFilterMenuExpanded }
-            } else null,
+            onTitleClick = onTitleClick,
+            titleExpanded = quickFiltersExpanded,
             actions = {
                 if (isArchiveView) {
                     IconButton(onClick = { viewModel.closeArchiveView() }) {
@@ -531,17 +449,6 @@ internal fun PasswordListTopSection(
             }
         )
 
-        // 实验功能：把首页密码页快捷筛选 chip 收拢进 TopBar 标题菜单（下拉）。
-        // DropdownMenu 的 anchor 找最近的 Box，即上面把 ExpressiveTopBar 包起来那个。
-        VaultQuickFiltersMenu(
-            expanded = quickFilterMenuExpanded,
-            onDismissRequest = { quickFilterMenuExpanded = false },
-            items = quickFilterMenuItems,
-            headerLabel = if (appSettings.experimentalCollapsedQuickFilters) {
-                stringResource(R.string.vault_quick_filters_menu_title)
-            } else null
-        )
-        } // 关闭 Box(modifier = Modifier.fillMaxWidth()) —— 实验 TopBar 包裹层
 
         if (showClearBitwardenCacheDialog && selectedBitwardenVaultId != null && clearCacheRiskSummary != null) {
             val vaultId = selectedBitwardenVaultId

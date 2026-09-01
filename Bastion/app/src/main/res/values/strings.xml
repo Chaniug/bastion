@@ -1922,10 +1922,10 @@
     <!-- 通用/组件硬编码修复 -->
     <string name="topbar_search_hint">搜索…</string>
     <string name="topbar_title_filter_hint">点击展开快捷筛选</string>
-    <string name="experimental_collapsed_quick_filters_switch_title">快捷筛选收进标题（实验）</string>
-    <string name="experimental_collapsed_quick_filters_switch_desc">把首页密码页的快捷筛选 chip 收拢进顶部标题菜单，让密码列表多出一行空间。开启后会点一次才能切换筛选，可发现性会下降。</string>
+    <string name="experimental_collapsed_quick_filters_switch_title">筛选条可收纳（实验）</string>
+    <string name="experimental_collapsed_quick_filters_switch_desc">开启后点击顶部标题可收起/展开密码页的快捷筛选条，收起后为密码列表腾出一行空间。筛选功能本身完全不变，只是多了一个收起动作。</string>
     <string name="vault_quick_filters_menu_title">快捷筛选</string>
-    <string name="vault_quick_filters_intro_snackbar">实验功能：点击标题可切换条目类型筛选</string>
+    <string name="vault_quick_filters_intro_snackbar">实验功能：点击顶部标题可收起/展开快捷筛选条</string>
     <string name="topbar_close_search">关闭搜索</string>
     <string name="loading_default">加载中…</string>
     <string name="common_count_items">%1$d 项</string>
