@@ -1133,26 +1133,6 @@ internal fun buildVaultV2VisibleListState(
 	allItems: List<VaultV2Item>,
 	config: VaultV2VisibleListConfig,
 ): VaultV2VisibleListState {
-	// TEMP-DIAG: 定位「首页通行秘钥筛选不出 Bitwarden passkey」问题，确认后移除。
-	run {
-		val passkeyTotal = allItems.count { it.type == VaultV2ItemType.PASSKEY }
-		val afterStorage = allItems.filter {
-			config.isArchiveView || it.matchesStorageFilter(config.storageSelection)
-		}
-		val passkeyAfterStorage = afterStorage.count { it.type == VaultV2ItemType.PASSKEY }
-		val passkeyAfterType = afterStorage.count {
-			it.matchesDisplayedTypes(config.displayedContentTypes) &&
-				it.type == VaultV2ItemType.PASSKEY
-		}
-		android.util.Log.i(
-			"VaultV2FilterDiag",
-			"items=${allItems.size} passkeyTotal=$passkeyTotal " +
-				"afterStorage=${afterStorage.size} passkeyAfterStorage=$passkeyAfterStorage " +
-				"passkeyAfterType=$passkeyAfterType " +
-				"displayed=${config.displayedContentTypes} storage=${config.storageSelection} " +
-				"qfPasskey=${config.quickFilterPasskey}"
-		)
-	}
 	val filteredItems = allItems.asSequence().filter { item ->
 		config.isArchiveView || item.matchesStorageFilter(config.storageSelection)
 	}.filter { item ->
@@ -1545,12 +1525,6 @@ fun VaultV2Pane(
 	val visiblePasskeyItems = remember(passkeyItems, showOnlyLocalData, state.isArchiveView) {
 		if (state.isArchiveView) emptyList() else if (showOnlyLocalData) passkeyItems.filter { it.isVaultV2LocalOnly() } else passkeyItems
 	}
-	// TEMP-DIAG: 确认 PasskeyEntry 是否真的进入首页数据源，确认后移除。
-	android.util.Log.i(
-		"VaultV2FilterDiag",
-		"source passkeyItems=${passkeyItems.size} visiblePasskeyItems=${visiblePasskeyItems.size} " +
-			"bwVaultIds=${passkeyItems.mapNotNull { it.bitwardenVaultId }.distinct()}"
-	)
 	val categoryMenuFilter = remember(storageSelection) {
 		storageSelection.toCategoryFilterOrNull() ?: CategoryFilter.All
 	}

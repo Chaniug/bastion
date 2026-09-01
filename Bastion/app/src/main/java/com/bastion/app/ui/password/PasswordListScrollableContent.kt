@@ -77,6 +77,9 @@ internal fun PasswordListScrollableContent(
     onQuickFilterBarcodeChange: (Boolean) -> Unit = {},
     barcodeQuickFilterVisible: Boolean = false,
     onToggleAggregateType: ((PasswordPageContentType) -> Unit)?,
+    // 通行秘钥 chip：点击进入通行秘钥页，而非在密码列表里过滤
+    // （筛选只能得到「绑定了 passkey 的密码条目」，得不到 passkey 条目本身）。
+    onNavigateToPasskeys: (() -> Unit)? = null,
     categoryQuickFilterShortcuts: List<PasswordQuickFolderShortcut>,
     quickFolderShortcuts: List<PasswordQuickFolderShortcut>,
     quickFolderStyle: PasswordListQuickFolderStyle,
@@ -147,7 +150,8 @@ internal fun PasswordListScrollableContent(
                                                 onQuickFilterUnstackedChange = onQuickFilterUnstackedChange,
                                                 aggregateSelectedTypes = aggregateUiState.selectedContentTypes,
                                                 aggregateVisibleTypes = aggregateUiState.visibleContentTypes,
-                                                onToggleAggregateType = onToggleAggregateType
+                                                onToggleAggregateType = onToggleAggregateType,
+                                                onNavigateToPasskeys = onNavigateToPasskeys
                                             )
                                         }
                                     }

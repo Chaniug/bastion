@@ -65,7 +65,10 @@ internal data class PasswordQuickFilterChipCallbacks(
     val onManualStackOnlyChange: (Boolean) -> Unit,
     val onNeverStackChange: (Boolean) -> Unit,
     val onUnstackedChange: (Boolean) -> Unit,
-    val onToggleAggregateType: (PasswordPageContentType) -> Unit
+    val onToggleAggregateType: (PasswordPageContentType) -> Unit,
+    // 通行秘钥 chip 走「跳转进入通行秘钥页」而非「列表过滤」。
+    // 为 null 时 PASSKEY chip 保持原筛选语义（VaultV2 聚合模式下筛选有效）。
+    val onNavigateToPasskeys: (() -> Unit)? = null
 )
 
 internal data class PasswordQuickFilterEditGridParams(
@@ -199,6 +202,7 @@ private fun PasswordQuickFilterGridChip(
         aggregateSelectedTypes = params.chipState.aggregateSelectedTypes,
         aggregateVisibleTypes = params.chipState.aggregateVisibleTypes,
         onToggleAggregateType = params.chipCallbacks.onToggleAggregateType,
+        onNavigateToPasskeys = params.chipCallbacks.onNavigateToPasskeys,
         modifier = trackedModifier
     )
 }

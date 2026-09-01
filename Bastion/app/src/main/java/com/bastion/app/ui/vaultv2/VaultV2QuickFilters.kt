@@ -96,6 +96,7 @@ private fun VaultV2QuickFilterChips(
             aggregateSelectedTypes = chipState.aggregateSelectedTypes,
             aggregateVisibleTypes = chipState.aggregateVisibleTypes,
             onToggleAggregateType = chipCallbacks.onToggleAggregateType,
+            onNavigateToPasskeys = chipCallbacks.onNavigateToPasskeys,
         )
     }
 }

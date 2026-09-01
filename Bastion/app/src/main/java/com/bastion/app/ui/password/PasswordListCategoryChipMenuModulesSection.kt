@@ -76,6 +76,7 @@ internal fun PasswordListCategoryChipMenuModulesSection(
     isExpandedStateLoaded: Boolean = true,
     activeTab: Int = 1,
     showHeaders: Boolean = false,
+    onNavigateToPasskeys: (() -> Unit)? = null,
 ) {
     val quickFilterBindings = buildCategoryMenuQuickFilterBindings(
         quickFilterFavorite = quickFilterFavorite,
@@ -102,7 +103,8 @@ internal fun PasswordListCategoryChipMenuModulesSection(
         onQuickFilterUnstackedChange = onQuickFilterUnstackedChange,
         aggregateSelectedTypes = aggregateSelectedTypes,
         aggregateVisibleTypes = aggregateVisibleTypes,
-        onToggleAggregateType = onToggleAggregateType
+        onToggleAggregateType = onToggleAggregateType,
+        onNavigateToPasskeys = onNavigateToPasskeys
     )
 
     val moduleDragCallbacks = buildCategoryMenuModuleDragCallbacks(

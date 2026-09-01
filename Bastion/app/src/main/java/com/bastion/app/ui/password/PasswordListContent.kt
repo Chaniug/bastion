@@ -338,7 +338,11 @@ fun PasswordListContent(
     onScanFidoQr: () -> Unit = {},
     showStandaloneSettingsEntry: Boolean = false,
     onOpenStandaloneSettings: () -> Unit = {},
-    aggregateConfig: PasswordListAggregateConfig? = null
+    aggregateConfig: PasswordListAggregateConfig? = null,
+    // 通行秘钥 chip 的跳转目标：点击进入通行秘钥页。
+    // 不做列表过滤，因为筛选只能得到「绑定了 passkey 的密码条目」，
+    // 而 passkey 本身存在独立的 PasskeyEntry 表，需进通行秘钥页查看。
+    onNavigateToPasskeys: (() -> Unit)? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val passwordEntries by viewModel.passwordEntries.collectAsState()
@@ -1711,6 +1715,7 @@ LaunchedEffect(quickFiltersExpanded) {
             context = context,
             passwordEntries = passwordEntries,
             aggregateConfig = aggregateConfig,
+            onNavigateToPasskeys = onNavigateToPasskeys,
             decryptAuthenticatorKey = decryptAuthenticatorKeyForPreview
         )
     }
@@ -1958,7 +1963,8 @@ private fun PasswordListMainPaneHost(
     context: Context,
     passwordEntries: List<PasswordEntry>,
     aggregateConfig: PasswordListAggregateConfig?,
-    decryptAuthenticatorKey: ((String) -> String)?
+    decryptAuthenticatorKey: ((String) -> String)?,
+    onNavigateToPasskeys: (() -> Unit)? = null
 ) {
     // 滚动期间把 TOTP 验证码行从 50ms 平滑刷新降为秒级刷新（方案 A，见 docs §7.8），
     // 避免可见验证码卡片每帧重组导致滚动掉帧。isScrollInProgress 只在滚动开始/结束时翻转，
@@ -2039,6 +2045,7 @@ private fun PasswordListMainPaneHost(
         onQuickFilterBarcodeChange = onQuickFilterBarcodeChange,
         barcodeQuickFilterVisible = barcodeQuickFilterVisible,
         onToggleAggregateType = onToggleAggregateType,
+        onNavigateToPasskeys = onNavigateToPasskeys,
         categoryQuickFilterShortcuts = categoryQuickFilterShortcuts,
         quickFolderShortcuts = quickFolderShortcuts,
         quickFolderStyle = quickFolderStyle,

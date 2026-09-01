@@ -274,7 +274,8 @@ internal fun CompactDraggableTabContent(
                     onClearSelectedPassword = {},
                     onEditPassword = {},
                     showStandaloneSettingsEntry = showStandaloneSettingsEntry,
-                    onOpenStandaloneSettings = onOpenStandaloneSettings
+                    onOpenStandaloneSettings = onOpenStandaloneSettings,
+                    onNavigateToPasskeys = onNavigateToPasskeys
                 )
             }
             BottomNavItem.Authenticator -> {

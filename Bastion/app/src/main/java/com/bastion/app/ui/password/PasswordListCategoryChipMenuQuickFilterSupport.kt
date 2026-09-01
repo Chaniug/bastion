@@ -71,7 +71,8 @@ internal fun buildCategoryMenuQuickFilterBindings(
     onQuickFilterUnstackedChange: (Boolean) -> Unit,
     aggregateSelectedTypes: Set<PasswordPageContentType>,
     aggregateVisibleTypes: List<PasswordPageContentType>,
-    onToggleAggregateType: (PasswordPageContentType) -> Unit
+    onToggleAggregateType: (PasswordPageContentType) -> Unit,
+    onNavigateToPasskeys: (() -> Unit)? = null
 ): PasswordCategoryMenuQuickFilterBindings {
     return PasswordCategoryMenuQuickFilterBindings(
         state = PasswordQuickFilterChipState(
@@ -101,7 +102,8 @@ internal fun buildCategoryMenuQuickFilterBindings(
             onManualStackOnlyChange = onQuickFilterManualStackOnlyChange,
             onNeverStackChange = onQuickFilterNeverStackChange,
             onUnstackedChange = onQuickFilterUnstackedChange,
-            onToggleAggregateType = onToggleAggregateType
+            onToggleAggregateType = onToggleAggregateType,
+            onNavigateToPasskeys = onNavigateToPasskeys
         )
     )
 }

@@ -66,7 +66,8 @@ internal fun PasswordQuickFilterFlow(
                         onQuickFilterUnstackedChange = params.chipCallbacks.onUnstackedChange,
                         aggregateSelectedTypes = params.chipState.aggregateSelectedTypes,
                         aggregateVisibleTypes = params.chipState.aggregateVisibleTypes,
-                        onToggleAggregateType = params.chipCallbacks.onToggleAggregateType
+                        onToggleAggregateType = params.chipCallbacks.onToggleAggregateType,
+                        onNavigateToPasskeys = params.chipCallbacks.onNavigateToPasskeys
                     )
                 }
             }

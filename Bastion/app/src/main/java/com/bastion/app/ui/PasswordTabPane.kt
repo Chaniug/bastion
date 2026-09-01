@@ -97,7 +97,9 @@ internal fun PasswordTabPane(
     onClearSelectedPassword: () -> Unit,
     onEditPassword: (Long) -> Unit,
     showStandaloneSettingsEntry: Boolean,
-    onOpenStandaloneSettings: () -> Unit
+    onOpenStandaloneSettings: () -> Unit,
+    // 通行秘钥 chip：点击进入通行秘钥页（不做列表过滤）
+    onNavigateToPasskeys: (() -> Unit)? = null
 ) {
     val appSettings by settingsViewModel.settings.collectAsState()
 
@@ -145,7 +147,8 @@ internal fun PasswordTabPane(
                 onOpenBillingAddress = onNavigateToBillingAddressDetail,
                 onOpenNote = onNavigateToAddNote,
                 onOpenPasskey = onNavigateToPasskeyDetail
-            )
+            ),
+            onNavigateToPasskeys = onNavigateToPasskeys
         )
     }
 

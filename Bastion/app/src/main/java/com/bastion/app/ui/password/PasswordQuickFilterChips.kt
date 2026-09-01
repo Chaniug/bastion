@@ -93,6 +93,11 @@ internal fun PasswordQuickFilterChipItem(
     aggregateSelectedTypes: Set<PasswordPageContentType> = emptySet(),
     aggregateVisibleTypes: List<PasswordPageContentType> = emptyList(),
     onToggleAggregateType: ((PasswordPageContentType) -> Unit)? = null,
+    // 通行秘钥 chip 的语义是「导航到通行秘钥页」而非「在密码列表里过滤」：
+    // 筛选只能筛出「绑定了 passkey 的密码条目」，筛不出 passkey 条目本身，
+    // 而 passkey 存在独立的 PasskeyEntry 表，只有进通行秘钥页才能看到。
+    // 传入该回调即启用跳转语义；为 null 时退回原有筛选行为（VaultV2 聚合模式）。
+    onNavigateToPasskeys: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null
 ) {
     when (item) {
@@ -245,22 +250,36 @@ internal fun PasswordQuickFilterChipItem(
             val useAggregateFilter = type in aggregateVisibleTypes
             // 不用 type.icon()（Icons.Default.VpnKey，盾牌+钥匙视觉上和仅本地的钥匙图标混淆），
             // 直接用指纹图标——这是 passkey 的标准视觉符号，与「仅本地」的钥匙图标明显区分。
-            PasswordQuickFilterChip(
-                selected = if (useAggregateFilter) aggregateSelectedTypes.contains(type) else quickFilterPasskey,
-                onClick = {
-                    if (!categoryEditMode) {
-                        if (useAggregateFilter) {
-                            onToggleAggregateType?.invoke(type)
-                        } else {
-                            onQuickFilterPasskeyChange(!quickFilterPasskey)
+            if (onNavigateToPasskeys != null) {
+                // 跳转语义：点击直接进入通行秘钥页。无选中态（不是过滤器）。
+                PasswordQuickFilterChip(
+                    selected = false,
+                    onClick = {
+                        if (!categoryEditMode) onNavigateToPasskeys.invoke()
+                    },
+                    label = stringResource(type.labelRes()),
+                    modifier = modifier,
+                    interactionSource = interactionSource,
+                    leadingIcon = Icons.Default.Fingerprint
+                )
+            } else {
+                PasswordQuickFilterChip(
+                    selected = if (useAggregateFilter) aggregateSelectedTypes.contains(type) else quickFilterPasskey,
+                    onClick = {
+                        if (!categoryEditMode) {
+                            if (useAggregateFilter) {
+                                onToggleAggregateType?.invoke(type)
+                            } else {
+                                onQuickFilterPasskeyChange(!quickFilterPasskey)
+                            }
                         }
-                    }
-                },
-                label = stringResource(type.labelRes()),
-                modifier = modifier,
-                interactionSource = interactionSource,
-                leadingIcon = Icons.Default.Fingerprint
-            )
+                    },
+                    label = stringResource(type.labelRes()),
+                    modifier = modifier,
+                    interactionSource = interactionSource,
+                    leadingIcon = Icons.Default.Fingerprint
+                )
+            }
         }
 
         PasswordListQuickFilterItem.NOTE -> {
