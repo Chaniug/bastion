@@ -1,5 +1,6 @@
 package com.bastion.app.autofill_ng.builder
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.graphics.BlendMode
@@ -134,6 +135,11 @@ object AutofillDatasetBuilder {
          * @param icon 图标
          * @param contentDescription 无障碍描述
          */
+        // builder.build().slice 即 SlicedContent.getSlice()，属 androidx.autofill 内部 API
+        // （@RestrictTo(LIBRARY_GROUP)，升级也不会公开）。内联建议构建无公开替代，
+        // 故就地抑制 RestrictedApi（2 条），零行为变更。
+        // ⚠️ 升级 androidx.autofill 时须回归验证内联建议是否正常展示。
+        @SuppressLint("RestrictedApi")
         @RequiresApi(Build.VERSION_CODES.R)
         fun tryCreate(
             context: Context,

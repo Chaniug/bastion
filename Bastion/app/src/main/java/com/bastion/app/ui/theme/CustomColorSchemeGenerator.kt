@@ -1,5 +1,16 @@
+// 本文件使用 Material 内部配色 API（Hct / TonalPalette / DynamicScheme /
+// MaterialDynamicColors.* 等），它们被 @RestrictTo(LIBRARY_GROUP) 限制，
+// 升级 Material 版本也不会转为公开 API —— 等依赖升级是等不到的。
+// Compose 官方未提供「由种子色生成 Material3 配色」的公开 API
+// （dynamicXxxColorScheme 只接受系统壁纸色），社区通行做法即直接调用这些类。
+//
+// 故就地抑制 RestrictedApi（89 条）：零行为变更，仅把升级预警从 lint 转移到本注释。
+// ⚠️ 升级 Material / Compose 版本时，须回归验证自定义配色的取色结果是否发生偏移。
+@file:SuppressLint("RestrictedApi")
+
 package com.bastion.app.ui.theme
 
+import android.annotation.SuppressLint
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
