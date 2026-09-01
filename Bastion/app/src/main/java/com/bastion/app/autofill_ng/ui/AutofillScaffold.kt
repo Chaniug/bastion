@@ -357,7 +357,7 @@ fun AppInfo(
     val resolvedMainTitle = (webDomain
         ?: resolvedName
         ?: packageName?.substringAfterLast('.')?.replaceFirstChar { it.uppercaseChar() }
-        ?: context.getString(R.string.app_name))
+        ?: stringResource(R.string.app_name))
     LaunchedEffect(packageName, webDomain, appName, resolvedName, resolvedIcon, resolvedMainTitle) {
         AutofillLogger.i(
             "PICKER_UI",

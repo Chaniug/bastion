@@ -330,7 +330,7 @@ internal fun PasswordListDialogs(
             passwordErrorText = stringResource(R.string.current_password_incorrect),
             onBiometricClick = biometricAction,
             biometricHintText = if (biometricAction == null) {
-                context.getString(R.string.biometric_not_available)
+                stringResource(R.string.biometric_not_available)
             } else {
                 null
             }

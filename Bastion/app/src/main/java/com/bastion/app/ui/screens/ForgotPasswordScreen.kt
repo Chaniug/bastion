@@ -238,7 +238,7 @@ fun ForgotPasswordScreen(
 
         M3IdentityVerifyDialog(
             title = stringResource(R.string.forgot_password_confirm),
-            message = context.getString(R.string.forgot_password_warning),
+            message = stringResource(R.string.forgot_password_warning),
             passwordValue = passwordInput,
             onPasswordChange = {
                 passwordInput = it
@@ -264,12 +264,12 @@ fun ForgotPasswordScreen(
                     passwordError = true
                 }
             },
-            confirmText = context.getString(R.string.reset_all_data),
+            confirmText = stringResource(R.string.reset_all_data),
             destructiveConfirm = true,
             isPasswordError = passwordError,
-            passwordErrorText = context.getString(R.string.error_invalid_password),
+            passwordErrorText = stringResource(R.string.error_invalid_password),
             onBiometricClick = null,
-            biometricHintText = context.getString(R.string.biometric_not_available)
+            biometricHintText = stringResource(R.string.biometric_not_available)
         )
     }
 }

@@ -312,9 +312,9 @@ fun AutoLockSelectionSheet(
 
                 Text(
                     text = if (customSelected) {
-                        context.getString(R.string.auto_lock_minutes, currentMinutes)
+                        stringResource(R.string.auto_lock_minutes, currentMinutes)
                     } else {
-                        context.getString(R.string.auto_lock_custom)
+                        stringResource(R.string.auto_lock_custom)
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = customContent,

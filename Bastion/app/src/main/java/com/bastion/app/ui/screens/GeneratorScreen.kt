@@ -2288,7 +2288,7 @@ private fun GeneratorHistorySheet(
                                     ) {
                                         Icon(
                                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = if (passwordVisible) context.getString(R.string.hide_password) else context.getString(R.string.show_password),
+                                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }

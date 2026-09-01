@@ -1618,7 +1618,7 @@ private fun BackupItem(
                         horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showRestoreDialog = false }) {
-                            Text(context.getString(R.string.cancel))
+                            Text(stringResource(R.string.cancel))
                         }
                         TextButton(
                             onClick = {

@@ -533,9 +533,9 @@ fun BankCardDetailScreen(
     
     if (showDeleteDialog) {
         val deleteMessage = if (replicaTargets.size > 1) {
-            context.getString(R.string.delete_current_replica_only_message, replicaTargets.size - 1)
+            stringResource(R.string.delete_current_replica_only_message, replicaTargets.size - 1)
         } else {
-            context.getString(R.string.delete_card_message)
+            stringResource(R.string.delete_card_message)
         }
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

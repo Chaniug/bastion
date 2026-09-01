@@ -430,14 +430,14 @@ internal fun CommonAccountCard() {
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = context.getString(R.string.common_account_title),
+                        text = stringResource(R.string.common_account_title),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
                         text = if (commonInfo.hasAnyInfo()) 
-                            context.getString(R.string.common_account_configured) 
+                            stringResource(R.string.common_account_configured) 
                         else 
-                            context.getString(R.string.common_account_not_configured),
+                            stringResource(R.string.common_account_not_configured),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -470,7 +470,7 @@ internal fun CommonAccountCard() {
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = context.getString(R.string.common_account_description),
+                            text = stringResource(R.string.common_account_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -526,11 +526,11 @@ internal fun CommonAccountCard() {
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = context.getString(R.string.common_account_auto_fill),
+                                    text = stringResource(R.string.common_account_auto_fill),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
-                                    text = context.getString(R.string.common_account_auto_fill_desc),
+                                    text = stringResource(R.string.common_account_auto_fill_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -551,7 +551,7 @@ internal fun CommonAccountCard() {
                             modifier = Modifier.align(Alignment.End),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(context.getString(R.string.save))
+                            Text(stringResource(R.string.save))
                         }
                     }
                 }

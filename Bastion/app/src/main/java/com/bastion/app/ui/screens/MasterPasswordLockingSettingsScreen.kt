@@ -54,8 +54,8 @@ fun MasterPasswordLockingSettingsScreen(
     val biometricHelper = remember(context) { BiometricAuthHelper(context) }
     val isBiometricAvailable = remember(biometricHelper) { biometricHelper.isBiometricAvailable() }
     val biometricSubtitle = if (isBiometricAvailable) {
-        if (settings.biometricEnabled) context.getString(R.string.biometric_unlock_enabled)
-        else context.getString(R.string.biometric_unlock_disabled)
+        if (settings.biometricEnabled) stringResource(R.string.biometric_unlock_enabled)
+        else stringResource(R.string.biometric_unlock_disabled)
     } else {
         biometricHelper.getBiometricStatusMessage()
     }

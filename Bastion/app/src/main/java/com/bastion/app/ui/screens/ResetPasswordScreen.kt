@@ -104,9 +104,9 @@ fun ResetPasswordScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = if (skipCurrentPassword) 
-                            context.getString(R.string.reset_password_verified_description)
+                            stringResource(R.string.reset_password_verified_description)
                         else 
-                            context.getString(R.string.reset_password_description),
+                            stringResource(R.string.reset_password_description),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )

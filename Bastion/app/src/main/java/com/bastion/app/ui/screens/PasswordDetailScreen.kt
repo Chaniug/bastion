@@ -1187,7 +1187,7 @@ fun PasswordDetailScreen(
             passwordErrorText = stringResource(R.string.current_password_incorrect),
             onBiometricClick = retryBiometricAction,
             biometricHintText = if (retryBiometricAction == null) {
-                context.getString(R.string.biometric_not_available)
+                stringResource(R.string.biometric_not_available)
             } else {
                 null
             }

@@ -336,34 +336,34 @@ fun SettingsScreen(
         }
     }
 
-    val securityTitle = context.getString(R.string.security)
-    val masterPasswordLockingTitle = context.getString(R.string.master_password_and_locking)
-    val masterPasswordLockingDescription = context.getString(R.string.master_password_and_locking_description)
-    val dataManagementTitle = context.getString(R.string.data_management)
-    val appearanceTitle = context.getString(R.string.theme)
-    val aboutTitle = context.getString(R.string.about)
-    val developerTitle = context.getString(R.string.developer_settings)
+    val securityTitle = stringResource(R.string.security)
+    val masterPasswordLockingTitle = stringResource(R.string.master_password_and_locking)
+    val masterPasswordLockingDescription = stringResource(R.string.master_password_and_locking_description)
+    val dataManagementTitle = stringResource(R.string.data_management)
+    val appearanceTitle = stringResource(R.string.theme)
+    val aboutTitle = stringResource(R.string.about)
+    val developerTitle = stringResource(R.string.developer_settings)
 
     val biometricSubtitle = if (isBiometricAvailable) {
-        if (biometricSwitchState) context.getString(R.string.biometric_unlock_enabled)
-        else context.getString(R.string.biometric_unlock_disabled)
+        if (biometricSwitchState) stringResource(R.string.biometric_unlock_enabled)
+        else stringResource(R.string.biometric_unlock_disabled)
     } else {
         biometricHelper.getBiometricStatusMessage()
     }
     val screenshotProtectionSubtitle = if (settings.screenshotProtectionEnabled) {
-        context.getString(R.string.screenshot_protection_enabled)
+        stringResource(R.string.screenshot_protection_enabled)
     } else {
-        context.getString(R.string.screenshot_protection_disabled)
+        stringResource(R.string.screenshot_protection_disabled)
     }
     val autoLockSubtitle = getAutoLockDisplayName(settings.autoLockMinutes, context)
     val trashSubtitle = if (settings.trashEnabled) {
         if (settings.trashAutoDeleteDays > 0) {
-            context.getString(R.string.trash_status_enabled_auto_clear, settings.trashAutoDeleteDays)
+            stringResource(R.string.trash_status_enabled_auto_clear, settings.trashAutoDeleteDays)
         } else {
-            context.getString(R.string.trash_status_enabled_no_auto_clear)
+            stringResource(R.string.trash_status_enabled_no_auto_clear)
         }
     } else {
-        context.getString(R.string.trash_status_disabled_permanent_delete)
+        stringResource(R.string.trash_status_disabled_permanent_delete)
     }
     fun searchTexts(vararg resIds: Int): Array<String> = resIds.map(context::getString).toTypedArray()
 
@@ -548,32 +548,32 @@ fun SettingsScreen(
     val showSecurityAnalysisCard = matchesSettingsSearch(
         settingsSearchQuery,
         securityTitle,
-        context.getString(R.string.security_analysis),
-        context.getString(R.string.security_analysis_description)
+        stringResource(R.string.security_analysis),
+        stringResource(R.string.security_analysis_description)
     )
 
     val showMasterPasswordLockingItem = matchesSettingsItem(
         securityTitle,
         masterPasswordLockingTitle,
         masterPasswordLockingDescription,
-        context.getString(R.string.biometric_unlock),
+        stringResource(R.string.biometric_unlock),
         biometricSubtitle,
-        context.getString(R.string.auto_lock),
+        stringResource(R.string.auto_lock),
         autoLockSubtitle,
-        context.getString(R.string.security_questions),
-        context.getString(R.string.security_questions_description),
-        context.getString(R.string.reset_master_password),
-        context.getString(R.string.reset_password_description)
+        stringResource(R.string.security_questions),
+        stringResource(R.string.security_questions_description),
+        stringResource(R.string.reset_master_password),
+        stringResource(R.string.reset_password_description)
     )
     val showScreenshotProtectionItem = matchesSettingsItem(
         securityTitle,
-        context.getString(R.string.screenshot_protection),
+        stringResource(R.string.screenshot_protection),
         screenshotProtectionSubtitle
     )
     val showPermissionManagementItem = matchesSettingsItem(
         securityTitle,
-        context.getString(R.string.permission_management_title),
-        context.getString(R.string.permission_management_subtitle)
+        stringResource(R.string.permission_management_title),
+        stringResource(R.string.permission_management_subtitle)
     )
     val showSecuritySection = listOf(
         showMasterPasswordLockingItem,
@@ -583,25 +583,25 @@ fun SettingsScreen(
 
     val showSyncBackupItem = matchesSettingsItem(
         dataManagementTitle,
-        context.getString(R.string.sync_backup_title),
-        context.getString(R.string.sync_backup_description),
+        stringResource(R.string.sync_backup_title),
+        stringResource(R.string.sync_backup_description),
         *syncBackupSubSettingsSearchTexts
     )
     val showAutofillItem = matchesSettingsItem(
         dataManagementTitle,
-        context.getString(R.string.autofill),
-        context.getString(R.string.autofill_subtitle),
+        stringResource(R.string.autofill),
+        stringResource(R.string.autofill_subtitle),
         *autofillSubSettingsSearchTexts
     )
     val showTrashItem = matchesSettingsItem(
         dataManagementTitle,
-        context.getString(R.string.trash_bin),
+        stringResource(R.string.trash_bin),
         trashSubtitle
     )
     val showClearDataItem = matchesSettingsItem(
         dataManagementTitle,
-        context.getString(R.string.clear_all_data),
-        context.getString(R.string.clear_all_data_subtitle)
+        stringResource(R.string.clear_all_data),
+        stringResource(R.string.clear_all_data_subtitle)
     )
     val showDataManagementSection = listOf(
         showSyncBackupItem,
@@ -612,20 +612,20 @@ fun SettingsScreen(
 
     val showThemeAndColorSchemeItem = matchesSettingsItem(
         appearanceTitle,
-        context.getString(R.string.theme_and_color_scheme),
-        context.getString(R.string.color_scheme_description),
+        stringResource(R.string.theme_and_color_scheme),
+        stringResource(R.string.color_scheme_description),
         *themeAndColorSchemeSubSettingsSearchTexts
     )
     val showExtensionsItem = matchesSettingsItem(
         appearanceTitle,
-        context.getString(R.string.extensions_title),
-        context.getString(R.string.extensions_description),
+        stringResource(R.string.extensions_title),
+        stringResource(R.string.extensions_description),
         *extensionsSubSettingsSearchTexts
     )
     val showPageCustomizationItem = matchesSettingsItem(
         appearanceTitle,
-        context.getString(R.string.page_adjust_custom_title),
-        context.getString(R.string.page_adjust_custom_subtitle),
+        stringResource(R.string.page_adjust_custom_title),
+        stringResource(R.string.page_adjust_custom_subtitle),
         *pageCustomizationSubSettingsSearchTexts
     )
     val showAppearanceSection = listOf(
@@ -637,24 +637,24 @@ fun SettingsScreen(
     val currentVersionText = "V${BuildConfig.VERSION_NAME}"
     val showVersionItem = matchesSettingsItem(
         aboutTitle,
-        context.getString(R.string.version),
+        stringResource(R.string.version),
         currentVersionText
     )
     val showUpdateCheckItem = matchesSettingsItem(
         aboutTitle,
-        context.getString(R.string.update_check_title),
-        context.getString(R.string.update_check_subtitle),
-        context.getString(R.string.update_check_latest_release)
+        stringResource(R.string.update_check_title),
+        stringResource(R.string.update_check_subtitle),
+        stringResource(R.string.update_check_latest_release)
     )
     val showPreviewFeaturesItem = matchesSettingsItem(
         developerTitle,
-        context.getString(R.string.preview_features_title),
-        context.getString(R.string.preview_features_description)
+        stringResource(R.string.preview_features_title),
+        stringResource(R.string.preview_features_description)
     )
     val showDeveloperSettingsItem = matchesSettingsItem(
         developerTitle,
-        context.getString(R.string.developer_settings),
-        context.getString(R.string.developer_settings_subtitle),
+        stringResource(R.string.developer_settings),
+        stringResource(R.string.developer_settings_subtitle),
         *developerSubSettingsSearchTexts
     )
     val hasVisibleResults = listOf(
@@ -685,11 +685,11 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = context.getString(R.string.back))
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                         
                         Text(
-                            text = context.getString(R.string.settings_title),
+                            text = stringResource(R.string.settings_title),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier
                                 .weight(1f)
@@ -700,7 +700,7 @@ fun SettingsScreen(
                         IconButton(onClick = onSecurityAnalysis) {
                             Icon(
                                 Icons.Default.Shield,
-                                contentDescription = context.getString(R.string.security_analysis),
+                                contentDescription = stringResource(R.string.security_analysis),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -758,12 +758,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = context.getString(R.string.security_analysis),
+                                text = stringResource(R.string.security_analysis),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = context.getString(R.string.security_analysis_description),
+                                text = stringResource(R.string.security_analysis_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
@@ -792,7 +792,7 @@ fun SettingsScreen(
                     if (showScreenshotProtectionItem) {
                         SettingsItem(
                             icon = Icons.Default.Security,
-                            title = context.getString(R.string.screenshot_protection),
+                            title = stringResource(R.string.screenshot_protection),
                             subtitle = screenshotProtectionSubtitle,
                             onClick = {
                                 viewModel.updateScreenshotProtectionEnabled(!settings.screenshotProtectionEnabled)
@@ -803,8 +803,8 @@ fun SettingsScreen(
                     if (showPermissionManagementItem) {
                         SettingsItem(
                             icon = Icons.Default.AdminPanelSettings,
-                            title = context.getString(R.string.permission_management_title),
-                            subtitle = context.getString(R.string.permission_management_subtitle),
+                            title = stringResource(R.string.permission_management_title),
+                            subtitle = stringResource(R.string.permission_management_subtitle),
                             onClick = onNavigateToPermissionManagement,
                         )
                     }
@@ -817,8 +817,8 @@ fun SettingsScreen(
                     if (showSyncBackupItem) {
                         SettingsItem(
                             icon = Icons.Default.Sync,
-                            title = context.getString(R.string.sync_backup_title),
-                            subtitle = context.getString(R.string.sync_backup_description),
+                            title = stringResource(R.string.sync_backup_title),
+                            subtitle = stringResource(R.string.sync_backup_description),
                             onClick = onNavigateToSyncBackup,
                         )
                     }
@@ -826,8 +826,8 @@ fun SettingsScreen(
                     if (showAutofillItem) {
                         SettingsItem(
                             icon = Icons.Default.VpnKey,
-                            title = context.getString(R.string.autofill),
-                            subtitle = context.getString(R.string.autofill_subtitle),
+                            title = stringResource(R.string.autofill),
+                            subtitle = stringResource(R.string.autofill_subtitle),
                             onClick = onNavigateToAutofill,
                         )
                     }
@@ -848,8 +848,8 @@ fun SettingsScreen(
                     if (showClearDataItem) {
                         SettingsItem(
                             icon = Icons.Default.DeleteForever,
-                            title = context.getString(R.string.clear_all_data),
-                            subtitle = context.getString(R.string.clear_all_data_subtitle),
+                            title = stringResource(R.string.clear_all_data),
+                            subtitle = stringResource(R.string.clear_all_data_subtitle),
                             onClick = { showClearDataDialog = true },
                             iconTint = MaterialTheme.colorScheme.error
                         )
@@ -863,8 +863,8 @@ fun SettingsScreen(
                     if (showThemeAndColorSchemeItem) {
                         SettingsItem(
                             icon = Icons.Default.Palette,
-                            title = context.getString(R.string.theme_and_color_scheme),
-                            subtitle = context.getString(R.string.color_scheme_description),
+                            title = stringResource(R.string.theme_and_color_scheme),
+                            subtitle = stringResource(R.string.color_scheme_description),
                             onClick = onNavigateToThemeAndColorScheme,
                         )
                     }
@@ -872,8 +872,8 @@ fun SettingsScreen(
                     if (showExtensionsItem) {
                         SettingsItem(
                             icon = Icons.Default.Extension,
-                            title = context.getString(R.string.extensions_title),
-                            subtitle = context.getString(R.string.extensions_description),
+                            title = stringResource(R.string.extensions_title),
+                            subtitle = stringResource(R.string.extensions_description),
                             onClick = onNavigateToExtensions,
                         )
                     }
@@ -881,8 +881,8 @@ fun SettingsScreen(
                     if (showPageCustomizationItem) {
                         SettingsItem(
                             icon = Icons.Default.Tune,
-                            title = context.getString(R.string.interface_layout),
-                            subtitle = context.getString(R.string.page_adjust_custom_subtitle),
+                            title = stringResource(R.string.interface_layout),
+                            subtitle = stringResource(R.string.page_adjust_custom_subtitle),
                             onClick = onNavigateToPageCustomization
                         )
                     }
@@ -896,7 +896,7 @@ fun SettingsScreen(
                     if (showVersionItem) {
                         SettingsItem(
                             icon = Icons.Default.Info,
-                            title = context.getString(R.string.version),
+                            title = stringResource(R.string.version),
                             subtitle = currentVersionText,
                             onClick = { showVersionInfoDialog = true }
                         )
@@ -905,11 +905,11 @@ fun SettingsScreen(
                     if (showUpdateCheckItem) {
                         SettingsItem(
                             icon = Icons.Default.Update,
-                            title = context.getString(R.string.update_check_title),
+                            title = stringResource(R.string.update_check_title),
                             subtitle = if (isCheckingUpdate) {
-                                context.getString(R.string.update_check_checking)
+                                stringResource(R.string.update_check_checking)
                             } else {
-                                context.getString(R.string.update_check_subtitle)
+                                stringResource(R.string.update_check_subtitle)
                             },
                             onClick = startUpdateCheck,
                             trailingContent = {
@@ -937,8 +937,8 @@ fun SettingsScreen(
             if (advancedVisible) {
                 val (headerIcon, headerTitle, headerSubtitle) = Triple(
                     Icons.Default.Build,
-                    context.getString(R.string.advanced_settings_title),
-                    context.getString(R.string.advanced_settings_subtitle)
+                    stringResource(R.string.advanced_settings_title),
+                    stringResource(R.string.advanced_settings_subtitle)
                 )
                 // 折叠态：复用统一 SettingsItem 组件，与上方功能项保持一致的卡片风格、对齐与字号
                 SettingsItem(
@@ -1152,7 +1152,7 @@ fun SettingsScreen(
             passwordErrorText = stringResource(R.string.current_password_incorrect),
             onBiometricClick = retryBiometricAction,
             biometricHintText = if (retryBiometricAction == null) {
-                context.getString(R.string.biometric_not_available)
+                stringResource(R.string.biometric_not_available)
             } else {
                 null
             }
@@ -1604,7 +1604,7 @@ fun SettingsScreen(
                 
                 // Title
                 Text(
-                    text = context.getString(R.string.clear_all_data),
+                    text = stringResource(R.string.clear_all_data),
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
@@ -1615,7 +1615,7 @@ fun SettingsScreen(
                 
                 // Warning Text
                 Text(
-                    text = context.getString(R.string.clear_all_data_warning),
+                    text = stringResource(R.string.clear_all_data_warning),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -1636,7 +1636,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = context.getString(R.string.select_data_types_to_clear),
+                            text = stringResource(R.string.select_data_types_to_clear),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -1648,7 +1648,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearPasswords, onCheckedChange = { clearPasswords = it })
                             Text(
-                                text = context.getString(R.string.data_type_passwords),
+                                text = stringResource(R.string.data_type_passwords),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1663,7 +1663,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearTotp, onCheckedChange = { clearTotp = it })
                             Text(
-                                text = context.getString(R.string.data_type_totp),
+                                text = stringResource(R.string.data_type_totp),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1678,7 +1678,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearNotes, onCheckedChange = { clearNotes = it })
                             Text(
-                                text = context.getString(R.string.data_type_notes),
+                                text = stringResource(R.string.data_type_notes),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1693,7 +1693,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearDocuments, onCheckedChange = { clearDocuments = it })
                             Text(
-                                text = context.getString(R.string.data_type_documents),
+                                text = stringResource(R.string.data_type_documents),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1708,7 +1708,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearBankCards, onCheckedChange = { clearBankCards = it })
                             Text(
-                                text = context.getString(R.string.data_type_bank_cards),
+                                text = stringResource(R.string.data_type_bank_cards),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1723,7 +1723,7 @@ fun SettingsScreen(
                         ) {
                             Checkbox(checked = clearGeneratorHistory, onCheckedChange = { clearGeneratorHistory = it })
                             Text(
-                                text = context.getString(R.string.data_type_generator_history),
+                                text = stringResource(R.string.data_type_generator_history),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
@@ -1759,7 +1759,7 @@ fun SettingsScreen(
                             .height(48.dp),
                         shape = CircleShape
                     ) {
-                        Text(context.getString(R.string.cancel))
+                        Text(stringResource(R.string.cancel))
                     }
                     
                     // Confirm Delete
@@ -1795,7 +1795,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(context.getString(R.string.confirm))
+                        Text(stringResource(R.string.confirm))
                     }
                 }
                 

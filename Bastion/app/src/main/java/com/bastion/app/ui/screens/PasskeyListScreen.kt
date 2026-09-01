@@ -1215,7 +1215,7 @@ fun PasskeyListScreen(
                                 val currentCategoryId = effectiveCategoryId(passkey)
                                 val categoryName = currentCategoryId
                                     ?.let { categoryMap[it]?.name }
-                                    ?: context.getString(R.string.category_none)
+                                    ?: stringResource(R.string.category_none)
                                 val isSelected = selectedPasskeys.contains(passkeyKey)
                                 val isPendingDelete = pendingDeletePasskey?.managementKey() == passkeyKey
 
@@ -1401,7 +1401,7 @@ fun PasskeyListScreen(
             passwordErrorText = stringResource(R.string.current_password_incorrect),
             onBiometricClick = biometricAction,
             biometricHintText = if (biometricAction == null) {
-                context.getString(R.string.biometric_not_available)
+                stringResource(R.string.biometric_not_available)
             } else {
                 null
             }

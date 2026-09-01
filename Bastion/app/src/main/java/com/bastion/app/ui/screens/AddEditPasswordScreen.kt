@@ -4664,7 +4664,7 @@ private fun LoginTypeSelector(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // 登录方式标签
         Text(
-            text = context.getString(R.string.login_type_label),
+            text = stringResource(R.string.login_type_label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -4683,7 +4683,7 @@ private fun LoginTypeSelector(
                     }
                 }
             ) {
-                Text(context.getString(R.string.login_type_password))
+                Text(stringResource(R.string.login_type_password))
             }
             SegmentedButton(
                 selected = loginType.equals("SSO", ignoreCase = true),
@@ -4695,7 +4695,7 @@ private fun LoginTypeSelector(
                     }
                 }
             ) {
-                Text(context.getString(R.string.login_type_sso))
+                Text(stringResource(R.string.login_type_sso))
             }
         }
         
@@ -4717,7 +4717,7 @@ private fun LoginTypeSelector(
                     val providerDisplayName = if (ssoProvider.isNotEmpty()) {
                         com.bastion.app.data.SsoProvider.fromName(ssoProvider).displayName
                     } else {
-                        context.getString(R.string.sso_provider_select)
+                        stringResource(R.string.sso_provider_select)
                     }
                     
                     OutlinedTextField(
@@ -4766,7 +4766,7 @@ private fun LoginTypeSelector(
                 ) {
                     OutlinedTextField(
                         value = refEntry?.let { "${it.title} (${it.username})" } 
-                            ?: context.getString(R.string.sso_ref_entry_none),
+                            ?: stringResource(R.string.sso_ref_entry_none),
                         onValueChange = {},
                         readOnly = true,
                         enabled = false,
@@ -4802,11 +4802,11 @@ private fun LoginTypeSelector(
                 val displayProvider = if (ssoProvider.isNotEmpty()) {
                     com.bastion.app.data.SsoProvider.fromName(ssoProvider).displayName
                 } else {
-                    context.getString(R.string.sso_provider_select)
+                    stringResource(R.string.sso_provider_select)
                 }
 
                 Text(
-                    text = context.getString(R.string.sso_description, displayProvider),
+                    text = stringResource(R.string.sso_description, displayProvider),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -299,7 +299,7 @@ fun PasswordDetailDialog(
                                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                                 )
                                 Text(
-                                    context.getString(R.string.credit_card_encrypted),
+                                    stringResource(R.string.credit_card_encrypted),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -394,7 +394,7 @@ private fun CollapsibleInfoSection(
                 }
                 Icon(
                     if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) context.getString(R.string.collapse) else context.getString(R.string.expand)
+                    contentDescription = if (expanded) stringResource(R.string.collapse) else stringResource(R.string.expand)
                 )
             }
             
@@ -474,7 +474,7 @@ private fun InfoItemWithCopy(
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
-                    contentDescription = context.getString(R.string.copy),
+                    contentDescription = stringResource(R.string.copy),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -510,7 +510,7 @@ private fun PasswordItem(
         ) {
             Text(
                 text = when {
-                    !hasPasswordValue -> context.getString(R.string.permission_status_unavailable)
+                    !hasPasswordValue -> stringResource(R.string.permission_status_unavailable)
                     passwordVisible -> value
                     else -> "•".repeat(value.length.coerceAtMost(12))
                 },
@@ -525,7 +525,7 @@ private fun PasswordItem(
                     ) {
                         Icon(
                             if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) context.getString(R.string.hide) else context.getString(R.string.show),
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide) else stringResource(R.string.show),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -543,7 +543,7 @@ private fun PasswordItem(
                 ) {
                     Icon(
                         Icons.Default.ContentCopy,
-                        contentDescription = context.getString(R.string.copy),
+                        contentDescription = stringResource(R.string.copy),
                         modifier = Modifier.size(20.dp)
                     )
                 }
