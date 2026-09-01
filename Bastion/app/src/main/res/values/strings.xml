@@ -669,6 +669,8 @@
     
     <!-- Main Screen Bottom Navigation (Short) -->
     <string name="nav_passwords_short">密码</string>
+    <string name="timeline_empty_trash_progress_title">正在清空回收站…</string>
+    <string name="timeline_empty_trash_progress_message">共 %1$d 项，条目较多时需要一点时间，请勿关闭应用</string>
     <string name="nav_authenticator_short">验证</string>
     <string name="nav_documents_short">证件</string>
     <string name="nav_bank_cards_short">银行</string>

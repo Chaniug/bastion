@@ -32,6 +32,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Add
@@ -943,16 +947,21 @@ private fun TimelineHeaderBar(
         isSearchExpanded = isSearchExpanded,
         onSearchExpandedChange = onSearchExpandedChange,
         searchHint = stringResource(R.string.timeline_search_hint),
-        actions = {
-            if (onNavigateToPasswordPage != null) {
+        // 返回放在左上角标准位置，用标准返回箭头。
+        // 原先放在 actions 里的「锁」图标语义不明（锁=加密/锁定，不像返回），
+        // 且 HistoryTopBar 在 enableTabSwitch=false 时被隐藏，导致 showBackButton 失效，
+        // 用户进得来出不去。这里补上真正的返回入口。
+        navigationIcon = if (onNavigateToPasswordPage != null) {
+            {
                 IconButton(onClick = onNavigateToPasswordPage) {
                     Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = stringResource(R.string.nav_passwords_short),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
+        } else null,
+        actions = {
             Box {
                 IconButton(onClick = onOpenScopeSheet) {
                     Icon(
@@ -2359,6 +2368,9 @@ private fun TrashContent(
     var isSearchExpanded by rememberSaveable { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
+    // 清空回收站进行中：删除涉及 KeePass 写库与 Bitwarden 网络请求，可能耗时数秒，
+    // 没有反馈会让用户以为卡死，所以显示一个不可取消的进度对话框。
+    var isEmptyingTrash by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf<com.bastion.app.viewmodel.TrashItem?>(null) }
 
     // 多选模式状态
@@ -2596,7 +2608,10 @@ private fun TrashContent(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        showEmptyTrashDialog = false
+                        isEmptyingTrash = true
                         viewModel.permanentlyDeleteItems(scopedItems) { success ->
+                            isEmptyingTrash = false
                             if (!success) {
                                 Toast.makeText(
                                     context,
@@ -2605,7 +2620,6 @@ private fun TrashContent(
                                 ).show()
                             }
                         }
-                        showEmptyTrashDialog = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.error)
                 ) {
@@ -2617,6 +2631,28 @@ private fun TrashContent(
                     Text(stringResource(R.string.cancel))
                 }
             }
+        )
+    }
+
+    // 清空回收站进度对话框（不可取消，避免删一半被中断导致远端与本地不一致）
+    if (isEmptyingTrash) {
+        AlertDialog(
+            onDismissRequest = { /* 进行中不允许取消 */ },
+            title = { Text(stringResource(R.string.timeline_empty_trash_progress_title)) },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        stringResource(
+                            R.string.timeline_empty_trash_progress_message,
+                            scopedItems.size
+                        )
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
         )
     }
     
@@ -2702,16 +2738,18 @@ private fun TrashHeaderBar(
             isSearchExpanded = isSearchExpanded,
             onSearchExpandedChange = onSearchExpandedChange,
             searchHint = stringResource(R.string.search_passwords_hint),
-            actions = {
-                if (onNavigateToPasswordPage != null) {
+            // 回收站：返回入口改到左上角标准位置（原「锁」图标语义错误且难发现）
+            navigationIcon = if (onNavigateToPasswordPage != null) {
+                {
                     IconButton(onClick = onNavigateToPasswordPage) {
                         Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = stringResource(R.string.nav_passwords_short),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
+            } else null,
+            actions = {
                 Box {
                     IconButton(onClick = onOpenScopeSheet) {
                         Icon(

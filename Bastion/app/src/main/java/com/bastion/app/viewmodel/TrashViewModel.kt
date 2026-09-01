@@ -26,6 +26,19 @@ import com.bastion.app.utils.OperationLogger
 import com.bastion.app.utils.SettingsManager
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+
+/**
+ * 清空回收站时 Bitwarden 远程删除的最大并发数。
+ *
+ * Bitwarden 没有批量删除 API，只能逐条请求；并发能显著缩短总耗时，
+ * 但必须限流，否则一次打出上百个请求会打满连接池或触发服务端限流。
+ */
+private const val MAX_REMOTE_DELETE_CONCURRENCY = 8
 
 /**
  * 回收站中的条目数据类
@@ -720,16 +733,110 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+ * 永久删除一批回收站条目。
+ *
+ * 性能说明（为什么不能用简单的 forEach）：
+ *  - 原实现逐条调用 permanentlyDeleteWithSources，每条都会走一次 KeePass 的
+ *    mutateDatabase —— 那是「解密整个 kdbx → 删 1 条 → 加密 → 写磁盘 → 可能整文件上传」。
+ *    N 条就是 N 次全量重写数据库，清空回收站因此极慢（与 Bitwarden 无关）。
+ *  - 这里改成按「KeePass 数据库 + 条目类型」分组，一个库只调用一次批量接口，
+ *    把 N 次全量重写降为「每个库 1 次」。
+ *  - Bitwarden 远程删除没有批量 API，只能逐条请求，因此改为有限并发，
+ *    把 N 次串行往返压成 ceil(N / 并发数) 轮。
+ *
+ * 语义保持与旧实现一致：
+ *  - 远程（Bitwarden）删除失败 → 该条整体不算成功，且不落本地删除；
+ *  - KeePass 删除失败 → 该分组的条目不落本地删除，并置 hasFailure。
+ */
     private suspend fun permanentlyDeleteTrashItems(items: List<TrashItem>): Pair<Int, Boolean> {
-        var hasFailure = false
-        var deletedCount = 0
-        items.forEach { item ->
-            if (permanentlyDeleteWithSources(item.originalData)) {
-                deletedCount += 1
-            } else {
-                hasFailure = true
+        if (items.isEmpty()) return 0 to false
+
+        // 1) Bitwarden 远程删除：有限并发（原实现串行）。
+        //    结果按下标与 items 一一对应，不用实体做 map key，避免 equals 语义问题。
+        val remoteOk: List<Boolean> = coroutineScope {
+            val semaphore = Semaphore(MAX_REMOTE_DELETE_CONCURRENCY)
+            items.map { item ->
+                async {
+                    semaphore.withPermit {
+                        deleteRemoteCipherIfNeeded(item.originalData)
+                    }
+                }
+            }.awaitAll()
+        }
+
+        var hasFailure = remoteOk.any { !it }
+
+        // 2) 只有通过远程删除的条目才继续（保持原语义）
+        val survivors = items.filterIndexed { index, _ -> remoteOk[index] }
+
+        // 3) KeePass：按「数据库 + 类型」分组，一个库只写一次
+        val passwordGroups = linkedMapOf<Long, MutableList<PasswordEntry>>()
+        val secureGroups = linkedMapOf<Long, MutableList<SecureItem>>()
+        survivors.forEach { item ->
+            when (val data = item.originalData) {
+                is PasswordEntry -> data.keepassDatabaseId?.let { dbId ->
+                    passwordGroups.getOrPut(dbId) { mutableListOf() }.add(data)
+                }
+                is SecureItem -> data.keepassDatabaseId?.let { dbId ->
+                    secureGroups.getOrPut(dbId) { mutableListOf() }.add(data)
+                }
             }
         }
+
+        val failedGroups = mutableSetOf<Pair<Long, String>>()
+
+        passwordGroups.forEach { (dbId, entries) ->
+            val result = keepassBridge.deleteKeePassPasswordEntries(
+                databaseId = dbId,
+                entries = entries.map { it.copy(keepassDatabaseId = dbId) }
+            )
+            if (result.isFailure) {
+                android.util.Log.e(
+                    "TrashViewModel",
+                    "KeePass batch permanent delete failed: db=$dbId, count=${entries.size}",
+                    result.exceptionOrNull()
+                )
+                hasFailure = true
+                failedGroups += dbId to "password"
+            }
+        }
+
+        secureGroups.forEach { (dbId, group) ->
+            val result = keepassBridge.deleteKeePassSecureItems(
+                databaseId = dbId,
+                items = group.map { it.copy(keepassDatabaseId = dbId) }
+            )
+            if (result.isFailure) {
+                android.util.Log.e(
+                    "TrashViewModel",
+                    "KeePass batch permanent delete failed (secure): db=$dbId, count=${group.size}",
+                    result.exceptionOrNull()
+                )
+                hasFailure = true
+                failedGroups += dbId to "secure"
+            }
+        }
+
+        // 4) 本地 DB 删除：跳过 KeePass 删除失败的分组
+        var deletedCount = 0
+        survivors.forEach { item ->
+            when (val data = item.originalData) {
+                is PasswordEntry -> {
+                    val dbId = data.keepassDatabaseId
+                    if (dbId != null && (dbId to "password") in failedGroups) return@forEach
+                    database.passwordEntryDao().delete(data)
+                    deletedCount += 1
+                }
+                is SecureItem -> {
+                    val dbId = data.keepassDatabaseId
+                    if (dbId != null && (dbId to "secure") in failedGroups) return@forEach
+                    database.secureItemDao().delete(data)
+                    deletedCount += 1
+                }
+            }
+        }
+
         return deletedCount to hasFailure
     }
 
