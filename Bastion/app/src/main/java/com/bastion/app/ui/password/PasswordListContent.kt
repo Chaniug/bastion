@@ -1324,7 +1324,22 @@ fun PasswordListContent(
     // 状态必须由这里（共同父级）持有：chip 横排在 PasswordListScrollableContent，
     // 触发按钮在 PasswordListTopSection 的标题，两者是兄弟组件，无法直接共享状态。
     // 默认展开，保证不开实验开关时行为与现状一致。
-    var quickFiltersExpanded by rememberSaveable { mutableStateOf(true) }
+    // 用 SharedPreferences 持久化：rememberSaveable 只在「系统重建 Activity」时恢复，
+// 用户主动退出 APP 后再打开会丢失（用户反馈"下次又展开了"），所以这里落盘。
+// LocalContext.current 是 @Composable，必须在 Composable 作用域取，
+// 不能写在 remember 的 lambda 里（那个 lambda 不是 Composable 上下文）。
+val collapseContext = LocalContext.current
+val collapsePrefs = remember(collapseContext) {
+    collapseContext.getSharedPreferences("ui_prefs", Context.MODE_PRIVATE)
+}
+var quickFiltersExpanded by remember(collapsePrefs) {
+    mutableStateOf(collapsePrefs.getBoolean("password_quick_filters_expanded", true))
+}
+LaunchedEffect(quickFiltersExpanded) {
+    collapsePrefs.edit()
+        .putBoolean("password_quick_filters_expanded", quickFiltersExpanded)
+        .apply()
+}
     val hasVisibleCategoryQuickFilters = remember(
         effectiveCategoryQuickFilterShortcuts
     ) {
