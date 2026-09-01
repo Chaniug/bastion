@@ -114,8 +114,7 @@ class SettingsViewModel(
 
     fun updateValidatorVibrationEnabled(enabled: Boolean) = commitUpdate { updateValidatorVibrationEnabled(enabled) }
 
-    fun updateHideFabOnScroll(enabled: Boolean) = commitUpdate { updateHideFabOnScroll(enabled) }
-
+    
     fun updateSecurityAnalysisAutoEnabled(enabled: Boolean) = commitUpdate { updateSecurityAnalysisAutoEnabled(enabled) }
 
     fun updatePasswordDetailSecurityAnalysisEnabled(enabled: Boolean) = commitUpdate { updatePasswordDetailSecurityAnalysisEnabled(enabled) }

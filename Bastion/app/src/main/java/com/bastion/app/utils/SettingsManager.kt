@@ -231,8 +231,7 @@ class SettingsManager(private val context: Context) {
         private val PASSWORD_LIST_QUICK_ACCESS_ENABLED_KEY = booleanPreferencesKey("password_list_quick_access_enabled") // 密码列表“最近/常用”快捷入口开关
         private val PASSWORD_LIST_TOP_MODULES_ORDER_KEY = stringPreferencesKey("password_list_top_modules_order") // 密码列表顶部模块顺序
         private val PASSWORD_SWIPE_SELECTION_MODE_KEY = stringPreferencesKey("password_swipe_selection_mode") // 密码列表右滑选中模式
-        private val HIDE_FAB_ON_SCROLL_KEY = booleanPreferencesKey("hide_fab_on_scroll") // 滚动隐藏 FAB
-        private val SECURITY_ANALYSIS_AUTO_ENABLED_KEY = booleanPreferencesKey("security_analysis_auto_enabled") // 安全分析自动分析
+                private val SECURITY_ANALYSIS_AUTO_ENABLED_KEY = booleanPreferencesKey("security_analysis_auto_enabled") // 安全分析自动分析
         private val PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY =
             booleanPreferencesKey("password_detail_security_analysis_enabled")
         private val NOTE_GRID_LAYOUT_KEY = booleanPreferencesKey("note_grid_layout") // 笔记网格布局
@@ -531,8 +530,7 @@ class SettingsManager(private val context: Context) {
             }.getOrDefault(com.bastion.app.data.UnifiedProgressBarMode.ENABLED),
             validatorSmoothProgress = preferences[VALIDATOR_SMOOTH_PROGRESS_KEY] ?: true,
             validatorVibrationEnabled = preferences[VALIDATOR_VIBRATION_ENABLED_KEY] ?: true,
-            hideFabOnScroll = preferences[HIDE_FAB_ON_SCROLL_KEY] ?: false,
-            securityAnalysisAutoEnabled = preferences[SECURITY_ANALYSIS_AUTO_ENABLED_KEY] ?: false,
+                        securityAnalysisAutoEnabled = preferences[SECURITY_ANALYSIS_AUTO_ENABLED_KEY] ?: false,
             passwordDetailSecurityAnalysisEnabled =
                 preferences[PASSWORD_DETAIL_SECURITY_ANALYSIS_ENABLED_KEY] ?: true,
             bitwardenBottomStatusBarEnabled = preferences[BITWARDEN_BOTTOM_STATUS_BAR_ENABLED_KEY] ?: false,
@@ -809,12 +807,7 @@ class SettingsManager(private val context: Context) {
         }
     }
 
-    suspend fun updateHideFabOnScroll(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[HIDE_FAB_ON_SCROLL_KEY] = enabled
-        }
-    }
-
+    
     suspend fun updateSecurityAnalysisAutoEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[SECURITY_ANALYSIS_AUTO_ENABLED_KEY] = enabled

@@ -691,11 +691,7 @@ fun PasswordListCustomizationScreen(
     var previewQuickAccessEnabled by remember(settings.passwordListQuickAccessEnabled) {
         mutableStateOf(settings.passwordListQuickAccessEnabled)
     }
-    var previewHideFabOnScroll by remember(settings.hideFabOnScroll) {
-        mutableStateOf(settings.hideFabOnScroll)
-    }
-
-    var aggregateSectionExpanded by rememberSaveable { mutableStateOf(false) }
+        var aggregateSectionExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(
         previewAggregateEnabled,
@@ -1256,16 +1252,7 @@ fun PasswordListCustomizationScreen(
                 }
             )
 
-            SwitchSettingsCard(
-                title = stringResource(R.string.hide_fab_on_scroll_title),
-                subtitle = stringResource(R.string.hide_fab_on_scroll_description),
-                checked = previewHideFabOnScroll,
-                onCheckedChange = { checked ->
-                    previewHideFabOnScroll = checked
-                    viewModel.updateHideFabOnScroll(checked)
-                }
-            )
-        }
+            }
     }
 }
 

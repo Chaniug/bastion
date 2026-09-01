@@ -507,8 +507,7 @@ data class AppSettings(
     val validatorUnifiedProgressBar: UnifiedProgressBarMode = UnifiedProgressBarMode.ENABLED, // 统一进度条模式
     val validatorSmoothProgress: Boolean = true, // 平滑进度条（无停顿感）
     val validatorVibrationEnabled: Boolean = true, // 验证器震动提醒
-    val hideFabOnScroll: Boolean = false, // 滚动时隐藏悬浮按钮
-    val securityAnalysisAutoEnabled: Boolean = false, // 安全分析自动分析
+        val securityAnalysisAutoEnabled: Boolean = false, // 安全分析自动分析
     val passwordDetailSecurityAnalysisEnabled: Boolean = true,
     val bitwardenBottomStatusBarEnabled: Boolean = false, // Bitwarden 底部状态栏（实验）
     val copyNextCodeWhenExpiring: Boolean = true, // 倒计时<=5秒时复制下一个验证码（默认开启）

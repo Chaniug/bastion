@@ -992,9 +992,7 @@
     <string name="smooth_progress_bar_description">启用平滑动画，消除进度条的停顿感</string>
     <string name="validator_settings_section">验证器设置</string>
     <string name="experimental_features_section">实验功能</string>
-    <string name="hide_fab_on_scroll_title">滚动时隐藏悬浮按钮</string>
-    <string name="hide_fab_on_scroll_description">向下滑动列表时隐藏右下角的添加按钮</string>
-    <string name="keepass_dx_like_mutation_title">KeePass DX 类引擎</string>
+        <string name="keepass_dx_like_mutation_title">KeePass DX 类引擎</string>
     <string name="keepass_dx_like_mutation_description">实验功能：KeePass 操作使用内存变更 + 异步落盘（默认关闭）</string>
     
     <!-- 验证器震动 -->

@@ -45,10 +45,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.unit.Velocity
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -1126,24 +1122,10 @@ fun SimpleMainScreen(
         sendPaneState = SendPaneUiStateTransitions.closeInlineEditor(sendPaneState)
     }
 
-    // 监听滚动以隐藏/显示 FAB
-    var isFabVisible by remember { mutableStateOf(true) }
-    
-    // 如果设置中禁用了此功能，强制显示 FAB
-    LaunchedEffect(appSettings.hideFabOnScroll) {
-        if (!appSettings.hideFabOnScroll) {
-            isFabVisible = true
-        }
-    }
-
     // 监听 FAB 展开状态，展开时禁用隐藏逻辑
     var isFabExpanded by remember { mutableStateOf(false) }
     var isFastScrollStripVisible by rememberSaveable(currentTab) { mutableStateOf(false) }
-    // 使用 rememberUpdatedState 确保 currentTab 始终是最新的
-    val currentTabState = rememberUpdatedState(currentTab)
-    // 确保滚动监听器能获取到最新的设置值
-    val hideFabOnScrollState = rememberUpdatedState(appSettings.hideFabOnScroll)
-    val fastScrollStripVisibleState = rememberUpdatedState(isFastScrollStripVisible)
+    
 
     // 检测是否有任何选择模式处于激活状态
     var isNoteSelectionMode by remember { mutableStateOf(false) }
@@ -1156,47 +1138,7 @@ fun SimpleMainScreen(
             vaultV2PaneState.selectionCount > 0
     var generatorRefreshRequestKey by remember { mutableIntStateOf(0) }
     
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            // 使用 onPostScroll 代替 onPreScroll
-            // 只有当子视图实际消费了滚动事件时（即真正滚动了内容），我们才根据方向判断显隐
-            // 这样可以解决：
-            // 1. 在页面顶部无法上滑时，FAB 不会错误隐藏
-            // 2. 内容太少不足以滚动时，FAB 保持显示
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                // 如果功能未开启，直接返回
-                if (!hideFabOnScrollState.value) return Offset.Zero
-
-                // 如果 FAB 已展开，或当前正在使用快滑条，不要触发自动隐藏
-                if (isFabExpanded || fastScrollStripVisibleState.value) return Offset.Zero
-
-                val tab = currentTabState.value
-                if (tab == BottomNavItem.Passwords || 
-                    tab == BottomNavItem.Authenticator || 
-                    tab == BottomNavItem.CardWallet ||
-                    tab == BottomNavItem.Generator ||
-                    tab == BottomNavItem.Send) {
-                    
-                    // consumed.y < 0 表示内容向上滚动（手指上滑，查看下方内容） -> 隐藏
-                    if (consumed.y < -15f) {
-                        isFabVisible = false
-                    } 
-                    // consumed.y > 0 表示内容向下滚动（手指下滑，回到顶部） -> 显示
-                    // 注意：如果是 available.y > 0 但 consumed.y == 0，说明已经到顶滑不动了，
-                    // 这种情况下我们也不隐藏（保持原状或强制显示），通常保持原状即可，
-                    // 但为了体验，如果在顶部尝试下滑（即使没动），也可以强制显示
-                    else if (consumed.y > 15f || (available.y > 0f && consumed.y == 0f)) {
-                         isFabVisible = true
-                    }
-                }
-                return Offset.Zero
-            }
-        }
-    }
+    
 
     val currentFilter by passwordViewModel.categoryFilter.collectAsState()
     val passwordNewItemDefaults = remember(currentFilter) { defaultsFromPasswordFilter(currentFilter) }
@@ -1836,7 +1778,6 @@ fun SimpleMainScreen(
     Box(
         modifier = Modifier
             .matchParentSize()
-            .nestedScroll(nestedScrollConnection)
     ) {
         if (useDraggableNav && isCompactWidth && !shouldHideBottomNavigation) {
         // 使用可拖拽底部导航栏
