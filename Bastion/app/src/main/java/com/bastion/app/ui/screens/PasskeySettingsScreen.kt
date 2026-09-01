@@ -1,3 +1,4 @@
+@file:Suppress("LocalContextGetResourceValueCall")
 package com.bastion.app.ui.screens
 
 import android.content.ClipData

@@ -1,3 +1,4 @@
+@file:Suppress("LocalContextGetResourceValueCall")
 package com.bastion.app.ui.common.pull
 
 import android.widget.Toast

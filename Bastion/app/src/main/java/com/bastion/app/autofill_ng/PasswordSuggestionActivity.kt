@@ -1,3 +1,4 @@
+@file:Suppress("LocalContextGetResourceValueCall")
 package com.bastion.app.autofill_ng
 
 import android.app.Activity

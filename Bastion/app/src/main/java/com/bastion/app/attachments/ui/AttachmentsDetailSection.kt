@@ -1,3 +1,4 @@
+@file:Suppress("LocalContextGetResourceValueCall")
 package com.bastion.app.attachments.ui
 
 import com.bastion.app.logging.runCatchingObserved

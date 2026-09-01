@@ -1,3 +1,4 @@
+@file:Suppress("LocalContextGetResourceValueCall")
 package com.bastion.app.ui.screens
 
 import androidx.compose.animation.core.Animatable
