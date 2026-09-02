@@ -158,7 +158,9 @@ internal fun PasswordListTopSection(
      * 状态由调用方持有（PasswordListContent），因为 chip 横排不在本组件内。
      */
     onTitleClick: (() -> Unit)? = null,
-    quickFiltersExpanded: Boolean = true
+    quickFiltersExpanded: Boolean = true,
+    // 通行秘钥 chip：收拢菜单内点击跳转通行秘钥页（不做列表过滤，passkey 存独立 PasskeyEntry 表）。
+    onNavigateToPasskeys: (() -> Unit)? = null
 ) {
     val appSettings by settingsViewModel.settings.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
@@ -302,6 +304,7 @@ internal fun PasswordListTopSection(
                                 aggregateSelectedTypes = aggregateSelectedTypes,
                                 aggregateVisibleTypes = aggregateVisibleTypes,
                                 onToggleAggregateType = onToggleAggregateType,
+                                onNavigateToPasskeys = onNavigateToPasskeys,
                                 quickFolderShortcuts = categoryMenuQuickFolderShortcuts,
                                 topModulesOrder = appSettings.passwordListTopModulesOrder,
                                 onTopModulesOrderChange = settingsViewModel::updatePasswordListTopModulesOrder,

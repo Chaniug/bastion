@@ -92,7 +92,9 @@ internal fun PasswordListCategoryChipMenu(
     getBitwardenFolders: (Long) -> Flow<List<BitwardenFolder>> = { flowOf(emptyList()) },
     getKeePassGroups: (Long) -> Flow<List<KeePassGroupInfo>> = { flowOf(emptyList()) },
     onRenameCategory: ((Category) -> Unit)? = null,
-    onDeleteCategory: ((Category) -> Unit)? = null
+    onDeleteCategory: ((Category) -> Unit)? = null,
+    // 通行秘钥 chip：收拢菜单内点击跳转通行秘钥页（不做列表过滤）。
+    onNavigateToPasskeys: (() -> Unit)? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val menuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
@@ -193,6 +195,11 @@ internal fun PasswordListCategoryChipMenu(
             aggregateSelectedTypes = aggregateSelectedTypes,
             aggregateVisibleTypes = aggregateVisibleTypes,
             onToggleAggregateType = onToggleAggregateType,
+            // 跳转前先收起下拉菜单，避免导航后菜单仍悬浮在新页面上。
+            onNavigateToPasskeys = {
+                onNavigateToPasskeys?.invoke()
+                onDismiss()
+            },
             onQuickFilterItemsOrderChange = { reordered ->
                 quickFilterState.onOrderChange(reordered)
                 onQuickFilterItemsOrderChange(reordered)

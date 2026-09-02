@@ -1524,6 +1524,7 @@ LaunchedEffect(quickFiltersExpanded) {
     fun RenderPasswordListTopSection() {
         PasswordListTopSection(
             currentFilter = currentFilter,
+            onNavigateToPasskeys = onNavigateToPasskeys,
             categories = categories,
             keepassDatabases = keepassDatabases,
             bitwardenVaults = bitwardenVaults,
