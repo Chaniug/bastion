@@ -160,7 +160,9 @@ internal fun PasswordListTopSection(
     onTitleClick: (() -> Unit)? = null,
     quickFiltersExpanded: Boolean = true,
     // 通行秘钥 chip：收拢菜单内点击跳转通行秘钥页（不做列表过滤，passkey 存独立 PasskeyEntry 表）。
-    onNavigateToPasskeys: (() -> Unit)? = null
+    onNavigateToPasskeys: (() -> Unit)? = null,
+    // 滚动收起状态（0=展开/1=收起，快照式切换）
+    scrollCollapseFraction: Float = 0f
 ) {
     val appSettings by settingsViewModel.settings.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
@@ -242,6 +244,7 @@ internal fun PasswordListTopSection(
             onActionPillBoundsChanged = if (isArchiveView) null else onCategoryPillBoundsChange,
             onTitleClick = onTitleClick,
             titleExpanded = quickFiltersExpanded,
+            scrollCollapseFraction = scrollCollapseFraction,
             actions = {
                 if (isArchiveView) {
                     IconButton(onClick = { viewModel.closeArchiveView() }) {

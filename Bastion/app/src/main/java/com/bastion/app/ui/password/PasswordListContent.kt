@@ -1424,6 +1424,21 @@ LaunchedEffect(quickFiltersExpanded) {
         onBackToTopVisibilityChange = onBackToTopVisibilityChange
     )
 
+    // 顶部 Bar 收起判定（快照式）：滚动越过一个很小的阈值(8dp)就整体切换，
+    // 不随滚动距离连续缩放（用户反馈"逐渐缩小"不自然）。回到列表顶部自动恢复展开。
+    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+        8.dp.toPx()
+    }
+    val scrollCollapseFraction by remember(listState) {
+        derivedStateOf {
+            if (listState.firstVisibleItemScrollOffset.toFloat() > scrollCollapseThresholdPx) {
+                1f
+            } else {
+                0f
+            }
+        }
+    }
+
     var lastHandledFilterForScrollReset by remember {
         mutableStateOf<CategoryFilter?>(null)
     }
@@ -1528,6 +1543,7 @@ LaunchedEffect(quickFiltersExpanded) {
         PasswordListTopSection(
             currentFilter = currentFilter,
             onNavigateToPasskeys = onNavigateToPasskeys,
+            scrollCollapseFraction = scrollCollapseFraction,
             categories = categories,
             keepassDatabases = keepassDatabases,
             bitwardenVaults = bitwardenVaults,
@@ -1724,8 +1740,15 @@ LaunchedEffect(quickFiltersExpanded) {
         )
     }
 
-    RenderPasswordListTopSection()
-    RenderPasswordListMainPaneHost()
+    // 顶部 Bar 透明覆盖在列表之上（不再是上下排列）：
+    // 列表从 Bar 底下穿过，Bar 自身无背景、可透出内容（参考系统相册）。
+    // 列表顶部留 contentPadding = 展开态 Bar 高度，保证首屏第一条完整可见。
+    Box(modifier = Modifier.fillMaxSize()) {
+        RenderPasswordListMainPaneHost()
+        Box(modifier = Modifier.align(androidx.compose.ui.Alignment.TopCenter)) {
+            RenderPasswordListTopSection()
+        }
+    }
 
     PasswordListQuickStatusDialogs(
         showQuickStatusTransferDialog = showQuickStatusTransferDialog,
