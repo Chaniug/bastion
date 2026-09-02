@@ -1214,8 +1214,8 @@ fun PasskeyListScreen(
                                 start = 16.dp,
                                 end = 16.dp,
                                 // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
-                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-                                    androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
+                                // 流式布局：状态栏与 Bar 已由 Column 上方元素避让，这里只留小间距
+                                top = 8.dp,
                                 bottom = if (selectionMode) 140.dp else 100.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)

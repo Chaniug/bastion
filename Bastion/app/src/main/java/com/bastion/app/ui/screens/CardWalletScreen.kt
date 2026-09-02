@@ -1272,8 +1272,8 @@ fun CardWalletScreen(
                             contentPadding = PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-                                    androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
+                                // 流式布局：状态栏与 Bar 已由 Column 上方元素避让，这里只留小间距
+                                top = 8.dp,
                                 bottom = 96.dp
                             )
                         ) {
