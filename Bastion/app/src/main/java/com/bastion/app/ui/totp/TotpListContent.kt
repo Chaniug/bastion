@@ -79,6 +79,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -695,7 +696,7 @@ fun TotpListContent(
                     Icon(
                         imageVector = Icons.Default.Folder,
                         contentDescription = stringResource(R.string.category),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = LocalContentColor.current
                     )
                 }
                 Box {
@@ -703,7 +704,7 @@ fun TotpListContent(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = stringResource(R.string.more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = LocalContentColor.current
                         )
                     }
                     if (appSettings.categorySelectionUiMode == com.bastion.app.data.CategorySelectionUiMode.CHIP_MENU) {
@@ -881,25 +882,37 @@ fun TotpListContent(
             }
         }
 
-        // 统一进度条 - 在顶栏下方显示
-        if (appSettings.validatorUnifiedProgressBar == com.bastion.app.data.UnifiedProgressBarMode.ENABLED &&
-            filteredTotpItems.isNotEmpty()) {
-            com.bastion.app.ui.components.UnifiedProgressBar(
-                style = appSettings.validatorProgressBarStyle,
-                currentSeconds = sharedTickSeconds,
-                period = 30,
-                smoothProgress = appSettings.validatorSmoothProgress,
-                timeOffset = (appSettings.totpTimeOffset * 1000).toLong(), // 传递时间偏移(毫秒)
-                trailingContent = passkeyEntryButton
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                passkeyEntryButton()
+        // 统一进度条 - 在顶栏下方显示；滚动收起时高度收起 + 淡出（列表避让随悬浮层实测自动跟随）
+        val progressBarHeight by animateDpAsState(
+            targetValue = androidx.compose.ui.unit.lerp(44.dp, 0.dp, scrollCollapseFraction),
+            animationSpec = tween(200),
+            label = "totp_progress_bar_height"
+        )
+        Box(
+            modifier = Modifier
+                .height(progressBarHeight)
+                .clipToBounds()
+                .graphicsLayer { alpha = 1f - scrollCollapseFraction }
+        ) {
+            if (appSettings.validatorUnifiedProgressBar == com.bastion.app.data.UnifiedProgressBarMode.ENABLED &&
+                filteredTotpItems.isNotEmpty()) {
+                com.bastion.app.ui.components.UnifiedProgressBar(
+                    style = appSettings.validatorProgressBarStyle,
+                    currentSeconds = sharedTickSeconds,
+                    period = 30,
+                    smoothProgress = appSettings.validatorSmoothProgress,
+                    timeOffset = (appSettings.totpTimeOffset * 1000).toLong(), // 传递时间偏移(毫秒)
+                    trailingContent = passkeyEntryButton
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    passkeyEntryButton()
+                }
             }
         }
         } // 悬浮层结束（顶栏 + 统一进度条）

@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -250,7 +251,7 @@ internal fun PasswordListTopSection(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = stringResource(R.string.nav_passwords_short),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = LocalContentColor.current
                         )
                     }
                 }
@@ -275,7 +276,7 @@ internal fun PasswordListTopSection(
                         Icon(
                             imageVector = Icons.Default.Folder,
                             contentDescription = stringResource(R.string.category),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = LocalContentColor.current
                         )
                     }
                 }
@@ -288,7 +289,7 @@ internal fun PasswordListTopSection(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = stringResource(R.string.more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = LocalContentColor.current
                         )
                     }
                     if (!isArchiveView && appSettings.categorySelectionUiMode == CategorySelectionUiMode.CHIP_MENU) {

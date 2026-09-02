@@ -84,7 +84,7 @@ fun ExpressiveTopBar(
     searchHint: String? = null,
     navigationIcon: @Composable (() -> Unit)? = null,
     onActionPillBoundsChanged: ((Rect) -> Unit)? = null,
-    collapsedTitleEndPadding: Dp = 180.dp,
+    collapsedTitleEndPadding: Dp = 144.dp,
     /**
      * 若非空，则标题区变为可点击（外加展开/收起箭头）。
      * 为 null 时标题保持纯文本，行为与原有调用方完全一致。
@@ -145,6 +145,24 @@ fun ExpressiveTopBar(
     }
     val pillReserve = if (isSearchExpanded) 0.dp else collapsedTitleEndPadding
 
+    // 标题过长（可用宽度被右侧胶囊挤压）时自动缩小字号，避免尾字符被裁
+    var titleAutoScale by remember(title) { mutableStateOf(1f) }
+
+    // 顶栏内容色：标题与右侧按钮同色；滚动收起时整体略暗
+    val topBarContentColor by animateColorAsState(
+        targetValue = if (isSearchExpanded) {
+            MaterialTheme.colorScheme.onBackground
+        } else {
+            androidx.compose.ui.graphics.lerp(
+                MaterialTheme.colorScheme.onBackground,
+                MaterialTheme.colorScheme.onSurfaceVariant,
+                scrollCollapseFraction
+            )
+        },
+        animationSpec = tween(200),
+        label = "topbar_content_color"
+    )
+
     // === 滚动收起动画值（0=展开，1=完全收起）===
     // 落差（32→16sp、72→48dp）。展开态收窄：大标题上方不再留大块空白
     val titleFontSize by animateFloatAsState(
@@ -185,7 +203,10 @@ fun ExpressiveTopBar(
         } else {
             androidx.compose.ui.unit.lerp(48.dp, 40.dp, scrollCollapseFraction)
         },
-        animationSpec = tween(200),
+        animationSpec = spring(
+            dampingRatio = 0.85f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
         label = "topbar_action_pill_height"
     )
     // 胶囊底部与大标题字形底部对齐（实机实测：展开态需下移 5dp）
@@ -241,12 +262,19 @@ fun ExpressiveTopBar(
                     text = title,
                     style = titleStyle,
                     // 滚动收起时标题字缩小（保留 titleStyle 的字重/字距/颜色）
-                    fontSize = titleFontSize.sp,
-                    lineHeight = (titleFontSize * 1.2f).sp,
+                    fontSize = (titleFontSize * titleAutoScale).sp,
+                    lineHeight = (titleFontSize * titleAutoScale * 1.2f).sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = topBarContentColor,
                     maxLines = if (isLongTitle) 2 else 1,
-                    overflow = TextOverflow.Clip
+                    overflow = TextOverflow.Clip,
+                    softWrap = false,
+                    // 溢出时逐步缩小字号（下限 0.72），避免末尾字符被裁
+                    onTextLayout = { result ->
+                        if (result.hasVisualOverflow && titleAutoScale > 0.72f) {
+                            titleAutoScale = (titleAutoScale - 0.04f).coerceAtLeast(0.72f)
+                        }
+                    }
                 )
             } else {
                 Row(
@@ -263,12 +291,18 @@ fun ExpressiveTopBar(
                     Text(
                         text = title,
                         style = titleStyle,
-                        fontSize = titleFontSize.sp,
-                        lineHeight = (titleFontSize * 1.2f).sp,
+                        fontSize = (titleFontSize * titleAutoScale).sp,
+                        lineHeight = (titleFontSize * titleAutoScale * 1.2f).sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = topBarContentColor,
                         maxLines = if (isLongTitle) 2 else 1,
-                        overflow = TextOverflow.Clip
+                        overflow = TextOverflow.Clip,
+                        softWrap = false,
+                        onTextLayout = { result ->
+                            if (result.hasVisualOverflow && titleAutoScale > 0.72f) {
+                                titleAutoScale = (titleAutoScale - 0.04f).coerceAtLeast(0.72f)
+                            }
+                        }
                     )
                     Icon(
                         imageVector = if (titleExpanded == true) {
@@ -278,7 +312,7 @@ fun ExpressiveTopBar(
                         },
                         contentDescription = null,
                         modifier = Modifier.size(if (titleStyle.fontSize.value > 24f) 22.dp else 18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = topBarContentColor
                     )
                 }
             }
@@ -335,13 +369,24 @@ fun ExpressiveTopBar(
                 AnimatedContent(
                     targetState = isSearchExpanded,
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(300))
-                            .togetherWith(fadeOut(animationSpec = tween(300)))
+                        // 展开：淡入 + 轻微放大；收起：快速淡出。尺寸用 spring 平滑过渡（避免生硬跳变）
+                        (fadeIn(animationSpec = tween(220, delayMillis = 70)) +
+                            scaleIn(
+                                initialScale = 0.94f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                )
+                            ))
+                            .togetherWith(fadeOut(animationSpec = tween(120)))
                             .using(
                                 SizeTransform(
                                     clip = false,
                                     sizeAnimationSpec = { _, _ ->
-                                        tween(300, easing = FastOutSlowInEasing)
+                                        spring(
+                                            dampingRatio = 0.85f,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
                                     }
                                 )
                             )
@@ -420,21 +465,24 @@ fun ExpressiveTopBar(
                         }
                     } else {
                         // 折叠状态：Action Buttons
-                        Row(
-                            modifier = Modifier
-                                // 右移补偿按钮触控区留白，使 ⋮ 图标右缘贴近卡片右缘
-                                .offset(x = 12.dp)
-                                .graphicsLayer {
-                                    // 收起时按钮组跟随标题一起缩小（1.0→0.85）
-                                    val scale = 1f + (0.85f - 1f) * scrollCollapseFraction
-                                    scaleX = scale
-                                    scaleY = scale
-                                }
-                                .padding(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(0.dp) // 紧凑排列
-                        ) {
-                            actions()
+                        // 按钮组与标题同色：由 LocalContentColor 统一供给
+                        CompositionLocalProvider(LocalContentColor provides topBarContentColor) {
+                            Row(
+                                modifier = Modifier
+                                    // 右移补偿按钮触控区留白，使 ⋮ 图标右缘贴近卡片右缘
+                                    .offset(x = 20.dp)
+                                    .graphicsLayer {
+                                        // 收起时按钮组跟随标题一起缩小（1.0→0.85）
+                                        val scale = 1f + (0.85f - 1f) * scrollCollapseFraction
+                                        scaleX = scale
+                                        scaleY = scale
+                                    }
+                                    .padding(horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(0.dp) // 紧凑排列
+                            ) {
+                                actions()
+                            }
                         }
                     }
                 }
