@@ -94,7 +94,10 @@ internal fun PasswordListCategoryChipMenu(
     onRenameCategory: ((Category) -> Unit)? = null,
     onDeleteCategory: ((Category) -> Unit)? = null,
     // 通行秘钥 chip：收拢菜单内点击跳转通行秘钥页（不做列表过滤）。
-    onNavigateToPasskeys: (() -> Unit)? = null
+    onNavigateToPasskeys: (() -> Unit)? = null,
+    // 非收拢模式下横排筛选条常驻，菜单里的快捷筛选区块与其重复，传 false 隐藏
+    // （同时隐藏顶部「快捷筛选」Tab）。收拢模式下菜单是唯一筛选入口，保持 true。
+    showQuickFilterSection: Boolean = true
 ) {
     val coroutineScope = rememberCoroutineScope()
     val menuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
@@ -102,17 +105,27 @@ internal fun PasswordListCategoryChipMenu(
 
     // 方案 A：用顶部 Tab 串联"数据库 / 快捷筛选 / 分类"三个区块，
     // 选中 Tab 即展开对应区块、收起其余，避免三个折叠区纵向堆叠过长。
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    var selectedTabRaw by rememberSaveable { mutableStateOf(0) }
+    // 隐藏快捷筛选 Tab 后索引上限变化，对历史保存的索引做收敛，避免越界空选中。
+    val selectedTab = selectedTabRaw.coerceAtMost(if (showQuickFilterSection) 2 else 1)
     // 快捷筛选 / 分类文件夹的展开以 uiState 为单一事实来源；Tab 切换时通过
     // 下方 LaunchedEffect 同步，避免 Tab 驱动的只读布尔值与折叠 header 点击写入的
     // uiState 状态互相覆盖（两套状态打架会导致 AnimatedVisibility 重组异常）。
     // 切 Tab 即展开对应区块、收起其余，形成完整闭环（含 Tab 0）。
     // 注意：仅在“切 Tab”这一刻同步，用户在该 Tab 内手动折叠后不会被迫重新展开。
-    LaunchedEffect(selectedTab) {
-        when (selectedTab) {
-            0 -> { uiState.onQuickFiltersExpandedChange(false); uiState.onFoldersExpandedChange(false) }
-            1 -> { uiState.onQuickFiltersExpandedChange(true); uiState.onFoldersExpandedChange(false) }
-            2 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
+    LaunchedEffect(selectedTab, showQuickFilterSection) {
+        if (!showQuickFilterSection) {
+            // 两 Tab 布局：0=数据库，1=分类
+            when (selectedTab) {
+                0 -> { uiState.onQuickFiltersExpandedChange(false); uiState.onFoldersExpandedChange(false) }
+                1 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
+            }
+        } else {
+            when (selectedTab) {
+                0 -> { uiState.onQuickFiltersExpandedChange(false); uiState.onFoldersExpandedChange(false) }
+                1 -> { uiState.onQuickFiltersExpandedChange(true); uiState.onFoldersExpandedChange(false) }
+                2 -> { uiState.onFoldersExpandedChange(true); uiState.onQuickFiltersExpandedChange(false) }
+            }
         }
     }
 
@@ -125,11 +138,17 @@ internal fun PasswordListCategoryChipMenu(
         coroutineScope = coroutineScope
     )
 
-    val availableModules = remember(uiState.showDeferredFolderSection, quickFolderShortcuts, quickFilterState.order) {
+    val availableModules = remember(
+        uiState.showDeferredFolderSection,
+        quickFolderShortcuts,
+        quickFilterState.order,
+        showQuickFilterSection
+    ) {
         buildCategoryMenuAvailableModules(
             showDeferredFolderSection = uiState.showDeferredFolderSection,
             quickFolderShortcuts = quickFolderShortcuts,
-            quickFilterOrder = quickFilterState.order
+            quickFilterOrder = quickFilterState.order,
+            includeQuickFilters = showQuickFilterSection
         )
     }
     val orderedModules = remember(moduleDragState.moduleOrder, availableModules) {
@@ -147,7 +166,8 @@ internal fun PasswordListCategoryChipMenu(
     ) {
         PasswordListCategoryChipMenuTabBar(
             selectedTab = selectedTab,
-            onSelectTab = { selectedTab = it }
+            onSelectTab = { selectedTabRaw = it },
+            showQuickFilters = showQuickFilterSection
         )
 
         PasswordDatabaseFiltersSection(
@@ -265,13 +285,15 @@ internal fun PasswordListCategoryChipMenu(
 private fun PasswordListCategoryChipMenuTabBar(
     selectedTab: Int,
     onSelectTab: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // 非收拢模式下隐藏「快捷筛选」Tab（与横排筛选条重复）
+    showQuickFilters: Boolean = true
 ) {
-    val tabs = listOf(
-        R.string.category_selection_menu_databases,
-        R.string.category_selection_menu_quick_filters,
-        R.string.category_selection_menu_folders
-    )
+    val tabs = buildList {
+        add(R.string.category_selection_menu_databases)
+        if (showQuickFilters) add(R.string.category_selection_menu_quick_filters)
+        add(R.string.category_selection_menu_folders)
+    }
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp)

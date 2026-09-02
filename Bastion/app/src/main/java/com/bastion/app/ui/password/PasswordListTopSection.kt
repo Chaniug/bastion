@@ -305,6 +305,8 @@ internal fun PasswordListTopSection(
                                 aggregateVisibleTypes = aggregateVisibleTypes,
                                 onToggleAggregateType = onToggleAggregateType,
                                 onNavigateToPasskeys = onNavigateToPasskeys,
+                                // 非收拢模式：横排筛选条常驻，菜单里不再重复快捷筛选区块
+                                showQuickFilterSection = appSettings.experimentalCollapsedQuickFilters,
                                 quickFolderShortcuts = categoryMenuQuickFolderShortcuts,
                                 topModulesOrder = appSettings.passwordListTopModulesOrder,
                                 onTopModulesOrderChange = settingsViewModel::updatePasswordListTopModulesOrder,

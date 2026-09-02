@@ -40,10 +40,13 @@ internal data class PasswordCategoryMenuModuleDragCallbacks(
 internal fun buildCategoryMenuAvailableModules(
     showDeferredFolderSection: Boolean,
     quickFolderShortcuts: List<PasswordQuickFolderShortcut>,
-    quickFilterOrder: List<PasswordListQuickFilterItem>
+    quickFilterOrder: List<PasswordListQuickFilterItem>,
+    // 非收拢模式下横排筛选条常驻，菜单里的快捷筛选与其重复，可隐藏。
+    // 收拢模式下横排被隐藏，菜单是唯一筛选入口，必须保留。
+    includeQuickFilters: Boolean = true
 ): List<PasswordListTopModule> {
     return buildList {
-        if (quickFilterOrder.isNotEmpty()) add(PasswordListTopModule.QUICK_FILTERS)
+        if (includeQuickFilters && quickFilterOrder.isNotEmpty()) add(PasswordListTopModule.QUICK_FILTERS)
         if (showDeferredFolderSection && quickFolderShortcuts.isNotEmpty()) {
             add(PasswordListTopModule.QUICK_FOLDERS)
         }
