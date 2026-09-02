@@ -117,9 +117,12 @@ private fun DatabaseFilterRows(params: PasswordDatabaseFiltersSectionParams) {
             )
         }
         params.bitwardenVaults.forEach { vault ->
+            // 库名显示：displayName 优先，其次邮箱 @ 前的用户名（完整邮箱在窄行里太长）
+            val vaultTitle = vault.displayName?.takeIf { it.isNotBlank() }
+                ?: vault.email.substringBefore("@").ifBlank { vault.email }.ifBlank { "Bitwarden" }
             DatabaseStatRow(
                 icon = Icons.Default.CloudSync,
-                title = vault.email.ifBlank { "Bitwarden" },
+                title = vaultTitle,
                 count = counts?.perBitwardenVault?.get(vault.id),
                 selected = params.currentFilter.isBitwardenVaultFilter(vault.id),
                 onClick = { params.onSelectFilter(CategoryFilter.BitwardenVault(vault.id)) },
@@ -174,6 +177,7 @@ private fun DatabaseStatRow(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             if (statusDotColor != null) {
