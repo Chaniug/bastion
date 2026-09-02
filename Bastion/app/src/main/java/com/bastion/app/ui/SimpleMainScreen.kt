@@ -1946,9 +1946,10 @@ fun SimpleMainScreen(
     } else {
         // 使用传统底部导航栏
     Scaffold(
-        // 透明容器色：默认 surface 与 MainActivity 根布局 background 存在色差，
-        // 会在底栏槽位形成一条「矩形接缝带」包裹悬浮胶囊。透明后全屏统一 background。
-        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        // 容器色取 background（与 MainActivity 根布局 Surface 同色）：
+        // ① 默认 surface 与根布局存在色差，会在底栏槽位形成「矩形接缝带」；
+        // ② 必须不透明，否则转场/解锁瞬间下层不透明的 Login 屏会从列表空隙透出。
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // 顶部栏由各自页面内部控制（如 ExpressiveTopBar），这里保持为空以避免叠加
         },

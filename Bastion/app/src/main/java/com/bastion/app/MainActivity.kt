@@ -985,6 +985,10 @@ fun BastionContent(
             // 主界面（含底部导航与长列表）让位给子页面时，只做极轻微缩小、不淡出；
             // 子页面在自己上方做缩放 + 淡入。父页面不参与 alpha 变化，
             // 避免转场中间帧出现两层半透明内容叠影（返回时尤其明显）。
+            // enterTransition 必须显式关闭：Navigation Compose 默认是 fadeIn(tween(700))，
+            // 而 Login 路由 exitTransition=None 会不透明地留在下层，
+            // 解锁后进入主界面时主界面半透明，Login 屏会从列表空隙透出（闪帧 1~2 帧）。
+            enterTransition = { EnterTransition.None },
             exitTransition = { parentPageExit() },
             popEnterTransition = { parentPageEnter() }
         ) { backStackEntry ->
