@@ -93,9 +93,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.fragment.app.FragmentActivity
 import android.widget.Toast
@@ -634,7 +636,11 @@ fun TotpListContent(
         }
     )
 
-    Column(
+    // 悬浮叠加：顶栏+统一进度条浮在列表之上，列表内容可从其下方穿过（对齐密码页观感）
+    var topOverlayHeightPx by remember { mutableStateOf(0) }
+    val topOverlayHeightDp = with(LocalDensity.current) { topOverlayHeightPx.toDp() }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
@@ -657,6 +663,13 @@ fun TotpListContent(
             is com.bastion.app.viewmodel.TotpCategoryFilter.BitwardenVaultUncategorized -> "${stringResource(R.string.filter_bitwarden)} · ${stringResource(R.string.filter_uncategorized)}"
         }
 
+        // 悬浮层：置顶 + 提升层级（压在列表之上），高度实测供列表避让
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+                .onSizeChanged { size -> topOverlayHeightPx = size.height.toInt() }
+        ) {
         ExpressiveTopBar(
             title = title,
             searchQuery = searchQuery,
@@ -889,6 +902,7 @@ fun TotpListContent(
                 passkeyEntryButton()
             }
         }
+        } // 悬浮层结束（顶栏 + 统一进度条）
 
         val contentPullOffset = if (enableBitwardenPullSync) 0 else pullAction.currentOffset.toInt()
 
@@ -982,8 +996,8 @@ fun TotpListContent(
 contentPadding = PaddingValues(
     start = 16.dp,
     end = 16.dp,
-    // 流式布局：状态栏与 Bar 已由 Column 上方元素避让，这里只留小间距（否则双重避让产生大空白）
-    top = 8.dp,
+    // 悬浮叠加：按悬浮层（顶栏+进度条）实测高度避让，随收起动画自动联动
+    top = topOverlayHeightDp,
     bottom = 96.dp
 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
