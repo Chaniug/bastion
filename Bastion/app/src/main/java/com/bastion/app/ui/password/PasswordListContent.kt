@@ -1424,18 +1424,6 @@ LaunchedEffect(quickFiltersExpanded) {
         onBackToTopVisibilityChange = onBackToTopVisibilityChange
     )
 
-    // 列表向下滚动距离驱动顶部 Bar 收起（"仪式感"效果）：
-    // 前 100dp 滚动内从展开平滑过渡到完全收起。列表回到顶部时自动恢复。
-    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
-        100.dp.toPx()
-    }
-    val scrollCollapseFraction by remember(listState) {
-        derivedStateOf {
-            (listState.firstVisibleItemScrollOffset.toFloat() / scrollCollapseThresholdPx)
-                .coerceIn(0f, 1f)
-        }
-    }
-
     var lastHandledFilterForScrollReset by remember {
         mutableStateOf<CategoryFilter?>(null)
     }
@@ -1540,7 +1528,6 @@ LaunchedEffect(quickFiltersExpanded) {
         PasswordListTopSection(
             currentFilter = currentFilter,
             onNavigateToPasskeys = onNavigateToPasskeys,
-            scrollCollapseFraction = scrollCollapseFraction,
             categories = categories,
             keepassDatabases = keepassDatabases,
             bitwardenVaults = bitwardenVaults,

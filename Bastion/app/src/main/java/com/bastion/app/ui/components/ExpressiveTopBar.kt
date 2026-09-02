@@ -42,7 +42,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.spring
@@ -94,16 +93,10 @@ fun ExpressiveTopBar(
      * 为 null 时视为收起态。仅当 onTitleClick 非空时箭头才会渲染。
      */
     titleExpanded: Boolean? = null,
-    actions: @Composable RowScope.() -> Unit = {},
-    /**
-     * 滚动驱动的收起比例 0..1：列表向下滚动时由调用方计算传入。
-     * 0 = 完全展开，1 = 完全收起。
-     * - 标题字号从 32sp 平滑缩到 18sp
-     * - Bar 整体高度从 64dp 压到 44dp（让出约 20dp 给列表）
-     * - 右侧操作胶囊抬升 2dp→0dp，视觉上"落下去"
-     * 默认 0（其它页面不受影响）
-     */
-    scrollCollapseFraction: Float = 0f
+    actions: @Composable RowScope.() -> Unit = {}
+    // 注：参考系统相册的设计——Bar 始终保持「小且透明」状态（标题字小、整体矮、
+    // 抬升为 0），不做滚动驱动的渐变收起。列表内容直接紧贴 Bar 下方呈现，
+    // Bar 自身透明、不压内容。
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -146,26 +139,10 @@ fun ExpressiveTopBar(
     val pillReserve = if (isSearchExpanded) 0.dp else collapsedTitleEndPadding
 
     // === 滚动收起动画值（0=展开，1=完全收起）===
-    val titleFontSize by animateFloatAsState(
-        targetValue = 32f + (18f - 32f) * scrollCollapseFraction,
-        animationSpec = tween(200),
-        label = "topbar_title_size"
-    )
-    val barMinHeight by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(64.dp, 44.dp, scrollCollapseFraction),
-        animationSpec = tween(200),
-        label = "topbar_bar_height"
-    )
-    val barVerticalPadding by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(10.dp, 4.dp, scrollCollapseFraction),
-        animationSpec = tween(200),
-        label = "topbar_vpadding"
-    )
-    val pillElevation by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(2.dp, 0.dp, scrollCollapseFraction),
-        animationSpec = tween(200),
-        label = "topbar_pill_elevation"
-    )
+    val titleFontSize = 18f
+    val barMinHeight = 44.dp
+    val barVerticalPadding = 4.dp
+    val pillElevation = 0.dp
 
     // 当 onTitleClick 非空时，提前解析「点击展开快捷筛选」的本地化字符串，
     // 避免在非 Composable 的 .semantics { } 块里再调用 stringResource。
