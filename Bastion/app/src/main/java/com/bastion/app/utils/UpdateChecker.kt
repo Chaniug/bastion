@@ -47,6 +47,11 @@ data class UpdateDownloadProgress(
 }
 
 object UpdateChecker {
+    /** 项目主页（设置页「版本与更新」对外展示） */
+    const val PROJECT_URL = "https://github.com/Chaniug/bastion"
+    /** Release 列表页（下载地址入口） */
+    const val RELEASES_PAGE_URL = "https://github.com/Chaniug/bastion/releases"
+
     private const val RELEASE_API_URL =
         "https://api.github.com/repos/Chaniug/bastion/releases/latest"
     private const val RELEASE_LIST_API_URL =

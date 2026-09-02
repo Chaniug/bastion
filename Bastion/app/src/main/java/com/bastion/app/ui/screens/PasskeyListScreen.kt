@@ -34,6 +34,8 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -976,10 +978,21 @@ fun PasskeyListScreen(
         is UnifiedCategoryFilterSelection.KeePassDatabaseUncategorizedFilter -> "${stringResource(R.string.filter_keepass)} · ${stringResource(R.string.filter_uncategorized)}"
     }
     
-    Column(
+    // 悬浮叠加：顶栏浮在列表之上，列表内容可从其下方穿过（对齐密码页/验证器页观感）
+    var topOverlayHeightPx by remember { mutableStateOf(0) }
+    val topOverlayHeightDp = with(LocalDensity.current) { topOverlayHeightPx.toDp() }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
     ) {
+        // 悬浮层：置顶 + 提升层级（压在列表之上），高度实测供列表避让
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+                .onSizeChanged { size -> topOverlayHeightPx = size.height.toInt() }
+        ) {
         // ExpressiveTopBar（与密码列表完全一致）
         if (!hideTopBar) {
             ExpressiveTopBar(
@@ -1111,7 +1124,7 @@ fun PasskeyListScreen(
             )
         }
         
-        // 版本兼容性警告
+        // 版本兼容性警告（跟随悬浮层，位于顶栏下方）
         SafeAnimatedVisibility(
             visible = showVersionWarning && !isFullySupported,
             enter = expandVertically() + fadeIn(),
@@ -1122,6 +1135,7 @@ fun PasskeyListScreen(
                 onDismiss = { showVersionWarning = false }
             )
         }
+        } // 悬浮层结束（顶栏 + 版本警告条）
         
         // 主内容 + 左下角胶囊多选栏
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1214,8 +1228,8 @@ fun PasskeyListScreen(
                                 start = 16.dp,
                                 end = 16.dp,
                                 // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
-                                // 流式布局：状态栏与 Bar 已由 Column 上方元素避让，这里只留小间距
-                                top = 8.dp,
+                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动
+                                top = topOverlayHeightDp,
                                 bottom = if (selectionMode) 140.dp else 100.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)

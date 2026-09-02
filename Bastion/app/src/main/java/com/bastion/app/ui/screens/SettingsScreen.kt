@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -155,6 +156,8 @@ fun SettingsScreen(
 
     var showUpdateCheckDialog by remember { mutableStateOf(false) }
     var updateChannel by remember { mutableStateOf(UpdateChannel.STABLE) }
+    // 下载方式：false=应用内直接下载安装；true=用浏览器打开 Release 页面
+    var downloadViaBrowser by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var isDownloadingUpdate by remember { mutableStateOf(false) }
     var updateDownloadProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
@@ -1322,6 +1325,55 @@ fun SettingsScreen(
                                 )
                             }
                         }
+
+                        // === 下载方式选择（仅在有新版本时）===
+                        if (result?.isUpdateAvailable == true) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = stringResource(R.string.update_download_method_label),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                DownloadMethodChip(
+                                    selected = !downloadViaBrowser,
+                                    icon = Icons.Default.Download,
+                                    label = stringResource(R.string.update_download_method_direct),
+                                    onClick = { downloadViaBrowser = false }
+                                )
+                                DownloadMethodChip(
+                                    selected = downloadViaBrowser,
+                                    icon = Icons.Default.OpenInNew,
+                                    label = stringResource(R.string.update_download_method_browser),
+                                    onClick = { downloadViaBrowser = true }
+                                )
+                            }
+                        }
+
+                        // === 相关链接 ===
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.material3.HorizontalDivider()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.update_links_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val uriHandler = LocalUriHandler.current
+                        UpdateLinkRow(
+                            icon = Icons.Default.Code,
+                            label = stringResource(R.string.update_project_url_label),
+                            value = "Chaniug/bastion",
+                            onClick = { uriHandler.openUri(com.bastion.app.utils.UpdateChecker.PROJECT_URL) }
+                        )
+                        UpdateLinkRow(
+                            icon = Icons.Default.OpenInNew,
+                            label = stringResource(R.string.update_releases_url_label),
+                            value = "Releases",
+                            onClick = { uriHandler.openUri(com.bastion.app.utils.UpdateChecker.RELEASES_PAGE_URL) }
+                        )
                     }
 
                     if (result != null && isDownloadingUpdate) {
@@ -1331,16 +1383,26 @@ fun SettingsScreen(
             },
             confirmButton = {
                 if (result?.isUpdateAvailable == true) {
-                    TextButton(
+                    val uriHandlerConfirm = LocalUriHandler.current
+                    val openInBrowser = downloadViaBrowser || result.apkDownloadUrl.isNullOrBlank()
+                    androidx.compose.material3.FilledTonalButton(
                         enabled = !isDownloadingUpdate,
                         onClick = {
-                            startUpdateDownload(result)
+                            if (openInBrowser) {
+                                uriHandlerConfirm.openUri(
+                                    result.releaseUrl.ifBlank {
+                                        com.bastion.app.utils.UpdateChecker.RELEASES_PAGE_URL
+                                    }
+                                )
+                            } else {
+                                startUpdateDownload(result)
+                            }
                         }
                     ) {
                         Text(
                             if (isDownloadingUpdate) {
                                 stringResource(R.string.update_download_downloading)
-                            } else if (result.apkDownloadUrl.isNullOrBlank()) {
+                            } else if (openInBrowser) {
                                 stringResource(R.string.update_check_open_release)
                             } else {
                                 stringResource(R.string.update_download_and_install)

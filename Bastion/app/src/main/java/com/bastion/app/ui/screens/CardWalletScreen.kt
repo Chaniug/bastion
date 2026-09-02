@@ -65,6 +65,8 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -981,10 +983,21 @@ fun CardWalletScreen(
         return
     }
 
-    Column(
+    // 悬浮叠加：顶栏浮在列表之上，列表内容可从其下方穿过（对齐密码页/验证器页观感）
+    var topOverlayHeightPx by remember { mutableStateOf(0) }
+    val topOverlayHeightDp = with(LocalDensity.current) { topOverlayHeightPx.toDp() }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
     ) {
+        // 悬浮层：置顶 + 提升层级（压在列表之上），高度实测供列表避让
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+                .onSizeChanged { size -> topOverlayHeightPx = size.height.toInt() }
+        ) {
         ExpressiveTopBar(
             title = topBarTitle,
             searchQuery = searchQuery,
@@ -1171,6 +1184,7 @@ fun CardWalletScreen(
                     }
             }
         )
+        } // 悬浮层结束（顶栏）
 
         val contentPullOffset = if (isBitwardenDatabaseView) {
             (currentOffset * 0.28f).toInt()
@@ -1289,8 +1303,8 @@ fun CardWalletScreen(
                             contentPadding = PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                // 流式布局：状态栏与 Bar 已由 Column 上方元素避让，这里只留小间距
-                                top = 8.dp,
+                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动
+                                top = topOverlayHeightDp,
                                 bottom = 96.dp
                             )
                         ) {

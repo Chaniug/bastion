@@ -861,6 +861,12 @@
     <string name="update_check_open_release">打开 Release</string>
     <string name="update_download_and_install">下载并安装</string>
     <string name="update_download_downloading">正在下载…</string>
+    <string name="update_links_label">相关链接</string>
+    <string name="update_project_url_label">项目地址</string>
+    <string name="update_releases_url_label">下载地址</string>
+    <string name="update_download_method_label">下载方式</string>
+    <string name="update_download_method_direct">直接下载</string>
+    <string name="update_download_method_browser">浏览器打开</string>
     <string name="update_download_progress_known">%1$s / %2$s</string>
     <string name="update_download_progress_unknown">已下载 %1$s</string>
     <string name="update_download_failed">下载失败：%1$s</string>
