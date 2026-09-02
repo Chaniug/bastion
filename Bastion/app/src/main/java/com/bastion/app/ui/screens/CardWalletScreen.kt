@@ -79,6 +79,8 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -253,6 +255,21 @@ fun CardWalletScreen(
     var hasRestoredCategoryFilter by rememberSaveable { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
     var isSelectionMode by remember { mutableStateOf(false) }
+
+    // 搜索展开时按返回键：先收起搜索框（否则手势返回会直接触发"再按一次退出"）
+    val focusManager = LocalFocusManager.current
+    BackHandler(enabled = isSearchExpanded) {
+        isSearchExpanded = false
+        searchQuery = ""
+        focusManager.clearFocus()
+    }
+
+    // 多选模式下按返回键：先取消选择
+    BackHandler(enabled = isSelectionMode) {
+        isSelectionMode = false
+        selectedIds = emptySet()
+    }
+
     var itemToDelete by remember { mutableStateOf<SecureItem?>(null) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
     var showVerifyDialog by remember { mutableStateOf(false) }

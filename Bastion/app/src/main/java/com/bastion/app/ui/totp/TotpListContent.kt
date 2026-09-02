@@ -329,6 +329,7 @@ fun TotpListContent(
         focusManager.clearFocus()
     }
 
+
     // Pull-to-search state
     val density = androidx.compose.ui.platform.LocalDensity.current
     val isBitwardenDatabaseView = when (currentFilter) {
@@ -389,6 +390,13 @@ fun TotpListContent(
     // 选择模式状态
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedItems by remember { mutableStateOf(setOf<Long>()) }
+
+    // 多选模式下按返回键：先取消选择（否则手势返回会直接触发"再按一次退出"）
+    BackHandler(enabled = isSelectionMode) {
+        isSelectionMode = false
+        selectedItems = emptySet()
+    }
+
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
     var showMoveToCategoryDialog by remember { mutableStateOf(false) }
     var passwordInput by remember { mutableStateOf("") }
