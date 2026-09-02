@@ -130,13 +130,21 @@ private fun PasswordPageContentType.toAggregateQuickFilterItemOrNull(): Password
 internal fun appendAggregateContentQuickFilterItems(
     configuredItems: List<PasswordListQuickFilterItem>,
     visibleTypes: List<PasswordPageContentType>,
-    aggregateEnabled: Boolean
+    aggregateEnabled: Boolean,
+    // 密码页不渲染通行秘钥 chip：passkey 存独立 PasskeyEntry 表，列表筛选必然为空，
+    // 入口收敛到验证器页指纹按钮。VaultV2 聚合页保持 true（那里的类型筛选有效）。
+    includePasskeyChip: Boolean = true
 ): List<PasswordListQuickFilterItem> {
-    if (!aggregateEnabled) return configuredItems
+    val baseItems = if (includePasskeyChip) {
+        configuredItems
+    } else {
+        configuredItems.filterNot { it == PasswordListQuickFilterItem.PASSKEY }
+    }
+    if (!aggregateEnabled) return baseItems
     val aggregateItems = resolvePasswordPageQuickFilterTypes(visibleTypes)
         .mapNotNull(PasswordPageContentType::toAggregateQuickFilterItemOrNull)
     return buildList {
-        configuredItems.forEach { item ->
+        baseItems.forEach { item ->
             if (item !in this) add(item)
         }
         aggregateItems.forEach { item ->

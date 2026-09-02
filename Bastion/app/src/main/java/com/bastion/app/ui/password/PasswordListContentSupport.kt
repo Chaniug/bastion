@@ -568,7 +568,8 @@ internal fun rememberPasswordAggregateUiState(
         appendAggregateContentQuickFilterItems(
             configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
             visibleTypes = aggregateVisibleContentTypes,
-            aggregateEnabled = appSettings.passwordPageAggregateEnabled
+            aggregateEnabled = appSettings.passwordPageAggregateEnabled,
+            includePasskeyChip = false
         )
     }
     val aggregateQuickFilterTypes = remember(

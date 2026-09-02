@@ -648,7 +648,6 @@ fun PasswordListCustomizationScreen(
             PasswordListQuickFilterItem.NEVER_STACK,
             PasswordListQuickFilterItem.UNSTACKED,
             PasswordListQuickFilterItem.CARD_WALLET,
-            PasswordListQuickFilterItem.PASSKEY,
             PasswordListQuickFilterItem.NOTE
         )
     }
@@ -659,7 +658,8 @@ fun PasswordListCustomizationScreen(
         appendAggregateContentQuickFilterItems(
             configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
             visibleTypes = settings.passwordPageVisibleContentTypes,
-            aggregateEnabled = settings.passwordPageAggregateEnabled
+            aggregateEnabled = settings.passwordPageAggregateEnabled,
+            includePasskeyChip = false
         )
     }
     val selectedQuickFilterItems = remember(effectiveQuickFilterItems) {

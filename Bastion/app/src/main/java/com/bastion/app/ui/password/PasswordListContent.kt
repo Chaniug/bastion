@@ -759,7 +759,8 @@ fun PasswordListContent(
         appendAggregateContentQuickFilterItems(
             configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
             visibleTypes = aggregateUiState.visibleContentTypes,
-            aggregateEnabled = appSettings.passwordPageAggregateEnabled
+            aggregateEnabled = appSettings.passwordPageAggregateEnabled,
+            includePasskeyChip = false
         )
     }
     val quickFolderStyle = appSettings.passwordListQuickFolderStyle
