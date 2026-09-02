@@ -363,6 +363,16 @@ fun TotpListContent(
     val syncTriggerDistance = remember(density) { with(density) { 72.dp.toPx() } }
     val maxDragDistance = remember(density) { with(density) { 100.dp.toPx() } }
     val lazyListState = rememberSaveableLazyListState()
+    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+        8.dp.toPx()
+    }
+    val scrollCollapseFraction by remember(lazyListState) {
+        derivedStateOf {
+            if (lazyListState.firstVisibleItemIndex > 0 ||
+                lazyListState.firstVisibleItemScrollOffset > scrollCollapseThresholdPx
+            ) 1f else 0f
+        }
+    }
     val pullAction = rememberPullActionState(
         isBitwardenDatabaseView = enableBitwardenPullSync,
         isSearchExpanded = isSearchExpanded,
@@ -655,9 +665,13 @@ fun TotpListContent(
             onSearchExpandedChange = { isSearchExpanded = it },
             searchHint = stringResource(R.string.search_authenticator),
             onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+            scrollCollapseFraction = scrollCollapseFraction,
             actions = {
-                // 搜索按钮（FilledTonal 对齐密码页风格，固定首位）
-                FilledTonalIconButton(onClick = { isSearchExpanded = true }) {
+                // 搜索按钮（无高亮底色，与密码页一致，固定首位）
+                IconButton(
+                    onClick = { isSearchExpanded = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = stringResource(R.string.search)
@@ -968,7 +982,8 @@ fun TotpListContent(
 contentPadding = PaddingValues(
     start = 16.dp,
     end = 16.dp,
-    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 104.dp,
+    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+        androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
     bottom = 96.dp
 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

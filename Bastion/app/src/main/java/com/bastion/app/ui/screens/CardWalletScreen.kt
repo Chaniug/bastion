@@ -53,6 +53,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -261,6 +262,16 @@ fun CardWalletScreen(
     var showBatchMoveCategoryDialog by remember { mutableStateOf(false) }
     val categoryMgmt = com.bastion.app.ui.category.rememberCategoryManagementState()
     val listState = rememberLazyListState()
+    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+        8.dp.toPx()
+    }
+    val scrollCollapseFraction by remember(listState) {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > scrollCollapseThresholdPx
+            ) 1f else 0f
+        }
+    }
     val isBitwardenDatabaseView = selectedCategoryFilter.isBitwardenWalletScope()
     val selectedBitwardenVaultId = selectedCategoryFilter.bitwardenVaultIdForWalletSync()
     val bitwardenSyncStatusByVault: Map<Long, VaultSyncStatus> = if (bitwardenViewModel != null) {
@@ -970,6 +981,7 @@ fun CardWalletScreen(
             },
             searchHint = stringResource(R.string.topbar_search_hint),
             onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+            scrollCollapseFraction = scrollCollapseFraction,
             actions = {
                 if (appSettings.categorySelectionUiMode == com.bastion.app.data.CategorySelectionUiMode.CHIP_MENU) {
                     IconButton(onClick = { showCategoryFilterDialog = true }) {
@@ -1260,7 +1272,8 @@ fun CardWalletScreen(
                             contentPadding = PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 96.dp,
+                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                    androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
                                 bottom = 96.dp
                             )
                         ) {

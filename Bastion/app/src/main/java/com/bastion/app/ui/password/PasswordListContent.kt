@@ -1432,7 +1432,9 @@ LaunchedEffect(quickFiltersExpanded) {
     }
     val scrollCollapseFraction by remember(listState) {
         derivedStateOf {
-            if (listState.firstVisibleItemScrollOffset.toFloat() > scrollCollapseThresholdPx) {
+            if (listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset.toFloat() > scrollCollapseThresholdPx
+            ) {
                 1f
             } else {
                 0f

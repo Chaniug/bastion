@@ -264,6 +264,16 @@ fun PasskeyListScreen(
     
     // 列表状态
     val listState = rememberSaveableLazyListState()
+    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+        8.dp.toPx()
+    }
+    val scrollCollapseFraction by remember(listState) {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > scrollCollapseThresholdPx
+            ) 1f else 0f
+        }
+    }
     
     // 搜索栏展开状态
     var isSearchExpanded by remember { mutableStateOf(false) }
@@ -980,6 +990,7 @@ fun PasskeyListScreen(
                 onSearchExpandedChange = { isSearchExpanded = it },
                 searchHint = stringResource(R.string.passkey_search_placeholder),
                 onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+                scrollCollapseFraction = scrollCollapseFraction,
                 actions = {
                     onNavigateToAuthenticator?.let { navigateToAuthenticator ->
                         IconButton(onClick = navigateToAuthenticator) {
@@ -1203,7 +1214,8 @@ fun PasskeyListScreen(
                                 start = 16.dp,
                                 end = 16.dp,
                                 // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
-                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 96.dp,
+                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                    androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
                                 bottom = if (selectionMode) 140.dp else 100.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
