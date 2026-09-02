@@ -1997,14 +1997,16 @@ fun SimpleMainScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp)
+                            // bottom 16dp：整体上移避开系统手势条（小白条），底部圆角完整可见
+                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 16.dp)
                     ) {
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         tonalElevation = 3.dp,
-                        shadowElevation = 12.dp
+                        // 12dp 阴影在浅色主题下偏"墩"，收小到 6dp
+                        shadowElevation = 6.dp
                     ) {
                     NavigationBar(
                         modifier = Modifier
@@ -2076,7 +2078,8 @@ fun SimpleMainScreen(
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(52.dp)
+                                    // 48dp：在 68dp 胶囊里留出 10dp 上下余量，不再顶到胶囊轮廓
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
