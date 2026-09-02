@@ -215,6 +215,7 @@ import com.bastion.app.ui.password.PasswordSupplementaryListItemUi
 import com.bastion.app.ui.password.PasswordBatchDeleteProgressTracker
 import com.bastion.app.ui.password.PasswordBatchTransferProgressTracker
 import com.bastion.app.ui.password.appendAggregateContentQuickFilterItems
+import com.bastion.app.ui.password.resolvedQuickFilterBaseItems
 import com.bastion.app.ui.password.buildPasswordAggregateManualStackGroups
 import com.bastion.app.ui.password.buildPasswordAggregateItems
 import com.bastion.app.ui.password.buildPasswordPageListItems
@@ -757,7 +758,7 @@ fun PasswordListContent(
         aggregateUiState.visibleContentTypes
     ) {
         appendAggregateContentQuickFilterItems(
-            configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
+            configuredItems = resolvedQuickFilterBaseItems(appSettings.passwordListQuickFilterItems),
             visibleTypes = aggregateUiState.visibleContentTypes,
             aggregateEnabled = appSettings.passwordPageAggregateEnabled,
             includePasskeyChip = false

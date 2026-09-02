@@ -121,6 +121,7 @@ import com.bastion.app.data.UnmatchedIconHandlingStrategy
 import com.bastion.app.data.model.TotpData
 import com.bastion.app.ui.components.TotpCodeCard
 import com.bastion.app.ui.password.appendAggregateContentQuickFilterItems
+import com.bastion.app.ui.password.resolvedQuickFilterBaseItems
 import com.bastion.app.ui.password.PasswordEntryCard
 import com.bastion.app.ui.password.StackCardMode
 import com.bastion.app.viewmodel.SettingsViewModel
@@ -656,7 +657,7 @@ fun PasswordListCustomizationScreen(
         settings.passwordPageAggregateEnabled
     ) {
         appendAggregateContentQuickFilterItems(
-            configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
+            configuredItems = resolvedQuickFilterBaseItems(settings.passwordListQuickFilterItems),
             visibleTypes = settings.passwordPageVisibleContentTypes,
             aggregateEnabled = settings.passwordPageAggregateEnabled,
             includePasskeyChip = false

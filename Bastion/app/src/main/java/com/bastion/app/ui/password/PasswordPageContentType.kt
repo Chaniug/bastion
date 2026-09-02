@@ -127,6 +127,17 @@ private fun PasswordPageContentType.toAggregateQuickFilterItemOrNull(): Password
     PasswordPageContentType.PASSKEY -> PasswordListQuickFilterItem.PASSKEY
 }
 
+/**
+ * 快捷筛选的基础列表：以持久化的用户排序为准，DEFAULT_ORDER 中新增的条目
+ * （老版本持久化数据里没有的）自动追加到尾部，保证新筛选项不丢失。
+ */
+internal fun resolvedQuickFilterBaseItems(
+    persistedOrder: List<PasswordListQuickFilterItem>
+): List<PasswordListQuickFilterItem> {
+    if (persistedOrder.isEmpty()) return PasswordListQuickFilterItem.DEFAULT_ORDER
+    return persistedOrder + PasswordListQuickFilterItem.DEFAULT_ORDER.filterNot { it in persistedOrder }
+}
+
 internal fun appendAggregateContentQuickFilterItems(
     configuredItems: List<PasswordListQuickFilterItem>,
     visibleTypes: List<PasswordPageContentType>,

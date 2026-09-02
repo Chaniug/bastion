@@ -1078,7 +1078,12 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(32.dp))
             
             // Bottom padding spacer for edge-to-edge scrolling
-            Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
+            // 外层主界面已让列表延伸到悬浮胶囊底下，这里补足胶囊高度，避免最后几张设置卡被盖住
+            Spacer(
+                modifier = Modifier.height(
+                    paddingValues.calculateBottomPadding() + 96.dp
+                )
+            )
         }
     }
     

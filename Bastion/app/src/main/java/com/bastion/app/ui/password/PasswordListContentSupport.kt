@@ -48,6 +48,7 @@ import com.bastion.app.ui.password.PasswordAggregateWalletItemType
 import com.bastion.app.ui.password.PasswordListAggregateConfig
 import com.bastion.app.ui.password.StackCardMode
 import com.bastion.app.ui.password.appendAggregateContentQuickFilterItems
+import com.bastion.app.ui.password.resolvedQuickFilterBaseItems
 import com.bastion.app.ui.password.buildPasswordAggregateItems
 import com.bastion.app.ui.password.filterPasswordAggregateItemsByContentTypes
 import com.bastion.app.ui.password.getGroupKeyForMode
@@ -566,7 +567,7 @@ internal fun rememberPasswordAggregateUiState(
         aggregateVisibleContentTypes
     ) {
         appendAggregateContentQuickFilterItems(
-            configuredItems = PasswordListQuickFilterItem.DEFAULT_ORDER,
+            configuredItems = resolvedQuickFilterBaseItems(appSettings.passwordListQuickFilterItems),
             visibleTypes = aggregateVisibleContentTypes,
             aggregateEnabled = appSettings.passwordPageAggregateEnabled,
             includePasskeyChip = false
