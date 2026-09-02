@@ -409,7 +409,8 @@ fun NoteListContent(
             if (isGridLayout) {
                 LazyVerticalStaggeredGrid(
                     columns = StaggeredGridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
+                    // bottom 预留悬浮胶囊高度，保证最后一条能滚出胶囊区域
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 12.dp,
                     modifier = Modifier
@@ -437,7 +438,8 @@ fun NoteListContent(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
+                    // bottom 预留悬浮胶囊高度，保证最后一条能滚出胶囊区域
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier
                         .fillMaxSize()

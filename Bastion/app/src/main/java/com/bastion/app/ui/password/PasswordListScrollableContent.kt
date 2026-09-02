@@ -96,7 +96,9 @@ internal fun PasswordListScrollableContent(
     LazyColumn(
         state = listState,
         modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        // bottom 预留悬浮胶囊高度（68dp 栏高 + 6/8dp 外边距 ≈ 82dp，取 96dp 留余量），
+        // 保证最后一条能滚出胶囊区域。
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp)
     ) {
         if (hasVisibleQuickFilters || hasVisibleCategoryQuickFilters) {
             item(key = PASSWORD_LIST_QUICK_FILTERS_KEY) {

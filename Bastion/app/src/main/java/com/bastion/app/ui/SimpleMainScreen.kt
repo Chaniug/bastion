@@ -97,6 +97,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.fragment.app.FragmentActivity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -2124,7 +2125,14 @@ fun SimpleMainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    // 不吃掉 bottom padding：让列表延伸到悬浮胶囊底下（胶囊浮于内容上层，
+                    // 周围间隙透出内容，同 Coolapk）。最后一条的滚出空间由各列表的
+                    // contentPadding.bottom 自行预留（胶囊总高 82dp，取 96dp）。
+                    .padding(
+                        top = paddingValues.calculateTopPadding(),
+                        start = paddingValues.calculateLeftPadding(LocalLayoutDirection.current),
+                        end = paddingValues.calculateRightPadding(LocalLayoutDirection.current)
+                    )
             ) {
             AuthenticatorPasskeyAnimatedContent(currentTab = currentTab) { displayedTab ->
             when (displayedTab) {

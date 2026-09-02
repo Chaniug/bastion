@@ -1252,7 +1252,8 @@ fun CardWalletScreen(
                                 .offset { IntOffset(0, contentPullOffset) }
                                 .nestedScroll(nestedScrollConnection),
                             userScrollEnabled = true,
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            // bottom 预留悬浮胶囊高度，保证最后一张卡能滚出胶囊区域
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
                         ) {
                             items(localFilteredItems, key = { it.id }) { walletItem ->
                                 val item = walletItem.item
