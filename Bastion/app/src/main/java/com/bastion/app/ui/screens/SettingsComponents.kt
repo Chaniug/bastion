@@ -56,7 +56,10 @@ fun SettingsItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
-    trailingContent: (@Composable () -> Unit)? = null
+    trailingContent: (@Composable () -> Unit)? = null,
+    // 副标题默认不渲染（简洁模式）；subtitle 参数仍参与设置搜索匹配。
+    // 仅状态类信息（版本号、检查更新进度等）显式传 true 展示。
+    showSubtitle: Boolean = false
 ) {
     Card(
         onClick = onClick,
@@ -87,11 +90,13 @@ fun SettingsItem(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (showSubtitle) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             if (trailingContent != null) {
@@ -118,7 +123,9 @@ fun SettingsItemWithSwitch(
     checked: Boolean,
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
-    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
+    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
+    // 与 SettingsItem 一致：副标题默认隐藏，subtitle 仍参与搜索
+    showSubtitle: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -157,15 +164,17 @@ fun SettingsItemWithSwitch(
                         LocalContentColor.current.copy(alpha = 0.38f)
                     }
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (enabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                    }
-                )
+                if (showSubtitle) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (enabled) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        }
+                    )
+                }
             }
 
             Switch(

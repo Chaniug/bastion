@@ -790,16 +790,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    if (showScreenshotProtectionItem) {
-                        SettingsItem(
-                            icon = Icons.Default.Security,
-                            title = stringResource(R.string.screenshot_protection),
-                            subtitle = screenshotProtectionSubtitle,
-                            onClick = {
-                                viewModel.updateScreenshotProtectionEnabled(!settings.screenshotProtectionEnabled)
-                            }
-                        )
-                    }
+                    // 防截屏保护已移入「主密码与锁定」页作为开关（与锁定类安全项归组）
 
                     if (showPermissionManagementItem) {
                         SettingsItem(
@@ -899,7 +890,8 @@ fun SettingsScreen(
                             icon = Icons.Default.Info,
                             title = stringResource(R.string.version),
                             subtitle = currentVersionText,
-                            onClick = { showVersionInfoDialog = true }
+                            onClick = { showVersionInfoDialog = true },
+                            showSubtitle = true // 版本号是状态信息，保留展示
                         )
                     }
 
@@ -913,6 +905,8 @@ fun SettingsScreen(
                                 stringResource(R.string.update_check_subtitle)
                             },
                             onClick = startUpdateCheck,
+                            // 检查更新中/可更新状态是动态信息，保留展示
+                            showSubtitle = isCheckingUpdate,
                             trailingContent = {
                                 if (isCheckingUpdate) {
                                     CircularProgressIndicator(

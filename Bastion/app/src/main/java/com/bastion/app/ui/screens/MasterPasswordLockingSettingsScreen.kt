@@ -151,6 +151,8 @@ fun MasterPasswordLockingSettingsScreen(
                 subtitle = biometricSubtitle,
                 checked = biometricSwitchState,
                 enabled = isBiometricAvailable,
+                // 仅在生物识别不可用时展示原因提示；正常启/停状态由开关本身表达
+                showSubtitle = !isBiometricAvailable,
                 onCheckedChange = { newState ->
                     if (newState) {
                         if (biometricHelper.isWeakBiometricOnly()) {
@@ -174,7 +176,19 @@ fun MasterPasswordLockingSettingsScreen(
                 icon = Icons.Default.Timer,
                 title = stringResource(R.string.auto_lock),
                 subtitle = getAutoLockDisplayName(settings.autoLockMinutes, context),
-                onClick = { showAutoLockDialog = true }
+                onClick = { showAutoLockDialog = true },
+                showSubtitle = true // 当前自动锁定时长是状态信息
+            )
+
+            // 防截屏保护：从设置页「安全」分组移入此处，与锁定类安全项归组
+            SettingsItemWithSwitch(
+                icon = Icons.Default.Security,
+                title = stringResource(R.string.screenshot_protection),
+                subtitle = "",
+                checked = settings.screenshotProtectionEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.updateScreenshotProtectionEnabled(enabled)
+                }
             )
 
             SettingsItem(
