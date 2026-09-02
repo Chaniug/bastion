@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.input.pointer.pointerInput
@@ -145,25 +146,45 @@ fun ExpressiveTopBar(
     val pillReserve = if (isSearchExpanded) 0.dp else collapsedTitleEndPadding
 
     // === 滚动收起动画值（0=展开，1=完全收起）===
+    // 落差刻意做大（32→16sp、88→48dp），贴近系统相册的展开/收起观感
     val titleFontSize by animateFloatAsState(
-        targetValue = 32f + (18f - 32f) * scrollCollapseFraction,
+        targetValue = 32f + (16f - 32f) * scrollCollapseFraction,
         animationSpec = tween(200),
         label = "topbar_title_size"
     )
     val barMinHeight by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(64.dp, 44.dp, scrollCollapseFraction),
+        targetValue = androidx.compose.ui.unit.lerp(88.dp, 48.dp, scrollCollapseFraction),
         animationSpec = tween(200),
         label = "topbar_bar_height"
     )
     val barVerticalPadding by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(10.dp, 4.dp, scrollCollapseFraction),
+        targetValue = androidx.compose.ui.unit.lerp(12.dp, 4.dp, scrollCollapseFraction),
         animationSpec = tween(200),
         label = "topbar_vpadding"
     )
     val pillElevation by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(2.dp, 0.dp, scrollCollapseFraction),
+        targetValue = androidx.compose.ui.unit.lerp(3.dp, 0.dp, scrollCollapseFraction),
         animationSpec = tween(200),
         label = "topbar_pill_elevation"
+    )
+    // 内容的垂直偏移：展开时下移贴栏底（像相册展开态标题/+都在底部），
+    // 收起后回到垂直居中（栏变矮，看起来+按钮"升"到了顶部）。搜索展开时不偏移。
+    val contentOffsetY by animateDpAsState(
+        targetValue = if (isSearchExpanded) {
+            0.dp
+        } else {
+            androidx.compose.ui.unit.lerp(24.dp, 0.dp, scrollCollapseFraction)
+        },
+        animationSpec = tween(200),
+        label = "topbar_content_offset"
+    )
+    // Bar 自身背景的透明度：展开时不透明（像相册顶部的白色头部栏），
+    // 收起后 alpha→0 变透明，列表内容可从 Bar 底下穿过（关键：列表 contentPadding.top=0）。
+    // 搜索框展开时始终保持不透明，否则输入时背景消失很怪。
+    val barBackgroundAlpha by animateFloatAsState(
+        targetValue = if (isSearchExpanded || scrollCollapseFraction < 0.5f) 1f else 0f,
+        animationSpec = tween(200),
+        label = "topbar_bg_alpha"
     )
 
     // 当 onTitleClick 非空时，提前解析「点击展开快捷筛选」的本地化字符串，
@@ -173,8 +194,10 @@ fun ExpressiveTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            // 滚动收起时 Bar 整体高度从 64dp 压到 44dp（让出约 20dp 给列表）
+            // 滚动收起时 Bar 整体高度从 88dp 压到 48dp（落差 40dp，接近相册观感）
             .heightIn(min = barMinHeight)
+            // 自带背景：展开不透明、收起透明（列表从 Bar 底下穿过）
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = barBackgroundAlpha))
             .padding(horizontal = 24.dp, vertical = barVerticalPadding),
         contentAlignment = Alignment.Center
     ) {
@@ -182,6 +205,7 @@ fun ExpressiveTopBar(
         Row(
             modifier = Modifier
                 .align(Alignment.CenterStart)
+                .offset(y = contentOffsetY)
                 .graphicsLayer { alpha = titleAlpha }
                 .padding(end = pillReserve),
             verticalAlignment = Alignment.CenterVertically,
@@ -240,7 +264,9 @@ fun ExpressiveTopBar(
         // 2. 搜索/操作胶囊 (在右侧，覆盖在标题之上)
         // 使用 Box + CenterEnd 确保严格的右锚定
         Box(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = contentOffsetY),
             contentAlignment = Alignment.CenterEnd
         ) {
             Surface(

@@ -98,9 +98,9 @@ internal fun PasswordListScrollableContent(
         modifier = modifier,
         // bottom 预留悬浮胶囊高度（68dp 栏高 + 6/8dp 外边距 ≈ 82dp，取 96dp 留余量），
         // 保证最后一条能滚出胶囊区域。
-        // top 64dp = 展开态顶部 Bar 高度：Bar 透明覆盖在列表之上，
-        // 首屏时第一条内容正好落在 Bar 下方，滚动后内容可从 Bar 底下穿过。
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 64.dp, bottom = 96.dp)
+        // top 0：Bar 自带背景并透明覆盖在列表之上，列表内容可从 Bar 底下穿过
+        // （若 top 设成 Bar 高度，卡片永远滚不进 Bar 区域，Bar 区就永远是不透明底色）。
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp)
     ) {
         if (hasVisibleQuickFilters || hasVisibleCategoryQuickFilters) {
             item(key = PASSWORD_LIST_QUICK_FILTERS_KEY) {
