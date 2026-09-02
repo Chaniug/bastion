@@ -18,6 +18,12 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
+/** 更新渠道：正式版（latest release）/ 预览版（滚动 preview prerelease 的 Debug APK）。 */
+enum class UpdateChannel {
+    STABLE,
+    PREVIEW
+}
+
 data class UpdateCheckResult(
     val currentVersion: String,
     val latestVersion: String,
@@ -43,6 +49,8 @@ data class UpdateDownloadProgress(
 object UpdateChecker {
     private const val RELEASE_API_URL =
         "https://api.github.com/repos/Chaniug/bastion/releases/latest"
+    private const val RELEASE_LIST_API_URL =
+        "https://api.github.com/repos/Chaniug/bastion/releases?per_page=15"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -58,6 +66,21 @@ object UpdateChecker {
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
+
+    /**
+     * 统一入口。
+     * - STABLE：对比 latest release 的语义化版本号。
+     * - PREVIEW：滚动 preview prerelease 的 Debug APK，用「附件上传时间(epoch 秒) > 当前 versionCode」
+     *   判断是否有新构建（CI 的 versionCode 即构建时刻的 Unix 时间戳）。
+     */
+    suspend fun checkForUpdate(
+        currentVersion: String,
+        currentVersionCode: Long,
+        channel: UpdateChannel
+    ): Result<UpdateCheckResult> = when (channel) {
+        UpdateChannel.STABLE -> checkLatestRelease(currentVersion)
+        UpdateChannel.PREVIEW -> checkLatestPreview(currentVersion, currentVersionCode)
+    }
 
     suspend fun checkLatestRelease(currentVersion: String): Result<UpdateCheckResult> =
         withContext(Dispatchers.IO) {
@@ -94,6 +117,63 @@ object UpdateChecker {
                 }
             }
         }
+
+    private suspend fun checkLatestPreview(
+        currentVersion: String,
+        currentVersionCode: Long
+    ): Result<UpdateCheckResult> =
+        withContext(Dispatchers.IO) {
+            runCatchingObserved {
+                val request = Request.Builder()
+                    .url(RELEASE_LIST_API_URL)
+                    .header("Accept", "application/vnd.github+json")
+                    .header("User-Agent", "Bastion-Android")
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw IOException("GitHub Releases request failed: HTTP ${response.code}")
+                    }
+
+                    val body = response.body?.string().orEmpty()
+                    if (body.isBlank()) {
+                        throw IOException("GitHub Releases response is empty")
+                    }
+
+                    val releases = json.decodeFromString<List<GitHubRelease>>(body)
+                    val preview = releases.firstOrNull { it.prerelease }
+                        ?: throw IOException("No preview release found")
+
+                    val apkAsset = preview.debugApkAsset()
+                        ?: throw IOException("Preview release has no APK asset")
+                    val buildEpochSeconds = previewBuildEpochSeconds(apkAsset.updatedAt)
+                    val isUpdateAvailable = buildEpochSeconds == null || buildEpochSeconds > currentVersionCode
+                    val buildLabel = buildEpochSeconds?.let { formatBuildEpoch(it) }
+
+                    UpdateCheckResult(
+                        currentVersion = currentVersion,
+                        latestVersion = buildLabel?.let { "build $it" } ?: preview.tagName,
+                        releaseName = preview.name?.takeIf { it.isNotBlank() } ?: "开发预览版",
+                        releaseUrl = preview.htmlUrl,
+                        apkAssetName = apkAsset.name,
+                        apkDownloadUrl = apkAsset.downloadUrl,
+                        releaseNotes = buildLabel?.let { "预览构建时间：$it" },
+                        isUpdateAvailable = isUpdateAvailable
+                    )
+                }
+            }
+        }
+
+    /** GitHub 附件的 updated_at 为 ISO-8601 UTC 时间，解析为 epoch 秒。 */
+    private fun previewBuildEpochSeconds(assetUpdatedAt: String?): Long? =
+        assetUpdatedAt?.takeIf { it.isNotBlank() }?.let { value ->
+            runCatching { java.time.Instant.parse(value).epochSecond }.getOrNull()
+        }
+
+    private fun formatBuildEpoch(epochSeconds: Long): String =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+            .withZone(java.time.ZoneId.systemDefault())
+            .format(java.time.Instant.ofEpochSecond(epochSeconds))
 
     suspend fun downloadApk(
         downloadUrl: String,
@@ -255,6 +335,8 @@ private data class GitHubRelease(
     @SerialName("html_url") val htmlUrl: String,
     val name: String? = null,
     val body: String? = null,
+    val prerelease: Boolean = false,
+    @SerialName("published_at") val publishedAt: String? = null,
     val assets: List<GitHubReleaseAsset> = emptyList()
 ) {
     fun apkAsset(): GitHubReleaseAsset? =
@@ -262,11 +344,17 @@ private data class GitHubRelease(
             asset.name.endsWith(".apk", ignoreCase = true) ||
                 asset.contentType?.equals("application/vnd.android.package-archive", ignoreCase = true) == true
         }
+
+    /** 预览渠道优先取 Debug APK（arm64），退回任意 APK。 */
+    fun debugApkAsset(): GitHubReleaseAsset? =
+        assets.firstOrNull { it.name.endsWith("-debug.apk", ignoreCase = true) }
+            ?: apkAsset()
 }
 
 @Serializable
 private data class GitHubReleaseAsset(
     val name: String,
     @SerialName("browser_download_url") val downloadUrl: String,
-    @SerialName("content_type") val contentType: String? = null
+    @SerialName("content_type") val contentType: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
 )

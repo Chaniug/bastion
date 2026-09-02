@@ -2783,6 +2783,10 @@
     <string name="batch_delete_title">Batch Delete</string>
     <string name="category_all">All</string>
     <string name="database_entry_count">%1$d 条</string>
+    <string name="version_and_update_title">版本与更新</string>
+    <string name="update_channel_stable">正式版</string>
+    <string name="update_channel_preview">预览版 (Debug)</string>
+    <string name="update_current_version_label">当前版本</string>
     <string name="cd_back">返回</string>
     <string name="data_type_notes">Notes</string>
     <string name="filter_title">Filter</string>

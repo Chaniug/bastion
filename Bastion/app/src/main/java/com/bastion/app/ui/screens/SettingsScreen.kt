@@ -61,6 +61,7 @@ import com.bastion.app.ui.password.PasswordBatchDeleteProgressTracker
 import com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState
 import com.bastion.app.ui.password.PasswordBatchTransferProgressTracker
 import com.bastion.app.utils.BiometricAuthHelper
+import com.bastion.app.utils.UpdateChannel
 import com.bastion.app.utils.UpdateCheckResult
 import com.bastion.app.utils.UpdateChecker
 import com.bastion.app.utils.UpdateDownloadProgress
@@ -152,8 +153,8 @@ fun SettingsScreen(
     var showClearDataDialog by remember { mutableStateOf(false) }
     var clearDataPasswordInput by remember { mutableStateOf("") }
 
-    var showVersionInfoDialog by remember { mutableStateOf(false) }
     var showUpdateCheckDialog by remember { mutableStateOf(false) }
+    var updateChannel by remember { mutableStateOf(UpdateChannel.STABLE) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var isDownloadingUpdate by remember { mutableStateOf(false) }
     var updateDownloadProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
@@ -167,6 +168,13 @@ fun SettingsScreen(
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
     var advancedSectionExpanded by rememberSaveable { mutableStateOf(false) }
 
+    // 预览渠道用构建时间戳（CI 的 versionCode 即构建时刻的 Unix 秒）对比是否更新
+    val currentVersionCode = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
+        }.getOrDefault(0L)
+    }
+
     val startUpdateCheck: () -> Unit = {
         if (!isCheckingUpdate) {
             isCheckingUpdate = true
@@ -174,7 +182,7 @@ fun SettingsScreen(
             updateCheckError = null
             coroutineScope.launch {
                 val currentVersion = BuildConfig.VERSION_NAME.ifBlank { BuildConfig.FULL_VERSION_NAME }
-                UpdateChecker.checkLatestRelease(currentVersion)
+                UpdateChecker.checkForUpdate(currentVersion, currentVersionCode, updateChannel)
                     .onSuccess { result ->
                         updateCheckResult = result
                         showUpdateCheckDialog = true
@@ -885,44 +893,14 @@ fun SettingsScreen(
             if (showVersionItem || showUpdateCheckItem) {
                 SettingsSection(title = aboutTitle,
                     onClick = onSectionSelected?.let { cb -> { cb(aboutTitle) } }) {
-                    if (showVersionItem) {
-                        SettingsItem(
-                            icon = Icons.Default.Info,
-                            title = stringResource(R.string.version),
-                            subtitle = currentVersionText,
-                            onClick = { showVersionInfoDialog = true },
-                            showSubtitle = true // 版本号是状态信息，保留展示
-                        )
-                    }
-
-                    if (showUpdateCheckItem) {
-                        SettingsItem(
-                            icon = Icons.Default.Update,
-                            title = stringResource(R.string.update_check_title),
-                            subtitle = if (isCheckingUpdate) {
-                                stringResource(R.string.update_check_checking)
-                            } else {
-                                stringResource(R.string.update_check_subtitle)
-                            },
-                            onClick = startUpdateCheck,
-                            // 检查更新中/可更新状态是动态信息，保留展示
-                            showSubtitle = isCheckingUpdate,
-                            trailingContent = {
-                                if (isCheckingUpdate) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.ChevronRight,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        )
-                    }
+                    // 版本号 + 检查更新合并为一个入口：点开对话框可看版本信息、选渠道检查并下载更新
+                    SettingsItem(
+                        icon = Icons.Default.Info,
+                        title = stringResource(R.string.version_and_update_title),
+                        subtitle = currentVersionText,
+                        onClick = { showUpdateCheckDialog = true },
+                        showSubtitle = true // 当前版本号是状态信息，保留展示
+                    )
                 }
             }
             
@@ -1191,100 +1169,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showVersionInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showVersionInfoDialog = false },
-            icon = {
-                Icon(
-                    Icons.Default.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = { Text(stringResource(R.string.version_info_dialog_title)) },
-            text = {
-                Column {
-                    val githubUrl = "https://github.com/Chaniug/bastion"
-                    val websiteUrl = "https://github.com/Chaniug/bastion"
-                    val iconSourceUrl = "https://github.com/stratumauth/app/tree/v1.4.0/icons"
-                    val iconReleaseUrl = "https://github.com/stratumauth/app/releases/tag/v1.4.0"
-                    val fullVersion = BuildConfig.FULL_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
-
-                    Text(
-                        text = stringResource(R.string.version_info_full_version_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = fullVersion,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = stringResource(R.string.version_info_github_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = githubUrl,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { openExternalLink(githubUrl) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.version_info_website_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = websiteUrl,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { openExternalLink(websiteUrl) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.version_info_icon_source_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = iconSourceUrl,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { openExternalLink(iconSourceUrl) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.version_info_icon_release_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = iconReleaseUrl,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { openExternalLink(iconReleaseUrl) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.version_info_simple_icons_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showVersionInfoDialog = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            }
-        )
-    }
-
     if (showUpdateCheckDialog) {
         val result = updateCheckResult
         val updateDialogScrollState = rememberScrollState()
@@ -1309,7 +1193,8 @@ fun SettingsScreen(
                     when {
                         updateCheckError != null -> stringResource(R.string.update_check_failed_title)
                         result?.isUpdateAvailable == true -> stringResource(R.string.update_check_update_available_title)
-                        else -> stringResource(R.string.update_check_no_update_title)
+                        result != null -> stringResource(R.string.update_check_no_update_title)
+                        else -> stringResource(R.string.version_and_update_title)
                     }
                 )
             },
@@ -1322,6 +1207,62 @@ fun SettingsScreen(
                             .weight(1f, fill = false)
                             .verticalScroll(updateDialogScrollState)
                     ) {
+                        // === 当前版本 ===
+                        val fullVersion = BuildConfig.FULL_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
+                        Text(
+                            text = stringResource(R.string.update_current_version_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = fullVersion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // === 更新渠道选择 ===
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            androidx.compose.material3.FilterChip(
+                                selected = updateChannel == UpdateChannel.STABLE,
+                                onClick = {
+                                    updateChannel = UpdateChannel.STABLE
+                                    updateCheckResult = null
+                                    updateCheckError = null
+                                },
+                                label = { Text(stringResource(R.string.update_channel_stable)) }
+                            )
+                            androidx.compose.material3.FilterChip(
+                                selected = updateChannel == UpdateChannel.PREVIEW,
+                                onClick = {
+                                    updateChannel = UpdateChannel.PREVIEW
+                                    updateCheckResult = null
+                                    updateCheckError = null
+                                },
+                                label = { Text(stringResource(R.string.update_channel_preview)) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // === 检查更新按钮 ===
+                        androidx.compose.material3.FilledTonalButton(
+                            onClick = startUpdateCheck,
+                            enabled = !isCheckingUpdate
+                        ) {
+                            Text(stringResource(R.string.update_check_title))
+                        }
+                        if (isCheckingUpdate) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            androidx.compose.material3.LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        if (updateCheckResult != null || updateCheckError != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            androidx.compose.material3.HorizontalDivider()
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
                         when {
                             updateCheckError != null -> {
                                 Text(
