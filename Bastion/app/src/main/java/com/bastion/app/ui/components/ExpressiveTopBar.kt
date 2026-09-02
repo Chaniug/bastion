@@ -141,8 +141,9 @@ fun ExpressiveTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 88.dp)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            // 88dp 偏高：列表滚动时顶部留白过大且压迫首条卡片，收窄到 64dp
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 24.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         // 1. 标题区 (在左侧，始终占位，只改变透明度)

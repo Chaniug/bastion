@@ -164,6 +164,24 @@ internal fun PasswordListTopSection(
 ) {
     val appSettings by settingsViewModel.settings.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+
+    // 数据库筛选区块的条数统计：基于全量未删除条目按存储来源分组。
+    val allPasswordsForStats by viewModel.allPasswordsForUi.collectAsState()
+    val storageCounts = remember(allPasswordsForStats) {
+        val active = allPasswordsForStats.filter { !it.isDeleted }
+        PasswordStorageCounts(
+            total = active.size,
+            bastionLocal = active.count { it.keepassDatabaseId == null && it.bitwardenVaultId == null },
+            perKeePassDatabase = active
+                .filter { it.keepassDatabaseId != null }
+                .groupingBy { it.keepassDatabaseId!! }
+                .eachCount(),
+            perBitwardenVault = active
+                .filter { it.bitwardenVaultId != null }
+                .groupingBy { it.bitwardenVaultId!! }
+                .eachCount()
+        )
+    }
     var showCreateCategoryDialog by remember { mutableStateOf(false) }
     var showReunlockDialog by remember { mutableStateOf(false) }
     var reunlockPassword by remember { mutableStateOf("") }
@@ -307,6 +325,7 @@ internal fun PasswordListTopSection(
                                 onNavigateToPasskeys = onNavigateToPasskeys,
                                 // 非收拢模式：横排筛选条常驻，菜单里不再重复快捷筛选区块
                                 showQuickFilterSection = appSettings.experimentalCollapsedQuickFilters,
+                                storageCounts = storageCounts,
                                 quickFolderShortcuts = categoryMenuQuickFolderShortcuts,
                                 topModulesOrder = appSettings.passwordListTopModulesOrder,
                                 onTopModulesOrderChange = settingsViewModel::updatePasswordListTopModulesOrder,

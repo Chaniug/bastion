@@ -2782,6 +2782,7 @@
     <string name="batch_delete_message" tools:ignore="PluralsCandidate">确定删除选中的 %d 项吗？</string>
     <string name="batch_delete_title">Batch Delete</string>
     <string name="category_all">All</string>
+    <string name="database_entry_count">%1$d 条</string>
     <string name="cd_back">返回</string>
     <string name="data_type_notes">Notes</string>
     <string name="filter_title">Filter</string>

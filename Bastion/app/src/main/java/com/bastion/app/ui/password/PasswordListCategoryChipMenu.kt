@@ -97,7 +97,9 @@ internal fun PasswordListCategoryChipMenu(
     onNavigateToPasskeys: (() -> Unit)? = null,
     // 非收拢模式下横排筛选条常驻，菜单里的快捷筛选区块与其重复，传 false 隐藏
     // （同时隐藏顶部「快捷筛选」Tab）。收拢模式下菜单是唯一筛选入口，保持 true。
-    showQuickFilterSection: Boolean = true
+    showQuickFilterSection: Boolean = true,
+    // 各存储来源的密码条数统计，null 时数据库区块不显示徽标
+    storageCounts: PasswordStorageCounts? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val menuWidth = rememberUnifiedCategoryFilterChipMenuWidth()
@@ -175,7 +177,8 @@ internal fun PasswordListCategoryChipMenu(
                 currentFilter = currentFilter,
                 keepassDatabases = keepassDatabases,
                 bitwardenVaults = bitwardenVaults,
-                onSelectFilter = onSelectFilter
+                onSelectFilter = onSelectFilter,
+                entryCounts = storageCounts
             ),
             expanded = selectedTab == 0
         )
