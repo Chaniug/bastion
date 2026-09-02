@@ -188,12 +188,12 @@ fun ExpressiveTopBar(
         animationSpec = tween(200),
         label = "topbar_action_pill_height"
     )
-    // 胶囊底部与大标题字形底部对齐：展开态上移约一个字体下延（descent）的高度
+    // 胶囊底部与大标题字形底部对齐（实机实测：展开态需下移 5dp）
     val actionPillOffsetY by animateDpAsState(
         targetValue = if (isSearchExpanded) {
             0.dp
         } else {
-            androidx.compose.ui.unit.lerp((-9).dp, 0.dp, scrollCollapseFraction)
+            androidx.compose.ui.unit.lerp(5.dp, 0.dp, scrollCollapseFraction)
         },
         animationSpec = tween(200),
         label = "topbar_action_pill_offset"
@@ -422,6 +422,8 @@ fun ExpressiveTopBar(
                         // 折叠状态：Action Buttons
                         Row(
                             modifier = Modifier
+                                // 右移补偿按钮触控区留白，使 ⋮ 图标右缘贴近卡片右缘
+                                .offset(x = 12.dp)
                                 .graphicsLayer {
                                     // 收起时按钮组跟随标题一起缩小（1.0→0.85）
                                     val scale = 1f + (0.85f - 1f) * scrollCollapseFraction
