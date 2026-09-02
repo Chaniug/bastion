@@ -100,6 +100,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
@@ -1439,6 +1440,14 @@ LaunchedEffect(quickFiltersExpanded) {
         }
     }
 
+    // 列表顶部留白跟随 Bar 当前高度联动：展开 88dp / 收起 48dp。
+    // 必须与 ExpressiveTopBar 的 barMinHeight 保持一致，否则首条内容会被 Bar 吞掉。
+    val listTopPadding by animateDpAsState(
+        targetValue = androidx.compose.ui.unit.lerp(88.dp, 48.dp, scrollCollapseFraction),
+        animationSpec = tween(200),
+        label = "list_top_padding"
+    )
+
     var lastHandledFilterForScrollReset by remember {
         mutableStateOf<CategoryFilter?>(null)
     }
@@ -1736,7 +1745,8 @@ LaunchedEffect(quickFiltersExpanded) {
             passwordEntries = passwordEntries,
             aggregateConfig = aggregateConfig,
             onNavigateToPasskeys = onNavigateToPasskeys,
-            decryptAuthenticatorKey = decryptAuthenticatorKeyForPreview
+            decryptAuthenticatorKey = decryptAuthenticatorKeyForPreview,
+            listTopPadding = listTopPadding
         )
     }
 
@@ -1991,7 +2001,9 @@ private fun PasswordListMainPaneHost(
     passwordEntries: List<PasswordEntry>,
     aggregateConfig: PasswordListAggregateConfig?,
     decryptAuthenticatorKey: ((String) -> String)?,
-    onNavigateToPasskeys: (() -> Unit)? = null
+    onNavigateToPasskeys: (() -> Unit)? = null,
+    // 顶部留白：跟随顶部 Bar 高度联动（展开 88dp / 收起 48dp），保证首条内容不被 Bar 遮挡
+    listTopPadding: Dp = 0.dp
 ) {
     // 滚动期间把 TOTP 验证码行从 50ms 平滑刷新降为秒级刷新（方案 A，见 docs §7.8），
     // 避免可见验证码卡片每帧重组导致滚动掉帧。isScrollInProgress 只在滚动开始/结束时翻转，
@@ -2076,6 +2088,7 @@ private fun PasswordListMainPaneHost(
         categoryQuickFilterShortcuts = categoryQuickFilterShortcuts,
         quickFolderShortcuts = quickFolderShortcuts,
         quickFolderStyle = quickFolderStyle,
+        listTopPadding = listTopPadding,
         renderPasswordRows = {
             passwordPageListRows(
                 isListScrolling = isListScrolling,

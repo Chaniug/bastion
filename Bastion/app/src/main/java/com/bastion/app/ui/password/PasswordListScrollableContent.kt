@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
 import com.bastion.app.data.AppSettings
@@ -89,6 +90,9 @@ internal fun PasswordListScrollableContent(
     showEmptyState: Boolean,
     searchQuery: String,
     emptyStateMessage: PasswordListEmptyStateMessage,
+    // 顶部留白：跟随顶部 Bar 的当前高度联动（展开 88dp / 收起 48dp）。
+    // Bar 透明覆盖在列表之上，留白必须 ≥ Bar 当前高度，否则首屏首条内容会被 Bar 吞掉。
+    listTopPadding: Dp = 0.dp,
     renderPasswordRows: LazyListScope.() -> Unit
 ) {
     val categoryQuickFilterScrollState = rememberScrollState()
@@ -100,7 +104,12 @@ internal fun PasswordListScrollableContent(
         // 保证最后一条能滚出胶囊区域。
         // top 0：Bar 自带背景并透明覆盖在列表之上，列表内容可从 Bar 底下穿过
         // （若 top 设成 Bar 高度，卡片永远滚不进 Bar 区域，Bar 区就永远是不透明底色）。
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp)
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = listTopPadding,
+            bottom = 96.dp
+        )
     ) {
         if (hasVisibleQuickFilters || hasVisibleCategoryQuickFilters) {
             item(key = PASSWORD_LIST_QUICK_FILTERS_KEY) {

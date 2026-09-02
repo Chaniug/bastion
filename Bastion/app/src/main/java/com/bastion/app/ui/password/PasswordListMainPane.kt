@@ -18,6 +18,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.bastion.app.R
@@ -101,6 +102,8 @@ internal fun PasswordListMainPane(
     categoryQuickFilterShortcuts: List<PasswordQuickFolderShortcut>,
     quickFolderShortcuts: List<PasswordQuickFolderShortcut>,
     quickFolderStyle: PasswordListQuickFolderStyle,
+    // 顶部留白：跟随顶部 Bar 高度联动（展开 88dp / 收起 48dp），保证首条内容不被 Bar 遮挡
+    listTopPadding: Dp = 0.dp,
     renderPasswordRows: LazyListScope.() -> Unit
 ) {
     Box(
@@ -232,6 +235,7 @@ internal fun PasswordListMainPane(
                     showEmptyState = showEmptyState,
                     searchQuery = searchQuery,
                     emptyStateMessage = emptyStateMessage,
+                    listTopPadding = listTopPadding,
                     renderPasswordRows = renderPasswordRows
                 )
             }
