@@ -1446,7 +1446,7 @@ LaunchedEffect(quickFiltersExpanded) {
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val listTopPadding by animateDpAsState(
         targetValue = statusBarTopPadding +
-            androidx.compose.ui.unit.lerp(88.dp, 48.dp, scrollCollapseFraction),
+            androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
         animationSpec = tween(200),
         label = "list_top_padding"
     )

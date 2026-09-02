@@ -21,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -256,8 +255,11 @@ internal fun PasswordListTopSection(
                     }
                 }
 
-                // 搜索：突出显示（FilledTonalIconButton 容器背景），无论 archive 与否都可访问
-                FilledTonalIconButton(onClick = { onSearchExpandedChange(true) }) {
+                // 搜索：无高亮底色，避免滚动时圆形底遮挡下方条目
+                IconButton(
+                    onClick = { onSearchExpandedChange(true) },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = stringResource(R.string.search)
