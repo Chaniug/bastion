@@ -1017,8 +1017,8 @@ fun TotpListContent(
 contentPadding = PaddingValues(
     start = 16.dp,
     end = 16.dp,
-    // 悬浮叠加：按悬浮层（顶栏+进度条）实测高度避让，随收起动画自动联动
-    top = topOverlayHeightDp,
+    // 悬浮叠加：按悬浮层（顶栏+进度条）实测高度避让，随收起动画自动联动；额外 12dp 呼吸空间
+    top = topOverlayHeightDp + 12.dp,
     bottom = 96.dp
 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

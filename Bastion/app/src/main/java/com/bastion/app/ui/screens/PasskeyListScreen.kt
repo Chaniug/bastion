@@ -1228,8 +1228,8 @@ fun PasskeyListScreen(
                                 start = 16.dp,
                                 end = 16.dp,
                                 // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
-                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动
-                                top = topOverlayHeightDp,
+                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动；额外 12dp 呼吸空间
+                                top = topOverlayHeightDp + 12.dp,
                                 bottom = if (selectionMode) 140.dp else 100.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)

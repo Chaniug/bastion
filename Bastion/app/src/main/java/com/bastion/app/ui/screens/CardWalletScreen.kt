@@ -1303,8 +1303,8 @@ fun CardWalletScreen(
                             contentPadding = PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动
-                                top = topOverlayHeightDp,
+                                // 悬浮叠加：按悬浮层实测高度避让，随收起动画自动联动；额外 12dp 呼吸空间
+                                top = topOverlayHeightDp + 12.dp,
                                 bottom = 96.dp
                             )
                         ) {
