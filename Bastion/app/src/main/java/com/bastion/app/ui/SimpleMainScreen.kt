@@ -1994,27 +1994,26 @@ fun SimpleMainScreen(
 
                     // 底栏悬浮胶囊：Surface 提供圆角 + 阴影 + 半透明 + 离屏边内边距，
 // NavigationBar 在内层透明显示。这样既有「浮起来」的层次感，又不依赖第三方库。
+                    // 底栏悬浮胶囊（对齐酷安规格）：60dp 扁胶囊 + 内容可见的周围间隙。
+                    // 选中态 = secondaryContainer 圆角块包住「图标+文字」整体；中间 + 号为圆角方形。
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            // bottom 16dp：整体上移避开系统手势条（小白条），底部圆角完整可见
-                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 16.dp)
+                            // bottom 20dp：胶囊明显抬离系统手势条（小白条），底部透出内容
+                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 20.dp)
                     ) {
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         tonalElevation = 3.dp,
-                        // 12dp 阴影在浅色主题下偏"墩"，收小到 6dp
                         shadowElevation = 6.dp
                     ) {
-                    NavigationBar(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(68.dp),
-                        tonalElevation = 0.dp,
-                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                            .height(60.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 底栏布局：左侧 2 个 + 中间「添加」+ 右侧「1 个自定义 + 固定设置」。
                         // tabs 已保证数据 tab 最多 3 个且 Settings 固定在末尾。
@@ -2022,11 +2021,10 @@ fun SimpleMainScreen(
                         val rightTabs = tabs.drop(2).take(2)
 
                         @Composable
-                        fun tabItem(item: BottomNavItem) {
+                        fun tabItem(item: BottomNavItem, modifier: Modifier = Modifier) {
                             val label = stringResource(item.shortLabelRes())
                             val isTabSelected = item.key == selectedDockTab.key
-                            // 自绘选中胶囊底色：M3 Expressive 指示器有漂浮动画 bug，
-                            // 全透明又没有强调色反馈。改为静态 pill + 短过渡动画。
+                            // 选中色块包住「图标+文字」整体（酷安样式），圆角矩形非细长条
                             val pillColor by androidx.compose.animation.animateColorAsState(
                                 targetValue = if (isTabSelected) {
                                     MaterialTheme.colorScheme.secondaryContainer
@@ -2036,87 +2034,100 @@ fun SimpleMainScreen(
                                 animationSpec = androidx.compose.animation.core.tween(200),
                                 label = "nav_tab_pill"
                             )
-                            NavigationBarItem(
-                                icon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .widthIn(min = 52.dp)
-                                            .height(30.dp)
-                                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                            .background(pillColor),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(item.icon, contentDescription = label)
-                                    }
-                                },
-                                label = {
+                            val contentTint = if (isTabSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            Box(
+                                modifier = modifier
+                                    .fillMaxHeight()
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { selectedTabKey = item.key },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .widthIn(min = 56.dp)
+                                        .height(48.dp)
+                                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                                        .background(pillColor),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = label,
+                                        tint = contentTint,
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                     Text(
                                         text = label,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Clip
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = contentTint
                                     )
-                                },
-                                selected = isTabSelected,
-                                onClick = { selectedTabKey = item.key },
-                                colors = NavigationBarItemDefaults.colors(
-                                    indicatorColor = Color.Transparent
-                                )
-                            )
+                                }
+                            }
                         }
 
-                        leftTabs.forEach { item -> tabItem(item) }
+                        leftTabs.forEach { item -> tabItem(item, Modifier.weight(1f)) }
                         repeat(2 - leftTabs.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
 
-                        // 中间「添加」按钮：主色实心圆形 + 白色加号，比两侧 tab 更显眼。
+                        // 中间「添加」按钮：主色圆角方形（酷安样式），接近撑满胶囊高度。
                         // 行为沿用原 FAB：按当前 tab 跳到对应的添加页。
                         val addLabel = stringResource(R.string.add)
-                        NavigationBarItem(
-                            icon = {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    // 48dp：在 68dp 胶囊里留出 10dp 上下余量，不再顶到胶囊轮廓
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = addLabel
-                                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Surface(
+                                onClick = {
+                                    when (currentTab) {
+                                        BottomNavItem.VaultV2,
+                                        BottomNavItem.Passwords -> handlePasswordAddOpen()
+                                        BottomNavItem.Authenticator -> handleTotpAddOpen()
+                                        BottomNavItem.CardWallet -> handleWalletAddOpen()
+                                        BottomNavItem.Notes -> handleNoteOpen(null)
+                                        BottomNavItem.Send -> handleSendAddOpen()
+                                        BottomNavItem.Generator -> generatorRefreshRequestKey++
+                                        else -> handlePasswordAddOpen()
                                     }
+                                },
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier
+                                    .width(52.dp)
+                                    .height(48.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = addLabel,
+                                        modifier = Modifier.size(26.dp)
+                                    )
                                 }
-                            },
-                            label = { /* 中间 + 号不显示文字（label 留空） */ },
-                            selected = false,
-                            onClick = {
-                                when (currentTab) {
-                                    BottomNavItem.VaultV2,
-                                    BottomNavItem.Passwords -> handlePasswordAddOpen()
-                                    BottomNavItem.Authenticator -> handleTotpAddOpen()
-                                    BottomNavItem.CardWallet -> handleWalletAddOpen()
-                                    BottomNavItem.Notes -> handleNoteOpen(null)
-                                    BottomNavItem.Send -> handleSendAddOpen()
-                                    BottomNavItem.Generator -> generatorRefreshRequestKey++
-                                    else -> handlePasswordAddOpen()
-                                }
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = Color.Transparent
-                            )
-                        )
+                            }
+                        }
 
-                        rightTabs.forEach { item -> tabItem(item) }
+                        rightTabs.forEach { item -> tabItem(item, Modifier.weight(1f)) }
                         repeat(2 - rightTabs.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
-                    }  // 关闭 NavigationBar
+                    }  // 关闭 Row
                 }  // 关闭 Surface 胶囊包装
                     }  // 关闭 Box 留白
             }
