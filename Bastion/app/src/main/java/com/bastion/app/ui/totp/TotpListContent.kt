@@ -656,29 +656,18 @@ fun TotpListContent(
             searchHint = stringResource(R.string.search_authenticator),
             onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
             actions = {
-                // 分类选择按钮
-                if (appSettings.categorySelectionUiMode == com.bastion.app.data.CategorySelectionUiMode.CHIP_MENU) {
-                    IconButton(onClick = { isCategorySheetVisible = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Folder,
-                            contentDescription = stringResource(R.string.category),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    IconButton(onClick = { isCategorySheetVisible = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Folder,
-                            contentDescription = stringResource(R.string.category),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                // 搜索按钮
-                IconButton(onClick = { isSearchExpanded = true }) {
+                // 搜索按钮（FilledTonal 对齐密码页风格，固定首位）
+                FilledTonalIconButton(onClick = { isSearchExpanded = true }) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search),
+                        contentDescription = stringResource(R.string.search)
+                    )
+                }
+                // 分类文件夹按钮
+                IconButton(onClick = { isCategorySheetVisible = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = stringResource(R.string.category),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -975,7 +964,13 @@ fun TotpListContent(
                     .fillMaxSize()
                     .offset { androidx.compose.ui.unit.IntOffset(0, contentPullOffset) }
                     .nestedScroll(pullAction.nestedScrollConnection),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+                // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局下内容从屏幕顶开始，须避让状态栏和 Bar
+contentPadding = PaddingValues(
+    start = 16.dp,
+    end = 16.dp,
+    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 104.dp,
+    bottom = 96.dp
+),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(

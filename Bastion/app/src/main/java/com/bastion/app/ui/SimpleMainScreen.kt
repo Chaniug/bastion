@@ -1953,11 +1953,11 @@ fun SimpleMainScreen(
         topBar = {
             // 顶部栏由各自页面内部控制（如 ExpressiveTopBar），这里保持为空以避免叠加
         },
-        contentWindowInsets = if (isCompactWidth) {
-            ScaffoldDefaults.contentWindowInsets
-        } else {
-            WindowInsets(0, 0, 0, 0)
-        },
+        // 沉浸状态栏：统一 0 insets，内容从屏幕顶部开始（状态栏底下）。
+        // 状态栏避让下沉到各页面自行处理：
+        // - ExpressiveTopBar 页面（密码/验证器/卡包/通行秘钥）：Bar 内 statusBarsPadding + 列表 contentPadding 含状态栏
+        // - 内层自带 Scaffold 的页面（设置/Send/笔记）：内层 Scaffold 自动处理
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (isCompactWidth && !shouldHideBottomNavigation) {
                 Column {

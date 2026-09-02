@@ -1442,8 +1442,11 @@ LaunchedEffect(quickFiltersExpanded) {
 
     // 列表顶部留白跟随 Bar 当前高度联动：展开 88dp / 收起 48dp。
     // 必须与 ExpressiveTopBar 的 barMinHeight 保持一致，否则首条内容会被 Bar 吞掉。
+    // 另加状态栏高度：沉浸式布局下内容从屏幕顶部开始，首条要落在状态栏+Bar 之下。
+    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val listTopPadding by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(88.dp, 48.dp, scrollCollapseFraction),
+        targetValue = statusBarTopPadding +
+            androidx.compose.ui.unit.lerp(88.dp, 48.dp, scrollCollapseFraction),
         animationSpec = tween(200),
         label = "list_top_padding"
     )

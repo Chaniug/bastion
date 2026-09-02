@@ -196,8 +196,11 @@ fun ExpressiveTopBar(
             .fillMaxWidth()
             // 滚动收起时 Bar 整体高度从 88dp 压到 48dp（落差 40dp，接近相册观感）
             .heightIn(min = barMinHeight)
-            // 自带背景：展开不透明、收起透明（列表从 Bar 底下穿过）
+            // 自带背景：展开不透明、收起透明（列表从 Bar 底下穿过）。
+            // 背景在 statusBarsPadding 之前应用 → 覆盖到状态栏区域（沉浸式白/彩头部），
+            // 内容通过 statusBarsPadding 下移到状态栏下方。
             .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = barBackgroundAlpha))
+            .statusBarsPadding()
             .padding(horizontal = 24.dp, vertical = barVerticalPadding),
         contentAlignment = Alignment.Center
     ) {
@@ -303,7 +306,8 @@ fun ExpressiveTopBar(
                         }
                     },
                 shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                // 跟随 Bar 背景一起透明：收起后按钮浮在内容上（对齐相册的 + 按钮浮在图片上）
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = barBackgroundAlpha),
                 // 滚动收起时抬升降为 0，让右侧胶囊视觉上"落下去"
                 tonalElevation = pillElevation
             ) {

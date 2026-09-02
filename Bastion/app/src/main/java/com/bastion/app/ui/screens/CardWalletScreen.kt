@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -1253,7 +1256,13 @@ fun CardWalletScreen(
                                 .nestedScroll(nestedScrollConnection),
                             userScrollEnabled = true,
                             // bottom 预留悬浮胶囊高度，保证最后一张卡能滚出胶囊区域
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
+                            // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 96.dp,
+                                bottom = 96.dp
+                            )
                         ) {
                             items(localFilteredItems, key = { it.id }) { walletItem ->
                                 val item = walletItem.item

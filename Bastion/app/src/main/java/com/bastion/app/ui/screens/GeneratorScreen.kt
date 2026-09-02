@@ -510,7 +510,11 @@ fun GeneratorScreen(
             modifier = Modifier
                 .fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(bottom = 96.dp)
+            // top 含状态栏：沉浸式布局下标题行从状态栏下方开始
+            contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp,
+                bottom = 96.dp
+            )
         ) {
             item {
                 // 页面标题和历史按钮

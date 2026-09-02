@@ -1202,7 +1202,8 @@ fun PasskeyListScreen(
                             contentPadding = PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = 8.dp,
+                                // top = 状态栏 + 顶部 Bar 高度(88dp)：沉浸式布局避让
+                                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 96.dp,
                                 bottom = if (selectionMode) 140.dp else 100.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
