@@ -424,9 +424,9 @@ fun ExpressiveTopBar(
                             modifier = Modifier
                                 .graphicsLayer {
                                     // 收起时按钮组跟随标题一起缩小（1.0→0.85）
-                                    val s = androidx.compose.ui.unit.lerp(1f, 0.85f, scrollCollapseFraction)
-                                    scaleX = s
-                                    scaleY = s
+                                    val scale = 1f + (0.85f - 1f) * scrollCollapseFraction
+                                    scaleX = scale
+                                    scaleY = scale
                                 }
                                 .padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
