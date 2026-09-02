@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.SwipeUp
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -136,17 +135,8 @@ fun BottomNavSettingsScreen(
                     )
                 }
 
-                item(key = "bottom_nav_draggable") {
-                    BottomNavConfigRow(
-                        icon = Icons.Default.SwipeUp,
-                        title = stringResource(R.string.draggable_bottom_nav),
-                        subtitle = stringResource(R.string.draggable_bottom_nav_description),
-                        checked = settings.useDraggableBottomNav,
-                        switchEnabled = true,
-                        onCheckedChange = viewModel::updateUseDraggableBottomNav,
-                        showDragHandle = false,
-                    )
-                }
+                // 「可拖拽底部导航栏」开关已移除：+ 号已合并进底栏中间，
+                // 抽屉式底栏与当前设计冲突，设置不再暴露（数据字段保留以兼容备份恢复）。
             }
         }
     }

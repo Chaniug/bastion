@@ -886,8 +886,10 @@ fun SimpleMainScreen(
         .map { it.toBottomNavItem() }
     val shouldHideBottomNavigation = appSettings.autoHideBottomNavWhenSingleTab && dataTabItems.size == 1
 
+    // 底栏自定义槽位固定 3 个（左2 + 右1），最右侧固定「设置」。
+    // 否则自定义 tab 过多时 Settings 排在末尾会被挤出 5 槽布局，完全不可见。
     val tabs = buildList {
-        addAll(dataTabItems)
+        addAll(dataTabItems.take(3))
         if (!shouldHideBottomNavigation) {
             add(BottomNavItem.Settings)
         }
@@ -1210,8 +1212,9 @@ fun SimpleMainScreen(
     }
     val keepassDatabases by localKeePassViewModel.allDatabases.collectAsState()
     val bitwardenVaults by bitwardenViewModel.vaults.collectAsState()
-    // 可拖拽导航栏模式开关 (将来可从设置中读取)
-    val useDraggableNav = appSettings.useDraggableBottomNav
+    // 可拖拽导航栏已弃用（+ 号合并进底栏中间，两者冲突）。
+    // 强制走悬浮胶囊底栏，避免此前开启过的用户在设置项移除后无法关回。
+    val useDraggableNav = false
     
     // 构建导航项列表 (用于可拖拽导航栏)
     val draggableNavItems = remember(tabs, selectedDockTab) {
@@ -1942,6 +1945,9 @@ fun SimpleMainScreen(
     } else {
         // 使用传统底部导航栏
     Scaffold(
+        // 透明容器色：默认 surface 与 MainActivity 根布局 background 存在色差，
+        // 会在底栏槽位形成一条「矩形接缝带」包裹悬浮胶囊。透明后全屏统一 background。
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         topBar = {
             // 顶部栏由各自页面内部控制（如 ExpressiveTopBar），这里保持为空以避免叠加
         },
@@ -1990,7 +1996,7 @@ fun SimpleMainScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp)
                     ) {
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -2000,22 +2006,45 @@ fun SimpleMainScreen(
                         shadowElevation = 12.dp
                     ) {
                     NavigationBar(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(68.dp),
                         tonalElevation = 0.dp,
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
                         windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
                     ) {
-                        // 底栏布局：左侧 2 个 + 中间「添加」+ 右侧 2 个。
-                        // 两侧各固定 2 个槽位，不足时用 Spacer 占位，保证中间的 + 始终居中。
+                        // 底栏布局：左侧 2 个 + 中间「添加」+ 右侧「1 个自定义 + 固定设置」。
+                        // tabs 已保证数据 tab 最多 3 个且 Settings 固定在末尾。
                         val leftTabs = tabs.take(2)
                         val rightTabs = tabs.drop(2).take(2)
 
                         @Composable
                         fun tabItem(item: BottomNavItem) {
                             val label = stringResource(item.shortLabelRes())
+                            val isTabSelected = item.key == selectedDockTab.key
+                            // 自绘选中胶囊底色：M3 Expressive 指示器有漂浮动画 bug，
+                            // 全透明又没有强调色反馈。改为静态 pill + 短过渡动画。
+                            val pillColor by androidx.compose.animation.animateColorAsState(
+                                targetValue = if (isTabSelected) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    Color.Transparent
+                                },
+                                animationSpec = androidx.compose.animation.core.tween(200),
+                                label = "nav_tab_pill"
+                            )
                             NavigationBarItem(
                                 icon = {
-                                    Icon(item.icon, contentDescription = label)
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(min = 52.dp)
+                                            .height(30.dp)
+                                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                            .background(pillColor),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(item.icon, contentDescription = label)
+                                    }
                                 },
                                 label = {
                                     Text(
@@ -2024,11 +2053,8 @@ fun SimpleMainScreen(
                                         overflow = TextOverflow.Clip
                                     )
                                 },
-                                selected = item.key == selectedDockTab.key,
+                                selected = isTabSelected,
                                 onClick = { selectedTabKey = item.key },
-                                // Material3 Expressive 的选中 indicator 会在 tab 之间
-                                // 产生一个明显漂浮/放大的圆形/胶囊动画， visually 像 bug。
-                                // 关闭 indicator 背景，仅保留图标/文字颜色变化作为选中态。
                                 colors = NavigationBarItemDefaults.colors(
                                     indicatorColor = Color.Transparent
                                 )
@@ -2049,7 +2075,7 @@ fun SimpleMainScreen(
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(52.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
