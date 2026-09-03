@@ -1544,39 +1544,21 @@ fun AddEditPasswordScreen(
                         Toast.makeText(context, context.getString(R.string.save_failed), Toast.LENGTH_SHORT).show()
                         return@onComplete
                     }
-                    // Save TOTP if authenticatorKey is provided
-                    if (currentAuthKey.isNotEmpty() && totpViewModel != null) {
-                        val resolvedAuthTotp = TotpDataResolver.fromAuthenticatorKey(
-                            rawKey = currentAuthKey,
-                            fallbackIssuer = currentTitle,
-                            fallbackAccountName = currentUsername
-                        ) ?: TotpData(
-                            secret = currentAuthKey,
-                            issuer = currentTitle,
-                            accountName = currentUsername
-                        )
-
-                        val totpData = resolvedAuthTotp.copy(
-                            secret = resolvedAuthTotp.secret,
-                            issuer = resolvedAuthTotp.issuer.ifBlank { currentTitle },
-                            accountName = resolvedAuthTotp.accountName.ifBlank { currentUsername },
-                            otpType = resolvedAuthTotp.otpType,
-                            digits = resolvedAuthTotp.digits,
-                            period = resolvedAuthTotp.period,
-                            algorithm = resolvedAuthTotp.algorithm,
-                            counter = resolvedAuthTotp.counter,
-                            boundPasswordId = firstPasswordId,
-                        )
-
-                        totpViewModel.savePasswordBoundTotps(
-                            passwordIds = savedPasswordIds.ifEmpty { listOf(firstPasswordId) },
-                            title = currentTitle,
-                            notes = "",
-                            totpData = totpData,
-                            preferredTotpId = existingTotpId
-                        )
-                    } else if (currentAuthKey.isEmpty() && originalAuthenticatorKey.isNotEmpty() && totpViewModel != null) {
-                        // 密码页清空密钥：只取消验证器绑定，不删除验证器
+                    // 【单一数据源】验证码只保存在密码条目上（commonEntry.authenticatorKey
+                    // → 同步到 cipher 的 login.totp），**不再**额外创建一条独立的绑定型 SecureItem。
+                    //
+                    // 原先这里会再调用 savePasswordBoundTotps 建一条 secure_items(TOTP)，
+                    // 导致同一份验证码存在两种表示：
+                    //   ① 密码条目的 authenticatorKey（同步到 cipher.login.totp）
+                    //   ② 一条绑定型 SecureItem（自身不占 bitwardenVaultId）
+                    // 两者各走各的同步路径 → 双写 → 状态不一致 → 同步冲突。
+                    //
+                    // 改后验证器界面由「虚拟 TOTP」从密码条目解析呈现
+                    // （TotpViewModel.mergeStoredAndVirtualTotps），天然带密码条目的存储归属，
+                    // 归类正确，也不会再被去重丢弃（丢弃条件是"存在同密钥的 stored 记录"）。
+                    // 详见 BastionDocs/architecture-bitwarden-alignment.md
+                    if (currentAuthKey.isEmpty() && originalAuthenticatorKey.isNotEmpty() && totpViewModel != null) {
+                        // 密码页清空密钥：只取消验证器绑定（清理历史遗留的绑定记录），不删除验证器
                         totpViewModel.unbindTotpFromPassword(firstPasswordId, originalAuthenticatorKey)
                     }
 
