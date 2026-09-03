@@ -40,10 +40,20 @@ class TotpMapper : BitwardenMapper<SecureItem> {
             folderId = folderId,
             favorite = item.isFavorite,
             login = CipherLoginApiData(
-                // 独立 TOTP 通常没有用户名密码，但可以有 URI
-                uris = totpData.issuer.takeIf { it.isNotBlank() }?.let {
-                    listOf(CipherUriApiData(uri = "otpauth://totp/${it}"))
-                },
+                // 独立 TOTP 通常没有用户名密码，但可以有 URI。
+                // 这里必须**始终**写入 otpauth URI：它既用于同步回来时回解 issuer，
+                // 也是识别「Bastion 承载验证器条目」的标记——CipherSyncProcessor
+                // .isBastionStandaloneTotpContainer 靠它区分承载条目与真实密码条目。
+                // 若因 issuer 为空而不写 URI，承载 cipher 就会被误判，额外解析成一条密码条目
+                // （用户反馈的「网站是 otpauth://totp/xxx 的多余密码条目」即由此产生）。
+                // issuer 为空时退化为条目标题，保证标记始终存在。
+                uris = listOf(
+                    CipherUriApiData(
+                        uri = "otpauth://totp/${
+                            totpData.issuer.takeIf { it.isNotBlank() } ?: item.title
+                        }"
+                    )
+                ),
                 totp = totpPayload,
                 username = totpData.accountName.takeIf { it.isNotBlank() }
             )
