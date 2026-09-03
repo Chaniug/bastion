@@ -465,7 +465,8 @@ fun TotpListContent(
      * boundPasswordId，但它在服务器上是另一个独立条目，删除只影响它自己，不会动到被绑定
      * 密码条目的验证码，因此不该弹出「会影响密码条目」的确认。
      */
-    private fun willClearBoundPasswordTotp(item: SecureItem): Boolean {
+    // 注意：这是 Composable 内的局部函数，不能加 private 修饰符（Kotlin 不允许）。
+    fun willClearBoundPasswordTotp(item: SecureItem): Boolean {
         return boundPasswordIdFor(item) != null && item.bitwardenCipherId.isNullOrBlank()
     }
 
