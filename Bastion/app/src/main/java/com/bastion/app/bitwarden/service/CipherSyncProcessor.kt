@@ -211,6 +211,21 @@ class CipherSyncProcessor(
     }
     
     /**
+     * 判断是否为 Bastion 自己为「独立验证器」创建的承载 cipher。
+     *
+     * 判据比 [TotpMapper.isStandaloneTotpCipher] 更严格：额外要求 login.uris 中带
+     * otpauth:// 前缀——该 URI 由 TotpMapper.toCreateRequest 写入，用于同步时回解 issuer，
+     * 是 Bastion 承载 cipher 的独有特征。这样用户手动创建的「只填了 TOTP、没填密码」的
+     * 密码条目不会被误判，仍按密码条目同步，行为保持不变。
+     */
+    private fun isBastionStandaloneTotpContainer(cipher: CipherApiResponse): Boolean {
+        if (!TotpMapper.isStandaloneTotpCipher(cipher)) return false
+        return cipher.login?.uris.orEmpty().any {
+            it.uri?.trim()?.startsWith("otpauth://", ignoreCase = true) == true
+        }
+    }
+
+    /**
      * 同步 Login 类型 Cipher (Type 1)
      * 可能是: Password, TOTP, 或 Passkey
      */
@@ -221,6 +236,15 @@ class CipherSyncProcessor(
         serverDeletedAt: Date?,
         serverArchivedAt: Date?
     ): CipherSyncResult {
+        // Bastion 为「独立验证器」创建的承载 cipher（type=1、无密码、只有 totp，
+        // login.uris 写成 otpauth://totp/{issuer}）在语义上并不是密码条目。
+        // 这类 cipher 必须只走 TotpMapper：若再走 syncPasswordCipher，同一个 cipher 会被
+        // 额外解析成一条密码条目，导致本地凭空多出一条重复条目——正是用户反馈的
+        // 「同步后密码界面多一条、验证器界面却因去重规则不显示」的根因。
+        if (isBastionStandaloneTotpContainer(cipher)) {
+            return syncTotpCipher(vault, cipher, symmetricKey, serverDeletedAt)
+        }
+
         val passwordResult = syncPasswordCipher(vault, cipher, symmetricKey, serverDeletedAt, serverArchivedAt)
         val passwordRemoteUnchanged =
             passwordResult is CipherSyncResult.Skipped && passwordResult.reason == SKIP_REMOTE_UNCHANGED
