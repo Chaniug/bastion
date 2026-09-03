@@ -454,8 +454,23 @@ fun TotpListContent(
         return (totpDataById[item.id] ?: viewModel.parseTotpDataForDisplay(item))?.boundPasswordId
     }
 
+    /**
+     * 删除一条验证器是否会连带清空「被绑定密码条目」的验证器密钥。
+     *
+     * 只有「绑定型且自己没有独立 Bitwarden cipher」的条目才会连带影响——此时它是密码条目
+     * 验证器的唯一载体，删除它就等于移除该密码条目的验证器（与 TotpViewModel.deleteTotpItem
+     * 的判断保持一致）。
+     *
+     * 自带独立 cipher 的条目（例如历史 bug 产生的 website=otpauth://... 重复条目）虽也带
+     * boundPasswordId，但它在服务器上是另一个独立条目，删除只影响它自己，不会动到被绑定
+     * 密码条目的验证码，因此不该弹出「会影响密码条目」的确认。
+     */
+    private fun willClearBoundPasswordTotp(item: SecureItem): Boolean {
+        return boundPasswordIdFor(item) != null && item.bitwardenCipherId.isNullOrBlank()
+    }
+
     fun requestDeleteItem(item: SecureItem) {
-        if (boundPasswordIdFor(item) != null) {
+        if (willClearBoundPasswordTotp(item)) {
             pendingBoundSingleDelete = item
             return
         }
@@ -468,7 +483,7 @@ fun TotpListContent(
         val toDelete = totpItems.filter { selectedItems.contains(it.id) }
         if (toDelete.isEmpty()) return
 
-        val boundItems = toDelete.filter { boundPasswordIdFor(it) != null }
+        val boundItems = toDelete.filter { willClearBoundPasswordTotp(it) }
         if (boundItems.isNotEmpty()) {
             pendingBoundBatchDelete = boundItems
         } else {

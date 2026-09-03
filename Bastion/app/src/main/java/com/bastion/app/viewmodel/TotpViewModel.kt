@@ -1574,7 +1574,14 @@ class TotpViewModel(
                             candidateData.boundPasswordId == boundId &&
                                 buildTotpIdentityKey(candidateData) == itemKey
                         }
-                    if (passwordKey != null && passwordKey == itemKey && !hasEquivalentBoundItem) {
+                    // 若本条 TOTP 自己拥有独立的 Bitwarden cipher，说明它在服务器上是**一个独立条目**
+                    // （例如历史 bug 产生的 website=otpauth://... 的重复条目）。删除这种条目只应删除
+                    // 它自己的 cipher，绝不能连带清空被绑定密码条目（如 obsidian）的验证器——
+                    // 后者在服务器上是该密码条目自己的 login.totp，属于另一份独立数据。
+                    // 否则会出现「删掉本地重复条目 → Bitwarden 上正主条目的验证码被一起删除」的误伤。
+                    val isStandaloneBitwardenCipher =
+                        item.bitwardenVaultId != null && !item.bitwardenCipherId.isNullOrBlank()
+                    if (passwordKey != null && passwordKey == itemKey && !hasEquivalentBoundItem && !isStandaloneBitwardenCipher) {
                         if (password.bitwardenVaultId != null && password.bitwardenCipherId != null) {
                             // For Bitwarden-linked passwords, mark as locally modified so sync can clear remote login.totp.
                             passwordRepository.updatePasswordEntry(
