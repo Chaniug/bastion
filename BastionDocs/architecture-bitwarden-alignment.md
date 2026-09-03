@@ -310,7 +310,55 @@ val virtualTotps = allPasswords.mapNotNull { password ->
    - **回归测试失败是强信号**，必须先读懂测试意图，再决定改实现还是改测试——这次测试是对的，是我的实现错了。
 5. **已定方向（2026-09-04 用户拍板）**：改用**方案二（明确主从）**，详见 §5.1。核心是**重新定位**绑定型记录——降为"只存 Bastion 属性、不参与同步"的附属品，而不是删除它。
 
-### 阶段 4：验证
+### 阶段 4：验证（2026-09-04 真机首轮 → **未通过**，已定位根因）
+
+#### 取证结果（数据库实锤，设备 BKQ-AN00）
+
+**现象**：添加密码条目 test4（选定 Bitwarden 存储），本地多出一条同名条目。
+
+```
+password_entries:
+  id=456 | test4 | cipher=d6475517-... | rg=646aeb01-... ← 用户真正创建的
+  id=457 | test4 | cipher=4650a5c2-... | rg=None        ← 多出来的"副本"（自带 authenticatorKey）
+
+secure_items (TOTP):
+  id=34 | test4 | bwv=1 | cipher=4650a5c2-... | SYNCED   ← 与 id=457 同一个 cipher
+```
+
+**同一个验证码被建了多条记录**（test3 更明显，3 条）：
+
+| id | vault | cipher | 说明 |
+|---|---|---|---|
+| 32 | **1** | 57aff8b2 | ❌ 被当独立条目上传 |
+| 31 | None | None | ✅ 绑定型（正确） |
+| 30 | None | None | ✅ 绑定型（正确） |
+
+#### 根因链（已定位）
+
+1. 密码页保存验证码 → `savePasswordBoundTotpInternal`
+2. `TotpViewModel:1006` `preserveSelectedSourceStorage = selectedSourceItem?.first?.id == preferredItem?.first?.id`
+   —— 当匹配复用到某条**历史遗留的、已归属 Bitwarden 的独立 TOTP** 时为 `true`，
+   于是**连 `bitwardenVaultId=1` 和 cipher 一起继承** → 绑定型被"洗白"成独立条目
+   （另注：新建场景两者皆 null 时 `null == null` 也为 `true`，属逻辑瑕疵）
+3. 该 TOTP 因此进入 Bitwarden 上传队列
+4. `CipherUploadProcessor:121` `ItemType.TOTP -> createTotpCipherRequest(...)`
+   —— **无条件**当独立条目上传，**不判断 `boundPasswordId`** → 创建 `otpauth://` cipher
+5. 同步拉回 → 该 cipher 被解析成**密码条目** → 本地多出"副本"（即 `id=457`）
+
+> 结论：**"本地多一份副本"是结果，不是原因**。根因是绑定型 TOTP 拿到了不该有的 Bitwarden 归属并被上传。
+
+#### 修复方向（两道防线，纵深防御）
+
+1. **保存层**：`savePasswordBoundTotpInternal` 中，绑定型 TOTP **强制清空** Bitwarden 归属
+   （`bitwardenVaultId` / `bitwardenCipherId` = null），**不继承**来源记录的存储。
+2. **上传层**：`CipherUploadProcessor` 增加守卫——TOTP 若 `boundPasswordId != null`，**拒绝上传**
+   （其验证码已随密码条目 `authenticatorKey` → `cipher.login.totp` 同步，无需自立门户）。
+
+#### 遗留观察
+
+- 本轮日志中**未捕获到** `808603e` 加的业务日志（`CIPHER_ROUTE_*` / `VIRTUAL_TOTP_DROPPED`），
+  需确认用户所装包是否包含该 commit，或日志条件未触发。
+
 - [ ] 用户真机复现原场景，用新日志确认无冲突
 - [ ] 数据库取证：`password_entries` 与 `secure_items` 不再出现同 cipher 双记录
 - [ ] 回归：独立型验证器仍正常
