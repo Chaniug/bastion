@@ -296,6 +296,15 @@ class TotpViewModel(
             val resolvedTotpData = resolvePasswordAuthenticatorTotp(password) ?: return@mapNotNull null
             val identityKey = buildTotpIdentityKey(resolvedTotpData)
             if (identityKey in existingKeys || !seenVirtualKeys.add(identityKey)) {
+                // 诊断日志：虚拟 TOTP 因与已存储的 TOTP 同密钥而被丢弃。
+                // 这正是「绑定型验证码在 Bitwarden 分类下搜不到」的直接原因——
+                // 被保留的 stored 记录自身 bitwardenVaultId 为 null，筛选时永远命中不了。
+                android.util.Log.d(
+                    "TotpViewModel",
+                    "VIRTUAL_TOTP_DROPPED passwordId=${password.id} title=${password.title} " +
+                        "vaultId=${password.bitwardenVaultId} " +
+                        "reason=${if (identityKey in existingKeys) "duplicate_of_stored" else "duplicate_virtual"}"
+                )
                 return@mapNotNull null
             }
 

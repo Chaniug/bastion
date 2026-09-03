@@ -242,8 +242,15 @@ class CipherSyncProcessor(
         // 额外解析成一条密码条目，导致本地凭空多出一条重复条目——正是用户反馈的
         // 「同步后密码界面多一条、验证器界面却因去重规则不显示」的根因。
         if (isBastionStandaloneTotpContainer(cipher)) {
+            // 诊断日志：承载验证器的 cipher 只应同步为验证器，不能再生成一条密码条目。
+            android.util.Log.d(
+                TAG,
+                "CIPHER_ROUTE_TOTP_CONTAINER id=${cipher.id} name=${cipher.name} " +
+                    "uris=${cipher.login?.uris?.map { it.uri }} -> 只同步为验证器"
+            )
             return syncTotpCipher(vault, cipher, symmetricKey, serverDeletedAt)
         }
+        android.util.Log.d(TAG, "CIPHER_ROUTE_PASSWORD id=${cipher.id} name=${cipher.name}")
 
         val passwordResult = syncPasswordCipher(vault, cipher, symmetricKey, serverDeletedAt, serverArchivedAt)
         val passwordRemoteUnchanged =
