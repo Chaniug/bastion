@@ -3271,14 +3271,18 @@ class PasswordViewModel(
                             !it.isDeleted &&
                             !it.isArchived
                     }
+                // 【移动语义】未勾选位置上的旧副本 = 用户要迁出的位置。
+                // 与验证器（saveTotpAcrossTargets）对齐：直接删除，而不是保留。
+                // 这样「改选库」就是真正的迁移——新库写入、旧库移除，不再留副本。
                 val staleReplicas = activeReplicas.filter {
                     it.toStorageTarget().stableKey !in selectedTargetKeys
                 }
                 if (staleReplicas.isNotEmpty()) {
                     Log.w(
                         "PasswordViewModel",
-                        "Preserving ${staleReplicas.size} existing password replicas not present in the edited target selection: ids=${staleReplicas.map { it.id }}"
+                        "Removing ${staleReplicas.size} stale password replicas after target change: ids=${staleReplicas.map { it.id }}"
                     )
+                    staleReplicas.forEach { repository.deletePasswordEntry(it) }
                 }
 
                     PasswordSaveAcrossTargetsResult(

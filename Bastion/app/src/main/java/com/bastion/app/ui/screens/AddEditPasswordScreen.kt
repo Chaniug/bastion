@@ -3217,7 +3217,8 @@ fun AddEditPasswordScreen(
     MultiStorageTargetPickerBottomSheet(
         visible = showStorageTargetSheet,
         selectedTargets = selectedStorageTargets.toList(),
-        lockedTargetKeys = existingReplicaTargetKeys,
+        // 【移动语义】已有位置不再锁定：允许改选其他库，保存时旧库副本将被移除（真正的迁移）。
+        lockedTargetKeys = emptySet(),
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,
