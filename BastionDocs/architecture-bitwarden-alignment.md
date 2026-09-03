@@ -239,12 +239,14 @@ val virtualTotps = allPasswords.mapNotNull { password ->
 - [ ] `savePasswordBoundTotp*`：写了哪些表/字段
 - [ ] 同步队列每条操作入队 / 出队 / 成败
 
-### 阶段 3：实施对齐改造
-- [ ] 绑定型验证码：去掉 SecureItem，只写 `authenticatorKey`
+### 阶段 3：实施对齐改造（部分完成 2026-09-04）
+- [x] 绑定型验证码：去掉 SecureItem 双写（`e9526ca`：AddEditPasswordScreen 移除 `savePasswordBoundTotps` 调用；实测 stored=0，无需数据迁移）
+- [x] 迁移语义（`95e28e2`）：密码条目 `staleReplicas` 真删除（对齐验证器）+ 解锁 `lockedTargetKeys`（改选库=真迁移）
+- [x] 日志打点（`808603e`）：`VIRTUAL_TOTP_DROPPED` / `CIPHER_ROUTE_TOTP_CONTAINER` / `CIPHER_ROUTE_PASSWORD`
 - [ ] 绑定型通行密钥：落到密码条目，统一关联
-- [ ] 验证器显示：改为虚拟 TOTP 单一路径
+- [ ] 存储选择器：移除"移动/复制"切换（用户指出多余，直接选库即可）
+- [ ] 验证器显示：改为虚拟 TOTP 单一路径（stored=0 后自动生效，待真机验证）
 - [ ] 删除逻辑：语义改为"修改密码条目字段"
-- [ ] 历史脏数据迁移（清理已存在的绑定型 SecureItem）
 
 ### 阶段 4：验证
 - [ ] 用户真机复现原场景，用新日志确认无冲突

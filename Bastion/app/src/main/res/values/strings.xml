@@ -1837,7 +1837,7 @@
          注意不要复用 single_select / multi_select——那两个还被滑动选择模式等功能共用。 -->
     <string name="storage_picker_mode_move">移动</string>
     <string name="storage_picker_mode_copy">复制</string>
-    <string name="storage_picker_edit_multi_append_hint">编辑已有条目时，已保存的位置会保留、无法在此取消；此时选择其他位置＝再复制一份过去。若要彻底删除某个位置上的副本，请到该位置下删除对应条目。</string>
+    <string name="storage_picker_edit_multi_append_hint">选择要保存到的数据库。一条数据只会保存在一个位置，切换到其他数据库＝把条目迁移过去（原位置不再保留）。</string>
     
     <!-- 自动填充硬编码修复 -->
     <string name="autofill_manual_entry_title">Bastion自动填充</string>

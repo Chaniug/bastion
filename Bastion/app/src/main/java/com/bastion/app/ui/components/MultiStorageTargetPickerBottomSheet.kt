@@ -120,7 +120,10 @@ fun MultiStorageTargetPickerBottomSheet(
     onSelectedTargetsChange: (List<StorageTarget>) -> Unit,
     onTargetClicked: ((StorageTarget) -> Unit)? = null,
     forceMultiSelectionMode: Boolean = false,
-    showSelectionModeToggle: Boolean = true,
+    // 【单一归属】不再提供「复制 / 多位置保存」模式：一条数据只保存在一个库里。
+    // 隐藏该切换后，选择器走单选逻辑（selectedTargets<=1 时自动进入 SINGLE），
+    // 用户直接点选目标库；切换到另一个库＝迁移（旧位置移除，见 PasswordViewModel 的 staleReplicas 清理）。
+    showSelectionModeToggle: Boolean = false,
     showBitwardenFolderTargets: Boolean = true,
     confirmButtonText: String? = null,
     onConfirmSelection: ((List<StorageTarget>) -> Unit)? = null
