@@ -271,23 +271,7 @@ fun TotpListContent(
     val parsedTotpItems by viewModel.parsedTotpItems.collectAsState()
     val totpItems = remember(parsedTotpItems) { parsedTotpItems.map { it.item } }
     val totpDataById = remember(parsedTotpItems) { parsedTotpItems.associate { it.item.id to it.totpData } }
-    // 「数据库」Tab 各条目的条数统计：基于全量未删除条目按存储来源分组（与密码页同口径）
     val allTotpItemsForStats by viewModel.allTotpItems.collectAsState()
-    val totpStorageCounts = remember(allTotpItemsForStats) {
-        val active = allTotpItemsForStats.filter { !it.isDeleted }
-        com.bastion.app.ui.PasswordStorageCounts(
-            total = active.size,
-            bastionLocal = active.count { it.keepassDatabaseId == null && it.bitwardenVaultId == null },
-            perKeePassDatabase = active
-                .filter { it.keepassDatabaseId != null }
-                .groupingBy { it.keepassDatabaseId!! }
-                .eachCount(),
-            perBitwardenVault = active
-                .filter { it.bitwardenVaultId != null }
-                .groupingBy { it.bitwardenVaultId!! }
-                .eachCount()
-        )
-    }
     val searchQuery by viewModel.searchQuery.collectAsState()
     val passwords by passwordViewModel.allPasswords.collectAsState(initial = emptyList())
     val passwordMap = remember(passwords) { passwords.associateBy { it.id } }
@@ -467,7 +451,39 @@ fun TotpListContent(
      */
     // 注意：这是 Composable 内的局部函数，不能加 private 修饰符（Kotlin 不允许）。
     fun willClearBoundPasswordTotp(item: SecureItem): Boolean {
-        return boundPasswordIdFor(item) != null && item.bitwardenCipherId.isNullOrBlank()
+        val boundId = boundPasswordIdFor(item) ?: return false
+        // 自带独立 cipher 的条目在服务器上是另一个独立条目，删除只影响它自己。
+        if (!item.bitwardenCipherId.isNullOrBlank()) return false
+        // 被绑定的密码条目若已不存在，就没有东西可连带清空，不该再用这条警告吓用户。
+        return passwordMap[boundId] != null
+    }
+
+    // 「数据库」Tab 条数统计：按存储来源分组（与密码页同口径）。
+    // 绑定型验证码依附于某条密码条目，自身不占存储位（bitwardenVaultId / keepassDatabaseId 皆空），
+    // 但它的数据实际存在于被绑定密码条目所在的库中。统计时须继承该密码条目的存储归属，
+    // 否则会被错误地算成「Bastion 本地」，用户就只能在本地分类里找到它、在 Bitwarden 下找不到。
+    val totpStorageCounts = remember(allTotpItemsForStats, passwordMap) {
+        val active = allTotpItemsForStats.filter { !it.isDeleted }
+        val storages = active.map { item ->
+            val boundPassword = boundPasswordIdFor(item)?.let { passwordMap[it] }
+            if (boundPassword != null) {
+                boundPassword.keepassDatabaseId to boundPassword.bitwardenVaultId
+            } else {
+                item.keepassDatabaseId to item.bitwardenVaultId
+            }
+        }
+        com.bastion.app.ui.PasswordStorageCounts(
+            total = active.size,
+            bastionLocal = storages.count { it.first == null && it.second == null },
+            perKeePassDatabase = storages
+                .mapNotNull { it.first }
+                .groupingBy { it }
+                .eachCount(),
+            perBitwardenVault = storages
+                .mapNotNull { it.second }
+                .groupingBy { it }
+                .eachCount()
+        )
     }
 
     fun requestDeleteItem(item: SecureItem) {
