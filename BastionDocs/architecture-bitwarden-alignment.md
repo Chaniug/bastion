@@ -76,14 +76,33 @@ PasswordEntry（对应一个 cipher）
 
 ## 5. 改造方案
 
-### 5.1 绑定型验证码（核心）
+### 5.1 绑定型验证码（核心）— 方案二：明确主从（**已定，2026-09-04**）
 
-| 操作 | 现状 | 改后 |
+> 曾尝试「方案一：删掉绑定型记录、只留虚拟条目」，因误判双写且会导致绑定型验证码**不可编辑**（负 id）而撤回，详见 §7 更正块。
+
+**主从模型**：
+
+|  | 主（Master） | 从（Slave） |
 |---|---|---|
-| 保存 | `savePasswordBoundTotp*` 额外创建一条 `secure_items`(TOTP) | **只写 `password_entries.authenticatorKey`**，不建 SecureItem |
-| 显示 | 存储 TOTP 与虚拟 TOTP 合并 + 去重 | 只剩虚拟 TOTP（从密码条目解析），天然带密码条目归属 |
-| 删除 | 删 SecureItem → 连带清空 authenticatorKey 并同步 | 直接改密码条目的 authenticatorKey（语义清晰） |
-| 图标 | 存在 TOTP 的 itemData 里 | 复用密码条目的 `customIconType/customIconValue` |
+| 载体 | `password_entries.authenticatorKey` | `secure_items`(TOTP)，`bound_password_id` 指向主 |
+| 职责 | **唯一同步源** → `cipher.login.totp` | 只存 **Bastion 特有属性**（图标、本地备注等） |
+| 同步 | ✅ 参与（随密码条目） | ❌ **永不参与**（`bitwardenVaultId`/`bitwardenCipherId` 恒为 NULL，`syncStatus=NONE`） |
+| 生命周期 | 独立 | 跟随主（主删 → 从删） |
+| 存在意义 | 与服务器对齐 | 给验证器页一个**正 id 可编辑实体**（虚拟条目 id 为负，无法编辑） |
+
+| 操作 | 改后行为 |
+|---|---|
+| 保存 | 主：写 `authenticatorKey`；从：创建/更新且**不分配 vault/cipher** |
+| 显示 | stored(从) 与 virtual(自主解析) 合并去重；**存储归属继承自主记录** |
+| 删除 | 清空主的 `authenticatorKey`（触发同步）+ 删除从记录 |
+| 图标 | 存在**从记录**上（这正是它存在的价值），主不冗余存图标 |
+
+**关键约束（必须写进代码注释 + 回归测试）**：
+
+1. 绑定型记录**永不**分配 `bitwardenVaultId` / `bitwardenCipherId`。
+2. 绑定型记录**永不**进入任何 sync 目标写入路径。
+3. **服务器路径唯一**：只有密码条目的 `authenticatorKey` → `cipher.login.totp`。
+4. **显示归属继承**：验证器页筛选/归类时，绑定型记录的存储归属**取绑定密码条目的**，而非自身（自身为 NULL）——否则会重现"Bitwarden 的验证码被归类到本地 / Bitwarden 下搜不到"（§6 `TotpCategoryFilter` 已记录此坑）。
 
 ### 5.2 绑定型通行密钥
 
@@ -261,7 +280,7 @@ val virtualTotps = allPasswords.mapNotNull { password ->
 4. **教训**：
    - 改动前先确认该记录**是否真的参与同步**，不能凭"看起来存了两份"就判定双写。
    - **回归测试失败是强信号**，必须先读懂测试意图，再决定改实现还是改测试——这次测试是对的，是我的实现错了。
-5. **后续方向**：方案一需重新设计。若要消除"两种表示"又保留可编辑性，应走**方案二（明确主从）**——密码条目为唯一同步源，绑定型记录降级为"仅存 Bastion 特有属性（图标等）且明确不参与同步"，而不是直接删掉记录。
+5. **已定方向（2026-09-04 用户拍板）**：改用**方案二（明确主从）**，详见 §5.1。核心是**重新定位**绑定型记录——降为"只存 Bastion 属性、不参与同步"的附属品，而不是删除它。
 
 ### 阶段 4：验证
 - [ ] 用户真机复现原场景，用新日志确认无冲突
@@ -337,6 +356,7 @@ python query.py   # 用 sqlite3 查询
 1. **独立型验证器：保留**（继续用 SecureItem + 承载 cipher）
 2. **通行密钥：本次一并改造**（与验证码同样绑到密码条目，消除两套关联并存）
 3. **"只能复制不能迁移"：本轮一并解决**（密码条目 `staleReplicas` 由"只 Log 不删"改为真删除）
+4. **绑定型验证码采用「方案二：明确主从」**（2026-09-04 用户拍板）：密码条目为唯一同步源，绑定型 SecureItem 保留但降为"只存 Bastion 特有属性、不参与同步"的附属品——既保住验证器页可编辑，又只有一条路径写服务器（替代已撤回的方案一）
 
 ---
 
