@@ -221,32 +221,47 @@ val virtualTotps = allPasswords.mapNotNull { password ->
 ## 7. 实施阶段（务必按顺序，可跨会话接力）
 
 ### 阶段 0：准备
-- [x] 用户导出 Bitwarden 备份（**动手前必须完成**）
-- [ ] 确认第 12 节待确认项
+- [x] 用户导出 Bitwarden 备份（2026-09-04 用户确认已完成；后续删除类改动可放心进行）
+- [x] 确认第 12 节待确认项（2026-09-04：①独立型验证器保留 ②通行密钥一起改 ③迁移问题一起解决）
 
 ### 阶段 1：数据流梳理（自己读代码，勿依赖子代理）
 > 子代理已两次未能回传结论（输出被截断、要求写文件也未成功），此路不通。
-- [ ] 读 `AddEditPasswordScreen` 验证器保存路径
-- [ ] 读 `TotpViewModel` 284-450（merge / 去重 / 筛选）
-- [ ] 读 `CipherSyncProcessor` 分流与 `syncPasswordCipher`
-- [ ] 读 `deleteTotpItem` 绑定型分支
-- [ ] **产出**：标注出"双表示/双写"的确切行号清单
+- [x] 读 `AddEditPasswordScreen` 验证器保存路径
+- [x] 读 `TotpViewModel` 284-450（merge / 去重 / 筛选）
+- [x] 读 `CipherSyncProcessor` 分流与 `syncPasswordCipher`
+- [x] 读 `deleteTotpItem` 绑定型分支
+- [x] **产出**：双表示 / 双写确切行号清单 → 见 **6.1 节**
 
 ### 阶段 2：加日志打点（与阶段 3 同批提交）
 在以下节点补 `Log`，让同步过程可见（当前正常路径**完全不打日志**，这是之前定位失败的直接原因）：
-- [ ] `CipherSyncProcessor` 分流：此 cipher 判为密码条目 / 承载验证器
+- [x] `CipherSyncProcessor` 分流：此 cipher 判为密码条目 / 承载验证器（`808603e`）
+- [x] 验证器虚拟条目被去重丢弃：`TotpViewModel:298` → `VIRTUAL_TOTP_DROPPED`（`808603e`）
 - [ ] `resolveBitwardenTransition`：本地与远端如何匹配、是否新建
 - [ ] `savePasswordBoundTotp*`：写了哪些表/字段
 - [ ] 同步队列每条操作入队 / 出队 / 成败
 
 ### 阶段 3：实施对齐改造（部分完成 2026-09-04）
-- [x] 绑定型验证码：去掉 SecureItem 双写（`e9526ca`：AddEditPasswordScreen 移除 `savePasswordBoundTotps` 调用；实测 stored=0，无需数据迁移）
 - [x] 迁移语义（`95e28e2`）：密码条目 `staleReplicas` 真删除（对齐验证器）+ 解锁 `lockedTargetKeys`（改选库=真迁移）
 - [x] 日志打点（`808603e`）：`VIRTUAL_TOTP_DROPPED` / `CIPHER_ROUTE_TOTP_CONTAINER` / `CIPHER_ROUTE_PASSWORD`
+- [x] 存储选择器：单一归属（`d2b260d` 隐藏"移动/复制"切换 + 文案改为"切换数据库＝迁移"）
 - [ ] 绑定型通行密钥：落到密码条目，统一关联
-- [ ] 存储选择器：移除"移动/复制"切换（用户指出多余，直接选库即可）
-- [ ] 验证器显示：改为虚拟 TOTP 单一路径（stored=0 后自动生效，待真机验证）
 - [ ] 删除逻辑：语义改为"修改密码条目字段"
+- [ ] 验证器显示：待真机验证
+
+#### ⚠️ 重要更正：绑定型 SecureItem **不是**双写源，`e9526ca` 已回滚（`49658d5`）
+
+曾误判「密码页保存验证码 = 双写」，据此提交 `e9526ca` 移除 `savePasswordBoundTotps` 调用。**这是错的，已回滚。** 事实如下：
+
+1. **绑定型记录根本不参与 Bitwarden 同步**：实测 `secure_items` 中绑定型记录为 `bitwarden_vault_id=NULL`、`bitwarden_cipher_id=NULL`、`sync_status=NONE`，它只是**本地影子记录**；服务器上的验证码**只有一个来源**——密码条目的 `authenticatorKey` → `cipher.login.totp`。**不存在双写。**
+2. **它是验证器页可编辑性的保障**：回归测试 `TotpPasswordBindingRegressionGuardTest` 明确断言——
+   > "Do not return early to rely only on virtual password.authenticatorKey entries; virtual entries have negative ids and cannot be edited as real TOTP rows."
+
+   去掉 stored 记录后，绑定型验证码只剩负 id 虚拟条目，**无法编辑**（改图标失效），属功能退化；CI 因此报 `669 tests completed, 2 failed`。
+3. **真正的冲突源是别的**：`4349a5f` 之前，验证器界面编辑走 `saveTotpAcrossTargets`，把绑定型 TOTP 当独立条目写入 Bitwarden → 新建 `otpauth://` cipher。**这个已经修好了**，不需要再动密码页。
+4. **教训**：
+   - 改动前先确认该记录**是否真的参与同步**，不能凭"看起来存了两份"就判定双写。
+   - **回归测试失败是强信号**，必须先读懂测试意图，再决定改实现还是改测试——这次测试是对的，是我的实现错了。
+5. **后续方向**：方案一需重新设计。若要消除"两种表示"又保留可编辑性，应走**方案二（明确主从）**——密码条目为唯一同步源，绑定型记录降级为"仅存 Bastion 特有属性（图标等）且明确不参与同步"，而不是直接删掉记录。
 
 ### 阶段 4：验证
 - [ ] 用户真机复现原场景，用新日志确认无冲突
