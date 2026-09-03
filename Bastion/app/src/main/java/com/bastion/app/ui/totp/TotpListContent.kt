@@ -744,7 +744,8 @@ fun TotpListContent(
                                         passwordViewModel = passwordViewModel,
                                         onDismissFilterSheet = { isCategorySheetVisible = false }
                                     )
-                                }
+                                },
+                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs
                             )
                         }
                     }

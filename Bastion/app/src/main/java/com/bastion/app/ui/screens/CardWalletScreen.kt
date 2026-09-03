@@ -1070,7 +1070,8 @@ fun CardWalletScreen(
                                         passwordViewModel = passwordViewModel,
                                         onDismissFilterSheet = { showCategoryFilterDialog = false }
                                     )
-                                }
+                                },
+                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs
                             )
                         }
                     }

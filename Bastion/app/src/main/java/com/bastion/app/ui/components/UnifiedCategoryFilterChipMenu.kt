@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,6 +86,55 @@ private data class ChipMenuLocalCategoryNode(
     val parentPath: String?,
     val displayName: String
 )
+
+/**
+ * 文件夹弹层呈现模式：
+ * - [FoldedSections]：现状，三个纵向折叠段（数据库 / 快捷筛选 / 分类）+ 底部 trailing。
+ * - [ThreeChipsTabs]：与密码页 [com.bastion.app.ui.PasswordListCategoryChipMenu] 对齐，
+ *   顶部三个 FilterChip（数据库 / 快捷筛选 / 分类）切换，下方只渲染当前 Tab 对应区块。
+ * TOTP / 卡包 / 通行密钥页改用此模式即可获得与密码页一致的视觉与交互。
+ */
+enum class UnifiedCategoryFilterChipMenuPresentationMode {
+    FoldedSections,
+    ThreeChipsTabs
+}
+
+/**
+ * 三胶囊 Tab 栏（与密码页 [com.bastion.app.ui.PasswordListCategoryChipMenuTabBar] 同款样式）。
+ * 固定三 Tab：数据库 / 快捷筛选 / 分类。
+ */
+@Composable
+private fun UnifiedCategoryFilterChipMenuTabBar(
+    selectedTab: Int,
+    onSelectTab: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tabs = listOf(
+        R.string.category_selection_menu_databases,
+        R.string.category_selection_menu_quick_filters,
+        R.string.category_selection_menu_folders
+    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        tabs.forEachIndexed { index, labelRes ->
+            FilterChip(
+                selected = selectedTab == index,
+                onClick = { onSelectTab(index) },
+                modifier = Modifier.weight(1f),
+                label = {
+                    Text(
+                        text = stringResource(labelRes),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            )
+        }
+    }
+}
 
 @Composable
 private fun <T> rememberAsyncComputed(
@@ -244,7 +296,9 @@ fun UnifiedCategoryFilterChipMenu(
     categoryEditMode: Boolean = false,
     onRequestCategoryAction: ((Category) -> Unit)? = null,
     quickFilterContent: (@Composable ColumnScope.() -> Unit)? = null,
-    trailingContent: (@Composable ColumnScope.() -> Unit)? = null
+    trailingContent: (@Composable ColumnScope.() -> Unit)? = null,
+    // 默认折叠段模式；TOTP / 卡包 / 通行密钥页传 ThreeChipsTabs 以对齐密码页三胶囊风格
+    presentationMode: UnifiedCategoryFilterChipMenuPresentationMode = UnifiedCategoryFilterChipMenuPresentationMode.FoldedSections
 ) {
     if (!visible) return
 
@@ -338,6 +392,7 @@ fun UnifiedCategoryFilterChipMenu(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (presentationMode == UnifiedCategoryFilterChipMenuPresentationMode.FoldedSections) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -551,6 +606,23 @@ fun UnifiedCategoryFilterChipMenu(
         }
 
         trailingContent?.invoke(this)
+        } else {
+            UnifiedCategoryFilterChipMenuThreeChipsTabs(
+                selected = selected,
+                onSelect = onSelect,
+                showLocalOnlyQuickFilter = showLocalOnlyQuickFilter,
+                isLocalOnlyQuickFilterSelected = isLocalOnlyQuickFilterSelected,
+                onSelectLocalOnlyQuickFilter = onSelectLocalOnlyQuickFilter,
+                keepassDatabases = keepassDatabases,
+                bitwardenVaults = bitwardenVaults,
+                quickFilterItems = quickFilterItems,
+                folderChips = folderChips,
+                categories = categories,
+                categoryEditMode = categoryEditMode,
+                onRequestCategoryAction = onRequestCategoryAction,
+                trailingContent = trailingContent
+            )
+        }
     }
 }
 
@@ -823,4 +895,149 @@ private fun UnifiedCategoryFilterSelection.toBaseScope(): UnifiedCategoryFilterS
     UnifiedCategoryFilterSelection.Starred,
     UnifiedCategoryFilterSelection.Uncategorized -> UnifiedCategoryFilterSelection.All
     else -> this
+}
+
+/**
+ * “三胶囊 Tab”呈现：顶部 [UnifiedCategoryFilterChipMenuTabBar] 切换，
+ * 下方只渲染当前 Tab 对应区块（数据库 / 快捷筛选 / 分类）。
+ * 与密码页 [com.bastion.app.ui.PasswordListCategoryChipMenu] 视觉对齐。
+ * 数据复用调用方已算好的 [quickFilterItems] / [folderChips]，不重复计算。
+ */
+@Composable
+private fun UnifiedCategoryFilterChipMenuThreeChipsTabs(
+    selected: UnifiedCategoryFilterSelection,
+    onSelect: (UnifiedCategoryFilterSelection) -> Unit,
+    showLocalOnlyQuickFilter: Boolean,
+    isLocalOnlyQuickFilterSelected: Boolean,
+    onSelectLocalOnlyQuickFilter: (() -> Unit)?,
+    keepassDatabases: List<LocalKeePassDatabase>,
+    bitwardenVaults: List<BitwardenVault>,
+    quickFilterItems: List<QuickFilterChipItem>,
+    folderChips: List<FolderChipItem>,
+    categories: List<Category>,
+    categoryEditMode: Boolean,
+    onRequestCategoryAction: ((Category) -> Unit)?,
+    trailingContent: (@Composable ColumnScope.() -> Unit)?
+) {
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    val sectionEnter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(120))
+    val sectionExit = shrinkVertically(animationSpec = tween(140)) + fadeOut(animationSpec = tween(100))
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        UnifiedCategoryFilterChipMenuTabBar(
+            selectedTab = selectedTab,
+            onSelectTab = { selectedTab = it }
+        )
+        // Tab 0：数据库
+        AnimatedVisibility(visible = selectedTab == 0, enter = sectionEnter, exit = sectionExit) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BastionExpressiveFilterChip(
+                    selected = selected is UnifiedCategoryFilterSelection.All,
+                    onClick = { onSelect(UnifiedCategoryFilterSelection.All) },
+                    label = stringResource(R.string.category_all),
+                    leadingIcon = Icons.Default.List
+                )
+                BastionExpressiveFilterChip(
+                    selected = selected.isBastionScope(),
+                    onClick = { onSelect(UnifiedCategoryFilterSelection.Local) },
+                    label = stringResource(R.string.category_selection_menu_local_database),
+                    leadingIcon = Icons.Default.Smartphone
+                )
+                keepassDatabases.forEach { database ->
+                    BastionExpressiveFilterChip(
+                        selected = selected.isKeePassScope(database.id),
+                        onClick = { onSelect(UnifiedCategoryFilterSelection.KeePassDatabaseFilter(database.id)) },
+                        label = database.name,
+                        leadingIcon = Icons.Default.Key,
+                        statusDotColor = if (database.writeOperationAvailability().canOperate) StorageHealthyGreen else null
+                    )
+                }
+                bitwardenVaults.forEach { vault ->
+                    BastionExpressiveFilterChip(
+                        selected = selected.isBitwardenScope(vault.id),
+                        onClick = { onSelect(UnifiedCategoryFilterSelection.BitwardenVaultFilter(vault.id)) },
+                        label = vault.email.ifBlank { "Bitwarden" },
+                        leadingIcon = Icons.Default.CloudSync,
+                        statusDotColor = if (vault.hasHealthyConnection()) StorageHealthyGreen else null
+                    )
+                }
+            }
+        }
+        // Tab 1：快捷筛选（标星 / 未分类 / 仅本地）
+        AnimatedVisibility(visible = selectedTab == 1, enter = sectionEnter, exit = sectionExit) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                quickFilterItems.forEach { item ->
+                    BastionExpressiveFilterChip(
+                        selected = item.isSelected,
+                        onClick = {
+                            if (item.isSelected) {
+                                onSelect(selected.toBaseScope())
+                            } else if (item.selection != null) {
+                                onSelect(item.selection)
+                            } else {
+                                onSelectLocalOnlyQuickFilter?.invoke()
+                            }
+                        },
+                        label = stringResource(item.labelRes),
+                        leadingIcon = item.icon
+                    )
+                }
+            }
+        }
+        // Tab 2：分类 + 分类管理（新建分类等入口复用 trailingContent）
+        AnimatedVisibility(visible = selectedTab == 2, enter = sectionEnter, exit = sectionExit) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    folderChips.forEach { chip ->
+                        val editableCategory = if (
+                            categoryEditMode &&
+                            onRequestCategoryAction != null &&
+                            !chip.isBack
+                        ) {
+                            (chip.selection as? UnifiedCategoryFilterSelection.Custom)
+                                ?.let { selection -> categories.firstOrNull { it.id == selection.categoryId } }
+                        } else {
+                            null
+                        }
+                        BastionExpressiveFilterChip(
+                            selected = chip.selection == selected,
+                            onClick = {
+                                if (editableCategory != null && onRequestCategoryAction != null) {
+                                    onRequestCategoryAction(editableCategory)
+                                } else {
+                                    onSelect(chip.selection)
+                                }
+                            },
+                            label = chip.label,
+                            leadingIcon = if (chip.isBack) {
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft
+                            } else if (categoryEditMode && editableCategory != null) {
+                                Icons.Default.MoreVert
+                            } else {
+                                Icons.Default.Folder
+                            }
+                        )
+                    }
+                }
+                if (folderChips.isEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                trailingContent?.invoke(this)
+            }
+        }
+    }
 }
