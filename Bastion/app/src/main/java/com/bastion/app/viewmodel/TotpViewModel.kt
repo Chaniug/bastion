@@ -1032,10 +1032,15 @@ class TotpViewModel(
                 } else {
                     boundPassword?.keepassGroupPath
                 },
-                bitwardenVaultId = preferredItem?.first?.bitwardenVaultId
-                    .takeIf { preserveSelectedSourceStorage },
-                bitwardenFolderId = preferredItem?.first?.bitwardenFolderId
-                    .takeIf { preserveSelectedSourceStorage },
+                // 【单一归属】绑定型验证码不占 Bitwarden 存储位：
+                // 无论来源记录原本是什么归属，都**不继承**其 vault / folder / cipher——
+                // 它只随所属密码条目的 authenticatorKey → cipher.login.totp 同步。
+                //
+                // 此前会继承历史独立型 TOTP 的 vault=1，导致它被当作独立条目上传成
+                // otpauth:// cipher，同步回来又被解析成一条多余的密码条目（本地"副本"）。
+                // 详见 BastionDocs/architecture-bitwarden-alignment.md
+                bitwardenVaultId = null,
+                bitwardenFolderId = null,
                 followBoundPasswordStorage = !preserveSelectedSourceStorage
             )
             if (savedItemId == null) {

@@ -2,6 +2,7 @@ package com.bastion.app.bitwarden.service
 
 import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
+import android.util.Log
 import android.content.Context
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -103,6 +104,9 @@ class CipherUploadProcessor(
         encodeDefaults = true
     }
 
+    /** 上传被跳过时返回的占位 cipherId：绑定型 TOTP 无需自立 cipher。 */
+    private val passwordBoundTotpSkipped = "password-bound-totp-skipped"
+
     init {
         runCatchingObserved { OperationLogger.init(context.applicationContext) }
     }
@@ -117,6 +121,16 @@ class CipherUploadProcessor(
         symmetricKey: SymmetricCryptoKey
     ): UploadItemResult {
         return try {
+            // 【单一归属】绑定型 TOTP 不参与 Bitwarden 同步：它的验证码已随所属密码条目的
+            // authenticatorKey → cipher.login.totp 上传。此处若再传一次，会生成一个独立的
+            // otpauth:// cipher，该 cipher 同步回来又被解析成一条多余的密码条目（本地"副本"）。
+            if (isPasswordBoundTotp(item)) {
+                Log.w(
+                    "CipherUploadProcessor",
+                    "skip upload: password-bound TOTP is carried by its password entry id=${item.id}"
+                )
+                return UploadItemResult.Success(passwordBoundTotpSkipped)
+            }
             val request = when (item.itemType) {
                 ItemType.TOTP -> createTotpCipherRequest(item, symmetricKey)
                 ItemType.BANK_CARD -> createCardCipherRequest(item, symmetricKey)
@@ -214,6 +228,14 @@ class CipherUploadProcessor(
         symmetricKey: SymmetricCryptoKey
     ): UploadItemResult {
         return try {
+            // 【单一归属】同 uploadSecureItem：绑定型 TOTP 的验证码随密码条目同步，不自立 cipher。
+            if (isPasswordBoundTotp(item)) {
+                Log.w(
+                    "CipherUploadProcessor",
+                    "skip update: password-bound TOTP is carried by its password entry id=${item.id}"
+                )
+                return UploadItemResult.Success(passwordBoundTotpSkipped)
+            }
             val request = when (item.itemType) {
                 ItemType.TOTP -> createTotpCipherRequest(item, symmetricKey)
                 ItemType.BANK_CARD -> createCardCipherRequest(item, symmetricKey)
@@ -1539,6 +1561,26 @@ class CipherUploadProcessor(
             ),
             fields = buildEncryptedDocumentFields(docData, symmetricKey)
         )
+    }
+
+    /**
+     * 绑定型 TOTP：依附于某条密码条目的验证码（itemData.boundPasswordId != null）。
+     *
+     * 这类验证码**没有自己的 Bitwarden cipher**——它随所属密码条目的 authenticatorKey
+     * 同步到 cipher.login.totp。若在此单独上传，会生成一个 otpauth:// 的独立 cipher，
+     * 该 cipher 同步回来又被解析成一条多余的密码条目（即用户看到的"本地副本"）。
+     * 详见 BastionDocs/architecture-bitwarden-alignment.md
+     */
+    private fun isPasswordBoundTotp(item: SecureItem): Boolean {
+        if (item.itemType != ItemType.TOTP) return false
+        val data = runCatchingObserved {
+            TotpDataResolver.parseStoredItemData(
+                itemData = item.itemData,
+                fallbackIssuer = item.title,
+                decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+            )
+        }.getOrNull() ?: return false
+        return data.boundPasswordId != null
     }
 
     private fun parseTotpData(item: SecureItem): TotpItemData {
