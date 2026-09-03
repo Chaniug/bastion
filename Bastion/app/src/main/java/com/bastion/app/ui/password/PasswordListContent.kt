@@ -1310,7 +1310,6 @@ fun PasswordListContent(
         selectedItemKeys = selectedItemKeys.intersect(visibleSelectableKeys)
     }
     val hasVisibleQuickFilters = remember(
-        appSettings.passwordListQuickFiltersEnabled,
         configuredQuickFilterItems,
         aggregateUiState.visibleContentTypes,
         shouldGateInitialPasswordFirstFrame,
@@ -1319,28 +1318,23 @@ fun PasswordListContent(
         hasAnyBarcodeEntry
     ) {
         if (shouldGateInitialPasswordFirstFrame) return@remember false
-        val hasConfiguredChips = appSettings.passwordListQuickFiltersEnabled &&
-            configuredQuickFilterItems.any { item ->
-                shouldShowQuickFilterItem(item, aggregateUiState.visibleContentTypes)
-            }
+        val hasConfiguredChips = configuredQuickFilterItems.any { item ->
+            shouldShowQuickFilterItem(item, aggregateUiState.visibleContentTypes)
+        }
         // WIFI / SSH chip 无需 quickFilters 设置开关——"有数据就冒出来"语义。
         hasConfiguredChips || hasAnyWifiEntry || hasAnySshKeyEntry || hasAnyBarcodeEntry
     }
 
-    // 实验功能（AppSettings.experimentalCollapsedQuickFilters）：快捷筛选条的展开/收起。
-    // 状态必须由这里（共同父级）持有：chip 横排在 PasswordListScrollableContent，
-    // 触发按钮在 PasswordListTopSection 的标题，两者是兄弟组件，无法直接共享状态。
-    // 默认展开，保证不开实验开关时行为与现状一致。
-    // 用 SharedPreferences 持久化：rememberSaveable 只在「系统重建 Activity」时恢复，
-// 用户主动退出 APP 后再打开会丢失（用户反馈"下次又展开了"），所以这里落盘。
-// LocalContext.current 是 @Composable，必须在 Composable 作用域取，
-// 不能写在 remember 的 lambda 里（那个 lambda 不是 Composable 上下文）。
+    // 收纳为内建行为：快捷筛选横排的展开/收起状态由这里（共同父级）持有，
+    // 因为 chip 横排在 PasswordListScrollableContent、触发按钮在 PasswordListTopSection 的标题，两者是兄弟组件。
+    // 默认收起；用 SharedPreferences 持久化（rememberSaveable 只在「系统重建 Activity」时恢复，
+    // 用户主动退出 APP 后再打开会丢失展开状态，所以这里落盘）。
 val collapseContext = LocalContext.current
 val collapsePrefs = remember(collapseContext) {
     collapseContext.getSharedPreferences("ui_prefs", Context.MODE_PRIVATE)
 }
 var quickFiltersExpanded by remember(collapsePrefs) {
-    mutableStateOf(collapsePrefs.getBoolean("password_quick_filters_expanded", true))
+    mutableStateOf(collapsePrefs.getBoolean("password_quick_filters_expanded", false))
 }
 LaunchedEffect(quickFiltersExpanded) {
     collapsePrefs.edit()
@@ -1636,10 +1630,8 @@ LaunchedEffect(quickFiltersExpanded) {
             onOpenHistory = onOpenHistory,
             onOpenTrash = onOpenTrash,
             onScanFidoQr = onScanFidoQr,
-            // 实验：开启后点标题可收起/展开快捷筛选条，收起后为列表腾出一行
-            onTitleClick = if (appSettings.experimentalCollapsedQuickFilters) {
-                { quickFiltersExpanded = !quickFiltersExpanded }
-            } else null,
+            // 收纳已内建：标题始终可点击收起/展开快捷筛选条
+            onTitleClick = { quickFiltersExpanded = !quickFiltersExpanded },
             quickFiltersExpanded = quickFiltersExpanded
         )
     }

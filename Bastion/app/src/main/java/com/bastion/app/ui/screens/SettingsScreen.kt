@@ -519,8 +519,6 @@ fun SettingsScreen(
         R.string.add_button_actions_desc,
         R.string.password_page_aggregate_switch_title,
         R.string.password_page_aggregate_switch_desc,
-        R.string.password_list_quick_filters_switch_title,
-        R.string.password_list_quick_filters_switch_desc,
         R.string.password_list_quick_folder_path_banner_switch_title,
         R.string.password_list_quick_folder_path_banner_switch_desc,
         R.string.password_list_system_back_to_parent_folder_switch_title,

@@ -170,10 +170,6 @@ class SettingsViewModel(
 
     fun updateAuthenticatorCardHideCodeByDefault(enabled: Boolean) = commitUpdate { updateAuthenticatorCardHideCodeByDefault(enabled) }
 
-    fun updatePasswordListQuickFiltersEnabled(enabled: Boolean) = commitUpdate { updatePasswordListQuickFiltersEnabled(enabled) }
-
-    fun updateExperimentalCollapsedQuickFilters(enabled: Boolean) = commitUpdate { updateExperimentalCollapsedQuickFilters(enabled) }
-
     fun updatePasswordListQuickFilterItems(items: List<com.bastion.app.data.PasswordListQuickFilterItem>) = commitUpdate { updatePasswordListQuickFilterItems(items) }
 
     fun updatePasswordListCategoryQuickFiltersEnabled(enabled: Boolean) = commitUpdate { updatePasswordListCategoryQuickFiltersEnabled(enabled) }

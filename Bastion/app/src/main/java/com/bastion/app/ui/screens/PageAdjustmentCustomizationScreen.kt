@@ -677,9 +677,6 @@ fun PasswordListCustomizationScreen(
     var previewAggregateEnabled by remember(settings.passwordPageAggregateEnabled) {
         mutableStateOf(settings.passwordPageAggregateEnabled)
     }
-    var previewQuickFiltersEnabled by remember(settings.passwordListQuickFiltersEnabled) {
-        mutableStateOf(settings.passwordListQuickFiltersEnabled)
-    }
     var previewCategoryQuickFiltersEnabled by remember(settings.passwordListCategoryQuickFiltersEnabled) {
         mutableStateOf(settings.passwordListCategoryQuickFiltersEnabled)
     }
@@ -1193,25 +1190,6 @@ fun PasswordListCustomizationScreen(
 
                 }
             }
-
-            SwitchSettingsCard(
-                title = stringResource(R.string.password_list_quick_filters_switch_title),
-                subtitle = stringResource(R.string.password_list_quick_filters_switch_desc),
-                checked = previewQuickFiltersEnabled,
-                onCheckedChange = { checked ->
-                    previewQuickFiltersEnabled = checked
-                    viewModel.updatePasswordListQuickFiltersEnabled(checked)
-                }
-            )
-
-            SwitchSettingsCard(
-                title = stringResource(R.string.experimental_collapsed_quick_filters_switch_title),
-                subtitle = stringResource(R.string.experimental_collapsed_quick_filters_switch_desc),
-                checked = settings.experimentalCollapsedQuickFilters,
-                onCheckedChange = { checked ->
-                    viewModel.updateExperimentalCollapsedQuickFilters(checked)
-                }
-            )
 
             SwitchSettingsCard(
                 title = stringResource(R.string.password_list_category_quick_filters_switch_title),

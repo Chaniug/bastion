@@ -152,9 +152,7 @@ internal fun PasswordListTopSection(
     onOpenTrash: () -> Unit,
     onScanFidoQr: () -> Unit,
     /**
-     * 实验功能（AppSettings.experimentalCollapsedQuickFilters）：
-     * 点击标题切换「快捷筛选条」的展开/收起，收起后为密码列表腾出一行空间。
-     * 为 null 时标题不可点击，行为与原有调用方完全一致。
+     * 收纳为内建行为：点击标题切换「快捷筛选条」的展开/收起，收起后为密码列表腾出一行空间。
      * 状态由调用方持有（PasswordListContent），因为 chip 横排不在本组件内。
      */
     onTitleClick: (() -> Unit)? = null,
@@ -192,24 +190,6 @@ internal fun PasswordListTopSection(
     var clearCacheRiskSummary by remember { mutableStateOf<BitwardenRepository.VaultCacheRiskSummary?>(null) }
     var isBitwardenMaintenanceActionRunning by remember { mutableStateOf(false) }
 
-    // 实验功能：点击标题收纳/展开快捷筛选条
-    val introShownPref = remember(context) {
-        context.getSharedPreferences("experimental_prefs", Context.MODE_PRIVATE)
-    }
-    LaunchedEffect(appSettings.experimentalCollapsedQuickFilters) {
-        if (appSettings.experimentalCollapsedQuickFilters &&
-            !introShownPref.getBoolean("vaultQuickFiltersIntroShown", false)
-        ) {
-            Toast.makeText(
-                context,
-                R.string.vault_quick_filters_intro_snackbar,
-                Toast.LENGTH_LONG
-            ).show()
-            introShownPref.edit()
-                .putBoolean("vaultQuickFiltersIntroShown", true)
-                .apply()
-        }
-    }
     val selectedBitwardenVault = selectedBitwardenVaultId?.let { vaultId ->
         bitwardenVaults.find { it.id == vaultId }
     }
@@ -329,8 +309,8 @@ internal fun PasswordListTopSection(
                                 aggregateVisibleTypes = aggregateVisibleTypes,
                                 onToggleAggregateType = onToggleAggregateType,
                                 onNavigateToPasskeys = onNavigateToPasskeys,
-                                // 非收拢模式：横排筛选条常驻，菜单里不再重复快捷筛选区块
-                                showQuickFilterSection = appSettings.experimentalCollapsedQuickFilters,
+                                // 收纳已内建：快捷筛选横排收进标题，文件夹菜单内不再显示快捷筛选区块
+                                showQuickFilterSection = false,
                                 storageCounts = storageCounts,
                                 quickFolderShortcuts = categoryMenuQuickFolderShortcuts,
                                 topModulesOrder = appSettings.passwordListTopModulesOrder,

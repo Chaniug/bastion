@@ -346,7 +346,6 @@ private data class PageAdjustmentPasswordFieldVisibilityBackupEntry(
 
 @Serializable
 private data class PageAdjustmentSettingsBackupEntry(
-    val passwordListQuickFiltersEnabled: Boolean = false,
     val passwordListQuickFilterItems: List<String> = emptyList(),
     val passwordListCategoryQuickFiltersEnabled: Boolean = false,
     val passwordListQuickFoldersEnabled: Boolean = false,
@@ -1890,7 +1889,6 @@ class WebDavHelper(
                                 vaults = bitwardenVaultBackups,
                             )
                             val pageAdjustmentSettingsBackup = PageAdjustmentSettingsBackupEntry(
-                                passwordListQuickFiltersEnabled = pageAdjustmentSettingsSnapshot.passwordListQuickFiltersEnabled,
                                 passwordListQuickFilterItems = pageAdjustmentSettingsSnapshot.passwordListQuickFilterItems,
                                 passwordListCategoryQuickFiltersEnabled =
                                     pageAdjustmentSettingsSnapshot.passwordListCategoryQuickFiltersEnabled,
@@ -3350,8 +3348,6 @@ class WebDavHelper(
                                             )
                                         SettingsManager(context).importPageAdjustmentSettings(
                                             PageAdjustmentSettingsSnapshot(
-                                                passwordListQuickFiltersEnabled =
-                                                    pageAdjustmentBackup.passwordListQuickFiltersEnabled,
                                                 passwordListQuickFilterItems =
                                                     pageAdjustmentBackup.passwordListQuickFilterItems,
                                                 passwordListCategoryQuickFiltersEnabled =

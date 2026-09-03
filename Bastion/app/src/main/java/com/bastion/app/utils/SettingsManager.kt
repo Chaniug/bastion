@@ -65,8 +65,6 @@ data class PageAdjustmentPasswordFieldVisibilitySnapshot(
 )
 
 data class PageAdjustmentSettingsSnapshot(
-    val passwordListQuickFiltersEnabled: Boolean = false,
-    val experimentalCollapsedQuickFilters: Boolean = false,
     val passwordListQuickFilterItems: List<String> = emptyList(),
     val passwordListCategoryQuickFiltersEnabled: Boolean = false,
     val passwordListQuickFoldersEnabled: Boolean = false,
@@ -211,8 +209,6 @@ class SettingsManager(private val context: Context) {
         private val PASSWORD_CARD_HIDE_OTHER_CONTENT_WHEN_AUTHENTICATOR_KEY = booleanPreferencesKey("password_card_hide_other_content_when_authenticator") // 显示验证器时隐藏其他内容
         private val AUTHENTICATOR_CARD_DISPLAY_FIELDS_KEY = stringPreferencesKey("authenticator_card_display_fields") // 验证器卡片显示字段
         private val AUTHENTICATOR_CARD_HIDE_CODE_BY_DEFAULT_KEY = booleanPreferencesKey("authenticator_card_hide_code_by_default") // 验证器卡片默认隐藏验证码
-        private val PASSWORD_LIST_QUICK_FILTERS_ENABLED_KEY = booleanPreferencesKey("password_list_quick_filters_enabled") // 密码列表快捷筛选开关
-        private val EXPERIMENTAL_COLLAPSED_QUICK_FILTERS_KEY = booleanPreferencesKey("experimental_collapsed_quick_filters") // 实验：密码页快捷筛选收拢进 TopBar 标题菜单
         private val PASSWORD_LIST_QUICK_FILTER_ITEMS_KEY = stringPreferencesKey("password_list_quick_filter_items") // 密码列表快捷筛选显示内容
         private val PASSWORD_LIST_CATEGORY_QUICK_FILTERS_ENABLED_KEY = booleanPreferencesKey("password_list_category_quick_filters_enabled") // 密码列表分类快捷筛选开关
         private val PASSWORD_LIST_QUICK_FOLDERS_ENABLED_KEY = booleanPreferencesKey("password_list_quick_folders_enabled") // 密码列表快捷文件夹开关
@@ -483,7 +479,6 @@ class SettingsManager(private val context: Context) {
                 preferences[THEME_MODE_KEY] ?: ThemeMode.SYSTEM.name
             ),
             oledPureBlackEnabled = preferences[OLED_PURE_BLACK_ENABLED_KEY] ?: false,
-            experimentalCollapsedQuickFilters = preferences[EXPERIMENTAL_COLLAPSED_QUICK_FILTERS_KEY] ?: false,
             colorScheme = runCatchingObserved {
                 ColorScheme.valueOf(
                     preferences[COLOR_SCHEME_KEY] ?: ColorScheme.DEFAULT.name
@@ -589,7 +584,6 @@ class SettingsManager(private val context: Context) {
                 ?: com.bastion.app.data.AuthenticatorCardDisplayField.DEFAULT_ORDER,
             authenticatorCardHideCodeByDefault =
                 preferences[AUTHENTICATOR_CARD_HIDE_CODE_BY_DEFAULT_KEY] ?: false,
-            passwordListQuickFiltersEnabled = preferences[PASSWORD_LIST_QUICK_FILTERS_ENABLED_KEY] ?: false,
             passwordListQuickFilterItems = parsedQuickFilterItems,
             passwordListCategoryQuickFiltersEnabled =
                 preferences[PASSWORD_LIST_CATEGORY_QUICK_FILTERS_ENABLED_KEY] ?: false,
@@ -988,17 +982,6 @@ class SettingsManager(private val context: Context) {
         }
     }
 
-    suspend fun updatePasswordListQuickFiltersEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[PASSWORD_LIST_QUICK_FILTERS_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun updateExperimentalCollapsedQuickFilters(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[EXPERIMENTAL_COLLAPSED_QUICK_FILTERS_KEY] = enabled
-        }
-    }
 
     suspend fun updatePasswordListQuickFilterItems(items: List<PasswordListQuickFilterItem>) {
         val normalizedItems = items.distinct()
@@ -1135,8 +1118,6 @@ class SettingsManager(private val context: Context) {
             PresetCustomField.listToJson(PresetCustomField.listFromJson(rawPresetCustomFieldsJson))
         }.getOrDefault("[]")
         return PageAdjustmentSettingsSnapshot(
-            passwordListQuickFiltersEnabled = settings.passwordListQuickFiltersEnabled,
-            experimentalCollapsedQuickFilters = settings.experimentalCollapsedQuickFilters,
             passwordListQuickFilterItems = settings.passwordListQuickFilterItems.map { it.name },
             passwordListCategoryQuickFiltersEnabled = settings.passwordListCategoryQuickFiltersEnabled,
             passwordListQuickFoldersEnabled = settings.passwordListQuickFoldersEnabled,
@@ -1296,8 +1277,6 @@ class SettingsManager(private val context: Context) {
         }.getOrDefault(com.bastion.app.data.UnmatchedIconHandlingStrategy.DEFAULT_ICON)
 
         dataStore.edit { preferences ->
-            preferences[PASSWORD_LIST_QUICK_FILTERS_ENABLED_KEY] = snapshot.passwordListQuickFiltersEnabled
-            preferences[EXPERIMENTAL_COLLAPSED_QUICK_FILTERS_KEY] = snapshot.experimentalCollapsedQuickFilters
             preferences[PASSWORD_LIST_QUICK_FILTER_ITEMS_KEY] =
                 parsedQuickFilterItems.joinToString(",") { it.name }
             preferences[PASSWORD_LIST_CATEGORY_QUICK_FILTERS_ENABLED_KEY] =

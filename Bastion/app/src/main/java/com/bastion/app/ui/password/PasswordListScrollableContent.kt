@@ -124,8 +124,7 @@ internal fun PasswordListScrollableContent(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(filterSectionSpacing)
                     ) {
-                        // 实验：开启 experimentalCollapsedQuickFilters 后，点 TopBar 标题可收起本行，
-// 为密码列表腾出一行空间；未开启时 quickFiltersExpanded 恒为 true，行为不变。
+                        // 快捷筛选横排的显示由标题点击控制（内建收纳：默认收起，点标题展开/收起）
                         if (hasVisibleQuickFilters && quickFiltersExpanded) {
                             Row(
                                 modifier = Modifier
@@ -133,40 +132,38 @@ internal fun PasswordListScrollableContent(
                                     .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (appSettings.passwordListQuickFiltersEnabled) {
-                                    configuredQuickFilterItems.forEach { item ->
-                                        if (shouldShowQuickFilterItem(item, aggregateUiState.visibleContentTypes)) {
-                                            PasswordQuickFilterChipItem(
-                                                item = item,
-                                                categoryEditMode = false,
-                                                quickFilterFavorite = quickFilterFavorite,
-                                                onQuickFilterFavoriteChange = onQuickFilterFavoriteChange,
-                                                quickFilter2fa = quickFilter2fa,
-                                                onQuickFilter2faChange = onQuickFilter2faChange,
-                                                quickFilterNotes = quickFilterNotes,
-                                                onQuickFilterNotesChange = onQuickFilterNotesChange,
-                                                quickFilterPasskey = quickFilterPasskey,
-                                                onQuickFilterPasskeyChange = onQuickFilterPasskeyChange,
-                                                quickFilterBoundNote = quickFilterBoundNote,
-                                                onQuickFilterBoundNoteChange = onQuickFilterBoundNoteChange,
-                                                quickFilterAttachments = quickFilterAttachments,
-                                                onQuickFilterAttachmentsChange = onQuickFilterAttachmentsChange,
-                                                quickFilterUncategorized = quickFilterUncategorized,
-                                                onQuickFilterUncategorizedChange = onQuickFilterUncategorizedChange,
-                                                quickFilterLocalOnly = quickFilterLocalOnly,
-                                                onQuickFilterLocalOnlyChange = onQuickFilterLocalOnlyChange,
-                                                quickFilterManualStackOnly = quickFilterManualStackOnly,
-                                                onQuickFilterManualStackOnlyChange = onQuickFilterManualStackOnlyChange,
-                                                quickFilterNeverStack = quickFilterNeverStack,
-                                                onQuickFilterNeverStackChange = onQuickFilterNeverStackChange,
-                                                quickFilterUnstacked = quickFilterUnstacked,
-                                                onQuickFilterUnstackedChange = onQuickFilterUnstackedChange,
-                                                aggregateSelectedTypes = aggregateUiState.selectedContentTypes,
-                                                aggregateVisibleTypes = aggregateUiState.visibleContentTypes,
-                                                onToggleAggregateType = onToggleAggregateType,
-                                                onNavigateToPasskeys = onNavigateToPasskeys
-                                            )
-                                        }
+                                configuredQuickFilterItems.forEach { item ->
+                                    if (shouldShowQuickFilterItem(item, aggregateUiState.visibleContentTypes)) {
+                                        PasswordQuickFilterChipItem(
+                                            item = item,
+                                            categoryEditMode = false,
+                                            quickFilterFavorite = quickFilterFavorite,
+                                            onQuickFilterFavoriteChange = onQuickFilterFavoriteChange,
+                                            quickFilter2fa = quickFilter2fa,
+                                            onQuickFilter2faChange = onQuickFilter2faChange,
+                                            quickFilterNotes = quickFilterNotes,
+                                            onQuickFilterNotesChange = onQuickFilterNotesChange,
+                                            quickFilterPasskey = quickFilterPasskey,
+                                            onQuickFilterPasskeyChange = onQuickFilterPasskeyChange,
+                                            quickFilterBoundNote = quickFilterBoundNote,
+                                            onQuickFilterBoundNoteChange = onQuickFilterBoundNoteChange,
+                                            quickFilterAttachments = quickFilterAttachments,
+                                            onQuickFilterAttachmentsChange = onQuickFilterAttachmentsChange,
+                                            quickFilterUncategorized = quickFilterUncategorized,
+                                            onQuickFilterUncategorizedChange = onQuickFilterUncategorizedChange,
+                                            quickFilterLocalOnly = quickFilterLocalOnly,
+                                            onQuickFilterLocalOnlyChange = onQuickFilterLocalOnlyChange,
+                                            quickFilterManualStackOnly = quickFilterManualStackOnly,
+                                            onQuickFilterManualStackOnlyChange = onQuickFilterManualStackOnlyChange,
+                                            quickFilterNeverStack = quickFilterNeverStack,
+                                            onQuickFilterNeverStackChange = onQuickFilterNeverStackChange,
+                                            quickFilterUnstacked = quickFilterUnstacked,
+                                            onQuickFilterUnstackedChange = onQuickFilterUnstackedChange,
+                                            aggregateSelectedTypes = aggregateUiState.selectedContentTypes,
+                                            aggregateVisibleTypes = aggregateUiState.visibleContentTypes,
+                                            onToggleAggregateType = onToggleAggregateType,
+                                            onNavigateToPasskeys = onNavigateToPasskeys
+                                        )
                                     }
                                 }
                                 if (wifiQuickFilterVisible) {

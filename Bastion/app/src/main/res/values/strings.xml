@@ -1929,8 +1929,7 @@
     <!-- 通用/组件硬编码修复 -->
     <string name="topbar_search_hint">搜索…</string>
     <string name="topbar_title_filter_hint">点击展开快捷筛选</string>
-    <string name="experimental_collapsed_quick_filters_switch_title">筛选条可收纳（实验）</string>
-    <string name="experimental_collapsed_quick_filters_switch_desc">开启后点击顶部标题可收起/展开密码页的快捷筛选条，收起后为密码列表腾出一行空间。筛选功能本身完全不变，只是多了一个收起动作。</string>
+
     <string name="vault_quick_filters_menu_title">快捷筛选</string>
     <string name="vault_quick_filters_intro_snackbar">实验功能：点击顶部标题可收起/展开快捷筛选条</string>
     <string name="topbar_close_search">关闭搜索</string>
@@ -2477,8 +2476,7 @@
     <string name="password_page_aggregate_switch_desc">开启后，密码页可额外显示卡包、笔记、独立验证器和独立通行密钥；关闭后，仅显示密码和已绑定到密码的数据。</string>
     <string name="password_page_aggregate_content_title">密码页显示内容</string>
     <string name="password_page_aggregate_content_desc">可选择密码页允许显示的内容类型，并拖拽调整顶部筛选顺序。密码始终开启。</string>
-    <string name="password_list_quick_filters_switch_title">快捷筛选开关</string>
-    <string name="password_list_quick_filters_switch_desc">开启后在密码列表顶部显示快捷筛选按钮，支持收藏、2FA、备注、未分类、仅本地、仅自定义堆叠、不堆叠、未堆叠，以及卡片、验证器、通行密钥、笔记内容类型筛选。</string>
+
     <string name="password_list_category_quick_filters_switch_title">分类快捷筛选</string>
     <string name="password_list_category_quick_filters_switch_desc">开启后会把密码列表顶部快捷筛选扩展为两行，第二行直接显示分类文件夹。Bastion 文件夹支持返回上一级目录，Bitwarden 文件夹再次点击当前选中项即可取消选中。</string>
     <string name="password_list_quick_folder_path_banner_switch_title">路径横幅</string>

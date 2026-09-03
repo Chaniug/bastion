@@ -534,9 +534,7 @@ data class AppSettings(
     val passwordCardHideOtherContentWhenAuthenticator: Boolean = true, // 显示验证器时隐藏其他卡片内容（默认开启）
     val authenticatorCardDisplayFields: List<AuthenticatorCardDisplayField> = AuthenticatorCardDisplayField.DEFAULT_ORDER, // 验证器卡片显示字段（顺序即展示顺序）
     val authenticatorCardHideCodeByDefault: Boolean = false, // 验证器卡片默认隐藏验证码
-    val passwordListQuickFiltersEnabled: Boolean = true, // 密码列表快捷筛选开关（默认开启）
-    val experimentalCollapsedQuickFilters: Boolean = false, // 实验：把首页密码页快捷筛选 chip 收拢进 TopBar 标题菜单（默认关闭；打开后会从横排 chip 改为点标题弹下拉菜单）
-    val passwordListQuickFilterItems: List<PasswordListQuickFilterItem> = PasswordListQuickFilterItem.DEFAULT_ORDER, // 密码列表快捷筛选显示内容
+    val passwordListQuickFilterItems: List<PasswordListQuickFilterItem> = PasswordListQuickFilterItem.DEFAULT_ORDER, // 密码列表快捷筛选显示内容（横排是否显示由该列表是否为空决定；收纳为内建行为）
     val passwordListCategoryQuickFiltersEnabled: Boolean = true, // 密码列表分类快捷筛选开关（默认开启）
     val passwordListQuickFoldersEnabled: Boolean = false, // 密码列表快捷文件夹开关
     val passwordListQuickFolderStyle: PasswordListQuickFolderStyle = PasswordListQuickFolderStyle.CLASSIC, // 密码列表快捷文件夹展示样式
