@@ -180,11 +180,11 @@ fun ExpressiveTopBar(
         animationSpec = tween(200),
         label = "topbar_vpadding"
     )
-    val pillElevation by animateDpAsState(
-        targetValue = androidx.compose.ui.unit.lerp(3.dp, 0.dp, scrollCollapseFraction),
-        animationSpec = tween(200),
-        label = "topbar_pill_elevation"
-    )
+    // 胶囊垂直抬升（tonalElevation）：原来是 3.dp，让 capsule 渲染色被 primary tint 加深，
+    // 浅色 dynamic 主题下 #FEF7FF → 像 #ECE6F0 这种明显灰色、和"贴系统"的诉求冲突。
+    // 改为 0.dp → capsule 与 Bar 主背景都是纯 surface，调子一致。
+    // 阴影仍由 shadowElevation = 1.dp 承担，保留轻微浮起感但不再有 tint 偏移。
+    val pillElevation = 0.dp
     // 内容的垂直偏移：展开时轻微下移（大标题贴近栏底、与右侧按钮胶囊同底线），
     // 收起后回到垂直居中。搜索展开时不偏移。
     val contentOffsetY by animateDpAsState(
@@ -363,8 +363,11 @@ fun ExpressiveTopBar(
                 // 与 Bar 主背景用同一 token（surface），避免胶囊在浅色背景上留下与 Bar 不
                 // 同色的"贴片感"。见上方 Box.background 注释了解背景 token 选择。
                 color = MaterialTheme.colorScheme.surface.copy(alpha = barBackgroundAlpha),
-                // 滚动收起时抬升降为 0，让右侧胶囊视觉上"落下去"
-                tonalElevation = pillElevation
+                // tonalElevation 0：胶囊与 Bar 都是 surface，不再被 primary tint 加深。
+                // shadowElevation 1.dp：保留轻微阴影，不让 capsule 完全"飘"在内容上。
+                // （滚动收起时已自动 alpha=0；"抬升动画"随之无意义，故 pillElevation 常数化）
+                tonalElevation = pillElevation,
+                shadowElevation = if (barBackgroundAlpha > 0.5f) 1.dp else 0.dp
             ) {
                 // 内容切换
                 AnimatedContent(
