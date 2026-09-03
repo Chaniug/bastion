@@ -100,20 +100,25 @@ enum class UnifiedCategoryFilterChipMenuPresentationMode {
 }
 
 /**
- * 三胶囊 Tab 栏（与密码页 [com.bastion.app.ui.PasswordListCategoryChipMenuTabBar] 同款样式）。
- * 固定三 Tab：数据库 / 快捷筛选 / 分类。
+ * 胶囊 Tab 栏（与密码页 [com.bastion.app.ui.password.PasswordListCategoryChipMenuTabBar] 同款样式）。
+ *
+ * 胶囊数量与密码页一致地受 [showQuickFilters] 控制：
+ * - false → 2 个（数据库 / 分类文件夹）。**密码页默认就是这个形态**，
+ *   因为快捷筛选已由页面上的横排 chip / 标题菜单承担，无需在弹层内重复。
+ * - true  → 3 个（数据库 / 快捷筛选 / 分类文件夹）。
  */
 @Composable
 private fun UnifiedCategoryFilterChipMenuTabBar(
     selectedTab: Int,
     onSelectTab: (Int) -> Unit,
+    showQuickFilters: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val tabs = listOf(
-        R.string.category_selection_menu_databases,
-        R.string.category_selection_menu_quick_filters,
-        R.string.category_selection_menu_folders
-    )
+    val tabs = buildList {
+        add(R.string.category_selection_menu_databases)
+        if (showQuickFilters) add(R.string.category_selection_menu_quick_filters)
+        add(R.string.category_selection_menu_folders)
+    }
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -297,8 +302,13 @@ fun UnifiedCategoryFilterChipMenu(
     onRequestCategoryAction: ((Category) -> Unit)? = null,
     quickFilterContent: (@Composable ColumnScope.() -> Unit)? = null,
     trailingContent: (@Composable ColumnScope.() -> Unit)? = null,
-    // 默认折叠段模式；TOTP / 卡包 / 通行密钥页传 ThreeChipsTabs 以对齐密码页三胶囊风格
-    presentationMode: UnifiedCategoryFilterChipMenuPresentationMode = UnifiedCategoryFilterChipMenuPresentationMode.FoldedSections
+    // 默认折叠段模式；TOTP / 卡包 / 通行密钥页传 ThreeChipsTabs 以对齐密码页胶囊风格
+    presentationMode: UnifiedCategoryFilterChipMenuPresentationMode = UnifiedCategoryFilterChipMenuPresentationMode.FoldedSections,
+    // 胶囊 Tab 模式下是否显示「快捷筛选」胶囊。默认 false → 只保留「数据库 / 分类文件夹」
+    // 两个胶囊，与密码页默认形态一致（密码页的快捷筛选由页面横排 chip 承担，弹层内不重复）。
+    showQuickFilters: Boolean = false,
+    // 「数据库」Tab 各条目的条数统计（全部 / 本地 / 每个库）。为 null 时不显示条数徽标。
+    entryCounts: com.bastion.app.ui.PasswordStorageCounts? = null
 ) {
     if (!visible) return
 
@@ -620,6 +630,8 @@ fun UnifiedCategoryFilterChipMenu(
                 categories = categories,
                 categoryEditMode = categoryEditMode,
                 onRequestCategoryAction = onRequestCategoryAction,
+                showQuickFilters = showQuickFilters,
+                entryCounts = entryCounts,
                 trailingContent = trailingContent
             )
         }
@@ -917,60 +929,67 @@ private fun UnifiedCategoryFilterChipMenuThreeChipsTabs(
     categories: List<Category>,
     categoryEditMode: Boolean,
     onRequestCategoryAction: ((Category) -> Unit)?,
+    showQuickFilters: Boolean,
+    entryCounts: com.bastion.app.ui.PasswordStorageCounts?,
     trailingContent: (@Composable ColumnScope.() -> Unit)?
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     val sectionEnter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(120))
     val sectionExit = shrinkVertically(animationSpec = tween(140)) + fadeOut(animationSpec = tween(100))
+    // 隐藏「快捷筛选」时分类 Tab 前移一位；同时对历史选中值做越界保护
+    // （例如三胶囊时代记住了 2，切到两胶囊后最大只有 1）。
+    val foldersTab = if (showQuickFilters) 2 else 1
+    val activeTab = selectedTab.coerceAtMost(foldersTab)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         UnifiedCategoryFilterChipMenuTabBar(
-            selectedTab = selectedTab,
-            onSelectTab = { selectedTab = it }
+            selectedTab = activeTab,
+            onSelectTab = { selectedTab = it },
+            showQuickFilters = showQuickFilters
         )
-        // Tab 0：数据库
-        AnimatedVisibility(visible = selectedTab == 0, enter = sectionEnter, exit = sectionExit) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                BastionExpressiveFilterChip(
+        // Tab 0：数据库（行式排列 + 右侧条数，与密码页 PasswordDatabaseFiltersSection 同款）
+        AnimatedVisibility(visible = activeTab == 0, enter = sectionEnter, exit = sectionExit) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                com.bastion.app.ui.DatabaseStatRow(
+                    icon = Icons.Default.List,
+                    title = stringResource(R.string.category_all),
+                    count = entryCounts?.total,
                     selected = selected is UnifiedCategoryFilterSelection.All,
-                    onClick = { onSelect(UnifiedCategoryFilterSelection.All) },
-                    label = stringResource(R.string.category_all),
-                    leadingIcon = Icons.Default.List
+                    onClick = { onSelect(UnifiedCategoryFilterSelection.All) }
                 )
-                BastionExpressiveFilterChip(
+                com.bastion.app.ui.DatabaseStatRow(
+                    icon = Icons.Default.Smartphone,
+                    title = stringResource(R.string.category_selection_menu_local_database),
+                    count = entryCounts?.bastionLocal,
                     selected = selected.isBastionScope(),
-                    onClick = { onSelect(UnifiedCategoryFilterSelection.Local) },
-                    label = stringResource(R.string.category_selection_menu_local_database),
-                    leadingIcon = Icons.Default.Smartphone
+                    onClick = { onSelect(UnifiedCategoryFilterSelection.Local) }
                 )
                 keepassDatabases.forEach { database ->
-                    BastionExpressiveFilterChip(
+                    com.bastion.app.ui.DatabaseStatRow(
+                        icon = Icons.Default.Key,
+                        title = database.name,
+                        count = entryCounts?.perKeePassDatabase?.get(database.id),
                         selected = selected.isKeePassScope(database.id),
                         onClick = { onSelect(UnifiedCategoryFilterSelection.KeePassDatabaseFilter(database.id)) },
-                        label = database.name,
-                        leadingIcon = Icons.Default.Key,
                         statusDotColor = if (database.writeOperationAvailability().canOperate) StorageHealthyGreen else null
                     )
                 }
                 bitwardenVaults.forEach { vault ->
-                    BastionExpressiveFilterChip(
+                    com.bastion.app.ui.DatabaseStatRow(
+                        icon = Icons.Default.CloudSync,
+                        title = vault.email.ifBlank { "Bitwarden" },
+                        count = entryCounts?.perBitwardenVault?.get(vault.id),
                         selected = selected.isBitwardenScope(vault.id),
                         onClick = { onSelect(UnifiedCategoryFilterSelection.BitwardenVaultFilter(vault.id)) },
-                        label = vault.email.ifBlank { "Bitwarden" },
-                        leadingIcon = Icons.Default.CloudSync,
                         statusDotColor = if (vault.hasHealthyConnection()) StorageHealthyGreen else null
                     )
                 }
             }
         }
-        // Tab 1：快捷筛选（标星 / 未分类 / 仅本地）
-        AnimatedVisibility(visible = selectedTab == 1, enter = sectionEnter, exit = sectionExit) {
+        // 快捷筛选 Tab（标星 / 未分类 / 仅本地）：仅在 showQuickFilters 时存在
+        AnimatedVisibility(visible = showQuickFilters && activeTab == 1, enter = sectionEnter, exit = sectionExit) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -994,8 +1013,8 @@ private fun UnifiedCategoryFilterChipMenuThreeChipsTabs(
                 }
             }
         }
-        // Tab 2：分类 + 分类管理（新建分类等入口复用 trailingContent）
-        AnimatedVisibility(visible = selectedTab == 2, enter = sectionEnter, exit = sectionExit) {
+        // 分类 Tab + 分类管理（新建分类等入口复用 trailingContent）
+        AnimatedVisibility(visible = activeTab == foldersTab, enter = sectionEnter, exit = sectionExit) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),

@@ -236,6 +236,23 @@ fun CardWalletScreen(
     val cards = remember(parsedCards) { parsedCards.map { it.item } }
     val documents = remember(parsedDocuments) { parsedDocuments.map { it.item } }
     val billingAddresses = remember(parsedBillingAddresses) { parsedBillingAddresses.map { it.item } }
+    // 「数据库」Tab 各条目的条数统计：合并卡包三类（银行卡 / 证件 / 账单地址），
+    // 与页面实际展示的 walletItems 口径一致，再按存储来源分组（与密码页同口径）。
+    val walletStorageCounts = remember(cards, documents, billingAddresses) {
+        val active = (cards + documents + billingAddresses).filter { !it.isDeleted }
+        com.bastion.app.ui.PasswordStorageCounts(
+            total = active.size,
+            bastionLocal = active.count { it.keepassDatabaseId == null && it.bitwardenVaultId == null },
+            perKeePassDatabase = active
+                .filter { it.keepassDatabaseId != null }
+                .groupingBy { it.keepassDatabaseId!! }
+                .eachCount(),
+            perBitwardenVault = active
+                .filter { it.bitwardenVaultId != null }
+                .groupingBy { it.bitwardenVaultId!! }
+                .eachCount()
+        )
+    }
     val walletItems = remember(parsedCards, parsedDocuments, parsedBillingAddresses) {
         parsedCards.map { it.item.toBankCardWalletListItem(it.cardData) } +
             parsedDocuments.map { it.item.toDocumentWalletListItem(it.documentData) } +
@@ -1071,7 +1088,10 @@ fun CardWalletScreen(
                                         onDismissFilterSheet = { showCategoryFilterDialog = false }
                                     )
                                 },
-                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs
+                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs,
+                                // 与密码页默认形态一致：只保留「数据库 / 分类文件夹」两个胶囊
+                                showQuickFilters = false,
+                                entryCounts = walletStorageCounts
                             )
                         }
                     }

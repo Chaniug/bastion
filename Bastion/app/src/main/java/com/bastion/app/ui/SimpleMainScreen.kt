@@ -686,15 +686,17 @@ private fun BottomNavTabItem(
 ) {
     val label = stringResource(item.shortLabelRes())
     // 选中色块包住「图标+文字」整体（酷安样式），圆角矩形非细长条
-    val pillColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            Color.Transparent
-        },
-        animationSpec = androidx.compose.animation.core.tween(200),
-        label = "nav_tab_pill"
-    )
+    // 选中色块颜色：直接取值，不使用颜色渐变动画。
+    // 原因：此前用 animateColorAsState(tween(200))，点击新 tab 时「新 pill 渐现」与
+    // 「旧 pill 渐隐」两个动画并行 200ms，期间两个 pill 同时处于中间色，
+    // 用户感知就是「点一个、旁边那个也跟着闪」。
+    // 且下方 contentTint 本来就是瞬间切换，背景若走渐变会与文字色不同步、更显抖动。
+    // 改为瞬切后，选中态与文字色严格同步，切换干净利落。
+    val pillColor = if (isSelected) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        Color.Transparent
+    }
     val contentTint = if (isSelected) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -938,29 +940,37 @@ fun SimpleMainScreen(
 
     val bottomNavVisibility = appSettings.bottomNavVisibility
 
-    val combinedAuthenticatorVisible =
-        bottomNavVisibility.authenticator || bottomNavVisibility.passkey
-    val dataTabItems = appSettings.bottomNavOrder
-        .map { tab ->
-            if (tab == BottomNavContentTab.PASSKEY) BottomNavContentTab.AUTHENTICATOR else tab
-        }
-        .distinct()
-        .filter { tab ->
-            if (tab == BottomNavContentTab.AUTHENTICATOR) {
-                combinedAuthenticatorVisible
-            } else {
-                bottomNavVisibility.isVisible(tab)
+    // 用 remember 缓存派生结果，避免每次重组都产生新的 List 实例。
+    // 此前 dataTabItems / tabs 都是无 remember 的链式调用，每次重组都是新对象，
+    // 导致下游 LaunchedEffect(tabs) 反复取消并重启协程，加重重组负担、
+    // 底栏动画掉帧显得抖动。这里以真正影响结果的稳定输入作为 key。
+    val dataTabItems = remember(appSettings.bottomNavOrder, bottomNavVisibility) {
+        val combinedAuthenticatorVisible =
+            bottomNavVisibility.authenticator || bottomNavVisibility.passkey
+        appSettings.bottomNavOrder
+            .map { tab ->
+                if (tab == BottomNavContentTab.PASSKEY) BottomNavContentTab.AUTHENTICATOR else tab
             }
-        }
-        .map { it.toBottomNavItem() }
+            .distinct()
+            .filter { tab ->
+                if (tab == BottomNavContentTab.AUTHENTICATOR) {
+                    combinedAuthenticatorVisible
+                } else {
+                    bottomNavVisibility.isVisible(tab)
+                }
+            }
+            .map { it.toBottomNavItem() }
+    }
     val shouldHideBottomNavigation = appSettings.autoHideBottomNavWhenSingleTab && dataTabItems.size == 1
 
     // 底栏自定义槽位固定 3 个（左2 + 右1），最右侧固定「设置」。
     // 否则自定义 tab 过多时 Settings 排在末尾会被挤出 5 槽布局，完全不可见。
-    val tabs = buildList {
-        addAll(dataTabItems.take(3))
-        if (!shouldHideBottomNavigation) {
-            add(BottomNavItem.Settings)
+    val tabs = remember(dataTabItems, shouldHideBottomNavigation) {
+        buildList {
+            addAll(dataTabItems.take(3))
+            if (!shouldHideBottomNavigation) {
+                add(BottomNavItem.Settings)
+            }
         }
     }
 

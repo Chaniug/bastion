@@ -271,6 +271,23 @@ fun TotpListContent(
     val parsedTotpItems by viewModel.parsedTotpItems.collectAsState()
     val totpItems = remember(parsedTotpItems) { parsedTotpItems.map { it.item } }
     val totpDataById = remember(parsedTotpItems) { parsedTotpItems.associate { it.item.id to it.totpData } }
+    // 「数据库」Tab 各条目的条数统计：基于全量未删除条目按存储来源分组（与密码页同口径）
+    val allTotpItemsForStats by viewModel.allTotpItems.collectAsState()
+    val totpStorageCounts = remember(allTotpItemsForStats) {
+        val active = allTotpItemsForStats.filter { !it.isDeleted }
+        com.bastion.app.ui.PasswordStorageCounts(
+            total = active.size,
+            bastionLocal = active.count { it.keepassDatabaseId == null && it.bitwardenVaultId == null },
+            perKeePassDatabase = active
+                .filter { it.keepassDatabaseId != null }
+                .groupingBy { it.keepassDatabaseId!! }
+                .eachCount(),
+            perBitwardenVault = active
+                .filter { it.bitwardenVaultId != null }
+                .groupingBy { it.bitwardenVaultId!! }
+                .eachCount()
+        )
+    }
     val searchQuery by viewModel.searchQuery.collectAsState()
     val passwords by passwordViewModel.allPasswords.collectAsState(initial = emptyList())
     val passwordMap = remember(passwords) { passwords.associateBy { it.id } }
@@ -745,7 +762,11 @@ fun TotpListContent(
                                         onDismissFilterSheet = { isCategorySheetVisible = false }
                                     )
                                 },
-                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs
+                                presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs,
+                                // 与密码页默认形态一致：只保留「数据库 / 分类文件夹」两个胶囊，
+                                // 快捷筛选由页面上的分类筛选横排按钮承担，弹层内不重复。
+                                showQuickFilters = false,
+                                entryCounts = totpStorageCounts
                             )
                         }
                     }

@@ -157,6 +157,25 @@ fun PasskeyListScreen(
     val passkeys by viewModel.filteredPasskeys.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    // 「数据库」Tab 各条目的条数统计：基于全量通行密钥按存储来源分组。
+    // 注意：PasskeyEntry 存独立表且无软删除字段，故不做 isDeleted 过滤。
+    val allPasskeysForStats by viewModel.allPasskeys.collectAsState()
+    val passkeyStorageCounts = remember(allPasskeysForStats) {
+        com.bastion.app.ui.PasswordStorageCounts(
+            total = allPasskeysForStats.size,
+            bastionLocal = allPasskeysForStats.count {
+                it.keepassDatabaseId == null && it.bitwardenVaultId == null
+            },
+            perKeePassDatabase = allPasskeysForStats
+                .filter { it.keepassDatabaseId != null }
+                .groupingBy { it.keepassDatabaseId!! }
+                .eachCount(),
+            perBitwardenVault = allPasskeysForStats
+                .filter { it.bitwardenVaultId != null }
+                .groupingBy { it.bitwardenVaultId!! }
+                .eachCount()
+        )
+    }
 
     val passwords by (passwordViewModel?.allPasswords ?: flowOf(emptyList())).collectAsState(initial = emptyList())
     val passwordMap = remember(passwords) { passwords.associateBy { it.id } }
@@ -1103,7 +1122,10 @@ fun PasskeyListScreen(
                                             onDismissFilterSheet = { showCategoryFilterDialog = false }
                                         )
                                     },
-                                    presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs
+                                    presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs,
+                                    // 与密码页默认形态一致：只保留「数据库 / 分类文件夹」两个胶囊
+                                    showQuickFilters = false,
+                                    entryCounts = passkeyStorageCounts
                                 )
                             }
                         }

@@ -40,8 +40,14 @@ import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.viewmodel.CategoryFilter
 
-/** 各存储来源的密码条数统计（全部 / 本地 Bastion / 每个库）。 */
-internal data class PasswordStorageCounts(
+/**
+ * 各存储来源的条目数统计（全部 / 本地 Bastion / 每个 KeePass 库 / 每个 Bitwarden 库）。
+ *
+ * 说明：本类是 public，因为 [com.bastion.app.ui.components.UnifiedCategoryFilterChipMenu]
+ * 是 public 函数，其 entryCounts 参数不能暴露 internal 类型。
+ * 验证器 / 卡包 / 通行密钥三页复用同一结构统计各自条数。
+ */
+data class PasswordStorageCounts(
     val total: Int,
     val bastionLocal: Int,
     val perKeePassDatabase: Map<Long, Int>,
@@ -132,8 +138,15 @@ private fun DatabaseFilterRows(params: PasswordDatabaseFiltersSectionParams) {
     }
 }
 
+/**
+ * 数据源条目行：图标 + 名称 + 右侧条数徽标。
+ *
+ * 原为密码页私有组件，现提升为 internal 供 UnifiedCategoryFilterChipMenu 复用，
+ * 让验证器 / 卡包 / 通行密钥三页的「数据库」Tab 与密码页保持同一视觉：
+ * 纵向整齐排列、每条右侧显示条数统计。
+ */
 @Composable
-private fun DatabaseStatRow(
+internal fun DatabaseStatRow(
     icon: ImageVector,
     title: String,
     count: Int?,
