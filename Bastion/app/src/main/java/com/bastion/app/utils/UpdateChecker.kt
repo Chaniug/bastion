@@ -31,6 +31,7 @@ data class UpdateCheckResult(
     val releaseUrl: String,
     val apkAssetName: String?,
     val apkDownloadUrl: String?,
+    val mirrorDownloadUrls: List<String> = emptyList(),
     val releaseNotes: String?,
     val isUpdateAvailable: Boolean
 )
@@ -51,6 +52,25 @@ object UpdateChecker {
     const val PROJECT_URL = "https://github.com/Chaniug/bastion"
     /** Release 列表页（下载地址入口） */
     const val RELEASES_PAGE_URL = "https://github.com/Chaniug/bastion/releases"
+
+    /**
+     * 国内镜像反代前缀：直接拼在 GitHub 原始下载地址（含 https://）之前即可。
+     * 镜像站随时可能失效或限速，故多列几个；下载时按顺序依次尝试，失败自动切换下一个，
+     * 用户侧始终只看到一个下载按钮。顺序靠前的优先（通常更快/更稳）。
+     */
+    val CN_MIRROR_PREFIXES = listOf(
+        "https://ghproxy.net/",
+        "https://mirror.ghproxy.com/",
+        "https://gh.api.99988866.xyz/",
+        "https://github.moeyy.xyz/",
+        "https://ghproxy.com.cn/"
+    )
+
+    /** 由 GitHub 原始下载地址派生国内镜像地址列表（顺序与 [CN_MIRROR_PREFIXES] 一致）。 */
+    fun buildMirrorUrls(githubUrl: String?): List<String> {
+        if (githubUrl.isNullOrBlank()) return emptyList()
+        return CN_MIRROR_PREFIXES.map { prefix -> prefix + githubUrl }
+    }
 
     private const val RELEASE_API_URL =
         "https://api.github.com/repos/Chaniug/bastion/releases/latest"
@@ -116,6 +136,7 @@ object UpdateChecker {
                         releaseUrl = release.htmlUrl,
                         apkAssetName = apkAsset?.name,
                         apkDownloadUrl = apkAsset?.downloadUrl,
+                        mirrorDownloadUrls = buildMirrorUrls(apkAsset?.downloadUrl),
                         releaseNotes = release.body?.takeIf { it.isNotBlank() },
                         isUpdateAvailable = compareVersionTags(latestVersion, currentVersion) > 0
                     )
@@ -162,6 +183,7 @@ object UpdateChecker {
                         releaseUrl = preview.htmlUrl,
                         apkAssetName = apkAsset.name,
                         apkDownloadUrl = apkAsset.downloadUrl,
+                        mirrorDownloadUrls = buildMirrorUrls(apkAsset.downloadUrl),
                         releaseNotes = buildLabel?.let { "预览构建时间：$it" },
                         isUpdateAvailable = isUpdateAvailable
                     )
@@ -181,13 +203,16 @@ object UpdateChecker {
             .format(java.time.Instant.ofEpochSecond(epochSeconds))
 
     suspend fun downloadApk(
-        downloadUrl: String,
+        candidateUrls: List<String>,
         outputDir: File,
         outputName: String,
         onProgress: suspend (UpdateDownloadProgress) -> Unit = {}
     ): Result<File> =
         withContext(Dispatchers.IO) {
             runCatchingObserved {
+                if (candidateUrls.isEmpty()) {
+                    throw IOException("没有可用的下载地址")
+                }
                 outputDir.mkdirs()
                 outputDir.listFiles()
                     ?.filter { it.isFile && it.name.endsWith(".apk", ignoreCase = true) }
@@ -199,47 +224,59 @@ object UpdateChecker {
                     .let { if (it.endsWith(".apk", ignoreCase = true)) it else "$it.apk" }
                 val outputFile = File(outputDir, safeName)
 
-                val request = Request.Builder()
-                    .url(downloadUrl)
-                    .header("Accept", "application/octet-stream")
-                    .header("User-Agent", "Bastion-Android")
-                    .build()
+                var lastError: Throwable? = null
+                for (url in candidateUrls) {
+                    try {
+                        val request = Request.Builder()
+                            .url(url)
+                            .header("Accept", "application/octet-stream")
+                            .header("User-Agent", "Bastion-Android")
+                            .build()
 
-                downloadClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        throw IOException("APK download failed: HTTP ${response.code}")
-                    }
+                        downloadClient.newCall(request).execute().use { response ->
+                            if (!response.isSuccessful) {
+                                throw IOException("APK download failed: HTTP ${response.code}")
+                            }
 
-                    val body = response.body ?: throw IOException("APK download response is empty")
-                    val totalBytes = body.contentLength()
-                    outputFile.outputStream().use { output ->
-                        body.byteStream().use { input ->
-                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                            var bytesRead = 0L
-                            var lastProgressAt = 0L
-                            onProgress(UpdateDownloadProgress(bytesRead, totalBytes))
-                            while (true) {
-                                val read = input.read(buffer)
-                                if (read < 0) break
-                                output.write(buffer, 0, read)
-                                bytesRead += read
-                                val now = System.currentTimeMillis()
-                                if (
-                                    totalBytes > 0L && bytesRead >= totalBytes ||
-                                    now - lastProgressAt >= 250L
-                                ) {
-                                    lastProgressAt = now
+                            val body =
+                                response.body ?: throw IOException("APK download response is empty")
+                            val totalBytes = body.contentLength()
+                            outputFile.outputStream().use { output ->
+                                body.byteStream().use { input ->
+                                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                    var bytesRead = 0L
+                                    var lastProgressAt = 0L
                                     onProgress(UpdateDownloadProgress(bytesRead, totalBytes))
+                                    while (true) {
+                                        val read = input.read(buffer)
+                                        if (read < 0) break
+                                        output.write(buffer, 0, read)
+                                        bytesRead += read
+                                        val now = System.currentTimeMillis()
+                                        if (
+                                            totalBytes > 0L && bytesRead >= totalBytes ||
+                                            now - lastProgressAt >= 250L
+                                        ) {
+                                            lastProgressAt = now
+                                            onProgress(UpdateDownloadProgress(bytesRead, totalBytes))
+                                        }
+                                    }
                                 }
                             }
                         }
+
+                        if (outputFile.length() <= 0L) {
+                            throw IOException("Downloaded APK is empty")
+                        }
+                        // 该源成功，直接返回（后续镜像不再尝试）
+                        return@runCatchingObserved outputFile
+                    } catch (e: Throwable) {
+                        // 当前源失败，清理半成品并尝试下一个镜像
+                        lastError = e
+                        runCatching { outputFile.delete() }
                     }
                 }
-
-                if (outputFile.length() <= 0L) {
-                    throw IOException("Downloaded APK is empty")
-                }
-                outputFile
+                throw lastError ?: IOException("所有下载源均失败")
             }
         }
 

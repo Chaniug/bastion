@@ -867,6 +867,7 @@
     <string name="update_download_method_label">下载方式</string>
     <string name="update_download_method_direct">直接下载</string>
     <string name="update_download_method_browser">浏览器打开</string>
+    <string name="update_mirror_hint">下载自动尝试多个国内镜像源，确保稳定可用</string>
     <string name="update_download_progress_known">%1$s / %2$s</string>
     <string name="update_download_progress_unknown">已下载 %1$s</string>
     <string name="update_download_failed">下载失败：%1$s</string>

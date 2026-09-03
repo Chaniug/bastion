@@ -669,6 +669,74 @@ private fun TimelineDetailPane(
 }
 
 /**
+ * 底栏单个 tab 项（悬浮胶囊内的图标 + 文字）。
+ *
+ * 注意：本函数必须是【顶层】 composable，不能像此前那样定义在 bottomBar
+ * lambda 内部再经 forEach 调用——嵌套函数在每次重组时会被重新定义，导致
+ * 内部 remember / animateColorAsState 的组合身份不稳定，点击一个 tab 触发
+ * 整行重组时动画状态会重启，表现为「点一个、旁边那个 pill 也跟着闪」。
+ * 同时调用处必须用 key(item.key) 包裹，保证每个 tab 有稳定的组合槽。
+ */
+@Composable
+private fun BottomNavTabItem(
+    item: BottomNavItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val label = stringResource(item.shortLabelRes())
+    // 选中色块包住「图标+文字」整体（酷安样式），圆角矩形非细长条
+    val pillColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            Color.Transparent
+        },
+        animationSpec = androidx.compose.animation.core.tween(200),
+        label = "nav_tab_pill"
+    )
+    val contentTint = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(min = 56.dp)
+                .height(48.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .background(pillColor),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = label,
+                tint = contentTint,
+                modifier = Modifier.size(22.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = contentTint
+            )
+        }
+    }
+}
+
+/**
  * 带有底部导航的主屏幕
  */
 @OptIn(
@@ -2021,62 +2089,16 @@ fun SimpleMainScreen(
                         val leftTabs = tabs.take(2)
                         val rightTabs = tabs.drop(2).take(2)
 
-                        @Composable
-                        fun tabItem(item: BottomNavItem, modifier: Modifier = Modifier) {
-                            val label = stringResource(item.shortLabelRes())
-                            val isTabSelected = item.key == selectedDockTab.key
-                            // 选中色块包住「图标+文字」整体（酷安样式），圆角矩形非细长条
-                            val pillColor by androidx.compose.animation.animateColorAsState(
-                                targetValue = if (isTabSelected) {
-                                    MaterialTheme.colorScheme.secondaryContainer
-                                } else {
-                                    Color.Transparent
-                                },
-                                animationSpec = androidx.compose.animation.core.tween(200),
-                                label = "nav_tab_pill"
-                            )
-                            val contentTint = if (isTabSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                            Box(
-                                modifier = modifier
-                                    .fillMaxHeight()
-                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { selectedTabKey = item.key },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .widthIn(min = 56.dp)
-                                        .height(48.dp)
-                                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                                        .background(pillColor),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = label,
-                                        tint = contentTint,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = contentTint
-                                    )
-                                }
+                        leftTabs.forEach { item ->
+                            key(item.key) {
+                                BottomNavTabItem(
+                                    item = item,
+                                    isSelected = item.key == selectedDockTab.key,
+                                    onClick = { selectedTabKey = item.key },
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
-
-                        leftTabs.forEach { item -> tabItem(item, Modifier.weight(1f)) }
                         repeat(2 - leftTabs.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
@@ -2123,7 +2145,16 @@ fun SimpleMainScreen(
                             }
                         }
 
-                        rightTabs.forEach { item -> tabItem(item, Modifier.weight(1f)) }
+                        rightTabs.forEach { item ->
+                            key(item.key) {
+                                BottomNavTabItem(
+                                    item = item,
+                                    isSelected = item.key == selectedDockTab.key,
+                                    onClick = { selectedTabKey = item.key },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
                         repeat(2 - rightTabs.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }

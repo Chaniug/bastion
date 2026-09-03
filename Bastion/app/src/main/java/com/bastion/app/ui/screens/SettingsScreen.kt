@@ -229,7 +229,13 @@ fun SettingsScreen(
             coroutineScope.launch {
                 val apkName = result.apkAssetName ?: "Bastion-${result.latestVersion}.apk"
                 val outputDir = File(context.cacheDir, UPDATE_APK_DIR)
-                UpdateChecker.downloadApk(downloadUrl, outputDir, apkName) { progress ->
+                // 候选下载源：原始 GitHub 在前，国内镜像在后。downloadApk 会按顺序尝试，
+                // 某个源失败自动切下一个，用户始终只点一个下载按钮。
+                val candidateUrls = buildList {
+                    result.apkDownloadUrl?.let { add(it) }
+                    addAll(result.mirrorDownloadUrls)
+                }.filter { it.isNotBlank() }
+                UpdateChecker.downloadApk(candidateUrls, outputDir, apkName) { progress ->
                     withContext(Dispatchers.Main.immediate) {
                         updateDownloadProgress = progress
                     }
@@ -1349,6 +1355,12 @@ fun SettingsScreen(
                                     onClick = { downloadViaBrowser = true }
                                 )
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = stringResource(R.string.update_mirror_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
 
                         // === 相关链接 ===
