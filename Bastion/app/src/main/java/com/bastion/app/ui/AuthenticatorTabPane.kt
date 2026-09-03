@@ -100,21 +100,41 @@ internal fun AuthenticatorTabPane(
                         totpViewModel = totpViewModel,
                         localKeePassViewModel = localKeePassViewModel,
                         onSave = { title, notes, totpData, isFavorite, targets, onComplete ->
-                            totpViewModel.saveTotpAcrossTargets(
-                                id = null,
-                                title = title,
-                                notes = notes,
-                                totpData = totpData,
-                                isFavorite = isFavorite,
-                                targets = targets,
-                                onComplete = { saved ->
-                                    if (saved) {
-                                        totpViewModel.revealSavedTotpTargets(targets)
-                                        onInlineTotpEditorBack()
+                            // 与编辑分支同理：若新建时就指定了绑定密码条目，走绑定型保存，
+                            // 避免被当成独立条目写入 Bitwarden 而新建一条 otpauth:// cipher。
+                            val boundPasswordId = totpData.boundPasswordId
+                            if (boundPasswordId != null && boundPasswordId > 0L) {
+                                totpViewModel.savePasswordBoundTotp(
+                                    passwordId = boundPasswordId,
+                                    title = title,
+                                    notes = notes,
+                                    totpData = totpData,
+                                    isFavorite = isFavorite,
+                                    preferredTotpId = null,
+                                    onComplete = { saved ->
+                                        if (saved) {
+                                            onInlineTotpEditorBack()
+                                        }
+                                        onComplete(saved)
                                     }
-                                    onComplete(saved)
-                                }
-                            )
+                                )
+                            } else {
+                                totpViewModel.saveTotpAcrossTargets(
+                                    id = null,
+                                    title = title,
+                                    notes = notes,
+                                    totpData = totpData,
+                                    isFavorite = isFavorite,
+                                    targets = targets,
+                                    onComplete = { saved ->
+                                        if (saved) {
+                                            totpViewModel.revealSavedTotpTargets(targets)
+                                            onInlineTotpEditorBack()
+                                        }
+                                        onComplete(saved)
+                                    }
+                                )
+                            }
                         },
                         onNavigateBack = onInlineTotpEditorBack,
                         onScanQrCode = onNavigateToQuickTotpScan,
@@ -160,20 +180,39 @@ internal fun AuthenticatorTabPane(
                         totpViewModel = totpViewModel,
                         localKeePassViewModel = localKeePassViewModel,
                         onSave = { title, notes, totpData, isFavorite, targets, onComplete ->
-                            totpViewModel.saveTotpAcrossTargets(
-                                id = selectedTotpItem.id,
-                                title = title,
-                                notes = notes,
-                                totpData = totpData,
-                                isFavorite = isFavorite,
-                                targets = targets,
-                                onComplete = { saved ->
-                                    if (saved) {
-                                        totpViewModel.revealSavedTotpTargets(targets)
+                            // 绑定型验证器（依附于某条密码条目）必须走 savePasswordBoundTotp，
+                            // 让它跟随密码条目存储、不占用自己的 Bitwarden 存储位。
+                            // 若误走 saveTotpAcrossTargets，它会以「独立条目」身份写入 Bitwarden 目标
+                            // （followBoundPasswordStorage=false + 分配 bitwardenVaultId），
+                            // 进而在服务器新建一条 website=otpauth://totp/{issuer} 的独立 cipher，
+                            // 导致本地与远端各多出一条重复数据。
+                            val boundPasswordId = totpData.boundPasswordId
+                            if (boundPasswordId != null && boundPasswordId > 0L) {
+                                totpViewModel.savePasswordBoundTotp(
+                                    passwordId = boundPasswordId,
+                                    title = title,
+                                    notes = notes,
+                                    totpData = totpData,
+                                    isFavorite = isFavorite,
+                                    preferredTotpId = selectedTotpItem.id,
+                                    onComplete = onComplete
+                                )
+                            } else {
+                                totpViewModel.saveTotpAcrossTargets(
+                                    id = selectedTotpItem.id,
+                                    title = title,
+                                    notes = notes,
+                                    totpData = totpData,
+                                    isFavorite = isFavorite,
+                                    targets = targets,
+                                    onComplete = { saved ->
+                                        if (saved) {
+                                            totpViewModel.revealSavedTotpTargets(targets)
+                                        }
+                                        onComplete(saved)
                                     }
-                                    onComplete(saved)
-                                }
-                            )
+                                )
+                            }
                         },
                         onNavigateBack = onInlineTotpEditorBack,
                         onScanQrCode = onNavigateToQuickTotpScan,

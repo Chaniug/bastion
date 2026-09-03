@@ -910,10 +910,13 @@ class TotpViewModel(
         notes: String = "",
         totpData: TotpData,
         isFavorite: Boolean = false,
-        preferredTotpId: Long? = null
+        preferredTotpId: Long? = null,
+        // 绑定型验证器保存后需要把结果回传给 UI（原签名是 fire-and-forget，UI 无法感知成败）。
+        // 默认 null，保证 AddEditPasswordScreen 等既有调用方行为不变。
+        onComplete: ((Boolean) -> Unit)? = null
     ) {
         viewModelScope.launch {
-            savePasswordBoundTotpInternal(
+            val saved = savePasswordBoundTotpInternal(
                 passwordId = passwordId,
                 title = title,
                 notes = notes,
@@ -921,6 +924,7 @@ class TotpViewModel(
                 isFavorite = isFavorite,
                 preferredTotpId = preferredTotpId
             )
+            onComplete?.invoke(saved)
         }
     }
 
