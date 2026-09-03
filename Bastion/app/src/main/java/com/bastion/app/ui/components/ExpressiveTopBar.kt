@@ -232,7 +232,14 @@ fun ExpressiveTopBar(
             // 自带背景：展开不透明、收起透明（列表从 Bar 底下穿过）。
             // 背景在 statusBarsPadding 之前应用 → 覆盖到状态栏区域（沉浸式白/彩头部），
             // 内容通过 statusBarsPadding 下移到状态栏下方。
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = barBackgroundAlpha))
+            //
+            // 改用 surface 而非 surfaceContainerHigh：
+            //   M3 expressive 设计里 surfaceContainerHigh 是"凸起容器色"，比 surface 略深，
+            //   会让 Bar 看起来像一张彩色卡片浮在主背景上——密码/验证器/通行秘钥/卡包四页
+            //   顶部因此偏蓝灰，和「设置页 Surface(color = surface, tonalElevation=3dp)」的
+            //   纯白顶栏不一致。统一改用 surface 后 Bar 与主背景融合，卡片从底下穿过即形成
+            //   用户要的"沉浸、贴系统"观感。
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = barBackgroundAlpha))
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = barVerticalPadding),
         contentAlignment = Alignment.Center
@@ -352,8 +359,10 @@ fun ExpressiveTopBar(
                         }
                     },
                 shape = RoundedCornerShape(50),
-                // 跟随 Bar 背景一起透明：收起后按钮浮在内容上（对齐相册的 + 按钮浮在图片上）
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = barBackgroundAlpha),
+                // 跟随 Bar 背景一起透明：收起后按钮浮在内容上（对齐相册的 + 按钮浮在图片上）。
+                // 与 Bar 主背景用同一 token（surface），避免胶囊在浅色背景上留下与 Bar 不
+                // 同色的"贴片感"。见上方 Box.background 注释了解背景 token 选择。
+                color = MaterialTheme.colorScheme.surface.copy(alpha = barBackgroundAlpha),
                 // 滚动收起时抬升降为 0，让右侧胶囊视觉上"落下去"
                 tonalElevation = pillElevation
             ) {
