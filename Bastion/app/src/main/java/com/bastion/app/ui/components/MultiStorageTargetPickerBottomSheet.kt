@@ -545,7 +545,8 @@ private fun StoragePickerModeToggleGroup(
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
         StoragePickerModeButton(
-            label = stringResource(R.string.single_select),
+            // 「移动」＝只存在选中的这一个位置（唯一归属）
+            label = stringResource(R.string.storage_picker_mode_move),
             selected = selectionMode == StoragePickerSelectionMode.SINGLE,
             enabled = singleEnabled,
             position = 0,
@@ -553,7 +554,8 @@ private fun StoragePickerModeToggleGroup(
             onClick = { onModeSelected(StoragePickerSelectionMode.SINGLE) }
         )
         StoragePickerModeButton(
-            label = stringResource(R.string.multi_select),
+            // 「复制」＝选中的每个位置各存一份（同一条目的副本）
+            label = stringResource(R.string.storage_picker_mode_copy),
             selected = selectionMode == StoragePickerSelectionMode.MULTI,
             enabled = true,
             position = 1,

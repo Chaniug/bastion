@@ -1832,7 +1832,12 @@
     <string name="category_parent_path_hint">父级路径：%1$s</string>
     <string name="single_select">单选</string>
     <string name="multi_select">多选</string>
-    <string name="storage_picker_edit_multi_append_hint">编辑已有条目时仅支持多选追加，已有目标会保留。</string>
+    <!-- 存储位置选择器专用文案：用「移动 / 复制」替代含糊的「单选 / 多选」，
+         直接说明选一个位置 vs 选多个位置的实际后果。
+         注意不要复用 single_select / multi_select——那两个还被滑动选择模式等功能共用。 -->
+    <string name="storage_picker_mode_move">移动</string>
+    <string name="storage_picker_mode_copy">复制</string>
+    <string name="storage_picker_edit_multi_append_hint">编辑已有条目时，已保存的位置会保留、无法在此取消；此时选择其他位置＝再复制一份过去。若要彻底删除某个位置上的副本，请到该位置下删除对应条目。</string>
     
     <!-- 自动填充硬编码修复 -->
     <string name="autofill_manual_entry_title">Bastion自动填充</string>
