@@ -693,7 +693,6 @@ fun PasswordListCustomizationScreen(
 
     LaunchedEffect(
         previewAggregateEnabled,
-        previewQuickFiltersEnabled,
         previewQuickAccessEnabled
     ) {
         if (!previewAggregateEnabled) {
@@ -751,7 +750,8 @@ fun PasswordListCustomizationScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (previewQuickFiltersEnabled && selectedQuickFilterItems.isNotEmpty()) {
+                        // 收纳转正后快捷筛选横排不再受开关控制，仅由「是否配置了筛选项」决定
+                        if (selectedQuickFilterItems.isNotEmpty()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1025,7 +1025,7 @@ fun PasswordListCustomizationScreen(
                             }
                         }
 
-                        if ((!previewQuickFiltersEnabled || selectedQuickFilterItems.isEmpty()) &&
+                        if (selectedQuickFilterItems.isEmpty() &&
                             !previewCategoryQuickFiltersEnabled &&
                             !previewQuickAccessEnabled
                         ) {
