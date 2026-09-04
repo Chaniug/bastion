@@ -303,20 +303,38 @@ interface SecureItemDao {
     
     /**
      * 获取待上传到 Bitwarden 的项目（有 vaultId 但没有 cipherId）
+     *
+     * 【单一归属】必须排除 syncStatus = REFERENCE 的引用型条目（绑定型 TOTP / Passkey）：
+     * 它们随所属密码条目的 cipher 同步，若被捞走上传会生成多余的 otpauth:// cipher。
      */
-    @Query("SELECT * FROM secure_items WHERE bitwarden_vault_id = :vaultId AND bitwarden_cipher_id IS NULL AND isDeleted = 0")
+    @Query(
+        "SELECT * FROM secure_items WHERE bitwarden_vault_id = :vaultId " +
+            "AND bitwarden_cipher_id IS NULL " +
+            "AND (sync_status IS NULL OR sync_status <> 'REFERENCE') " +
+            "AND isDeleted = 0"
+    )
     suspend fun getLocalEntriesPendingUpload(vaultId: Long): List<SecureItem>
 
     /**
      * 标记所有未关联 Bitwarden 的项目为指定 Vault
+     *
+     * ⚠️ 目前无调用方（死代码）。将来若启用：WHERE 需补 sync_status <> 'REFERENCE'，
+     * 否则会把绑定型 TOTP / Passkey 等引用型条目批量挂上 vaultId、又被上传流程误捞。
      */
     @Query("UPDATE secure_items SET bitwarden_vault_id = :vaultId WHERE bitwarden_vault_id IS NULL AND isDeleted = 0")
     suspend fun markAllForBitwarden(vaultId: Long)
-    
+
     /**
      * 获取有本地修改需要同步的项目
+     *
+     * 【单一归属】同样排除 REFERENCE 引用型条目（它们不独立上传）。
      */
-    @Query("SELECT * FROM secure_items WHERE bitwarden_vault_id = :vaultId AND bitwarden_local_modified = 1 AND isDeleted = 0")
+    @Query(
+        "SELECT * FROM secure_items WHERE bitwarden_vault_id = :vaultId " +
+            "AND bitwarden_local_modified = 1 " +
+            "AND (sync_status IS NULL OR sync_status <> 'REFERENCE') " +
+            "AND isDeleted = 0"
+    )
     suspend fun getLocalModifiedEntries(vaultId: Long): List<SecureItem>
     
     /**

@@ -2156,6 +2156,7 @@
     <string name="multi_storage_selected_summary">已选 %1$d 个保存位置 · %2$s</string>
     <string name="multi_storage_preserved_existing_suffix">已保留原目标</string>
     <string name="multi_storage_no_target">未选择目标</string>
+    <string name="storage_target_required">请至少选择一个存储位置</string>
     <string name="multi_storage_more_sources_suffix">另外 %1$d 个数据库</string>
     <string name="create_select_bitwarden_vault">选择 Bitwarden 账户</string>
     <string name="create_select_keepass_database">选择 KeePass 数据库</string>

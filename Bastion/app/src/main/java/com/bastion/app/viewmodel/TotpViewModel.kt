@@ -22,6 +22,7 @@ import com.bastion.app.data.Category
 import com.bastion.app.data.ItemType
 import com.bastion.app.data.LocalKeePassDatabaseDao
 import com.bastion.app.data.PasswordEntry
+import com.bastion.app.data.SYNC_STATUS_REFERENCE
 import com.bastion.app.data.SecureItem
 import com.bastion.app.data.SecureItemOwnership
 import com.bastion.app.data.asBastionLocalCopy
@@ -254,6 +255,58 @@ class TotpViewModel(
         restoreLastCategoryFilter()
         viewModelScope.launch {
             repairLegacyDetachedKeePassItems()
+        }
+        viewModelScope.launch {
+            relinkBoundTotpStorage()
+        }
+    }
+
+    /**
+     * 【存量修复】把历史版本遗留的"绑定型验证码恒落本地未分类"幽灵条目，
+     * 修复为跟随所属密码条目所在 vault + REFERENCE 引用标记。
+     *
+     * 背景：d15f0229 为堵住 otpauth cipher 把绑定型 TOTP 硬编码 bitwardenVaultId=null，
+     * 密码条目在 Bitwarden 时（categoryId=null）它恒等于 BastionLocal(null)，
+     * 用户看到的是"Bastion 未分类里多出一条、条数对不上"。本函数在升级后自动修复。
+     *
+     * 保守策略（不动任何不该动的数据）：
+     * - 独立型 TOTP（boundPasswordId 为空）不动；
+     * - 所属密码条目已被删除的绑定型不动（孤儿条目交给既有清理逻辑）；
+     * - 密码条目不在 Bitwarden（本地/KeePass）时绑定型留在本地是正确语义，不动；
+     * - 已有真实 cipher（bitwardenCipherId 非空）的不动。
+     */
+    private suspend fun relinkBoundTotpStorage() = withContext(Dispatchers.IO) {
+        try {
+            val allItems = repository.getItemsByType(ItemType.TOTP).first()
+            var repaired = 0
+            for (item in allItems) {
+                if (item.isDeleted) continue
+                if (item.syncStatus == SYNC_STATUS_REFERENCE) continue
+                if (item.bitwardenCipherId != null) continue
+                val data = parseStoredTotpData(item) ?: continue
+                val boundPasswordId = data.boundPasswordId ?: continue
+                val boundPassword = passwordRepository.getPasswordEntryById(boundPasswordId) ?: continue
+                val targetVaultId = boundPassword.bitwardenVaultId ?: continue
+                if (item.bitwardenVaultId == targetVaultId &&
+                    item.bitwardenFolderId == null &&
+                    item.syncStatus == SYNC_STATUS_REFERENCE
+                ) {
+                    continue
+                }
+                repository.updateItem(
+                    item.copy(
+                        bitwardenVaultId = targetVaultId,
+                        bitwardenFolderId = null,
+                        syncStatus = SYNC_STATUS_REFERENCE
+                    )
+                )
+                repaired++
+            }
+            if (repaired > 0) {
+                Log.i("TotpViewModel", "relinkBoundTotpStorage repaired=$repaired")
+            }
+        } catch (e: Exception) {
+            Log.e("TotpViewModel", "relinkBoundTotpStorage failed", e)
         }
     }
     
@@ -1019,6 +1072,19 @@ class TotpViewModel(
                 keepassDatabaseId = resolvedKeepassDatabaseId
             )
 
+            // 【单一归属】绑定型验证码跟随所属密码条目的 vault（归属/展示正确），但：
+            // - folderId 不继承（真实位置随密码条目）；
+            // - syncStatus 打 REFERENCE 引用标记，不独立参与 Bitwarden 上传——
+            //   它只随所属密码条目的 authenticatorKey → cipher.login.totp 同步。
+            //
+            // 此前（d15f0229）硬编码 vaultId=null 是为了堵 otpauth cipher，但代价是
+            // 绑定型 TOTP 恒落"本地未分类"（密码在 Bitwarden 时 categoryId=null），
+            // 用户看到的就是"Bastion 未分类里多出一条"。现在改为"带 vaultId + REFERENCE"。
+            //
+            // 历史独立型 TOTP 的 vault 同样**不继承**（preserveSelectedSourceStorage 时
+            // preferredItem 可能带旧 vault，一律以密码条目当前所在 vault 为准）。
+            // 详见 BastionDocs/architecture-bitwarden-alignment.md
+            val resolvedVaultId = boundPassword?.bitwardenVaultId
             val savedItemId = saveTotpItemInternal(
                 id = preferredItem?.first?.id,
                 title = metadataSource?.first?.title ?: title,
@@ -1032,16 +1098,10 @@ class TotpViewModel(
                 } else {
                     boundPassword?.keepassGroupPath
                 },
-                // 【单一归属】绑定型验证码不占 Bitwarden 存储位：
-                // 无论来源记录原本是什么归属，都**不继承**其 vault / folder / cipher——
-                // 它只随所属密码条目的 authenticatorKey → cipher.login.totp 同步。
-                //
-                // 此前会继承历史独立型 TOTP 的 vault=1，导致它被当作独立条目上传成
-                // otpauth:// cipher，同步回来又被解析成一条多余的密码条目（本地"副本"）。
-                // 详见 BastionDocs/architecture-bitwarden-alignment.md
-                bitwardenVaultId = null,
+                bitwardenVaultId = resolvedVaultId,
                 bitwardenFolderId = null,
-                followBoundPasswordStorage = !preserveSelectedSourceStorage
+                followBoundPasswordStorage = !preserveSelectedSourceStorage,
+                syncStatusOverride = if (resolvedVaultId != null) SYNC_STATUS_REFERENCE else null
             )
             if (savedItemId == null) {
                 Log.e(
@@ -1120,8 +1180,20 @@ class TotpViewModel(
         onComplete: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
-            val saved = try {
-                val distinctTargets = targets.distinctBy(StorageTarget::stableKey)
+            val saved = saveTotpAcrossTargetsInternal(id, title, notes, totpData, isFavorite, targets)
+            onComplete(saved)
+        }
+    }
+
+    private suspend fun saveTotpAcrossTargetsInternal(
+        id: Long?,
+        title: String,
+        notes: String,
+        totpData: TotpData,
+        isFavorite: Boolean,
+        targets: List<StorageTarget>
+    ): Boolean = try {
+            val distinctTargets = targets.distinctBy(StorageTarget::stableKey)
                 if (distinctTargets.isEmpty()) {
                     Log.w("TotpViewModel", "saveTotpAcrossTargets blocked because target list is empty id=$id")
                     false
@@ -1226,13 +1298,78 @@ class TotpViewModel(
                         allTargetsSaved
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(
-                    "TotpViewModel",
-                    "saveTotpAcrossTargets crashed id=$id targets=${targets.map(StorageTarget::stableKey)} error=${e::class.java.simpleName}: ${e.message}",
-                    e
+        } catch (e: Exception) {
+            Log.e(
+                "TotpViewModel",
+                "saveTotpAcrossTargets crashed id=$id targets=${targets.map(StorageTarget::stableKey)} error=${e::class.java.simpleName}: ${e.message}",
+                e
+            )
+            false
+        }
+
+    /**
+     * 【智能保存】按"归属策略"自动选择保存路径，供验证器页统一入口调用。
+     *
+     * - 非绑定型（boundPasswordId 为空）→ 走 [saveTotpAcrossTargetsInternal]，按用户选择的 targets 保存。
+     * - 绑定型且 targets 与密码同 scope（或未显式选择）→ 走绑定路径 [savePasswordBoundTotpInternal]，
+     *   验证器跟随密码存储：本地标记密码所在库的 vaultId + syncStatus=REFERENCE，不独立上传 Bitwarden。
+     * - 绑定型但 targets 指向别处（跨库）→ 视为用户显式解绑：清除 boundPasswordId，
+     *   按独立条目保存到用户选择的位置（此后正常参与 Bitwarden 同步）。
+     *
+     * 这样修复了"绑定型一律丢弃用户选择的 targets"的旧行为：用户在编辑器里
+     * 明确改选别的库时，选择不再被静默吞掉。
+     */
+    fun saveTotpWithOwnershipPolicy(
+        id: Long?,
+        title: String,
+        notes: String,
+        totpData: TotpData,
+        isFavorite: Boolean = false,
+        targets: List<StorageTarget>,
+        preferredTotpId: Long? = null,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val boundPasswordId = totpData.boundPasswordId?.takeIf { it > 0L }
+            val saved = if (boundPasswordId != null) {
+                val boundPassword = passwordRepository.getPasswordEntryById(boundPasswordId)
+                val boundScopeKey = boundPassword?.toStorageTarget()?.storageScopeKey()
+                val distinctTargets = targets.distinctBy(StorageTarget::stableKey)
+                val targetsFollowPassword = distinctTargets.isEmpty() ||
+                    distinctTargets.all { it.storageScopeKey() == boundScopeKey }
+                if (targetsFollowPassword) {
+                    savePasswordBoundTotpInternal(
+                        passwordId = boundPasswordId,
+                        title = title,
+                        notes = notes,
+                        totpData = totpData,
+                        isFavorite = isFavorite,
+                        preferredTotpId = preferredTotpId
+                    )
+                } else {
+                    Log.i(
+                        "TotpViewModel",
+                        "saveTotpWithOwnershipPolicy: unbinding totp from password=$boundPasswordId, " +
+                            "targets=${distinctTargets.map(StorageTarget::stableKey)}, boundScope=$boundScopeKey"
+                    )
+                    saveTotpAcrossTargetsInternal(
+                        id = id,
+                        title = title,
+                        notes = notes,
+                        totpData = totpData.copy(boundPasswordId = null),
+                        isFavorite = isFavorite,
+                        targets = distinctTargets
+                    )
+                }
+            } else {
+                saveTotpAcrossTargetsInternal(
+                    id = id,
+                    title = title,
+                    notes = notes,
+                    totpData = totpData,
+                    isFavorite = isFavorite,
+                    targets = targets.distinctBy(StorageTarget::stableKey)
                 )
-                false
             }
             onComplete(saved)
         }
@@ -1250,7 +1387,8 @@ class TotpViewModel(
         bitwardenVaultId: Long?,
         bitwardenFolderId: String?,
         followBoundPasswordStorage: Boolean,
-        replicaGroupId: String? = null
+        replicaGroupId: String? = null,
+        syncStatusOverride: String? = null
     ): Long? {
         val existingItem = if (id != null && id > 0) repository.getItemById(id) else null
         if (id != null && id > 0 && existingItem == null) {
@@ -1290,7 +1428,16 @@ class TotpViewModel(
         val itemDataJson = Json.encodeToString(updatedTotpData)
         val storedItemData = encodeStoredSensitiveValueForNewWrite(itemDataJson)
 
-        val resolvedBitwardenVaultId = if (shouldFollowBoundPassword) null else bitwardenVaultId
+        // 【单一归属】绑定型验证码跟随所属密码条目的 vault：本地记录带上密码所在的
+        // bitwardenVaultId，使归属判定（resolveOwnership）正确显示在对应库下——
+        // 但 folderId 仍置空（真实位置随密码条目），且 syncStatus 打 REFERENCE 引用标记，
+        // 不独立参与 Bitwarden 上传（DAO 待上传查询已排除 REFERENCE；上传侧另有
+        // isPasswordBoundTotp 解密级防线），不会生成多余的 otpauth:// cipher。
+        val resolvedBitwardenVaultId = if (shouldFollowBoundPassword) {
+            boundPassword?.bitwardenVaultId
+        } else {
+            bitwardenVaultId
+        }
         val resolvedBitwardenFolderId = if (shouldFollowBoundPassword) null else bitwardenFolderId
         val resolvedReplicaGroupId = replicaGroupId ?: existingItem?.replicaGroupId
         val transition = resolveBitwardenTransition(
@@ -1309,6 +1456,7 @@ class TotpViewModel(
             )
             return null
         }
+        val effectiveSyncStatus = syncStatusOverride ?: transition.syncStatus
 
         val item = if (id != null && id > 0) {
             existingItem?.copy(
@@ -1326,7 +1474,7 @@ class TotpViewModel(
                 bitwardenCipherId = transition.cipherId,
                 bitwardenRevisionDate = transition.revisionDate,
                 bitwardenLocalModified = transition.localModified,
-                syncStatus = transition.syncStatus,
+                syncStatus = effectiveSyncStatus,
                 replicaGroupId = resolvedReplicaGroupId,
                 updatedAt = Date()
             ) ?: run {
@@ -1353,7 +1501,7 @@ class TotpViewModel(
                 bitwardenCipherId = transition.cipherId,
                 bitwardenRevisionDate = transition.revisionDate,
                 bitwardenLocalModified = transition.localModified,
-                syncStatus = transition.syncStatus,
+                syncStatus = effectiveSyncStatus,
                 createdAt = Date(),
                 updatedAt = Date(),
                 imagePaths = "",

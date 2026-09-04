@@ -877,13 +877,20 @@ class CipherUploadProcessor(
         var failed = 0
         
         for (item in pending) {
+            // 【单一归属】防御性跳过 REFERENCE 引用型条目（绑定型 TOTP / Passkey）：
+            // DAO 的待上传查询已排除它们，此处再拦一层，避免历史遗留的 REFERENCE 条目
+            // 被误传成独立 cipher；同时不让"跳过"计入 uploaded/failed 统计。
+            if (item.syncStatus == SYNC_STATUS_REFERENCE) {
+                Log.i("CipherUploadProcessor", "skip upload(reference): id=${item.id} type=${item.itemType}")
+                continue
+            }
             val result = uploadSecureItem(vault, item, accessToken, symmetricKey)
             when (result) {
                 is UploadItemResult.Success -> uploaded++
                 is UploadItemResult.Error -> failed++
             }
         }
-        
+
         return BatchUploadResult(uploaded = uploaded, failed = failed, total = pending.size)
     }
 

@@ -51,6 +51,7 @@ import com.bastion.app.data.model.CardBrandDetector
 import com.bastion.app.data.model.CardWalletDataCodec
 import com.bastion.app.data.model.CardType
 import com.bastion.app.data.model.StorageTarget
+import com.bastion.app.data.model.dedupedStorageTargets
 import com.bastion.app.data.model.normalizedStorageTargets
 import com.bastion.app.data.model.formatForDisplay
 import com.bastion.app.data.model.isEmpty
@@ -233,7 +234,8 @@ fun AddEditBankCardScreen(
     }
 
     fun setSelectedStorageTargets(targets: List<StorageTarget>) {
-        val normalizedTargets = targets.normalizedStorageTargets()
+        // 编辑期允许空选择（用户可把条目从所有存储位置移除，保存前统一做空校验）。
+        val normalizedTargets = targets.dedupedStorageTargets()
         selectedStorageTargets.clear()
         selectedStorageTargets.addAll(normalizedTargets)
         syncLegacyStorageState(normalizedTargets)
@@ -241,11 +243,11 @@ fun AddEditBankCardScreen(
 
     fun addSelectedStorageTarget(target: StorageTarget) {
         if (selectedStorageTargets.any { it.stableKey == target.stableKey }) return
-        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target))
+        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target, fallbackIfEmpty = false))
     }
 
     fun removeSelectedStorageTarget(target: StorageTarget) {
-        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target))
+        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target, allowScopeFallback = false))
     }
 
     LaunchedEffect(
@@ -278,7 +280,13 @@ fun AddEditBankCardScreen(
         } else {
             null
         }
-        if (!hasExplicitInitialStorage && remembered == null && filterKeepassDatabaseId == null && filterKeepassGroupPath == null) {
+        // 新建默认位置跟随当前过滤：Bitwarden vault 视图下新建，默认存到该 vault（决策：跟随上下文）。
+        val filterBitwardenVaultId = when (cardWalletCategoryFilterState?.type) {
+            "bitwarden_vault", "bitwarden_folder", "bitwarden_vault_starred", "bitwarden_vault_uncategorized" ->
+                cardWalletCategoryFilterState?.primaryId
+            else -> null
+        }
+        if (!hasExplicitInitialStorage && remembered == null && filterKeepassDatabaseId == null && filterKeepassGroupPath == null && filterBitwardenVaultId == null) {
             setSelectedStorageTargets(listOf(StorageTarget.BastionLocal(null)))
             return@LaunchedEffect
         }
@@ -300,7 +308,7 @@ fun AddEditBankCardScreen(
         bitwardenVaultId = if (hasExplicitInitialStorage) {
             initialBitwardenVaultId
         } else {
-            remembered?.bitwardenVaultId
+            filterBitwardenVaultId ?: remembered?.bitwardenVaultId
         }
         bitwardenFolderId = if (hasExplicitInitialStorage) {
             explicitFolderId
@@ -437,21 +445,19 @@ fun AddEditBankCardScreen(
     val canSave = isExistingCardReady && cardNumber.isNotBlank() && !isSaving
     val save: () -> Unit = saveAction@{
         if (!isExistingCardReady || isSaving || cardNumber.isBlank()) return@saveAction
+        // 空选择校验：用户清空所有存储位置后不允许保存，不再静默兜底回 Bastion 本地。
+        if (selectedStorageTargets.isEmpty()) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.storage_target_required),
+                Toast.LENGTH_SHORT
+            ).show()
+            return@saveAction
+        }
         isSaving = true // 防止重复点击
         val effectiveTargets = selectedStorageTargets
             .toList()
-            .ifEmpty {
-            listOf(
-                buildMultiStorageTarget(
-                    categoryId = selectedCategoryId,
-                    keepassDatabaseId = keepassDatabaseId,
-                    keepassGroupPath = keepassGroupPath,
-                    bitwardenVaultId = bitwardenVaultId,
-                    bitwardenFolderId = bitwardenFolderId
-                )
-            )
-        }
-            .normalizedStorageTargets()
+            .dedupedStorageTargets()
         val primaryTarget = effectiveTargets.first()
         val syncVaultIds = effectiveTargets
             .filterIsInstance<StorageTarget.Bitwarden>()
@@ -1212,7 +1218,10 @@ fun AddEditBankCardScreen(
     MultiStorageTargetPickerBottomSheet(
         visible = showStorageTargetSheet,
         selectedTargets = selectedStorageTargets.toList(),
-        lockedTargetKeys = existingReplicaTargetKeys,
+        // 【移动语义】与密码页对齐：不再锁定已有位置，允许迁出（真正的跨库迁移）。
+        lockedTargetKeys = emptySet(),
+        // 允许清空所有位置（保存前 save 统一做空校验提示）。
+        allowEmptySelection = true,
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,

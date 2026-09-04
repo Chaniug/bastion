@@ -86,6 +86,7 @@ import com.bastion.app.data.parseLinkedAppBindings
 import com.bastion.app.data.removeLinkedAppBinding
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.model.StorageTarget
+import com.bastion.app.data.model.dedupedStorageTargets
 import com.bastion.app.data.model.normalizedStorageTargets
 import com.bastion.app.data.model.storageScopeKey
 import com.bastion.app.data.model.toStorageTarget
@@ -683,7 +684,9 @@ fun AddEditPasswordScreen(
     }
 
     fun setSelectedStorageTargets(targets: List<StorageTarget>) {
-        val normalizedTargets = targets.normalizedStorageTargets()
+        // 编辑期允许空选择（用户可把条目从所有存储位置移除，保存前统一做空校验），
+        // 不再在此处兜底回 Bastion 本地——那会让"取消最后一个位置"永远不可能。
+        val normalizedTargets = targets.dedupedStorageTargets()
         selectedStorageTargets.clear()
         selectedStorageTargets.addAll(normalizedTargets)
         syncLegacyStorageState(normalizedTargets)
@@ -691,15 +694,16 @@ fun AddEditPasswordScreen(
 
     fun addSelectedStorageTarget(target: StorageTarget) {
         if (selectedStorageTargets.any { it.stableKey == target.stableKey }) return
-        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target))
+        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target, fallbackIfEmpty = false))
     }
 
     fun removeSelectedStorageTarget(target: StorageTarget) {
-        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target))
+        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target, allowScopeFallback = false))
     }
 
     fun buildStorageTargetsForSave(): List<StorageTarget> {
-        return selectedStorageTargets.toList().normalizedStorageTargets()
+        // 保存前的 targets 必须与用户所见完全一致（空 = 由 handleSave 拦截并提示）。
+        return selectedStorageTargets.toList().dedupedStorageTargets()
     }
 
     fun normalizeCommonTemplateType(raw: String): String {
@@ -1443,6 +1447,15 @@ fun AddEditPasswordScreen(
                 Toast.makeText(
                     context,
                     context.getString(R.string.password_owner_conflict_display),
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@handleSave
+            }
+            // 空选择校验：用户清空所有存储位置后不允许保存（否则条目无处落地）。
+            if (buildStorageTargetsForSave().isEmpty()) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.storage_target_required),
                     Toast.LENGTH_SHORT
                 ).show()
                 return@handleSave
@@ -3237,6 +3250,8 @@ fun AddEditPasswordScreen(
         selectedTargets = selectedStorageTargets.toList(),
         // 【移动语义】已有位置不再锁定：允许改选其他库，保存时旧库副本将被移除（真正的迁移）。
         lockedTargetKeys = emptySet(),
+        // 允许清空所有位置（保存前 handleSave 统一做空校验提示）。
+        allowEmptySelection = true,
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,

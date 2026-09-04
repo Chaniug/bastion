@@ -57,6 +57,7 @@ import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.data.model.OtpType
 import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.data.model.TotpData
+import com.bastion.app.data.model.dedupedStorageTargets
 import com.bastion.app.data.model.normalizedStorageTargets
 import com.bastion.app.data.model.toStorageTarget
 import com.bastion.app.data.model.withStorageTargetSelected
@@ -223,7 +224,8 @@ fun AddEditTotpScreen(
     }
 
     fun setSelectedStorageTargets(targets: List<StorageTarget>) {
-        val normalizedTargets = targets.normalizedStorageTargets()
+        // 编辑期允许空选择（用户可把验证器从所有存储位置移除，保存前统一做空校验）。
+        val normalizedTargets = targets.dedupedStorageTargets()
         selectedStorageTargets.clear()
         selectedStorageTargets.addAll(normalizedTargets)
         syncLegacyStorageState(normalizedTargets)
@@ -231,11 +233,11 @@ fun AddEditTotpScreen(
 
     fun addSelectedStorageTarget(target: StorageTarget) {
         if (selectedStorageTargets.any { it.stableKey == target.stableKey }) return
-        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target))
+        setSelectedStorageTargets(selectedStorageTargets.withStorageTargetSelected(target, fallbackIfEmpty = false))
     }
 
     fun removeSelectedStorageTarget(target: StorageTarget) {
-        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target))
+        setSelectedStorageTargets(selectedStorageTargets.withoutStorageTarget(target, allowScopeFallback = false))
     }
 
     fun normalizedIconFileName(value: String?): String? = value?.takeIf { it.isNotBlank() }?.let { File(it).name }
@@ -546,18 +548,18 @@ fun AddEditTotpScreen(
     }
     val save: () -> Unit = saveAction@{
         if (!canSave || isSaving) return@saveAction
-        isSaving = true // 防止重复点击
-        val effectiveTargets = selectedStorageTargets.toList().ifEmpty {
-            listOf(
-                buildMultiStorageTarget(
-                    categoryId = selectedCategoryId,
-                    keepassDatabaseId = keepassDatabaseId,
-                    keepassGroupPath = keepassGroupPath,
-                    bitwardenVaultId = bitwardenVaultId,
-                    bitwardenFolderId = bitwardenFolderId
-                )
-            )
+        // 空选择校验：用户清空所有存储位置后不允许保存，也不再静默兜底回
+        // Bastion 本地（旧行为会让"取消所有位置"永远无法生效、幽灵本地副本复活）。
+        if (selectedStorageTargets.isEmpty()) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.storage_target_required),
+                Toast.LENGTH_SHORT
+            ).show()
+            return@saveAction
         }
+        isSaving = true // 防止重复点击
+        val effectiveTargets = selectedStorageTargets.toList().dedupedStorageTargets()
         val primaryTarget = effectiveTargets.first()
         val totpData = TotpData(
             secret = secret.trim(),
@@ -1264,7 +1266,12 @@ fun AddEditTotpScreen(
     MultiStorageTargetPickerBottomSheet(
         visible = showStorageTargetSheet,
         selectedTargets = selectedStorageTargets.toList(),
-        lockedTargetKeys = existingReplicaTargetKeys,
+        // 【移动语义】与密码页对齐：不再锁定已有位置（此前锁定导致"仅 Bastion 本地存储"
+        // 点击后静默 return，无法取消，也无法迁出——用户只能"再加一份"形成双份）。
+        // existingReplicaTargetKeys 仍传给 MultiStorageTargetSelectorCard 用于展示既有位置。
+        lockedTargetKeys = emptySet(),
+        // 允许清空所有位置（保存前 handleSave 统一做空校验提示）。
+        allowEmptySelection = true,
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,

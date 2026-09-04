@@ -2168,13 +2168,18 @@ class PasswordViewModel(
 
     private suspend fun updatePasswordEntryInternal(
         entry: PasswordEntry,
-        customFieldsOverride: List<CustomFieldDraft>? = null
+        customFieldsOverride: List<CustomFieldDraft>? = null,
+        skipCategoryBinding: Boolean = false
     ): Boolean {
         // 获取旧数据用于对比
         val oldEntry = repository.getPasswordEntryById(entry.id)
-        
-        // 应用分类绑定
-        val boundEntry = applyCategoryBinding(entry)
+
+        // 应用分类绑定。
+        // skipCategoryBinding=true 用于"条目归属已经显式确定"的路径
+        // （saveGroupedPasswordsInternal 的调用方已通过 applyToPasswordEntry /
+        // applyCategoryBinding 定好 vault/folder/category），避免二次绑定把用户
+        // 刚选好的 Bitwarden 位置按当前 UI 过滤器改写或清空。
+        val boundEntry = if (skipCategoryBinding) entry else applyCategoryBinding(entry)
         if (boundEntry.hasOwnershipConflict()) {
             Log.w(
                 "PasswordViewModel",
@@ -3094,14 +3099,21 @@ class PasswordViewModel(
             )
         }
 
-        // 分类未绑定 Bitwarden：清理“待上传”绑定（已同步条目保持映射不动）
+        // 分类未绑定 Bitwarden：清理"待上传"绑定（已同步条目保持映射不动）。
+        // 【单一归属】待上传条目（vaultId 已挂、cipherId 未生成）只清 folderId 细节，
+        // 保留 vaultId 与 bitwardenLocalModified——否则用户刚选好的 Bitwarden 位置
+        // 会被这里静默撤销（条目退回本地），这正是"编辑后同步状态不对"的成因之一。
         if (category.bitwardenVaultId == null || category.bitwardenFolderId == null) {
             return if (filterBoundEntry.bitwardenCipherId == null) {
-                filterBoundEntry.copy(
-                    bitwardenVaultId = null,
-                    bitwardenFolderId = null,
-                    bitwardenLocalModified = false
-                )
+                if (filterBoundEntry.bitwardenVaultId != null) {
+                    filterBoundEntry.copy(bitwardenFolderId = null)
+                } else {
+                    filterBoundEntry.copy(
+                        bitwardenVaultId = null,
+                        bitwardenFolderId = null,
+                        bitwardenLocalModified = false
+                    )
+                }
             } else {
                 filterBoundEntry
             }
@@ -3406,7 +3418,11 @@ class PasswordViewModel(
                 val entryCustomFields = if (index == 0) customFields else emptyList()
                 val updated = updatePasswordEntryInternal(
                     entry = updatedEntry,
-                    customFieldsOverride = entryCustomFields
+                    customFieldsOverride = entryCustomFields,
+                    // 归属已经在本函数入口定好（applyCategoryBinding 或 applyToPasswordEntry），
+                    // 这里跳过二次绑定，防止"分类未绑定 Bitwarden 文件夹"分支把
+                    // 待上传条目的 vaultId 清回本地（撤销用户刚选的存储位置）。
+                    skipCategoryBinding = true
                 )
                 if (!updated) {
                     Log.e(

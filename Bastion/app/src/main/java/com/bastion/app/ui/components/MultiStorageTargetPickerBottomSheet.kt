@@ -60,6 +60,7 @@ import com.bastion.app.data.writeOperationAvailability
 import com.bastion.app.data.bitwarden.BitwardenFolder
 import com.bastion.app.data.bitwarden.BitwardenVault
 import com.bastion.app.data.model.StorageTarget
+import com.bastion.app.data.model.dedupedStorageTargets
 import com.bastion.app.data.model.normalizedStorageTargets
 import com.bastion.app.data.model.withStorageTargetSelected
 import com.bastion.app.data.model.withoutStorageTarget
@@ -120,6 +121,15 @@ fun MultiStorageTargetPickerBottomSheet(
     onSelectedTargetsChange: (List<StorageTarget>) -> Unit,
     onTargetClicked: ((StorageTarget) -> Unit)? = null,
     forceMultiSelectionMode: Boolean = false,
+    /**
+     * 是否允许用户把选择清空（跨库迁移语义）。
+     *
+     * false（默认）—— 既有调用方（Note / Document / Wifi / SSH 等）行为不变：
+     *   取消最后一个位置会被兜底回 Bastion 本地，选择永不为空。
+     * true —— 密码 / 验证器 / 卡包三页：支持取消所有位置；再次点击已选中的
+     *   数据库 chip 即取消；确认按钮在空选择时也可点击（由调用方在保存前做空校验）。
+     */
+    allowEmptySelection: Boolean = false,
     // 【单一归属】不再提供「复制 / 多位置保存」模式：一条数据只保存在一个库里。
     // 隐藏该切换后，选择器走单选逻辑（selectedTargets<=1 时自动进入 SINGLE），
     // 用户直接点选目标库；切换到另一个库＝迁移（旧位置移除，见 PasswordViewModel 的 staleReplicas 清理）。
@@ -174,8 +184,9 @@ fun MultiStorageTargetPickerBottomSheet(
         val groups by getKeePassGroups(database.id).collectAsState(initial = emptyList())
         keepassGroupsByDatabase[database.id] = groups
     }
-    val primaryTarget = selectedTargets.firstOrNull() ?: StorageTarget.BastionLocal(null)
-    val primarySourceKey = primaryTarget.toSourceKey()
+    // 空选择时 primarySourceKey 为空串：所有数据库 chip 都不显示选中，
+    // 而不是默认高亮 Bastion（否则"清空"后 UI 仍显示 Bastion 被选，与数据不一致）。
+    val primarySourceKey = selectedTargets.firstOrNull()?.toSourceKey().orEmpty()
     val singleModeAllowed = lockedTargetKeys.isEmpty()
     var selectionMode by remember(visible, selectedTargets, singleModeAllowed) {
         mutableStateOf(
@@ -319,6 +330,13 @@ fun MultiStorageTargetPickerBottomSheet(
 
     fun updateSingleSource(sourceKey: String) {
         if (!singleModeAllowed) return
+        // 再次点击已选中的数据库 = 取消该位置（仅允许清空的页面）。
+        // 取消后 singleSourceKey 置空，数据库区全部取消高亮，用户可重新点选任意位置。
+        if (allowEmptySelection && sourceKey == singleSourceKey) {
+            singleSourceKey = ""
+            onSelectedTargetsChange(emptyList())
+            return
+        }
         singleSourceKey = sourceKey
         val source = sourceByKey(sourceKey)
         onSelectedTargetsChange(listOf(rootTargetForSource(source)))
@@ -335,12 +353,17 @@ fun MultiStorageTargetPickerBottomSheet(
             onSelectedTargetsChange(
                 selectedTargets
                     .filterNot { it.toSourceKey() == sourceKey }
-                    .normalizedStorageTargets()
+                    // 允许清空的页面：取消后不做兜底，空列表合法；
+                    // 既有调用方仍走 normalizedStorageTargets 保持原兜底行为。
+                    .let { if (allowEmptySelection) it.dedupedStorageTargets() else it.normalizedStorageTargets() }
             )
         } else {
             activeSourceKeys.add(sourceKey)
             onSelectedTargetsChange(
-                selectedTargets.withStorageTargetSelected(rootTarget)
+                selectedTargets.withStorageTargetSelected(
+                    rootTarget,
+                    fallbackIfEmpty = !allowEmptySelection
+                )
             )
         }
     }
@@ -351,9 +374,16 @@ fun MultiStorageTargetPickerBottomSheet(
         if (newMode == StoragePickerSelectionMode.SINGLE && !singleModeAllowed) return
         selectionMode = newMode
         if (newMode == StoragePickerSelectionMode.SINGLE) {
-            val retained = selectedTargets.firstOrNull() ?: StorageTarget.BastionLocal(null)
-            singleSourceKey = retained.toSourceKey()
-            onSelectedTargetsChange(listOf(retained))
+            val retained = selectedTargets.firstOrNull()
+            if (retained == null && allowEmptySelection) {
+                // 允许清空的页面：空选择切回单选时保持空，不兜底出 Bastion 本地。
+                singleSourceKey = ""
+                onSelectedTargetsChange(emptyList())
+            } else {
+                val fallback = retained ?: StorageTarget.BastionLocal(null)
+                singleSourceKey = fallback.toSourceKey()
+                onSelectedTargetsChange(listOf(fallback))
+            }
         } else {
             activeSourceKeys.clear()
             activeSourceKeys.addAll(selectedSourceKeys)
@@ -484,6 +514,7 @@ fun MultiStorageTargetPickerBottomSheet(
                             },
                                     singleMode = true,
                                     singleModeAllowed = singleModeAllowed,
+                                    allowEmptySelection = allowEmptySelection,
                                     onSelectedTargetsChange = onSelectedTargetsChange,
                                     onTargetClicked = onTargetClicked
                                 )
@@ -512,6 +543,7 @@ fun MultiStorageTargetPickerBottomSheet(
                                     },
                                     singleMode = false,
                                     singleModeAllowed = singleModeAllowed,
+                                    allowEmptySelection = allowEmptySelection,
                                     onSelectedTargetsChange = onSelectedTargetsChange,
                                     onTargetClicked = onTargetClicked
                                 )
@@ -524,7 +556,9 @@ fun MultiStorageTargetPickerBottomSheet(
             if (onConfirmSelection != null) {
                 FilledTonalButton(
                     onClick = { onConfirmSelection.invoke(selectedTargets) },
-                    enabled = selectedTargets.isNotEmpty(),
+                    // 允许清空的页面（allowEmptySelection=true）：空选择也可确认，
+                    // 由调用方在保存前做空校验并提示；其余调用方维持"必须至少选一个"。
+                    enabled = allowEmptySelection || selectedTargets.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
@@ -653,6 +687,7 @@ private fun FolderTargetChip(
     sourceHasLockedTarget: Boolean,
     singleMode: Boolean,
     singleModeAllowed: Boolean,
+    allowEmptySelection: Boolean,
     onSelectedTargetsChange: (List<StorageTarget>) -> Unit,
     onTargetClicked: ((StorageTarget) -> Unit)?
 ) {
@@ -667,6 +702,13 @@ private fun FolderTargetChip(
         selected = selected,
         onClick = {
             if (singleMode) {
+                // 允许清空的页面：再次点击已选中的具体位置 = 取消（单选下点同一个 chip）。
+                if (allowEmptySelection && selected &&
+                    selectedTargets.firstOrNull()?.stableKey == targetKey
+                ) {
+                    onSelectedTargetsChange(emptyList())
+                    return@BastionExpressiveFilterChip
+                }
                 onSelectedTargetsChange(listOf(chip.target))
                 onTargetClicked?.invoke(chip.target)
             } else {
@@ -674,12 +716,18 @@ private fun FolderTargetChip(
                     if (targetLocked) {
                         selectedTargets
                     } else {
-                        selectedTargets.withoutStorageTarget(chip.target)
+                        selectedTargets.withoutStorageTarget(
+                            chip.target,
+                            allowScopeFallback = !allowEmptySelection
+                        )
                     }
                 } else if (sourceHasLockedTarget) {
                     selectedTargets
                 } else {
-                    selectedTargets.withStorageTargetSelected(chip.target)
+                    selectedTargets.withStorageTargetSelected(
+                        chip.target,
+                        fallbackIfEmpty = !allowEmptySelection
+                    )
                 }
                 onSelectedTargetsChange(updatedTargets)
                 if (!selected) {

@@ -86,6 +86,18 @@ data class SecureItem(
 )
 
 /**
+ * 同步状态常量：随所属条目同步、不独立参与 Bitwarden 上传的"引用型"条目。
+ *
+ * 既有先例：PasskeyEntry 用它表示"随密码 cipher 同步、不占独立远端条目"。
+ * 现扩展到绑定型 TOTP（依附于某条密码条目的验证码）：
+ * - 本地记录带上所属密码条目的 [SecureItem.bitwardenVaultId]，使归属判定（resolveOwnership）
+ *   正确显示在对应 vault 下；
+ * - 但 DAO 的"待上传"查询必须排除此状态，且 CipherUploadProcessor 已有解密级防线
+ *   （isPasswordBoundTotp 在网络请求前 return），避免生成多余的 otpauth:// cipher。
+ */
+const val SYNC_STATUS_REFERENCE = "REFERENCE"
+
+/**
  * 数据项类型枚举
  */
 enum class ItemType {

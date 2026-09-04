@@ -45,9 +45,11 @@ import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 import com.bastion.app.data.Category
 import com.bastion.app.data.CategorySelectionUiMode
 import com.bastion.app.data.PasswordCardDisplayMode
+import com.bastion.app.data.PasswordOwnership
 import com.bastion.app.data.PasswordPageContentType
 import com.bastion.app.data.PasswordListQuickFilterItem
 import com.bastion.app.data.model.StorageTarget
+import com.bastion.app.data.resolveOwnership
 import com.bastion.app.security.SecurityManager
 import com.bastion.app.ui.components.CreateCategoryDialog
 import com.bastion.app.ui.components.CreateDialogTarget
@@ -166,19 +168,24 @@ internal fun PasswordListTopSection(
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
     // 数据库筛选区块的条数统计：基于全量未删除条目按存储来源分组。
+    // 口径统一走 resolveOwnership()（与列表归属判定一致）：只挂 vaultId 但尚无具体
+    // Bitwarden 绑定（无 cipher/revision/folder 且未本地修改）的条目算 Bastion 本地，
+    // 避免"列表里显示在本地、头部却计入 Bitwarden 库"的口径分裂（0 条 vs 1 条）。
+    // Conflict（同时挂具体 KeePass + Bitwarden 绑定）不计入任何分项。
     val allPasswordsForStats by viewModel.allPasswordsForUi.collectAsState()
     val storageCounts = remember(allPasswordsForStats) {
         val active = allPasswordsForStats.filter { !it.isDeleted }
+        val ownerships = active.map { it.resolveOwnership() }
         PasswordStorageCounts(
             total = active.size,
-            bastionLocal = active.count { it.keepassDatabaseId == null && it.bitwardenVaultId == null },
-            perKeePassDatabase = active
-                .filter { it.keepassDatabaseId != null }
-                .groupingBy { it.keepassDatabaseId!! }
+            bastionLocal = ownerships.count { it is PasswordOwnership.BastionLocal },
+            perKeePassDatabase = ownerships
+                .mapNotNull { (it as? PasswordOwnership.KeePass)?.databaseId }
+                .groupingBy { it }
                 .eachCount(),
-            perBitwardenVault = active
-                .filter { it.bitwardenVaultId != null }
-                .groupingBy { it.bitwardenVaultId!! }
+            perBitwardenVault = ownerships
+                .mapNotNull { (it as? PasswordOwnership.Bitwarden)?.vaultId }
+                .groupingBy { it }
                 .eachCount()
         )
     }

@@ -1771,7 +1771,10 @@ fun BastionContent(
                         }
                     },
                     onSave = { title, notes, totpData, isFavorite, targets, onComplete ->
-                        totpViewModel.saveTotpAcrossTargets(
+                        // 智能归属判定：绑定型跟随密码存储，除非用户显式把 targets 改选到
+                        // 别处（解绑为独立条目）；非绑定型按所选 targets 保存。
+                        // 与验证器页（AuthenticatorTabPane）保持同一套归属策略。
+                        totpViewModel.saveTotpWithOwnershipPolicy(
                             id = if (totpId > 0) totpId else null,
                             title = title,
                             notes = notes,
