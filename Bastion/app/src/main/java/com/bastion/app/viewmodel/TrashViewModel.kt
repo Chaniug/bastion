@@ -32,6 +32,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 清空回收站时 Bitwarden 远程删除的最大并发数。
@@ -248,24 +250,42 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
      *
      * 载体无独立 Bitwarden cipher，宿主被永久删除后残留只会变成用户无法清理的孤儿记录。
      */
-    private suspend fun permanentlyDeleteBoundTotpCarriers(passwordId: Long) {
-        runCatching {
-            secureItemRepository.getItemsByType(ItemType.TOTP)
-                .first()
-                .filter { it.isDeleted && isBoundTotpCarrierOf(it, setOf(passwordId)) }
-                .forEach { item ->
-                    database.secureItemDao().delete(item)
-                    android.util.Log.i(
+    /**
+     * 一次性加载所有绑定型验证器载体，按宿主密码 id 建索引。
+     *
+     * 判定绑定关系要解密 itemData，成本不低。若每条密码删除时各扫一遍全表 TOTP，
+     * 就是 N×M 次解密（N=待删密码数、M=TOTP 总数），清空回收站会明显变慢。
+     * 这里只扫一次、解密一次，且放回 Default 线程，避免占用主线程。
+     */
+    private suspend fun loadBoundTotpCarriersByPasswordId(): Map<Long, List<SecureItem>> =
+        withContext(Dispatchers.Default) {
+            runCatching {
+                secureItemRepository.getItemsByType(ItemType.TOTP)
+                    .first()
+                    .filter { it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                    .mapNotNull { item ->
+                        val boundId = boundPasswordIdOf(item) ?: return@mapNotNull null
+                        boundId to item
+                    }
+                    .groupBy({ it.first }, { it.second })
+            }.onFailure {
+                android.util.Log.e("TrashViewModel", "Load bound totp carriers index failed", it)
+            }.getOrDefault(emptyMap())
+        }
+
+    private suspend fun permanentlyDeleteBoundTotpCarriers(
+        passwordId: Long,
+        carriersByPasswordId: Map<Long, List<SecureItem>>
+    ) {
+        carriersByPasswordId[passwordId].orEmpty().forEach { item ->
+            runCatching { database.secureItemDao().delete(item) }
+                .onFailure {
+                    android.util.Log.e(
                         "TrashViewModel",
-                        "Cascade permanently deleted bound totp carrier: itemId=${item.id}, passwordId=$passwordId"
+                        "Cascade permanent delete of bound totp failed: itemId=${item.id}, passwordId=$passwordId",
+                        it
                     )
                 }
-        }.onFailure {
-            android.util.Log.e(
-                "TrashViewModel",
-                "Cascade permanent delete of bound totp failed for password $passwordId",
-                it
-            )
         }
     }
 
@@ -516,8 +536,13 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                     .getDeletedEntriesSync()
                     .filter { it.deletedAt != null && it.deletedAt < cutoffDate }
 
+                val boundCarriers = if (expiredPasswords.isNotEmpty()) {
+                    loadBoundTotpCarriersByPasswordId()
+                } else {
+                    emptyMap()
+                }
                 expiredPasswords.forEach { entry ->
-                    if (permanentlyDeleteWithSources(entry)) {
+                    if (permanentlyDeleteWithSources(entry, boundCarriers)) {
                         deletedCount += 1
                     }
                 }
@@ -965,13 +990,19 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
 
         // 4) 本地 DB 删除：跳过 KeePass 删除失败的分组
         var deletedCount = 0
+        // 绑定型载体索引只建一次：逐条重建会是 N×M 次解密，是清空变慢的主因
+        val boundCarriers = if (survivors.any { it.originalData is PasswordEntry }) {
+            loadBoundTotpCarriersByPasswordId()
+        } else {
+            emptyMap()
+        }
         survivors.forEach { item ->
             when (val data = item.originalData) {
                 is PasswordEntry -> {
                     val dbId = data.keepassDatabaseId
                     if (dbId != null && (dbId to "password") in failedGroups) return@forEach
                     database.passwordEntryDao().delete(data)
-                    permanentlyDeleteBoundTotpCarriers(data.id)
+                    permanentlyDeleteBoundTotpCarriers(data.id, boundCarriers)
                     deletedCount += 1
                 }
                 is SecureItem -> {
@@ -986,13 +1017,17 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         return deletedCount to hasFailure
     }
 
-    private suspend fun permanentlyDeleteWithSources(data: Any): Boolean {
+    private suspend fun permanentlyDeleteWithSources(
+        data: Any,
+        boundCarriers: Map<Long, List<SecureItem>>? = null
+    ): Boolean {
         if (!deleteRemoteCipherIfNeeded(data)) return false
         if (!deleteKeepassEntryIfNeeded(data)) return false
         when (data) {
             is PasswordEntry -> {
                 database.passwordEntryDao().delete(data)
-                permanentlyDeleteBoundTotpCarriers(data.id)
+                val carriers = boundCarriers ?: loadBoundTotpCarriersByPasswordId()
+                permanentlyDeleteBoundTotpCarriers(data.id, carriers)
             }
             is SecureItem -> database.secureItemDao().delete(data)
         }
