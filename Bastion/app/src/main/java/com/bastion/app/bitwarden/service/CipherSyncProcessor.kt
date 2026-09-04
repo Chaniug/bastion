@@ -218,10 +218,21 @@ class CipherSyncProcessor(
      * 是 Bastion 承载 cipher 的独有特征。这样用户手动创建的「只填了 TOTP、没填密码」的
      * 密码条目不会被误判，仍按密码条目同步，行为保持不变。
      */
-    private fun isBastionStandaloneTotpContainer(cipher: CipherApiResponse): Boolean {
+    private fun isBastionStandaloneTotpContainer(
+        cipher: CipherApiResponse,
+        symmetricKey: SymmetricCryptoKey
+    ): Boolean {
         if (!TotpMapper.isStandaloneTotpCipher(cipher)) return false
-        return cipher.login?.uris.orEmpty().any {
-            it.uri?.trim()?.startsWith("otpauth://", ignoreCase = true) == true
+        return cipher.login?.uris.orEmpty().any { uriData ->
+            val rawUri = uriData.uri?.trim().orEmpty()
+            if (rawUri.isBlank()) return@any false
+            // URI 在服务端是加密存储的（与 syncPasswordCipher 里的 parseLoginUris 同理），
+            // 必须先解密再比对。直接拿密文比 "otpauth://" 前缀永远不可能匹配，
+            // 承载验证器的 cipher 会被误判成普通密码条目，本地凭空多出一条重复条目
+            // （用户反馈的「同步后密码列表多一条纯验证码条目」即由此产生）。
+            // 非加密串（历史/手改数据）时回退原文比对，行为保持不变。
+            val resolved = decryptString(rawUri, symmetricKey) ?: rawUri
+            resolved.trim().startsWith("otpauth://", ignoreCase = true)
         }
     }
 
@@ -241,7 +252,7 @@ class CipherSyncProcessor(
         // 这类 cipher 必须只走 TotpMapper：若再走 syncPasswordCipher，同一个 cipher 会被
         // 额外解析成一条密码条目，导致本地凭空多出一条重复条目——正是用户反馈的
         // 「同步后密码界面多一条、验证器界面却因去重规则不显示」的根因。
-        if (isBastionStandaloneTotpContainer(cipher)) {
+        if (isBastionStandaloneTotpContainer(cipher, symmetricKey)) {
             // 诊断日志：承载验证器的 cipher 只应同步为验证器，不能再生成一条密码条目。
             android.util.Log.d(
                 TAG,
