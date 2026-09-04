@@ -840,7 +840,8 @@ class MultiPasswordSaveRegressionGuardTest {
         )
         assertTrue(
             "The authenticator list should collapse already-existing duplicate bound rows so users do not keep seeing one card per bad edit.",
-            totpViewModelSource.contains("collapseDuplicateBoundStoredTotps(storedTotps)") &&
+            // 只匹配函数调用，不写死参数名：参数重命名不应让这条守卫失效
+            totpViewModelSource.contains("collapseDuplicateBoundStoredTotps(") &&
                 totpViewModelSource.contains("private fun collapseDuplicateBoundStoredTotps(") &&
                 totpViewModelSource.contains("val key = \"\$boundPasswordId|")
         )
