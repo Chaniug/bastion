@@ -147,10 +147,15 @@ private fun extractPrimaryDomain(raw: String): String? {
 }
 
 private fun extractHost(raw: String): String? {
-    val normalized = raw.trim().lowercase(Locale.ROOT)
+    // website 字段可能被填成多个地址（例如 "https://a.com/x, https://b.com"），
+    // 整体丢给 URI 会因逗号与空格抛 URISyntaxException，这里只取第一个地址。
+    val normalized = raw.trim().lowercase(Locale.ROOT).substringBefore(',').trim()
     if (normalized.isBlank()) return null
 
-    val fromUri = runCatchingObserved {
+    // 这是列表分组/详情解析的高频纯函数，用户填什么都可能，解析失败属常态。
+    // 刻意使用静默 runCatching 而非 runCatchingObserved：后者会把每次失败连同
+    // 完整堆栈打进日志，列表每次重组都会触发，足以形成日志风暴（实测 19 行/条）。
+    val fromUri = runCatching {
         val withScheme = if ("://" in normalized) normalized else "https://$normalized"
         URI(withScheme).host
     }.getOrNull()

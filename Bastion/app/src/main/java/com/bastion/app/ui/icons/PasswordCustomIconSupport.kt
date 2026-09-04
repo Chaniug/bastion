@@ -318,10 +318,13 @@ private fun normalizeAutoSlugToken(value: String): String {
 }
 
 private fun parseWebsite(rawWebsite: String): ParsedWebsite {
-    val raw = rawWebsite.trim()
+    // 与 PasswordGrouping.extractHost 同理：website 可能被填成多个地址，只取第一个，
+    // 否则整体解析必然抛 URISyntaxException。
+    val raw = rawWebsite.trim().substringBefore(',').trim()
     if (raw.isBlank()) return ParsedWebsite(scheme = null, host = "")
     val withScheme = if (raw.contains("://")) raw else "https://$raw"
-    val parsed = runCatchingObserved { URI(withScheme) }.getOrNull()
+    // 图标自动匹配是高频纯函数，解析失败属常态，静默处理以免形成日志风暴。
+    val parsed = runCatching { URI(withScheme) }.getOrNull()
     return ParsedWebsite(
         scheme = parsed?.scheme?.trim()?.lowercase(Locale.ROOT),
         host = parsed?.host.orEmpty().trim().lowercase(Locale.ROOT)
