@@ -721,17 +721,11 @@ fun PasswordListContent(
     var manualStackGroupByEntryId by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
     var noStackEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var lastCustomFieldEntryIds by remember { mutableStateOf<List<Long>>(emptyList()) }
-    val configuredQuickFilterItems = remember(
-        appSettings.passwordPageAggregateEnabled,
-        aggregateUiState.visibleContentTypes
-    ) {
-        appendAggregateContentQuickFilterItems(
-            configuredItems = resolvedQuickFilterBaseItems(appSettings.passwordListQuickFilterItems),
-            visibleTypes = aggregateUiState.visibleContentTypes,
-            aggregateEnabled = appSettings.passwordPageAggregateEnabled,
-            includePasskeyChip = false
-        )
-    }
+    val configuredQuickFilterItems = rememberPasswordListConfiguredQuickFilterItems(
+        appSettings = appSettings,
+        aggregateUiState = aggregateUiState,
+        quickFilterToggles = quickFilterToggles
+    )
     val quickFolderStyle = appSettings.passwordListQuickFolderStyle
     var quickFolderRootKey by rememberSaveable {
         mutableStateOf(currentFilter.toQuickFolderRootKeyOrNull() ?: QUICK_FOLDER_ROOT_ALL)
@@ -751,42 +745,6 @@ fun PasswordListContent(
         }
         prevGroupMode.value = effectiveGroupMode
         prevStackCardMode.value = effectiveStackCardMode
-    }
-
-    LaunchedEffect(configuredQuickFilterItems) {
-        if (com.bastion.app.data.PasswordListQuickFilterItem.FAVORITE !in configuredQuickFilterItems) {
-            quickFilterToggles.favorite = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.TWO_FA !in configuredQuickFilterItems) {
-            quickFilterToggles.twoFa = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.NOTES !in configuredQuickFilterItems) {
-            quickFilterToggles.notes = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.PASSKEY !in configuredQuickFilterItems) {
-            quickFilterToggles.passkey = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.NOTE !in configuredQuickFilterItems) {
-            quickFilterToggles.boundNote = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.ATTACHMENTS !in configuredQuickFilterItems) {
-            quickFilterToggles.attachments = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.UNCATEGORIZED !in configuredQuickFilterItems) {
-            quickFilterToggles.uncategorized = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.LOCAL_ONLY !in configuredQuickFilterItems) {
-            quickFilterToggles.localOnly = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.MANUAL_STACK_ONLY !in configuredQuickFilterItems) {
-            quickFilterToggles.manualStackOnly = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.NEVER_STACK !in configuredQuickFilterItems) {
-            quickFilterToggles.neverStack = false
-        }
-        if (com.bastion.app.data.PasswordListQuickFilterItem.UNSTACKED !in configuredQuickFilterItems) {
-            quickFilterToggles.unstacked = false
-        }
     }
 
     LaunchedEffect(currentFilter) {
@@ -1996,6 +1954,71 @@ private fun rememberPasswordListQuickFilterToggles(
     toggles.hasAnySshKeyEntry = hasAnySshKeyEntry
     toggles.hasAnyBarcodeEntry = hasAnyBarcodeEntry
     return toggles
+}
+
+/**
+ * 持有"快捷筛选可见项清单"的组合函数，并把"清单里不存在的项目要归零"的
+ * 重置副作用一并搬进来（清单变化与开关归零天然内聚）。
+ *
+ * 为什么要拆：同 [rememberPasswordListQuickFilterToggles] —— `PasswordListContent`
+ * 编译后指令数超过 ART 上限，永远无法被 JIT 编译、只能解释执行。这是拆分该巨型
+ * Composable 的第二步，搬走 11 行声明 + 35 行重置 effect。
+ *
+ * 行为与拆分前严格等价：`remember` 的 key、effect 的依赖与判定顺序均未改动。
+ */
+@Composable
+private fun rememberPasswordListConfiguredQuickFilterItems(
+    appSettings: AppSettings,
+    aggregateUiState: PasswordListAggregateUiState,
+    quickFilterToggles: PasswordListQuickFilterToggles
+): List<PasswordListQuickFilterItem> {
+    val configuredQuickFilterItems = remember(
+        appSettings.passwordPageAggregateEnabled,
+        aggregateUiState.visibleContentTypes
+    ) {
+        appendAggregateContentQuickFilterItems(
+            configuredItems = resolvedQuickFilterBaseItems(appSettings.passwordListQuickFilterItems),
+            visibleTypes = aggregateUiState.visibleContentTypes,
+            aggregateEnabled = appSettings.passwordPageAggregateEnabled,
+            includePasskeyChip = false
+        )
+    }
+    LaunchedEffect(configuredQuickFilterItems) {
+        if (PasswordListQuickFilterItem.FAVORITE !in configuredQuickFilterItems) {
+            quickFilterToggles.favorite = false
+        }
+        if (PasswordListQuickFilterItem.TWO_FA !in configuredQuickFilterItems) {
+            quickFilterToggles.twoFa = false
+        }
+        if (PasswordListQuickFilterItem.NOTES !in configuredQuickFilterItems) {
+            quickFilterToggles.notes = false
+        }
+        if (PasswordListQuickFilterItem.PASSKEY !in configuredQuickFilterItems) {
+            quickFilterToggles.passkey = false
+        }
+        if (PasswordListQuickFilterItem.NOTE !in configuredQuickFilterItems) {
+            quickFilterToggles.boundNote = false
+        }
+        if (PasswordListQuickFilterItem.ATTACHMENTS !in configuredQuickFilterItems) {
+            quickFilterToggles.attachments = false
+        }
+        if (PasswordListQuickFilterItem.UNCATEGORIZED !in configuredQuickFilterItems) {
+            quickFilterToggles.uncategorized = false
+        }
+        if (PasswordListQuickFilterItem.LOCAL_ONLY !in configuredQuickFilterItems) {
+            quickFilterToggles.localOnly = false
+        }
+        if (PasswordListQuickFilterItem.MANUAL_STACK_ONLY !in configuredQuickFilterItems) {
+            quickFilterToggles.manualStackOnly = false
+        }
+        if (PasswordListQuickFilterItem.NEVER_STACK !in configuredQuickFilterItems) {
+            quickFilterToggles.neverStack = false
+        }
+        if (PasswordListQuickFilterItem.UNSTACKED !in configuredQuickFilterItems) {
+            quickFilterToggles.unstacked = false
+        }
+    }
+    return configuredQuickFilterItems
 }
 
 @Composable
