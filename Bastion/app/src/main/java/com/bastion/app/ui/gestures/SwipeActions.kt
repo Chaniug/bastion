@@ -57,6 +57,9 @@ fun SwipeActions(
     enabled: Boolean = true,
     allowSwipeLeft: Boolean = true,
     allowSwipeRight: Boolean = true,
+    // 【方案 A】已被长按激活：此时才允许滑动；未拖动时也静态露出动作提示，
+    // 让用户一眼看出"这条现在可以滑"，避免"激活了却不知道"或"没激活却去滑"。
+    armed: Boolean = false,
     content: @Composable () -> Unit
 ) {
     // 使用非动画状态记录实时拖动偏移，避免高频创建协程
@@ -171,18 +174,20 @@ fun SwipeActions(
             }
         }
         
-        // 右侧背景
-        if (allowSwipeLeft && totalOffset < 0) {
+        // 右侧背景（删除）。armed 但未拖动时以固定低透明度静态露出，作为"已解锁"提示。
+        if (allowSwipeLeft && (totalOffset < 0 || armed)) {
+            val armedHint = armed && totalOffset >= 0f
+            val hintAlpha = if (armedHint) 0.32f else backgroundAlpha
             Surface(
                 modifier = Modifier.fillMaxWidth().matchParentSize(),
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = backgroundAlpha),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = hintAlpha),
                 shape = componentShape
             ) {
                 Box(contentAlignment = Alignment.CenterEnd) {
                     Row(
                         modifier = Modifier.padding(end = 24.dp).graphicsLayer {
                             translationX = (totalOffset * 0.3f).coerceIn(-40f, 0f)
-                            alpha = backgroundAlpha
+                            alpha = hintAlpha
                         },
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically

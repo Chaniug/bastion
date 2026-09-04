@@ -7,7 +7,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -46,16 +52,38 @@ internal fun PasswordListSingleCardItem(
     leadingIconOverride: (@Composable () -> Unit)? = null,
     badge: PasswordListCardBadge? = null
 ) {
+    // 【方案 A】滑动删除需先长按激活：默认锁定，列表滚动绝不会误触。
+    var armed by remember { mutableStateOf(false) }
+    // 激活后 3 秒无操作自动解除，避免条目长期停留在"可滑动"状态。
+    LaunchedEffect(armed) {
+        if (!armed) return@LaunchedEffect
+        delay(3000)
+        armed = false
+    }
+
     SwipeActions(
-        onSwipeLeft = onSwipeLeft,
+        onSwipeLeft = {
+            armed = false
+            onSwipeLeft()
+        },
         onSwipeRight = onSwipeRight,
         isSwiped = isSwiped,
-        enabled = true
+        enabled = armed,
+        // 右滑原本用于进入多选，多选入口已移除，故不再允许右滑。
+        allowSwipeRight = false,
+        armed = armed
     ) {
         PasswordEntryCard(
             entry = entry,
-            onClick = onClick,
-            onLongClick = onLongClick,
+            onClick = {
+                armed = false
+                onClick()
+            },
+            // 长按 = 激活本条的滑动删除（不再进入多选模式）
+            onLongClick = {
+                armed = true
+                onLongClick()
+            },
             onToggleFavorite = onToggleFavorite,
             onToggleGroupCover = null,
             supportingBadge = badge

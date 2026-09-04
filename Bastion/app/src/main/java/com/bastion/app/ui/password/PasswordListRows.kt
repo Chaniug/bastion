@@ -456,12 +456,9 @@ internal fun LazyListScope.passwordPageListRows(
                         }
                     },
                     onLongClick = {
+                        // 【方案 A】长按只用于激活该条目的滑动删除（激活态由卡片内部维护）。
+                        // 不再进入多选模式：多选操作栏已移除，长按进多选没有出口。
                         haptic.performLongPress()
-                        if (!isSelectionMode) {
-                            onSelectionModeChange(true)
-                            onSelectedItemKeysChange(setOf(item.key))
-                            onSwipeSelectionAnchorKeyChange(item.key)
-                        }
                     },
                     onSwipeLeft = { requestDeleteForCards(listOf(card)) },
                     onSwipeRight = {
