@@ -17,8 +17,8 @@ class PasswordTotpCrossDatabaseBindingGuardTest {
             .substringBefore("fun normalizeCommonTemplateType(")
 
         assertTrue(
-            "Password save targets must still be normalized from the storage sources explicitly selected for the password.",
-            targetResolutionBody.contains("selectedStorageTargets.toList().normalizedStorageTargets()")
+            "Password save targets must still be derived from the storage sources explicitly selected for the password.",
+            targetResolutionBody.contains("selectedStorageTargets.toList().dedupedStorageTargets()")
         )
         assertFalse(
             "Selecting an existing authenticator must not add its database to password save targets; doing so creates an unintended password replica.",
