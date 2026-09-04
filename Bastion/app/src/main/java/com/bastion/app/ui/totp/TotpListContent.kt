@@ -796,9 +796,9 @@ fun TotpListContent(
                                     )
                                 },
                                 presentationMode = com.bastion.app.ui.components.UnifiedCategoryFilterChipMenuPresentationMode.ThreeChipsTabs,
-                                // 与密码页默认形态一致：只保留「数据库 / 分类文件夹」两个胶囊，
-                                // 快捷筛选由页面上的分类筛选横排按钮承担，弹层内不重复。
-                                showQuickFilters = false,
+                                // 验证器页没有密码页那种横排快捷筛选条，弹层是「标星 / 未分类 /
+                                // 仅本地」的唯一入口，必须开启，否则这三个筛选在 UI 上完全不可达。
+                                showQuickFilters = true,
                                 entryCounts = totpStorageCounts
                             )
                         }
