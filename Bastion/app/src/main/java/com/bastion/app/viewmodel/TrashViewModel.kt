@@ -478,28 +478,33 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
     fun emptyTrash(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
-                val deletedPasswords = database.passwordEntryDao().getDeletedEntriesSync()
-                val deletedSecureItems = database.secureItemDao().getDeletedItemsSync()
-                val items = deletedPasswords.map { entry ->
-                    TrashItem(
-                        id = entry.id,
-                        title = entry.title,
-                        itemType = ItemType.PASSWORD,
-                        deletedAt = entry.deletedAt ?: Date(),
-                        daysRemaining = -1,
-                        originalData = entry
-                    )
-                } + deletedSecureItems.map { item ->
-                    TrashItem(
-                        id = item.id,
-                        title = item.title,
-                        itemType = item.itemType,
-                        deletedAt = item.deletedAt ?: Date(),
-                        daysRemaining = -1,
-                        originalData = item
-                    )
+                // 同步 DB 查询 + 批量删除都是重活，统一放 IO：
+                // 原先直接在 Main 上跑 getDeletedEntriesSync()，条目一多就把界面卡住，
+                // 表现为「清空回收站很慢/假死」。onResult 仍在 Main 回调，UI 侧无感知。
+                val (deletedCount, hasFailure) = withContext(Dispatchers.IO) {
+                    val deletedPasswords = database.passwordEntryDao().getDeletedEntriesSync()
+                    val deletedSecureItems = database.secureItemDao().getDeletedItemsSync()
+                    val items = deletedPasswords.map { entry ->
+                        TrashItem(
+                            id = entry.id,
+                            title = entry.title,
+                            itemType = ItemType.PASSWORD,
+                            deletedAt = entry.deletedAt ?: Date(),
+                            daysRemaining = -1,
+                            originalData = entry
+                        )
+                    } + deletedSecureItems.map { item ->
+                        TrashItem(
+                            id = item.id,
+                            title = item.title,
+                            itemType = item.itemType,
+                            deletedAt = item.deletedAt ?: Date(),
+                            daysRemaining = -1,
+                            originalData = item
+                        )
+                    }
+                    permanentlyDeleteTrashItems(items)
                 }
-                val (deletedCount, hasFailure) = permanentlyDeleteTrashItems(items)
 
                 if (deletedCount > 0) {
                     logTrashSummaryDelete(
@@ -924,9 +929,11 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
  */
     private suspend fun permanentlyDeleteTrashItems(items: List<TrashItem>): Pair<Int, Boolean> {
         if (items.isEmpty()) return 0 to false
+        val startedAt = System.currentTimeMillis()
 
         // 1) Bitwarden 远程删除：有限并发（原实现串行）。
         //    结果按下标与 items 一一对应，不用实体做 map key，避免 equals 语义问题。
+        val remoteStart = System.currentTimeMillis()
         val remoteOk: List<Boolean> = coroutineScope {
             val semaphore = Semaphore(MAX_REMOTE_DELETE_CONCURRENCY)
             items.map { item ->
@@ -937,6 +944,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }.awaitAll()
         }
+        logTrashPerf("remote", items.size, remoteStart)
 
         var hasFailure = remoteOk.any { !it }
 
@@ -944,6 +952,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         val survivors = items.filterIndexed { index, _ -> remoteOk[index] }
 
         // 3) KeePass：按「数据库 + 类型」分组，一个库只写一次
+        val keepassStart = System.currentTimeMillis()
         val passwordGroups = linkedMapOf<Long, MutableList<PasswordEntry>>()
         val secureGroups = linkedMapOf<Long, MutableList<SecureItem>>()
         survivors.forEach { item ->
@@ -991,7 +1000,10 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        logTrashPerf("keepass", passwordGroups.size + secureGroups.size, keepassStart)
+
         // 4) 本地 DB 删除：跳过 KeePass 删除失败的分组
+        val localStart = System.currentTimeMillis()
         var deletedCount = 0
         // 绑定型载体索引只建一次：逐条重建会是 N×M 次解密，是清空变慢的主因
         val boundCarriers = if (survivors.any { it.originalData is PasswordEntry }) {
@@ -1017,6 +1029,8 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        logTrashPerf("local", survivors.size, localStart)
+        logTrashPerf("total", items.size, startedAt)
         return deletedCount to hasFailure
     }
 
@@ -1136,6 +1150,19 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             itemId = item.id,
             itemTitle = item.title,
             detail = getApplication<Application>().getString(R.string.timeline_permanent_delete_title)
+        )
+    }
+
+    /**
+     * 清空回收站的分段耗时打点。
+     *
+     * 清空横跨三条性质完全不同的链路（Bitwarden 网络往返 / KeePass 全库重写 / 本地 DB），
+     * 瓶颈随用户数据分布而变，没有分段耗时就只能靠猜。真机复现时抓 EmptyTrash perf 即可定位。
+     */
+    private fun logTrashPerf(stage: String, count: Int, sinceMs: Long) {
+        android.util.Log.i(
+            "TrashViewModel",
+            "EmptyTrash perf: stage=$stage count=$count elapsed=${System.currentTimeMillis() - sinceMs}ms"
         )
     }
 
