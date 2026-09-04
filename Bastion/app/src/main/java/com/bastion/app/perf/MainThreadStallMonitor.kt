@@ -106,10 +106,20 @@ object MainThreadStallMonitor {
         if (now - previousWarningAt < RELOG_INTERVAL_MS) return
         if (!lastWarningAt.compareAndSet(previousWarningAt, now)) return
 
+        val stack = mainThread.stackTrace
+        // 栈顶停在 MessageQueue.nativePollOnce —— 主线程正空闲等待下一条消息，
+        // 并非被耗时任务卡住。息屏、退后台或系统进入低功耗时心跳投递会被整体延后
+        // （系统 BlockMonitor 也会打出 delayed 数万毫秒的记录），此时若照常判定
+        // 就会刷出"主线程卡死"的假告警。空闲态直接重置基准，不产生告警。
+        if (stack.firstOrNull()?.methodName == "nativePollOnce") {
+            lastHeartbeatAt.set(now)
+            return
+        }
+
         val runtime = Runtime.getRuntime()
         val usedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L)
         val maxMb = runtime.maxMemory() / (1024L * 1024L)
-        val mainTop = mainThread.stackTrace
+        val mainTop = stack
             .take(8)
             .joinToString(separator = " <- ") { frame ->
                 "${frame.className}.${frame.methodName}:${frame.lineNumber}"
