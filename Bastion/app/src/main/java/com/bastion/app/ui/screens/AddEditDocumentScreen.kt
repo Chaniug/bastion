@@ -973,7 +973,9 @@ fun AddEditDocumentScreen(
     MultiStorageTargetPickerBottomSheet(
         visible = showStorageTargetSheet,
         selectedTargets = selectedStorageTargets.toList(),
-        lockedTargetKeys = existingReplicaTargetKeys,
+        // 【移动语义】与密码页对齐：已有位置不再锁定，允许改选其他库/文件夹。
+        // existingReplicaTargetKeys 仍传给 MultiStorageTargetSelectorCard 用于展示既有位置。
+        lockedTargetKeys = emptySet(),
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,

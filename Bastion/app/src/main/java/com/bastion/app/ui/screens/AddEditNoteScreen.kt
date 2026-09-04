@@ -864,7 +864,9 @@ fun AddEditNoteScreen(
     MultiStorageTargetPickerBottomSheet(
         visible = showStorageTargetSheet,
         selectedTargets = editorState.selectedStorageTargets,
-        lockedTargetKeys = editorState.existingReplicaTargetKeys,
+        // 【移动语义】与密码页对齐：已有位置不再锁定，允许改选其他库/文件夹。
+        // editorState.existingReplicaTargetKeys 仍用于展示既有位置。
+        lockedTargetKeys = emptySet(),
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,
