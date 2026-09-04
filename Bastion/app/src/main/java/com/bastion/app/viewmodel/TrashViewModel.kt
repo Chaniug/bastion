@@ -20,6 +20,7 @@ import com.bastion.app.repository.PasswordRepository
 import com.bastion.app.repository.SecureItemRepository
 import com.bastion.app.data.OperationLogItemType
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.util.TotpDataResolver
 import com.bastion.app.utils.FieldChange
 import com.bastion.app.utils.KeePassRestoreTarget
 import com.bastion.app.utils.OperationLogger
@@ -534,6 +535,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                     restoreOutcome = restoreOutcome
                 )
                 passwordRepository.updatePasswordEntry(restoredEntry)
+                cascadeRestoreBoundTotpItems(data)
             }
             is SecureItem -> {
                 val resolvedTarget = restoreTarget ?: KeePassRestoreTarget(data.keepassGroupPath, data.keepassGroupUuid)
@@ -552,11 +554,92 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             is PasswordEntry -> {
                 val rollbackEntry = data.copy(updatedAt = Date())
                 passwordRepository.updatePasswordEntry(rollbackEntry)
+                // 密码恢复失败回滚进回收站时，已级联恢复的绑定验证器需一并软删回去，
+                // 否则会重现"绑定到已删密码的孤儿验证码"。
+                if (rollbackEntry.isDeleted) {
+                    cascadeDeleteBoundTotpItemsForRollback(rollbackEntry)
+                }
             }
             is SecureItem -> {
                 val rollbackItem = data.copy(updatedAt = Date())
                 secureItemRepository.updateItem(rollbackItem)
             }
+        }
+    }
+
+    /**
+     * 密码恢复回滚时的验证器逆操作：把绑定到该密码、无独立 Bitwarden cipher、
+     * 当前未删除的 TOTP 重新软删，与 [cascadeRestoreBoundTotpItems] 对称。
+     */
+    private suspend fun cascadeDeleteBoundTotpItemsForRollback(entry: PasswordEntry) {
+        runCatching {
+            secureItemRepository.getItemsByType(ItemType.TOTP)
+                .first()
+                .filter { !it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                .filter { item ->
+                    val boundId = TotpDataResolver.parseStoredItemData(
+                        itemData = item.itemData,
+                        fallbackIssuer = item.title,
+                        decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+                    )?.boundPasswordId
+                    boundId == entry.id
+                }
+                .forEach { item ->
+                    secureItemRepository.softDeleteItem(item)
+                    android.util.Log.i(
+                        "TrashViewModel",
+                        "Cascade re-deleted bound totp on rollback: itemId=${item.id}, passwordId=${entry.id}"
+                    )
+                }
+        }.onFailure {
+            android.util.Log.e(
+                "TrashViewModel",
+                "Cascade delete bound totp on rollback failed for password ${entry.id}",
+                it
+            )
+        }
+    }
+
+    /**
+     * 恢复密码条目时级联恢复其绑定型验证器的载体记录（与
+     * PasswordViewModel.cascadeDeleteBoundTotpItems 的删除级联对称）。
+     *
+     * 绑定型 TOTP（无独立 Bitwarden cipher、boundPasswordId 指向该密码）随密码条目
+     * 一并进入回收站；若恢复密码时不恢复验证器，验证码将因载体记录仍处于已删除状态
+     * 而从验证器界面消失，造成"删了再恢复验证码丢失"的回归。
+     */
+    private suspend fun cascadeRestoreBoundTotpItems(entry: PasswordEntry) {
+        runCatching {
+            secureItemRepository.getItemsByType(ItemType.TOTP)
+                .first()
+                .filter { it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                .filter { item ->
+                    val boundId = TotpDataResolver.parseStoredItemData(
+                        itemData = item.itemData,
+                        fallbackIssuer = item.title,
+                        decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+                    )?.boundPasswordId
+                    boundId == entry.id
+                }
+                .forEach { item ->
+                    secureItemRepository.updateItem(
+                        item.copy(
+                            isDeleted = false,
+                            deletedAt = null,
+                            updatedAt = Date()
+                        )
+                    )
+                    android.util.Log.i(
+                        "TrashViewModel",
+                        "Cascade restored bound totp: itemId=${item.id}, passwordId=${entry.id}"
+                    )
+                }
+        }.onFailure {
+            android.util.Log.e(
+                "TrashViewModel",
+                "Cascade restore bound totp failed for password ${entry.id}",
+                it
+            )
         }
     }
 

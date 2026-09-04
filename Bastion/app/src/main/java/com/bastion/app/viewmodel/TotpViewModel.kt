@@ -1719,7 +1719,12 @@ class TotpViewModel(
             if (totpData?.boundPasswordId != null && totpData.secret.isNotBlank()) {
                 val boundId = totpData.boundPasswordId
                 val password = passwordRepository.getPasswordEntryById(boundId)
-                if (password != null) {
+                // 已删除（墓碑/回收站）的密码条目不再参与「清空 authenticatorKey + 标记
+                // bitwardenLocalModified」的联动：密码条目删除链路会级联清理绑定验证器
+                // （PasswordViewModel.cascadeDeleteBoundTotpItems），历史残留条目在此手动
+                // 删除时，若再对墓碑做修改并触发同步，会与远端已删除/待删除的 cipher 产生
+                // CONCURRENT_EDIT 冲突。此处跳过联动，仅继续执行本条验证器自身的删除。
+                if (password != null && !password.isDeleted) {
                     val passwordKey = buildTotpIdentityKeyFromRawKey(password.authenticatorKey)
                     val itemKey = buildTotpIdentityKey(totpData)
                     val hasEquivalentBoundItem = repository.getItemsByType(ItemType.TOTP)

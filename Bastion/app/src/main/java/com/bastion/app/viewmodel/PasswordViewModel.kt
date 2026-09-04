@@ -2456,6 +2456,7 @@ class PasswordViewModel(
         )
         repository.updatePasswordEntry(tombstone)
         repository.deleteArchiveSyncMeta(entry.id)
+        cascadeDeleteBoundTotpItems(listOf(entry), softDelete = true)
         com.bastion.app.utils.OperationLogger.logDelete(
             itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
             itemId = entry.id,
@@ -2483,6 +2484,7 @@ class PasswordViewModel(
             }
             repository.updatePasswordEntries(softDeletedEntries)
             repository.deleteArchiveSyncMeta(originalEntries.map { it.id })
+            cascadeDeleteBoundTotpItems(originalEntries, softDelete = true)
             originalEntries.forEach { entry ->
                 com.bastion.app.utils.OperationLogger.logDelete(
                     itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
@@ -2495,6 +2497,7 @@ class PasswordViewModel(
         } else {
             repository.deletePasswordEntries(originalEntries)
             repository.deleteArchiveSyncMeta(originalEntries.map { it.id })
+            cascadeDeleteBoundTotpItems(originalEntries, softDelete = false)
             originalEntries.forEach { entry ->
                 com.bastion.app.utils.OperationLogger.logDelete(
                     itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
@@ -2530,6 +2533,7 @@ class PasswordViewModel(
         )
         repository.updatePasswordEntry(softDeletedEntry)
         repository.deleteArchiveSyncMeta(entry.id)
+        cascadeDeleteBoundTotpItems(listOf(entry), softDelete = true)
         com.bastion.app.utils.OperationLogger.logDelete(
             itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
             itemId = entry.id,
@@ -2565,12 +2569,68 @@ class PasswordViewModel(
     private suspend fun permanentlyDeleteEntryLocalOnly(entry: PasswordEntry) {
         repository.deletePasswordEntry(entry)
         repository.deleteArchiveSyncMeta(entry.id)
+        cascadeDeleteBoundTotpItems(listOf(entry), softDelete = false)
         com.bastion.app.utils.OperationLogger.logDelete(
             itemType = com.bastion.app.data.OperationLogItemType.PASSWORD,
             itemId = entry.id,
             itemTitle = entry.title
         )
         Log.i("PasswordViewModel", "Delete permanently removed: id=${entry.id}")
+    }
+
+    /**
+     * 删除密码条目时级联清理其绑定型验证器在 secure_items 中的载体记录。
+     *
+     * 背景（真机复现 bug）：删除带验证码的密码条目后，验证器界面仍残留该验证码，
+     * 且 Bitwarden 同步报冲突——因为绑定型 TOTP 在 secure_items 里有一条
+     * SYNC_STATUS_REFERENCE 记录（boundPasswordId 指向密码条目），删除密码条目的
+     * 各条链路此前均未清理它，成为孤儿验证码。
+     *
+     * 级联范围：仅处理「绑定到被删密码、且没有独立 Bitwarden cipher」的 TOTP——
+     * 这类记录是密码验证码在本地 secure_items 的唯一载体，验证码数据本体随密码
+     * 条目的 authenticatorKey → cipher.login.totp 一起消失。自带独立 cipher 的
+     * 历史条目在服务器上是另一份独立数据，不纳入级联（与
+     * TotpListContent.willClearBoundPasswordTotp / TotpViewModel.deleteTotpItem
+     * 的既有语义保持一致）。
+     *
+     * softDelete 与密码条目的删除语义对齐：密码进回收站则验证器同步进回收站，
+     * 恢复对称逻辑见 TrashViewModel.applyLocalRestore。
+     */
+    private suspend fun cascadeDeleteBoundTotpItems(
+        entries: List<PasswordEntry>,
+        softDelete: Boolean
+    ) {
+        val secureRepository = secureItemRepository ?: return
+        if (entries.isEmpty()) return
+        val deletedPasswordIds = entries.mapTo(mutableSetOf()) { it.id }
+        runCatchingObserved {
+            secureRepository.getItemsByType(ItemType.TOTP)
+                .first()
+                .filter { !it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                .filter { item ->
+                    val boundId = parseStoredTotpData(item)?.boundPasswordId
+                    boundId != null && boundId in deletedPasswordIds
+                }
+                .forEach { item ->
+                    if (softDelete) {
+                        secureRepository.softDeleteItem(item)
+                    } else {
+                        secureRepository.deleteItem(item)
+                    }
+                    com.bastion.app.utils.OperationLogger.logDelete(
+                        itemType = com.bastion.app.data.OperationLogItemType.TOTP,
+                        itemId = item.id,
+                        itemTitle = item.title,
+                        detail = "随密码条目一并删除"
+                    )
+                    Log.i(
+                        "PasswordViewModel",
+                        "Cascade deleted bound totp: itemId=${item.id}, softDelete=$softDelete"
+                    )
+                }
+        }.onFailure { e ->
+            Log.e("PasswordViewModel", "Cascade delete bound totp failed", e)
+        }
     }
     
     fun toggleFavorite(id: Long, isFavorite: Boolean) {

@@ -505,7 +505,15 @@ class BitwardenSyncService(
         
         // 查找本地是否存在此 Cipher
         val existingEntry = passwordEntryDao.getByBitwardenCipherIdInVault(vault.id, cipherApi.id)
-        
+
+        if (existingEntry != null && existingEntry.isDeleted) {
+            // 本地已墓碑化（待删除队列执行中/待重试）：本地删除意图优先。
+            // 若此处继续走下行合并，墓碑的 bitwardenLocalModified=true 会与服务器
+            // revisionDate 比对产生伪 CONCURRENT_EDIT 冲突，或把墓碑"复活"更新。
+            // 等待 OP_DELETE 重试成功后，该 cipher 将从下行列表消失（deletedDate 过滤）。
+            return CipherSyncResult.Skipped("Local entry is tombstoned (pending delete)")
+        }
+
         if (existingEntry == null) {
             // 新建条目
             val newEntry = cipherToPasswordEntry(vault, cipherApi, symmetricKey)
