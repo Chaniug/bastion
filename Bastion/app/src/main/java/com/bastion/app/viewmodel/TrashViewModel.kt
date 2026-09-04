@@ -260,9 +260,10 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun loadBoundTotpCarriersByPasswordId(): Map<Long, List<SecureItem>> =
         withContext(Dispatchers.Default) {
             runCatching {
-                secureItemRepository.getItemsByType(ItemType.TOTP)
+                // 同 cascadeRestoreBoundTotpItems：必须查已删除载体，getItemsByType 查不到
+                database.secureItemDao().getDeletedItems()
                     .first()
-                    .filter { it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                    .filter { it.itemType == ItemType.TOTP && it.bitwardenCipherId.isNullOrBlank() }
                     .mapNotNull { item ->
                         val boundId = boundPasswordIdOf(item) ?: return@mapNotNull null
                         boundId to item
@@ -691,9 +692,11 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
      */
     private suspend fun cascadeRestoreBoundTotpItems(entry: PasswordEntry) {
         runCatching {
-            secureItemRepository.getItemsByType(ItemType.TOTP)
+            // 关键：级联恢复的目标是"已删除"的载体，必须走 getDeletedItems（isDeleted=1 查询）。
+            // getItemsByType 的 SQL 带 isDeleted=0，用它查已删除载体永远是空集，级联恢复会静默空转。
+            database.secureItemDao().getDeletedItems()
                 .first()
-                .filter { it.isDeleted && it.bitwardenCipherId.isNullOrBlank() }
+                .filter { it.itemType == ItemType.TOTP && it.bitwardenCipherId.isNullOrBlank() }
                 .filter { item ->
                     val boundId = TotpDataResolver.parseStoredItemData(
                         itemData = item.itemData,
