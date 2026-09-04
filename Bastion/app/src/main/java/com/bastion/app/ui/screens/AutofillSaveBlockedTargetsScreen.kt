@@ -13,10 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +42,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.bastion.app.R
 import com.bastion.app.autofill_ng.AutofillPreferences
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Language
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -80,7 +80,7 @@ fun AutofillSaveBlockedTargetsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.autofill_settings_back),
                         )
                     }
@@ -126,7 +126,7 @@ fun AutofillSaveBlockedTargetsScreen(
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.12f),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.Block,
+                                    imageVector = Icons.Default.Block,
                                     contentDescription = null,
                                     modifier = Modifier.padding(10.dp),
                                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -242,7 +242,7 @@ private fun SaveBlockedTargetCard(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                 ) {
                     Icon(
-                        imageVector = if (isDomainTarget) Icons.Outlined.Language else Icons.Outlined.Apps,
+                        imageVector = if (isDomainTarget) Icons.Default.Language else Icons.Default.Apps,
                         contentDescription = null,
                         modifier = Modifier.padding(12.dp),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -274,7 +274,7 @@ private fun SaveBlockedTargetCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
 
             SaveBlockedTargetSourceCard(
-                icon = if (isDomainTarget) Icons.Outlined.Language else Icons.Outlined.Apps,
+                icon = if (isDomainTarget) Icons.Default.Language else Icons.Default.Apps,
                 title = record.webDomain ?: appLabel ?: record.packageName.orEmpty(),
                 subtitle = when {
                     isDomainTarget -> stringResource(R.string.autofill_save_blocked_targets_domain_only)

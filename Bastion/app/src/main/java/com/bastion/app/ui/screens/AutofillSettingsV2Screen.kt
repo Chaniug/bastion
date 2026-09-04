@@ -26,25 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AccountTree
-import androidx.compose.material.icons.outlined.AddCircleOutline
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.DoNotDisturb
-import androidx.compose.material.icons.outlined.Input
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.Keyboard
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -96,6 +77,24 @@ import com.bastion.app.data.AppSettings
 import com.bastion.app.ui.components.AppInfo
 import com.bastion.app.ui.components.loadInstalledApps
 import com.bastion.app.utils.SettingsManager
+import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DoNotDisturb
+import androidx.compose.material.icons.filled.Input
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Smartphone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,7 +205,7 @@ fun AutofillSettingsV2Screen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowBack,
+                            imageVector = Icons.Default.ArrowBack,
                             contentDescription = stringResource(R.string.autofill_settings_back),
                         )
                     }
@@ -214,7 +213,7 @@ fun AutofillSettingsV2Screen(
                 actions = {
                     IconButton(onClick = ::refreshStatus) {
                         Icon(
-                            imageVector = Icons.Outlined.Refresh,
+                            imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.autofill_settings_refresh),
                         )
                     }
@@ -274,7 +273,7 @@ fun AutofillSettingsV2Screen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Input,
+                            imageVector = Icons.Default.Input,
                             contentDescription = null,
                             tint = statusIconTint,
                         )
@@ -318,11 +317,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_auth_required),
-                icon = Icons.Outlined.Lock,
+                icon = Icons.Default.Lock,
                 iconTint = MaterialTheme.colorScheme.primary,
             ) {
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Lock,
+                    icon = Icons.Default.Lock,
                     title = stringResource(R.string.autofill_auth_required),
                     subtitle = stringResource(R.string.autofill_auth_required_desc),
                     checked = autofillAuthRequired,
@@ -341,7 +340,7 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_v2_default_scope_title),
-                icon = Icons.Outlined.AccountTree,
+                icon = Icons.Default.AccountTree,
                 iconTint = MaterialTheme.colorScheme.tertiary,
             ) {
                 Text(
@@ -517,18 +516,18 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_system_settings_title),
-                icon = Icons.Outlined.Settings,
+                icon = Icons.Default.Settings,
                 iconTint = MaterialTheme.colorScheme.primary,
             ) {
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Smartphone,
+                    icon = Icons.Default.Smartphone,
                     title = stringResource(R.string.autofill_v2_set_system_service),
                     subtitle = stringResource(R.string.autofill_v2_set_system_service_desc),
                     onClick = ::openSystemAutofillSettings,
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Key,
+                    icon = Icons.Default.Key,
                     title = stringResource(R.string.autofill_system_passkey_settings),
                     subtitle = stringResource(R.string.autofill_system_passkey_settings_desc),
                     onClick = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
@@ -537,11 +536,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_fill_behavior_title),
-                icon = Icons.Outlined.Input,
+                icon = Icons.Default.Input,
                 iconTint = MaterialTheme.colorScheme.secondary,
             ) {
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Input,
+                    icon = Icons.Default.Input,
                     title = stringResource(R.string.autofill_v2_enable_service),
                     subtitle = stringResource(R.string.autofill_v2_enable_service_desc),
                     checked = autofillEnabled,
@@ -551,7 +550,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Notifications,
+                    icon = Icons.Default.Notifications,
                     title = stringResource(R.string.autofill_active_fill_notification_title),
                     subtitle = stringResource(R.string.autofill_active_fill_notification_desc),
                     checked = activeFillNotificationEnabled,
@@ -561,7 +560,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Link,
+                    icon = Icons.Default.Link,
                     title = stringResource(R.string.autofill_v2_strict_match),
                     subtitle = stringResource(R.string.autofill_v2_strict_match_desc),
                     checked = strictMode,
@@ -571,7 +570,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.AccountTree,
+                    icon = Icons.Default.AccountTree,
                     title = stringResource(R.string.autofill_v2_subdomain_match),
                     subtitle = stringResource(R.string.autofill_v2_subdomain_match_desc),
                     checked = subdomainMatch,
@@ -581,14 +580,14 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Language,
+                    icon = Icons.Default.Language,
                     title = stringResource(R.string.autofill_domain_strategy_title),
                     subtitle = DomainMatchStrategy.getDisplayName(context, domainMatchStrategy),
                     onClick = { showDomainStrategyDialog = true },
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.DoNotDisturb,
+                    icon = Icons.Default.DoNotDisturb,
                     title = stringResource(R.string.autofill_v2_respect_off),
                     subtitle = stringResource(R.string.autofill_v2_respect_off_desc),
                     checked = respectOffEnabled,
@@ -598,7 +597,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Input,
+                    icon = Icons.Default.Input,
                     title = stringResource(R.string.autofill_inline_suggestions),
                     subtitle = stringResource(R.string.autofill_inline_suggestions_desc),
                     checked = inlineSuggestionsEnabled,
@@ -608,7 +607,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.AutoAwesome,
+                    icon = Icons.Default.AutoAwesome,
                     title = stringResource(R.string.password_suggestion_title),
                     subtitle = stringResource(R.string.autofill_password_suggestion_setting_desc),
                     checked = passwordSuggestionEnabled,
@@ -620,11 +619,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_save_behavior_title),
-                icon = Icons.Outlined.Save,
+                icon = Icons.Default.Save,
                 iconTint = MaterialTheme.colorScheme.tertiary,
             ) {
                 SwitchSettingItem(
-                    icon = Icons.Outlined.AddCircleOutline,
+                    icon = Icons.Default.AddCircleOutline,
                     title = stringResource(R.string.autofill_save_enable),
                     subtitle = stringResource(R.string.autofill_save_enable_desc),
                     checked = savePromptEnabled,
@@ -634,7 +633,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Refresh,
+                    icon = Icons.Default.Refresh,
                     title = stringResource(R.string.autofill_save_update_duplicate),
                     subtitle = stringResource(R.string.autofill_save_update_duplicate_desc),
                     checked = autoUpdateDuplicatePasswordsEnabled,
@@ -644,7 +643,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Settings,
+                    icon = Icons.Default.Settings,
                     title = stringResource(R.string.autofill_save_show_notification),
                     subtitle = stringResource(R.string.autofill_save_show_notification_desc),
                     checked = showSaveNotificationEnabled,
@@ -654,7 +653,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Link,
+                    icon = Icons.Default.Link,
                     title = stringResource(R.string.autofill_save_smart_title),
                     subtitle = stringResource(R.string.autofill_save_smart_title_desc),
                     checked = smartTitleGenerationEnabled,
@@ -664,7 +663,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Apps,
+                    icon = Icons.Default.Apps,
                     title = stringResource(R.string.autofill_save_app_info),
                     subtitle = stringResource(R.string.autofill_save_app_info_desc),
                     checked = autoSaveAppInfoEnabled,
@@ -674,7 +673,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Language,
+                    icon = Icons.Default.Language,
                     title = stringResource(R.string.autofill_save_website_info),
                     subtitle = stringResource(R.string.autofill_save_website_info_desc),
                     checked = autoSaveWebsiteInfoEnabled,
@@ -686,11 +685,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_otp_settings_title),
-                icon = Icons.Outlined.Key,
+                icon = Icons.Default.Key,
                 iconTint = MaterialTheme.colorScheme.tertiary,
             ) {
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Smartphone,
+                    icon = Icons.Default.Smartphone,
                     title = stringResource(R.string.autofill_show_otp_notification),
                     subtitle = stringResource(R.string.autofill_show_otp_notification_desc),
                     checked = showOtpNotificationEnabled,
@@ -714,7 +713,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Settings,
+                    icon = Icons.Default.Settings,
                     title = stringResource(R.string.autofill_otp_notification_duration),
                     subtitle = "${stringResource(R.string.autofill_otp_notification_duration_desc)}: ${otpNotificationDurationSeconds}s",
                     onClick = {
@@ -723,7 +722,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 SwitchSettingItem(
-                    icon = Icons.Outlined.ContentCopy,
+                    icon = Icons.Default.ContentCopy,
                     title = stringResource(R.string.autofill_auto_copy_otp),
                     subtitle = stringResource(R.string.autofill_auto_copy_otp_desc),
                     checked = autoCopyOtpEnabled,
@@ -735,11 +734,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_save_blocked_targets_title),
-                icon = Icons.Outlined.Language,
+                icon = Icons.Default.Language,
                 iconTint = MaterialTheme.colorScheme.secondary,
             ) {
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Block,
+                    icon = Icons.Default.Block,
                     title = stringResource(R.string.autofill_save_blocked_targets_manage),
                     subtitle = stringResource(
                         R.string.autofill_save_blocked_targets_manage_desc,
@@ -751,11 +750,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_blacklist_title),
-                icon = Icons.Outlined.Block,
+                icon = Icons.Default.Block,
                 iconTint = MaterialTheme.colorScheme.error,
             ) {
                 SwitchSettingItem(
-                    icon = Icons.Outlined.Block,
+                    icon = Icons.Default.Block,
                     title = stringResource(R.string.autofill_v2_blacklist),
                     subtitle = stringResource(R.string.autofill_v2_blacklist_desc, blacklistPackages.size),
                     checked = blacklistEnabled,
@@ -765,7 +764,7 @@ fun AutofillSettingsV2Screen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 AutofillSettingItem(
-                    icon = Icons.Outlined.Apps,
+                    icon = Icons.Default.Apps,
                     title = stringResource(R.string.autofill_blacklist_manage),
                     subtitle = stringResource(R.string.autofill_blacklist_manage_desc, blacklistPackages.size),
                     onClick = { showBlacklistDialog = true },
@@ -774,11 +773,11 @@ fun AutofillSettingsV2Screen(
 
             SectionCard(
                 title = stringResource(R.string.autofill_blocked_fields_title),
-                icon = Icons.Outlined.DoNotDisturb,
+                icon = Icons.Default.DoNotDisturb,
                 iconTint = MaterialTheme.colorScheme.secondary,
             ) {
                 AutofillSettingItem(
-                    icon = Icons.Outlined.DoNotDisturb,
+                    icon = Icons.Default.DoNotDisturb,
                     title = stringResource(R.string.autofill_blocked_fields_manage),
                     subtitle = stringResource(
                         R.string.autofill_blocked_fields_manage_desc,
@@ -1042,7 +1041,7 @@ private fun V2BlacklistManagementDialog(
                                         )
                                     } else {
                                         Icon(
-                                            imageVector = Icons.Outlined.Apps,
+                                            imageVector = Icons.Default.Apps,
                                             contentDescription = null,
                                             modifier = Modifier.size(36.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,

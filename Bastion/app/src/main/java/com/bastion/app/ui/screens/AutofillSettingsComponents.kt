@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -21,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.OpenInNew
 
 // 分区卡片组件
 @Composable
@@ -82,7 +82,7 @@ fun AutofillSettingItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    trailingIcon: ImageVector = Icons.Outlined.OpenInNew,
+    trailingIcon: ImageVector = Icons.Default.OpenInNew,
     onClick: () -> Unit
 ) {
     Row(

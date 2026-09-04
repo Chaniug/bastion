@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -125,6 +124,7 @@ import com.bastion.app.passkey.PasskeyCredentialIdCodec
 import com.bastion.app.passkey.PasskeyPrivateKeyStore
 import com.bastion.app.passkey.managementKey
 import com.bastion.app.passkey.managementRecordIdOrNull
+import androidx.compose.material.icons.filled.Info
 
 /**
  * Passkey 列表屏幕
@@ -1788,7 +1788,7 @@ private fun VersionWarningBanner(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Outlined.Info,
+                imageVector = Icons.Default.Info,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(24.dp)

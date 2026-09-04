@@ -17,7 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +48,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.launch
 import com.bastion.app.ui.components.OutlinedTextField
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FilePresent
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.SdStorage
 
 private const val GOOGLE_DRIVE_ENTRY_ENABLED = false
 
@@ -193,7 +197,7 @@ fun LocalKeePassScreen(
                     if (internalDatabases.isNotEmpty()) {
                         item {
                             SectionHeader(
-                                icon = Icons.Outlined.PhoneAndroid,
+                                icon = Icons.Default.PhoneAndroid,
                                 title = stringResource(R.string.internal_storage),
                                 subtitle = stringResource(R.string.internal_storage_description),
                                 color = MaterialTheme.colorScheme.primary
@@ -221,7 +225,7 @@ fun LocalKeePassScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                             SectionHeader(
-                                icon = Icons.Outlined.SdStorage,
+                                icon = Icons.Default.SdStorage,
                                 title = stringResource(R.string.external_storage),
                                 subtitle = stringResource(R.string.external_storage_description),
                                 color = MaterialTheme.colorScheme.secondary
@@ -248,7 +252,7 @@ fun LocalKeePassScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                             SectionHeader(
-                                icon = Icons.Outlined.Cloud,
+                                icon = Icons.Default.Cloud,
                                 title = stringResource(R.string.remote_storage),
                                 subtitle = stringResource(R.string.remote_storage_description),
                                 color = MaterialTheme.colorScheme.tertiary
@@ -1078,14 +1082,14 @@ private fun CreateKeePassDatabaseBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     StorageCard(
-                        icon = Icons.Outlined.FilePresent,
+                        icon = Icons.Default.FilePresent,
                         title = stringResource(R.string.bastion_format_kdbx),
                         selected = databaseFormat == BastionDatabaseFormat.KDBX,
                         onClick = { databaseFormat = BastionDatabaseFormat.KDBX },
                         modifier = Modifier.weight(1f)
                     )
                     StorageCard(
-                        icon = Icons.Outlined.Description,
+                        icon = Icons.Default.Description,
                         title = stringResource(R.string.bastion_format_json),
                         selected = databaseFormat == BastionDatabaseFormat.JSON,
                         onClick = {
@@ -1389,7 +1393,7 @@ private fun CreateKeePassDatabaseBottomSheet(
                 ) {
                     // 内部存储卡片
                     StorageCard(
-                        icon = Icons.Outlined.PhoneAndroid,
+                        icon = Icons.Default.PhoneAndroid,
                         title = stringResource(R.string.internal_storage),
                         selected = storageLocation == KeePassStorageLocation.INTERNAL,
                         onClick = { storageLocation = KeePassStorageLocation.INTERNAL },
@@ -1398,7 +1402,7 @@ private fun CreateKeePassDatabaseBottomSheet(
                     
                     // 外部存储卡片
                     StorageCard(
-                        icon = Icons.Outlined.SdStorage,
+                        icon = Icons.Default.SdStorage,
                         title = stringResource(R.string.external_storage),
                         selected = storageLocation == KeePassStorageLocation.EXTERNAL,
                         onClick = { 
@@ -1702,7 +1706,7 @@ private fun ImportExternalDatabaseDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Outlined.SdStorage,
+                            Icons.Default.SdStorage,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSecondaryContainer
                         )

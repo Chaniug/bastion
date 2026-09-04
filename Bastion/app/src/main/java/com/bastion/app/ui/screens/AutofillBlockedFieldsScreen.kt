@@ -17,11 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.DoNotDisturb
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -60,6 +55,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bastion.app.R
 import com.bastion.app.autofill_ng.AutofillPreferences
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.DoNotDisturb
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Share
 
 private const val BLOCKED_FIELDS_SHARE_DIR = "temp_share"
 private const val BLOCKED_FIELDS_SHARE_PREFIX = "bastion_blocked_fields_"
@@ -95,7 +95,7 @@ fun AutofillBlockedFieldsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.autofill_settings_back),
                         )
                     }
@@ -131,7 +131,7 @@ fun AutofillBlockedFieldsScreen(
                             },
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Share,
+                                imageVector = Icons.Default.Share,
                                 contentDescription = stringResource(R.string.autofill_blocked_fields_share),
                             )
                         }
@@ -177,7 +177,7 @@ fun AutofillBlockedFieldsScreen(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.12f),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.DoNotDisturb,
+                                    imageVector = Icons.Default.DoNotDisturb,
                                     contentDescription = null,
                                     modifier = Modifier.padding(10.dp),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -299,9 +299,9 @@ private fun BlockedFieldSignatureCard(
                 ) {
                     Icon(
                         imageVector = if (!record.webDomain.isNullOrBlank()) {
-                            Icons.Outlined.Language
+                            Icons.Default.Language
                         } else {
-                            Icons.Outlined.Apps
+                            Icons.Default.Apps
                         },
                         contentDescription = null,
                         modifier = Modifier.padding(12.dp),
@@ -332,13 +332,13 @@ private fun BlockedFieldSignatureCard(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 appLabel?.let { label ->
                     BlockedFieldSourceCard(
-                        icon = Icons.Outlined.Apps,
+                        icon = Icons.Default.Apps,
                         title = label,
                         subtitle = record.packageName,
                     )
                 } ?: record.packageName?.let { packageName ->
                     BlockedFieldSourceCard(
-                        icon = Icons.Outlined.Apps,
+                        icon = Icons.Default.Apps,
                         title = packageName,
                         subtitle = stringResource(R.string.autofill_blocked_fields_package_only),
                     )
@@ -346,7 +346,7 @@ private fun BlockedFieldSignatureCard(
 
                 record.webDomain?.let { domain ->
                     BlockedFieldSourceCard(
-                        icon = Icons.Outlined.Language,
+                        icon = Icons.Default.Language,
                         title = domain,
                         subtitle = stringResource(R.string.autofill_blocked_fields_domain_only),
                     )

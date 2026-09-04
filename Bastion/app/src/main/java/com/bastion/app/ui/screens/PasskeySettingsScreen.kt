@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +36,12 @@ import com.bastion.app.passkey.PasskeyValidationDiagnostics
 import com.bastion.app.passkey.PasskeyValidationFlags
 import com.bastion.app.R
 import com.bastion.app.data.PasswordDatabase
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Sync
 
 /**
  * Passkey 设置页面
@@ -444,7 +449,7 @@ private fun SystemSettingsCard(onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Settings,
+                    imageVector = Icons.Default.Settings,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -492,7 +497,7 @@ private fun PasskeyStatsCard(passkeyCount: Int) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatItem(
-                icon = Icons.Outlined.Key,
+                icon = Icons.Default.Key,
                 value = passkeyCount.toString(),
                 label = stringResource(R.string.passkey_stats_saved)
             )
@@ -555,25 +560,25 @@ private fun PasskeyFeaturesSection() {
             Spacer(modifier = Modifier.height(16.dp))
             
             FeatureItem(
-                icon = Icons.Outlined.Security,
+                icon = Icons.Default.Security,
                 title = stringResource(R.string.passkey_feature_security_title),
                 description = stringResource(R.string.passkey_feature_security_desc)
             )
             
             FeatureItem(
-                icon = Icons.Outlined.Fingerprint,
+                icon = Icons.Default.Fingerprint,
                 title = stringResource(R.string.passkey_feature_biometric_title),
                 description = stringResource(R.string.passkey_feature_biometric_desc)
             )
             
             FeatureItem(
-                icon = Icons.Outlined.Sync,
+                icon = Icons.Default.Sync,
                 title = stringResource(R.string.passkey_feature_sync_title),
                 description = stringResource(R.string.passkey_feature_sync_desc)
             )
             
             FeatureItem(
-                icon = Icons.Outlined.Shield,
+                icon = Icons.Default.Shield,
                 title = stringResource(R.string.passkey_feature_phishing_title),
                 description = stringResource(R.string.passkey_feature_phishing_desc)
             )
