@@ -35,6 +35,18 @@ object MainThreadStallMonitor {
     private val paused = AtomicBoolean(false)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val mainThread = Looper.getMainLooper().thread
+    /**
+     * 心跳 Runnable。生命周期由 [pause] / [resume] 的 removeCallbacks / post 控制，
+     * 自身不再因 paused 而 return——否则一旦 return 就不再续期，心跳链永久断裂，
+     * 而 [resume] 只改标志位不会重新投递，看门狗随后会把"没有心跳"误报成
+     * "主线程卡死"（blockedForMs 持续累加，每 10 秒刷一条假告警）。
+     */
+    private val heartbeat = object : Runnable {
+        override fun run() {
+            lastHeartbeatAt.set(SystemClock.uptimeMillis())
+            mainHandler.postDelayed(this, CHECK_INTERVAL_MS)
+        }
+    }
     private val lastHeartbeatAt = AtomicLong(SystemClock.uptimeMillis())
     private val lastWarningAt = AtomicLong(0L)
     private val executor by lazy {
@@ -52,13 +64,6 @@ object MainThreadStallMonitor {
             return
         }
 
-        val heartbeat = object : Runnable {
-            override fun run() {
-                if (paused.get()) return
-                lastHeartbeatAt.set(SystemClock.uptimeMillis())
-                mainHandler.postDelayed(this, CHECK_INTERVAL_MS)
-            }
-        }
         mainHandler.post(heartbeat)
 
         executor.scheduleWithFixedDelay(
@@ -78,6 +83,8 @@ object MainThreadStallMonitor {
     fun pause() {
         if (!started.get()) return
         paused.set(true)
+        // 退后台直接摘掉心跳回调，不再周期性唤醒主线程。
+        mainHandler.removeCallbacks(heartbeat)
     }
 
     /** 恢复监控（App 回到前台时调用），重置心跳基准避免误报。 */
@@ -85,6 +92,8 @@ object MainThreadStallMonitor {
         if (!started.get()) return
         paused.set(false)
         lastHeartbeatAt.set(SystemClock.uptimeMillis())
+        // 重新投递心跳（pause 时已被移除），否则心跳永久停摆。
+        mainHandler.post(heartbeat)
     }
 
     private fun checkMainThread() {
