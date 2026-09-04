@@ -142,6 +142,12 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
     ) { passwords, secureItems, settings ->
         val now = Date()
         val categories = mutableListOf<TrashCategory>()
+        // 绑定型验证器是密码条目的附属载体，不是独立条目：宿主密码仍在回收站时，
+        // 它随宿主一并恢复/删除，此处不再单独占位，避免同一条密码显示成"密码 + 验证器"两条。
+        val trashedPasswordIds = passwords.mapTo(mutableSetOf()) { it.id }
+        val visibleSecureItems = secureItems.filterNot { item ->
+            isBoundTotpCarrierOf(item, trashedPasswordIds)
+        }
         
         // 密码类别
         if (passwords.isNotEmpty()) {
@@ -177,7 +183,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
             ItemType.BILLING_ADDRESS to "账单地址",
             ItemType.PAYMENT_ACCOUNT to "支付账户"
         )
-        secureItems
+        visibleSecureItems
             .groupBy { it.itemType }
             .toSortedMap(compareBy { TRASH_SECURE_ITEM_TYPES.indexOf(it).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE })
             .forEach { (itemType, typedItems) ->
@@ -213,6 +219,56 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
     
+    /**
+     * 读取 TOTP 载体绑定的密码条目 id；非绑定型（独立验证器）返回 null。
+     */
+    private fun boundPasswordIdOf(item: SecureItem): Long? =
+        TotpDataResolver.parseStoredItemData(
+            itemData = item.itemData,
+            fallbackIssuer = item.title,
+            decryptIfNeeded = securityManager::decryptDataIfBastionCiphertext
+        )?.boundPasswordId
+
+    /**
+     * 是否为挂在 [passwordIds] 中某条密码上的绑定型验证器载体。
+     *
+     * 判定口径与 [cascadeRestoreBoundTotpItems] 保持一致：TOTP、无独立 Bitwarden cipher、
+     * 且 boundPasswordId 命中。
+     */
+    private fun isBoundTotpCarrierOf(item: SecureItem, passwordIds: Set<Long>): Boolean {
+        if (passwordIds.isEmpty()) return false
+        if (item.itemType != ItemType.TOTP) return false
+        if (!item.bitwardenCipherId.isNullOrBlank()) return false
+        val boundId = boundPasswordIdOf(item) ?: return false
+        return boundId in passwordIds
+    }
+
+    /**
+     * 永久删除密码条目时一并清掉绑定到它的验证器载体。
+     *
+     * 载体无独立 Bitwarden cipher，宿主被永久删除后残留只会变成用户无法清理的孤儿记录。
+     */
+    private suspend fun permanentlyDeleteBoundTotpCarriers(passwordId: Long) {
+        runCatching {
+            secureItemRepository.getItemsByType(ItemType.TOTP)
+                .first()
+                .filter { it.isDeleted && isBoundTotpCarrierOf(it, setOf(passwordId)) }
+                .forEach { item ->
+                    database.secureItemDao().delete(item)
+                    android.util.Log.i(
+                        "TrashViewModel",
+                        "Cascade permanently deleted bound totp carrier: itemId=${item.id}, passwordId=$passwordId"
+                    )
+                }
+        }.onFailure {
+            android.util.Log.e(
+                "TrashViewModel",
+                "Cascade permanent delete of bound totp failed for password $passwordId",
+                it
+            )
+        }
+    }
+
     // 回收站总条目数
     val totalTrashCount: StateFlow<Int> = trashCategories.map { categories ->
         categories.sumOf { it.count }
@@ -915,6 +971,7 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                     val dbId = data.keepassDatabaseId
                     if (dbId != null && (dbId to "password") in failedGroups) return@forEach
                     database.passwordEntryDao().delete(data)
+                    permanentlyDeleteBoundTotpCarriers(data.id)
                     deletedCount += 1
                 }
                 is SecureItem -> {
@@ -933,7 +990,10 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
         if (!deleteRemoteCipherIfNeeded(data)) return false
         if (!deleteKeepassEntryIfNeeded(data)) return false
         when (data) {
-            is PasswordEntry -> database.passwordEntryDao().delete(data)
+            is PasswordEntry -> {
+                database.passwordEntryDao().delete(data)
+                permanentlyDeleteBoundTotpCarriers(data.id)
+            }
             is SecureItem -> database.secureItemDao().delete(data)
         }
         return true
