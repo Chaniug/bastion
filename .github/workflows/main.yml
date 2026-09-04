@@ -129,7 +129,12 @@ jobs:
       - name: Build Debug APK (build gate)
         run: |
           set +e
-          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee /tmp/build_log.txt
+          # previewVersionSuffix 让 debug 包 versionName 自带构建来源（adb dumpsys 一眼分辨）。
+          # 用 run_number + UTC 时间戳，不依赖 git 历史（本 job 是 fetch-depth=1 浅克隆）。
+          # 值里用连字符不用点：Gradle 会把 -P 值中的 "." 当任务名缩写解析，
+          # 报 "Task '.r123...' not found"。
+          ./gradlew :app:assembleDebug --stacktrace \
+            -PpreviewVersionSuffix=debug-r${{ github.run_number }}-$(date -u +%Y%m%d%H%M) 2>&1 | tee /tmp/build_log.txt
           BUILD_EXIT=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT" -ne 0 ]; then
             echo "::notice title=Build gate diagnostics::build_failed=true"

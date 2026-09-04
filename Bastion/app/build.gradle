@@ -32,21 +32,18 @@ android {
     def appVersionCode
     def baseVersionName
     if (previewVersionSuffix) {
-        // preview 构建：保留 commit_count + 时间戳后缀 + epoch 秒 versionCode（保证严格递增）
+        // preview 构建：epoch 秒 versionCode 保证严格递增。
+        // 版本名不依赖 gitCommitCount：CI 为浅克隆（fetch-depth=1）时 commit 计数恒为 1，
+        // 会让每个 preview 包都显示成 1.0.1，adb dumpsys 无法分辨构建来源。
         appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
-        baseVersionName = "1.0.${gitCommitCount}-${previewVersionSuffix}"
+        baseVersionName = "1.0.0-${previewVersionSuffix}"
     } else if (exactTag && exactTag.startsWith('v')) {
         // release 构建：HEAD 上有 tag，用 tag 名作 versionName（如 v1.0.307 → 1.0.307）
         baseVersionName = exactTag.substring(1)
-        def parts = baseVersionName.split('\\.')
-        try {
-            int major = parts.length > 0 ? parts[0].toInteger() : 0
-            int minor = parts.length > 1 ? parts[1].toInteger() : 0
-            int patch = parts.length > 2 ? parts[2].toInteger() : 0
-            appVersionCode = major * 1000000 + minor * 1000 + patch
-        } catch (ignored) {
-            appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
-        }
+        // versionCode 统一用 epoch 秒：语义化版本号（1.0.307 → 1000307）远小于 preview
+        // 的 epoch 秒（10 位），装过 preview 后再装 stable 会被判为降级而无法覆盖安装。
+        // 统一口径后 debug/release 之间可任意互相覆盖（签名已同为 DEBUG_KEYSTORE）。
+        appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
     } else {
         // fallback（如本地构建无 tag）：保持 commit_count 机制
         appVersionCode = (System.currentTimeMillis() / 1000L).toInteger()
