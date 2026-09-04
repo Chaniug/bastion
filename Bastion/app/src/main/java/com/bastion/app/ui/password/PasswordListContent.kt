@@ -716,41 +716,8 @@ fun PasswordListContent(
     
     // 堆叠展开状态 - 记录哪些分组已展开（托管到 ViewModel，导航返回后保持）
     val expandedGroups by viewModel.expandedGroups.collectAsState()
-    var quickFilterFavorite by rememberSaveable { mutableStateOf(false) }
-    var quickFilter2fa by rememberSaveable { mutableStateOf(false) }
-    var quickFilterNotes by rememberSaveable { mutableStateOf(false) }
-    var quickFilterPasskey by rememberSaveable { mutableStateOf(false) }
-    var quickFilterBoundNote by rememberSaveable { mutableStateOf(false) }
-    var quickFilterAttachments by rememberSaveable { mutableStateOf(false) }
-    var quickFilterUncategorized by rememberSaveable { mutableStateOf(false) }
-    var quickFilterLocalOnly by rememberSaveable { mutableStateOf(false) }
-    var quickFilterManualStackOnly by rememberSaveable { mutableStateOf(false) }
-    var quickFilterNeverStack by rememberSaveable { mutableStateOf(false) }
-    var quickFilterUnstacked by rememberSaveable { mutableStateOf(false) }
-    // WIFI 筛选走"按需出现"分支：只有数据库里存在 WIFI 条目才渲染 chip，
-    // 也不写进用户的 [PasswordListQuickFilterItem] 清单，避免污染备份结构。
-    var quickFilterWifi by rememberSaveable { mutableStateOf(false) }
-    val hasAnyWifiEntry = remember(passwordEntries) {
-        passwordEntries.any { it.isWifiEntry() }
-    }
-    LaunchedEffect(hasAnyWifiEntry) {
-        if (!hasAnyWifiEntry) quickFilterWifi = false
-    }
-    // SSH 密钥筛选：与 WIFI 同样按需出现，不进入 [PasswordListQuickFilterItem] 清单。
-    var quickFilterSshKey by rememberSaveable { mutableStateOf(false) }
-    val hasAnySshKeyEntry = remember(passwordEntries) {
-        passwordEntries.any { it.isSshKeyEntry() }
-    }
-    LaunchedEffect(hasAnySshKeyEntry) {
-        if (!hasAnySshKeyEntry) quickFilterSshKey = false
-    }
-    var quickFilterBarcode by rememberSaveable { mutableStateOf(false) }
-    val hasAnyBarcodeEntry = remember(passwordEntries) {
-        passwordEntries.any { it.isBarcodeEntry() }
-    }
-    LaunchedEffect(hasAnyBarcodeEntry) {
-        if (!hasAnyBarcodeEntry) quickFilterBarcode = false
-    }
+    // 15 个快捷筛选开关 + WIFI/SSH/条码的存在性派生值，已下沉到独立组合函数。
+    val quickFilterToggles = rememberPasswordListQuickFilterToggles(passwordEntries)
     var manualStackGroupByEntryId by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
     var noStackEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var lastCustomFieldEntryIds by remember { mutableStateOf<List<Long>>(emptyList()) }
@@ -788,37 +755,37 @@ fun PasswordListContent(
 
     LaunchedEffect(configuredQuickFilterItems) {
         if (com.bastion.app.data.PasswordListQuickFilterItem.FAVORITE !in configuredQuickFilterItems) {
-            quickFilterFavorite = false
+            quickFilterToggles.favorite = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.TWO_FA !in configuredQuickFilterItems) {
-            quickFilter2fa = false
+            quickFilterToggles.twoFa = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.NOTES !in configuredQuickFilterItems) {
-            quickFilterNotes = false
+            quickFilterToggles.notes = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.PASSKEY !in configuredQuickFilterItems) {
-            quickFilterPasskey = false
+            quickFilterToggles.passkey = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.NOTE !in configuredQuickFilterItems) {
-            quickFilterBoundNote = false
+            quickFilterToggles.boundNote = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.ATTACHMENTS !in configuredQuickFilterItems) {
-            quickFilterAttachments = false
+            quickFilterToggles.attachments = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.UNCATEGORIZED !in configuredQuickFilterItems) {
-            quickFilterUncategorized = false
+            quickFilterToggles.uncategorized = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.LOCAL_ONLY !in configuredQuickFilterItems) {
-            quickFilterLocalOnly = false
+            quickFilterToggles.localOnly = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.MANUAL_STACK_ONLY !in configuredQuickFilterItems) {
-            quickFilterManualStackOnly = false
+            quickFilterToggles.manualStackOnly = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.NEVER_STACK !in configuredQuickFilterItems) {
-            quickFilterNeverStack = false
+            quickFilterToggles.neverStack = false
         }
         if (com.bastion.app.data.PasswordListQuickFilterItem.UNSTACKED !in configuredQuickFilterItems) {
-            quickFilterUnstacked = false
+            quickFilterToggles.unstacked = false
         }
     }
 
@@ -860,9 +827,9 @@ fun PasswordListContent(
 
     val shouldLoadManualStackMetadata =
         effectiveStackCardMode != StackCardMode.ALWAYS_EXPANDED ||
-            quickFilterManualStackOnly ||
-            quickFilterNeverStack ||
-            quickFilterUnstacked
+            quickFilterToggles.manualStackOnly ||
+            quickFilterToggles.neverStack ||
+            quickFilterToggles.unstacked
     val emptyStateMessage = remember(
         currentFilter,
         quickFoldersEnabledForCurrentFilter,
@@ -911,19 +878,19 @@ fun PasswordListContent(
         quickFoldersEnabledForCurrentFilter,
         currentFilter,
         configuredQuickFilterItems,
-        quickFilterFavorite,
-        quickFilter2fa,
-        quickFilterNotes,
-        quickFilterPasskey,
-        quickFilterBoundNote,
-        quickFilterAttachments,
+        quickFilterToggles.favorite,
+        quickFilterToggles.twoFa,
+        quickFilterToggles.notes,
+        quickFilterToggles.passkey,
+        quickFilterToggles.boundNote,
+        quickFilterToggles.attachments,
         activeAttachmentParentIds,
-        quickFilterUncategorized,
-        quickFilterLocalOnly,
-        quickFilterNeverStack,
-        quickFilterWifi,
-        quickFilterSshKey,
-        quickFilterBarcode,
+        quickFilterToggles.uncategorized,
+        quickFilterToggles.localOnly,
+        quickFilterToggles.neverStack,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
         effectiveNoStackEntryIds,
         aggregateUiState.hasActiveContentTypeFilter,
         aggregateUiState.contentTypeFilterTypes
@@ -934,19 +901,19 @@ fun PasswordListContent(
             quickFoldersEnabledForCurrentFilter = quickFoldersEnabledForCurrentFilter,
             currentFilter = currentFilter,
             configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterFavorite,
-            quickFilter2fa = quickFilter2fa,
-            quickFilterNotes = quickFilterNotes,
-            quickFilterPasskey = quickFilterPasskey,
-            quickFilterBoundNote = quickFilterBoundNote,
-            quickFilterAttachments = quickFilterAttachments,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            quickFilterNotes = quickFilterToggles.notes,
+            quickFilterPasskey = quickFilterToggles.passkey,
+            quickFilterBoundNote = quickFilterToggles.boundNote,
+            quickFilterAttachments = quickFilterToggles.attachments,
             activeAttachmentParentIds = activeAttachmentParentIds,
-            quickFilterUncategorized = quickFilterUncategorized,
-            quickFilterLocalOnly = quickFilterLocalOnly,
-            quickFilterNeverStack = quickFilterNeverStack,
-            quickFilterWifi = quickFilterWifi,
-            quickFilterSshKey = quickFilterSshKey,
-            quickFilterBarcode = quickFilterBarcode,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
             effectiveNoStackEntryIds = effectiveNoStackEntryIds,
             hasActiveContentTypeFilter = aggregateUiState.hasActiveContentTypeFilter,
             contentTypeFilterTypes = aggregateUiState.contentTypeFilterTypes
@@ -956,15 +923,15 @@ fun PasswordListContent(
     val preStackFilteredAggregateItems = remember(
         aggregateUiState.visibleItems,
         configuredQuickFilterItems,
-        quickFilterFavorite,
-        quickFilter2fa,
-        quickFilterNotes,
-        quickFilterUncategorized,
-        quickFilterLocalOnly,
-        quickFilterWifi,
-        quickFilterSshKey,
-        quickFilterBarcode,
-        quickFilterNeverStack,
+        quickFilterToggles.favorite,
+        quickFilterToggles.twoFa,
+        quickFilterToggles.notes,
+        quickFilterToggles.uncategorized,
+        quickFilterToggles.localOnly,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
+        quickFilterToggles.neverStack,
         currentFilter,
         effectiveStackCardMode
     ) {
@@ -972,16 +939,16 @@ fun PasswordListContent(
             items = aggregateUiState.visibleItems,
             currentFilter = currentFilter,
             configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterFavorite,
-            quickFilter2fa = quickFilter2fa,
-            quickFilterNotes = quickFilterNotes,
-            quickFilterUncategorized = quickFilterUncategorized,
-            quickFilterLocalOnly = quickFilterLocalOnly,
-            quickFilterWifi = quickFilterWifi,
-            quickFilterSshKey = quickFilterSshKey,
-            quickFilterBarcode = quickFilterBarcode,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            quickFilterNotes = quickFilterToggles.notes,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
             quickFilterManualStackOnly = false,
-            quickFilterNeverStack = quickFilterNeverStack,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
             quickFilterUnstacked = false,
             effectiveStackCardMode = effectiveStackCardMode,
             manualStackedKeys = emptySet()
@@ -1004,8 +971,8 @@ fun PasswordListContent(
     val visiblePasswordEntries = remember(
         preStackFilteredPasswordEntries,
         configuredQuickFilterItems,
-        quickFilterManualStackOnly,
-        quickFilterUnstacked,
+        quickFilterToggles.manualStackOnly,
+        quickFilterToggles.unstacked,
         effectiveStackCardMode,
         effectiveManualStackGroupByEntryId,
         validAggregateStackedItemKeys,
@@ -1015,8 +982,8 @@ fun PasswordListContent(
         filterPasswordEntriesByStackQuickFilters(
             items = preStackFilteredPasswordEntries,
             configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterManualStackOnly = quickFilterManualStackOnly,
-            quickFilterUnstacked = quickFilterUnstacked,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
             effectiveStackCardMode = effectiveStackCardMode,
             effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
             aggregateManualStackedItemKeys = validAggregateStackedItemKeys,
@@ -1027,11 +994,11 @@ fun PasswordListContent(
     val visibleAggregateItems = remember(
         preStackFilteredAggregateItems,
         configuredQuickFilterItems,
-        quickFilterManualStackOnly,
-        quickFilterUnstacked,
-        quickFilterWifi,
-        quickFilterSshKey,
-        quickFilterBarcode,
+        quickFilterToggles.manualStackOnly,
+        quickFilterToggles.unstacked,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
         effectiveStackCardMode,
         validAggregateStackedItemKeys
     ) {
@@ -1044,12 +1011,12 @@ fun PasswordListContent(
             quickFilterNotes = false,
             quickFilterUncategorized = false,
             quickFilterLocalOnly = false,
-            quickFilterWifi = quickFilterWifi,
-            quickFilterSshKey = quickFilterSshKey,
-            quickFilterBarcode = quickFilterBarcode,
-            quickFilterManualStackOnly = quickFilterManualStackOnly,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
             quickFilterNeverStack = false,
-            quickFilterUnstacked = quickFilterUnstacked,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
             effectiveStackCardMode = effectiveStackCardMode,
             manualStackedKeys = validAggregateStackedItemKeys
         )
@@ -1313,16 +1280,16 @@ fun PasswordListContent(
         configuredQuickFilterItems,
         aggregateUiState.visibleContentTypes,
         shouldGateInitialPasswordFirstFrame,
-        hasAnyWifiEntry,
-        hasAnySshKeyEntry,
-        hasAnyBarcodeEntry
+        quickFilterToggles.hasAnyWifiEntry,
+        quickFilterToggles.hasAnySshKeyEntry,
+        quickFilterToggles.hasAnyBarcodeEntry
     ) {
         if (shouldGateInitialPasswordFirstFrame) return@remember false
         val hasConfiguredChips = configuredQuickFilterItems.any { item ->
             shouldShowQuickFilterItem(item, aggregateUiState.visibleContentTypes)
         }
         // WIFI / SSH chip 无需 quickFilters 设置开关——"有数据就冒出来"语义。
-        hasConfiguredChips || hasAnyWifiEntry || hasAnySshKeyEntry || hasAnyBarcodeEntry
+        hasConfiguredChips || quickFilterToggles.hasAnyWifiEntry || quickFilterToggles.hasAnySshKeyEntry || quickFilterToggles.hasAnyBarcodeEntry
     }
 
     // 收纳为内建行为：快捷筛选横排的展开/收起状态由这里（共同父级）持有，
@@ -1578,37 +1545,37 @@ LaunchedEffect(quickFiltersExpanded) {
             showDisplayOptionsSheet = showDisplayOptionsSheet,
             onShowDisplayOptionsSheetChange = { showDisplayOptionsSheet = it },
             configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterFavorite,
-            onQuickFilterFavoriteChange = { quickFilterFavorite = it },
-            quickFilter2fa = quickFilter2fa,
-            onQuickFilter2faChange = { quickFilter2fa = it },
-            quickFilterNotes = quickFilterNotes,
-            onQuickFilterNotesChange = { quickFilterNotes = it },
-            quickFilterPasskey = quickFilterPasskey,
-            onQuickFilterPasskeyChange = { quickFilterPasskey = it },
-            quickFilterBoundNote = quickFilterBoundNote,
-            onQuickFilterBoundNoteChange = { quickFilterBoundNote = it },
-            quickFilterAttachments = quickFilterAttachments,
-            onQuickFilterAttachmentsChange = { quickFilterAttachments = it },
-            quickFilterUncategorized = quickFilterUncategorized,
-            onQuickFilterUncategorizedChange = { quickFilterUncategorized = it },
-            quickFilterLocalOnly = quickFilterLocalOnly,
-            onQuickFilterLocalOnlyChange = { quickFilterLocalOnly = it },
-            quickFilterManualStackOnly = quickFilterManualStackOnly,
-            onQuickFilterManualStackOnlyChange = { quickFilterManualStackOnly = it },
-            quickFilterNeverStack = quickFilterNeverStack,
-            onQuickFilterNeverStackChange = { quickFilterNeverStack = it },
-            quickFilterUnstacked = quickFilterUnstacked,
-            onQuickFilterUnstackedChange = { quickFilterUnstacked = it },
-            quickFilterWifi = quickFilterWifi,
-            onQuickFilterWifiChange = { quickFilterWifi = it },
-            wifiQuickFilterVisible = hasAnyWifiEntry,
-            quickFilterSshKey = quickFilterSshKey,
-            onQuickFilterSshKeyChange = { quickFilterSshKey = it },
-            sshKeyQuickFilterVisible = hasAnySshKeyEntry,
-            quickFilterBarcode = quickFilterBarcode,
-            onQuickFilterBarcodeChange = { quickFilterBarcode = it },
-            barcodeQuickFilterVisible = hasAnyBarcodeEntry,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            onQuickFilterFavoriteChange = quickFilterToggles.onFavoriteChange,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            onQuickFilter2faChange = quickFilterToggles.onTwoFaChange,
+            quickFilterNotes = quickFilterToggles.notes,
+            onQuickFilterNotesChange = quickFilterToggles.onNotesChange,
+            quickFilterPasskey = quickFilterToggles.passkey,
+            onQuickFilterPasskeyChange = quickFilterToggles.onPasskeyChange,
+            quickFilterBoundNote = quickFilterToggles.boundNote,
+            onQuickFilterBoundNoteChange = quickFilterToggles.onBoundNoteChange,
+            quickFilterAttachments = quickFilterToggles.attachments,
+            onQuickFilterAttachmentsChange = quickFilterToggles.onAttachmentsChange,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            onQuickFilterUncategorizedChange = quickFilterToggles.onUncategorizedChange,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            onQuickFilterLocalOnlyChange = quickFilterToggles.onLocalOnlyChange,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
+            onQuickFilterManualStackOnlyChange = quickFilterToggles.onManualStackOnlyChange,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
+            onQuickFilterNeverStackChange = quickFilterToggles.onNeverStackChange,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
+            onQuickFilterUnstackedChange = quickFilterToggles.onUnstackedChange,
+            quickFilterWifi = quickFilterToggles.wifi,
+            onQuickFilterWifiChange = quickFilterToggles.onWifiChange,
+            wifiQuickFilterVisible = quickFilterToggles.hasAnyWifiEntry,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            onQuickFilterSshKeyChange = quickFilterToggles.onSshKeyChange,
+            sshKeyQuickFilterVisible = quickFilterToggles.hasAnySshKeyEntry,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            onQuickFilterBarcodeChange = quickFilterToggles.onBarcodeChange,
+            barcodeQuickFilterVisible = quickFilterToggles.hasAnyBarcodeEntry,
             aggregateSelectedTypes = aggregateUiState.selectedContentTypes,
             aggregateVisibleTypes = aggregateUiState.visibleContentTypes,
             onToggleAggregateType = { type -> aggregateConfig?.onToggleContentType?.invoke(type) },
@@ -1684,37 +1651,37 @@ LaunchedEffect(quickFiltersExpanded) {
             listState = listState,
             appSettings = appSettings,
             configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterFavorite,
-            onQuickFilterFavoriteChange = { quickFilterFavorite = it },
-            quickFilter2fa = quickFilter2fa,
-            onQuickFilter2faChange = { quickFilter2fa = it },
-            quickFilterNotes = quickFilterNotes,
-            onQuickFilterNotesChange = { quickFilterNotes = it },
-            quickFilterPasskey = quickFilterPasskey,
-            onQuickFilterPasskeyChange = { quickFilterPasskey = it },
-            quickFilterBoundNote = quickFilterBoundNote,
-            onQuickFilterBoundNoteChange = { quickFilterBoundNote = it },
-            quickFilterAttachments = quickFilterAttachments,
-            onQuickFilterAttachmentsChange = { quickFilterAttachments = it },
-            quickFilterUncategorized = quickFilterUncategorized,
-            onQuickFilterUncategorizedChange = { quickFilterUncategorized = it },
-            quickFilterLocalOnly = quickFilterLocalOnly,
-            onQuickFilterLocalOnlyChange = { quickFilterLocalOnly = it },
-            quickFilterManualStackOnly = quickFilterManualStackOnly,
-            onQuickFilterManualStackOnlyChange = { quickFilterManualStackOnly = it },
-            quickFilterNeverStack = quickFilterNeverStack,
-            onQuickFilterNeverStackChange = { quickFilterNeverStack = it },
-            quickFilterUnstacked = quickFilterUnstacked,
-            onQuickFilterUnstackedChange = { quickFilterUnstacked = it },
-            quickFilterWifi = quickFilterWifi,
-            onQuickFilterWifiChange = { quickFilterWifi = it },
-            wifiQuickFilterVisible = hasAnyWifiEntry,
-            quickFilterSshKey = quickFilterSshKey,
-            onQuickFilterSshKeyChange = { quickFilterSshKey = it },
-            sshKeyQuickFilterVisible = hasAnySshKeyEntry,
-            quickFilterBarcode = quickFilterBarcode,
-            onQuickFilterBarcodeChange = { quickFilterBarcode = it },
-            barcodeQuickFilterVisible = hasAnyBarcodeEntry,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            onQuickFilterFavoriteChange = quickFilterToggles.onFavoriteChange,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            onQuickFilter2faChange = quickFilterToggles.onTwoFaChange,
+            quickFilterNotes = quickFilterToggles.notes,
+            onQuickFilterNotesChange = quickFilterToggles.onNotesChange,
+            quickFilterPasskey = quickFilterToggles.passkey,
+            onQuickFilterPasskeyChange = quickFilterToggles.onPasskeyChange,
+            quickFilterBoundNote = quickFilterToggles.boundNote,
+            onQuickFilterBoundNoteChange = quickFilterToggles.onBoundNoteChange,
+            quickFilterAttachments = quickFilterToggles.attachments,
+            onQuickFilterAttachmentsChange = quickFilterToggles.onAttachmentsChange,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            onQuickFilterUncategorizedChange = quickFilterToggles.onUncategorizedChange,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            onQuickFilterLocalOnlyChange = quickFilterToggles.onLocalOnlyChange,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
+            onQuickFilterManualStackOnlyChange = quickFilterToggles.onManualStackOnlyChange,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
+            onQuickFilterNeverStackChange = quickFilterToggles.onNeverStackChange,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
+            onQuickFilterUnstackedChange = quickFilterToggles.onUnstackedChange,
+            quickFilterWifi = quickFilterToggles.wifi,
+            onQuickFilterWifiChange = quickFilterToggles.onWifiChange,
+            wifiQuickFilterVisible = quickFilterToggles.hasAnyWifiEntry,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            onQuickFilterSshKeyChange = quickFilterToggles.onSshKeyChange,
+            sshKeyQuickFilterVisible = quickFilterToggles.hasAnySshKeyEntry,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            onQuickFilterBarcodeChange = quickFilterToggles.onBarcodeChange,
+            barcodeQuickFilterVisible = quickFilterToggles.hasAnyBarcodeEntry,
             onToggleAggregateType = aggregateConfig?.onToggleContentType,
             categoryQuickFilterShortcuts = effectiveCategoryQuickFilterShortcuts,
             quickFolderShortcuts = effectiveQuickFolderCardShortcuts,
@@ -1904,6 +1871,131 @@ LaunchedEffect(quickFiltersExpanded) {
         showSingleItemPasswordVerify = showSingleItemPasswordVerify,
         onShowSingleItemPasswordVerifyChange = { showSingleItemPasswordVerify = it }
     )
+}
+
+/**
+ * 密码页「快捷筛选」的 15 个开关，外加 WIFI / SSH / 条码三个"库里是否存在对应条目"的派生值。
+ *
+ * 这几个值原先全部内联在 [PasswordListContent] 中，是该函数膨胀的组成部分之一。
+ * 详见 [rememberPasswordListQuickFilterToggles] 的说明。
+ */
+private class PasswordListQuickFilterToggles {
+    var favorite: Boolean = false
+    var onFavoriteChange: (Boolean) -> Unit = {}
+    var twoFa: Boolean = false
+    var onTwoFaChange: (Boolean) -> Unit = {}
+    var notes: Boolean = false
+    var onNotesChange: (Boolean) -> Unit = {}
+    var passkey: Boolean = false
+    var onPasskeyChange: (Boolean) -> Unit = {}
+    var boundNote: Boolean = false
+    var onBoundNoteChange: (Boolean) -> Unit = {}
+    var attachments: Boolean = false
+    var onAttachmentsChange: (Boolean) -> Unit = {}
+    var uncategorized: Boolean = false
+    var onUncategorizedChange: (Boolean) -> Unit = {}
+    var localOnly: Boolean = false
+    var onLocalOnlyChange: (Boolean) -> Unit = {}
+    var manualStackOnly: Boolean = false
+    var onManualStackOnlyChange: (Boolean) -> Unit = {}
+    var neverStack: Boolean = false
+    var onNeverStackChange: (Boolean) -> Unit = {}
+    var unstacked: Boolean = false
+    var onUnstackedChange: (Boolean) -> Unit = {}
+    var wifi: Boolean = false
+    var onWifiChange: (Boolean) -> Unit = {}
+    var sshKey: Boolean = false
+    var onSshKeyChange: (Boolean) -> Unit = {}
+    var barcode: Boolean = false
+    var onBarcodeChange: (Boolean) -> Unit = {}
+    var hasAnyWifiEntry: Boolean = false
+    var hasAnySshKeyEntry: Boolean = false
+    var hasAnyBarcodeEntry: Boolean = false
+}
+
+/**
+ * 持有 [PasswordListQuickFilterToggles] 的组合函数。
+ *
+ * 为什么要拆：`PasswordListContent` 编译后达 18895 条指令，超过 ART 的编译上限，
+ * 于是**永远无法被 JIT 编译、只能解释执行**，且每次尝试编译都会打出一条
+ * `Method exceeds compiler instruction limit`（日志里刷了 428 次）。这是拆分该巨型
+ * Composable 的第一步，优先搬走只依赖 `passwordEntries` 的这块内聚状态。
+ *
+ * 各开关仍用 rememberSaveable，屏幕旋转等重建场景的恢复行为与拆分前一致。
+ */
+@Composable
+private fun rememberPasswordListQuickFilterToggles(
+    passwordEntries: List<com.bastion.app.data.PasswordEntry>
+): PasswordListQuickFilterToggles {
+    var favorite by rememberSaveable { mutableStateOf(false) }
+    var twoFa by rememberSaveable { mutableStateOf(false) }
+    var notes by rememberSaveable { mutableStateOf(false) }
+    var passkey by rememberSaveable { mutableStateOf(false) }
+    var boundNote by rememberSaveable { mutableStateOf(false) }
+    var attachments by rememberSaveable { mutableStateOf(false) }
+    var uncategorized by rememberSaveable { mutableStateOf(false) }
+    var localOnly by rememberSaveable { mutableStateOf(false) }
+    var manualStackOnly by rememberSaveable { mutableStateOf(false) }
+    var neverStack by rememberSaveable { mutableStateOf(false) }
+    var unstacked by rememberSaveable { mutableStateOf(false) }
+    // WIFI 筛选走"按需出现"分支：只有数据库里存在 WIFI 条目才渲染 chip，
+    // 也不写进用户的 [com.bastion.app.data.PasswordListQuickFilterItem] 清单，避免污染备份结构。
+    var wifi by rememberSaveable { mutableStateOf(false) }
+    val hasAnyWifiEntry = remember(passwordEntries) {
+        passwordEntries.any { it.isWifiEntry() }
+    }
+    LaunchedEffect(hasAnyWifiEntry) {
+        if (!hasAnyWifiEntry) wifi = false
+    }
+    // SSH 密钥筛选：与 WIFI 同样按需出现，不进入 [com.bastion.app.data.PasswordListQuickFilterItem] 清单。
+    var sshKey by rememberSaveable { mutableStateOf(false) }
+    val hasAnySshKeyEntry = remember(passwordEntries) {
+        passwordEntries.any { it.isSshKeyEntry() }
+    }
+    LaunchedEffect(hasAnySshKeyEntry) {
+        if (!hasAnySshKeyEntry) sshKey = false
+    }
+    var barcode by rememberSaveable { mutableStateOf(false) }
+    val hasAnyBarcodeEntry = remember(passwordEntries) {
+        passwordEntries.any { it.isBarcodeEntry() }
+    }
+    LaunchedEffect(hasAnyBarcodeEntry) {
+        if (!hasAnyBarcodeEntry) barcode = false
+    }
+
+    val toggles = remember { PasswordListQuickFilterToggles() }
+    toggles.favorite = favorite
+    toggles.onFavoriteChange = { favorite = it }
+    toggles.twoFa = twoFa
+    toggles.onTwoFaChange = { twoFa = it }
+    toggles.notes = notes
+    toggles.onNotesChange = { notes = it }
+    toggles.passkey = passkey
+    toggles.onPasskeyChange = { passkey = it }
+    toggles.boundNote = boundNote
+    toggles.onBoundNoteChange = { boundNote = it }
+    toggles.attachments = attachments
+    toggles.onAttachmentsChange = { attachments = it }
+    toggles.uncategorized = uncategorized
+    toggles.onUncategorizedChange = { uncategorized = it }
+    toggles.localOnly = localOnly
+    toggles.onLocalOnlyChange = { localOnly = it }
+    toggles.manualStackOnly = manualStackOnly
+    toggles.onManualStackOnlyChange = { manualStackOnly = it }
+    toggles.neverStack = neverStack
+    toggles.onNeverStackChange = { neverStack = it }
+    toggles.unstacked = unstacked
+    toggles.onUnstackedChange = { unstacked = it }
+    toggles.wifi = wifi
+    toggles.onWifiChange = { wifi = it }
+    toggles.sshKey = sshKey
+    toggles.onSshKeyChange = { sshKey = it }
+    toggles.barcode = barcode
+    toggles.onBarcodeChange = { barcode = it }
+    toggles.hasAnyWifiEntry = hasAnyWifiEntry
+    toggles.hasAnySshKeyEntry = hasAnySshKeyEntry
+    toggles.hasAnyBarcodeEntry = hasAnyBarcodeEntry
+    return toggles
 }
 
 @Composable
