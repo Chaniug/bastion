@@ -136,6 +136,8 @@ class SettingsViewModel(
     
     // 回收站设置
     fun updateTrashEnabled(enabled: Boolean) = commitUpdate { updateTrashEnabled(enabled) }
+
+    fun updateDevBypassAppLock(enabled: Boolean) = commitUpdate { updateDevBypassAppLock(enabled) }
     
     fun updateTrashAutoDeleteDays(days: Int) = commitUpdate { updateTrashAutoDeleteDays(days) }
 

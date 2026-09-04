@@ -590,7 +590,8 @@ fun BastionApp(
                 MainAppLockPolicy.resolveAccessState(
                     securityManager,
                     context.applicationContext,
-                    settingsSnapshot.autoLockMinutes
+                    settingsSnapshot.autoLockMinutes,
+                    settingsSnapshot.devBypassAppLock
                 )
             }.getOrElse {
                 MainAppAccessState(
@@ -757,6 +758,7 @@ fun BastionContent(
     val mainAppAccessState = remember(
         isAuthenticated,
         settings.autoLockMinutes,
+        settings.devBypassAppLock,
         initialAuthState
     ) {
         if (isAuthenticated) {
@@ -765,7 +767,8 @@ fun BastionContent(
             MainAppLockPolicy.resolveAccessState(
                 securityManager,
                 context.applicationContext,
-                settings.autoLockMinutes
+                settings.autoLockMinutes,
+                settings.devBypassAppLock
             )
         }
     }
@@ -792,7 +795,8 @@ fun BastionContent(
                 val accessState = MainAppLockPolicy.resolveAccessState(
                     securityManager,
                     context.applicationContext,
-                    currentSettings.autoLockMinutes
+                    currentSettings.autoLockMinutes,
+                    currentSettings.devBypassAppLock
                 )
 
                     if (!currentIsAuthenticated && accessState.canEnterMainApp) {

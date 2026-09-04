@@ -1367,6 +1367,8 @@
     <string name="developer_functions">开发者功能</string>
     <string name="developer_launcher_name_use_pass">主应用名称显示 bastionpass</string>
     <string name="developer_launcher_name_use_pass_desc">开启后桌面主入口显示 bastionpass，关闭后显示 bastionpass。只影响主入口名称。</string>
+    <string name="developer_bypass_app_lock">跳过应用锁</string>
+    <string name="developer_bypass_app_lock_desc">开启后启动直接进入密码库，不再验证主密码或指纹。仅供开发调试，用完后请记得关闭。</string>
     <string name="developer_warning">⚠️ 开发者功能仅供测试使用，请勿在生产环境中启用</string>
     <string name="developer_log_buffer_cleared">日志缓冲区已清除</string>
     <string name="developer_clear_failed">清除失败: %s</string>

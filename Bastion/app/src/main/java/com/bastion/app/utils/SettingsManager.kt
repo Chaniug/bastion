@@ -194,6 +194,7 @@ class SettingsManager(private val context: Context) {
             stringPreferencesKey("password_website_stack_match_mode")
         private val TOTP_TIME_OFFSET_KEY = intPreferencesKey("totp_time_offset") // TOTP时间偏移（秒）
         private val TRASH_ENABLED_KEY = booleanPreferencesKey("trash_enabled") // 回收站功能开关
+        private val DEV_BYPASS_APP_LOCK_KEY = booleanPreferencesKey("dev_bypass_app_lock") // 开发者：跳过应用锁
         private val TRASH_AUTO_DELETE_DAYS_KEY = intPreferencesKey("trash_auto_delete_days") // 回收站自动清空天数
         private val ICON_CARDS_ENABLED_KEY = booleanPreferencesKey("icon_cards_enabled") // 带图标卡片开关
         private val APP_LAUNCHER_ICON_KEY = stringPreferencesKey("app_launcher_icon") // 主应用图标样式
@@ -540,6 +541,7 @@ class SettingsManager(private val context: Context) {
                 preferences[PASSWORD_WEBSITE_STACK_MATCH_MODE_KEY] ?: "strict",
             totpTimeOffset = preferences[TOTP_TIME_OFFSET_KEY] ?: 0,
             trashEnabled = preferences[TRASH_ENABLED_KEY] ?: true,
+            devBypassAppLock = preferences[DEV_BYPASS_APP_LOCK_KEY] ?: false,
             trashAutoDeleteDays = preferences[TRASH_AUTO_DELETE_DAYS_KEY] ?: 30,
             iconCardsEnabled = preferences[ICON_CARDS_ENABLED_KEY] ?: true,
             thirdPartyFaviconEnabled = preferences[THIRD_PARTY_FAVICON_ENABLED_KEY] ?: false,
@@ -865,6 +867,12 @@ class SettingsManager(private val context: Context) {
     suspend fun updateTrashEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[TRASH_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun updateDevBypassAppLock(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DEV_BYPASS_APP_LOCK_KEY] = enabled
         }
     }
 

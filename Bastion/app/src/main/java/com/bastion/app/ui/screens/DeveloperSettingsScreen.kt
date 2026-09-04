@@ -230,6 +230,18 @@ fun DeveloperSettingsScreen(
                         }
                     }
                 )
+
+                SettingsItemWithSwitch(
+                    icon = Icons.Default.LockOpen,
+                    title = stringResource(R.string.developer_bypass_app_lock),
+                    subtitle = stringResource(R.string.developer_bypass_app_lock_desc),
+                    checked = settings.devBypassAppLock,
+                    onCheckedChange = { enabled ->
+                        scope.launch {
+                            viewModel.updateDevBypassAppLock(enabled)
+                        }
+                    }
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
 

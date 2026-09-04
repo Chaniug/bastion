@@ -519,6 +519,7 @@ data class AppSettings(
     val passwordWebsiteStackMatchMode: String = "strict", // 网站自动堆叠匹配模式：strict/relaxed
     val totpTimeOffset: Int = 0, // TOTP时间偏移（秒），用于校正系统时间误差
     val trashEnabled: Boolean = true, // 回收站功能是否启用
+    val devBypassAppLock: Boolean = false, // 开发者：跳过应用锁直接进入密码库（仅供调试，默认关闭）
     val trashAutoDeleteDays: Int = 30, // 回收站自动清空天数（0=不自动清空，-1=禁用回收站）
     val iconCardsEnabled: Boolean = true, // 是否启用带图标卡片
     val appLauncherIcon: AppLauncherIcon = AppLauncherIcon.MODERN, // 主应用图标样式

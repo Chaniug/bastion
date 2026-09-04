@@ -15,7 +15,8 @@ object MainAppLockPolicy {
     fun resolveAccessState(
         securityManager: SecurityManager,
         context: Context,
-        autoLockMinutes: Int
+        autoLockMinutes: Int,
+        devBypassAppLock: Boolean = false
     ): MainAppAccessState {
         val firstTime = !securityManager.isMasterPasswordSet()
         if (firstTime) {
@@ -24,6 +25,17 @@ object MainAppLockPolicy {
                 bypassEnabled = false,
                 canRestoreSession = false,
                 reason = "first_time_setup_required"
+            )
+        }
+
+        // 开发者调试开关：跳过主应用锁直接进入，省去每次调试都要过一遍主密码/指纹。
+        // 仅在主密码已设置时生效——首次设置流程本身就要引导建密码，绕过没有意义。
+        if (devBypassAppLock) {
+            return MainAppAccessState(
+                isFirstTime = false,
+                bypassEnabled = true,
+                canRestoreSession = true,
+                reason = "dev_bypass_app_lock"
             )
         }
 
