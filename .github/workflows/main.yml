@@ -129,12 +129,13 @@ jobs:
       - name: Build Debug APK (build gate)
         run: |
           set +e
-          # previewVersionSuffix 让 debug 包 versionName 自带构建来源（adb dumpsys 一眼分辨）。
-          # 用 run_number + UTC 时间戳，不依赖 git 历史（本 job 是 fetch-depth=1 浅克隆）。
-          # 值里用连字符不用点：Gradle 会把 -P 值中的 "." 当任务名缩写解析，
-          # 报 "Task '.r123...' not found"。
+          # versionName 形如 1.0.0-dev-78db0ed：dev 标识 + 短 commit SHA（可直接 git show 定位代码）。
+          # 用 GITHUB_SHA 而非 git rev-parse：本 job 是 fetch-depth=1 浅克隆，本地 git 无历史，
+          # 而 GITHUB_SHA 由 Actions 注入，不受克隆深度影响。
+          # 不再拼日期：versionCode 已是 epoch 秒（单调递增、保证可覆盖安装），日期属于冗余。
+          # 值里用连字符不用点：Gradle 会把 -P 值中的 "." 当任务名缩写解析并导致构建失败。
           ./gradlew :app:assembleDebug --stacktrace \
-            -PpreviewVersionSuffix=debug-r${{ github.run_number }}-$(date -u +%Y%m%d%H%M) 2>&1 | tee /tmp/build_log.txt
+            -PpreviewVersionSuffix=dev-$(echo ${GITHUB_SHA} | cut -c1-7) 2>&1 | tee /tmp/build_log.txt
           BUILD_EXIT=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT" -ne 0 ]; then
             echo "::notice title=Build gate diagnostics::build_failed=true"
