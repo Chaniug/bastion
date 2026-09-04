@@ -272,6 +272,7 @@ fun TotpListContent(
     val totpItems = remember(parsedTotpItems) { parsedTotpItems.map { it.item } }
     val totpDataById = remember(parsedTotpItems) { parsedTotpItems.associate { it.item.id to it.totpData } }
     val allTotpItemsForStats by viewModel.allTotpItems.collectAsState()
+    val duplicateTotpIds by viewModel.duplicateTotpItemIds.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val passwords by passwordViewModel.allPasswords.collectAsState(initial = emptyList())
     val passwordMap = remember(passwords) { passwords.associateBy { it.id } }
@@ -1179,6 +1180,12 @@ contentPadding = PaddingValues(
                                     ),
                                     parsedTotpData = totpDataById[item.id]
                                 )
+
+                                // 同一密钥被保存了多份（如既存独立验证器、又绑进密码条目）→ 打标记提示。
+                                // 仅提示不自动删除：两种存在形式可能代表不同使用意图。
+                                if (item.id in duplicateTotpIds) {
+                                    DuplicateTotpBadge()
+                                }
                             }
                         }
                     }
@@ -1485,3 +1492,32 @@ private fun BoundTotpDeleteWarningDialog(
  * TOTP项卡片
  */
 
+
+/**
+ * 同一 TOTP 密钥被保存多份时的提示角标（文件末尾独立定义，避免插进 TotpListContent 体内）。
+ *
+ * 出现场景：同一个密钥既存为独立验证器、又绑定进了某个密码条目。二者在列表里是
+ * 不同的 SecureItem（绑定型按 boundPasswordId|identityKey 去重、独立型按 identityKey
+ * 去重，互不合并），内容却完全相同，改任一边另一边都不会跟着变化。
+ *
+ * 只做提示，不做任何自动清理——保留哪一份由用户决定，避免误删数据。
+ */
+@Composable
+private fun BoxScope.DuplicateTotpBadge() {
+    Box(
+        modifier = Modifier
+            .padding(top = 8.dp, end = 8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .align(Alignment.TopEnd)
+    ) {
+        Text(
+            text = stringResource(R.string.totp_duplicate_badge),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+    }
+}

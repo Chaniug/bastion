@@ -433,6 +433,30 @@ class TotpViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    /**
+     * 同一 TOTP 密钥被保存了多份的条目 id，供界面提示使用。
+     *
+     * 典型场景：同一个密钥既存为独立验证器、又绑定进某个密码条目。二者在
+     * [collapseDuplicateBoundStoredTotps] 里分属不同去重域（绑定型按
+     * boundPasswordId|identityKey，独立型按 identityKey），不会被合并，
+     * 界面上于是出现两条内容相同的条目——改任一边另一边都不会跟着变。
+     *
+     * 这里**只标记不删除**：两种存在形式可能代表不同使用意图，自动清理有误删风险。
+     */
+    val duplicateTotpItemIds: StateFlow<Set<Long>> = allTotpItems
+        .map { items -> findDuplicateIdentityKeyItemIds(items) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    private fun findDuplicateIdentityKeyItemIds(items: List<SecureItem>): Set<Long> {
+        val idsByIdentityKey = mutableMapOf<String, MutableList<Long>>()
+        for (item in items) {
+            val data = parseStoredTotpData(item) ?: continue
+            val identityKey = buildTotpIdentityKey(data)
+            idsByIdentityKey.getOrPut(identityKey) { mutableListOf() }.add(item.id)
+        }
+        return idsByIdentityKey.values.filter { it.size > 1 }.flatten().toSet()
+    }
     
     // TOTP项目列表 - 合并实际存储的TOTP和从密码authenticatorKey生成的虚拟TOTP
     val totpItems: StateFlow<List<SecureItem>> = combine(
