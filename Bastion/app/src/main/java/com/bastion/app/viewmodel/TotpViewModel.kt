@@ -338,8 +338,23 @@ class TotpViewModel(
         storedTotps: List<SecureItem>,
         allPasswords: List<PasswordEntry>
     ): List<SecureItem> {
-        val displayStoredTotps = collapseDuplicateBoundStoredTotps(storedTotps)
-        val existingKeys = storedTotps.mapNotNull { item ->
+        // 绑定型验证码自身不持有 folder —— 它的真实位置随所属密码条目（见
+        // savePasswordBoundTotpInternal：bitwardenFolderId 刻意置 null，避免
+        // 载体与密码条目各记一份位置而不同步）。
+        // 但界面按 folder 分组时若直接用载体这个空 folder，它们就会全部堆进
+        // 「无文件夹」，与服务器上的实际位置（密码条目所在文件夹）对不上。
+        // 这里按宿主密码条目归位，只影响显示、不落库，因此密码条目换文件夹时自动跟随。
+        val passwordById = allPasswords.associateBy { it.id }
+        val relocatedStoredTotps = storedTotps.map { item ->
+            val boundPasswordId = parseStoredTotpData(item)?.boundPasswordId ?: return@map item
+            val hostPassword = passwordById[boundPasswordId] ?: return@map item
+            item.copy(
+                bitwardenVaultId = hostPassword.bitwardenVaultId ?: item.bitwardenVaultId,
+                bitwardenFolderId = hostPassword.bitwardenFolderId
+            )
+        }
+        val displayStoredTotps = collapseDuplicateBoundStoredTotps(relocatedStoredTotps)
+        val existingKeys = relocatedStoredTotps.mapNotNull { item ->
             parseStoredTotpData(item)
                 ?.let(::buildTotpIdentityKey)
         }.toSet()
