@@ -30,12 +30,23 @@ object BitwardenTrashRestoreStateHelper {
         candidate: SecureItem,
         restoreOutcome: BitwardenRestoreQueueOutcome
     ): SecureItem {
-        val localModified = resolveLocalModified(
-            hasBitwardenVault = candidate.bitwardenVaultId != null,
-            hasRemoteCipher = !candidate.bitwardenCipherId.isNullOrBlank(),
-            currentValue = candidate.bitwardenLocalModified,
-            restoreOutcome = restoreOutcome
-        )
+        // 绑定型验证器载体（REFERENCE、无独立 cipher）不参与独立上传：它的验证码数据
+        // 本体随所属密码条目的 authenticatorKey → cipher.login.totp 同步。恢复它时若按
+        // 「vaultId 非空但无 cipher = 待上传新条目」处理（hasRemoteCipher=false → 标脏），
+        // 载体会永远卡在"待同步"状态——上传器会跳过无独立 cipher 的条目，没有任何
+        // 环节能把这个脏标记清掉。密码条目恢复链路已负责远端数据，载体恢复即干净。
+        val isReferenceCarrier = candidate.syncStatus == "REFERENCE" &&
+            candidate.bitwardenCipherId.isNullOrBlank()
+        val localModified = if (isReferenceCarrier) {
+            false
+        } else {
+            resolveLocalModified(
+                hasBitwardenVault = candidate.bitwardenVaultId != null,
+                hasRemoteCipher = !candidate.bitwardenCipherId.isNullOrBlank(),
+                currentValue = candidate.bitwardenLocalModified,
+                restoreOutcome = restoreOutcome
+            )
+        }
         return candidate.copy(
             bitwardenLocalModified = localModified,
             syncStatus = resolveSyncStatus(

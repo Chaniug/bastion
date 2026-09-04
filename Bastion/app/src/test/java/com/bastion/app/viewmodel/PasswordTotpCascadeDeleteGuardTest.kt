@@ -131,6 +131,44 @@ class PasswordTotpCascadeDeleteGuardTest {
         )
     }
 
+    @Test
+    fun trashRestoreMustClearDirtyFlagOnBoundTotpCarriers() {
+        val source = projectFile(
+            "app/src/main/java/com/bastion/app/viewmodel/TrashViewModel.kt"
+        ).readText()
+
+        val restoreBody = source
+            .substringAfter("private suspend fun cascadeRestoreBoundTotpItems(")
+            .substringBefore("private fun needsKeepassRestore(")
+
+        assertTrue(
+            "Cascade restore must explicitly clear bitwardenLocalModified on bound TOTP carriers: they have no independent cipher, so no uploader pass can ever clear the flag and the authenticator card would stay 'pending sync' forever.",
+            restoreBody.contains("bitwardenLocalModified = false")
+        )
+        assertTrue(
+            "Cascade restore must preserve the REFERENCE sync status: it means 'synced together with the owning password entry', not an independent pending upload.",
+            restoreBody.contains("REFERENCE")
+        )
+    }
+
+    @Test
+    fun restoreStateHelperMustNotMarkReferenceCarriersDirty() {
+        val source = projectFile(
+            "app/src/main/java/com/bastion/app/bitwarden/BitwardenTrashRestoreStateHelper.kt"
+        ).readText()
+
+        val secureItemBody = source
+            .substringAfter("fun applyToSecureItem(")
+            .substringBefore("private fun resolveLocalModified(")
+
+        assertTrue(
+            "BitwardenTrashRestoreStateHelper must special-case REFERENCE carriers (no independent cipher is the normal state for bound TOTPs, not a pending upload). Marking them dirty produces a permanent 'not synced' badge on the authenticator card.",
+            secureItemBody.contains("isReferenceCarrier") &&
+                secureItemBody.contains("syncStatus == \"REFERENCE\"") &&
+                secureItemBody.contains("bitwardenCipherId.isNullOrBlank()")
+        )
+    }
+
     private fun projectFile(relativePath: String): File {
         val candidates = mutableListOf<File>()
         var dir: File? = File(System.getProperty("user.dir") ?: ".")

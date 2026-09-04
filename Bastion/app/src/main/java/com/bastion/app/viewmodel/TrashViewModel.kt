@@ -626,7 +626,13 @@ class TrashViewModel(application: Application) : AndroidViewModel(application) {
                         item.copy(
                             isDeleted = false,
                             deletedAt = null,
-                            updatedAt = Date()
+                            updatedAt = Date(),
+                            // 绑定型载体（REFERENCE、无独立 cipher）永远不会被上传器单独上传，
+                            // 若沿用恢复时的"待上传"脏标记，图标会永远停在"未同步"。
+                            // 这里显式清脏：与密码条目的 cipher 同步状态保持一致，兼作存量卡死数据的自愈。
+                            bitwardenLocalModified = false,
+                            // REFERENCE 表示"跟随密码条目同步"，恢复后仍是该语义，不可被降级改写。
+                            syncStatus = if (item.syncStatus == "REFERENCE") "REFERENCE" else item.syncStatus
                         )
                     )
                     android.util.Log.i(
