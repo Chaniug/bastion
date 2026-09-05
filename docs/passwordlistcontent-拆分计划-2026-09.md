@@ -134,9 +134,9 @@ LaunchedEffect(configuredQuickFilterItems) {
 
 **收益估计**：~160 行参数计算移走，是单步最大收益。
 
-### 3.3 第四步：其余状态与派生
+### 3.3 第四步：其余状态与派生（⏸ 待实机数据决策 + 需用户确认后动手）
 
-约 80 个 `collectAsState` + 大量 `remember` / `derivedStateOf` + 19 个 `LaunchedEffect`。按职责分组继续下沉：
+约 80 个 `collectAsState` + 大量 `remember` / `derivedStateOf` + 23 个 `LaunchedEffect`/`BackHandler`。按职责分组继续下沉：
 
 - 滚动状态（`listState`、`listTopPadding`、滚动重置 effect）
 - 选择状态（`isSelectionMode`、`selectedItemKeys`、`swipeSelectionAnchorKey` + 相关 effect）
@@ -144,6 +144,12 @@ LaunchedEffect(configuredQuickFilterItems) {
 - 派生筛选结果（`preStackFilteredPasswordEntries`、`visiblePasswordEntries`、`visibleAggregateItems`）
 
 每组下沉为一个独立 Composable + 状态容器。
+
+**⏸ 决策门槛（2026-09-05 补充）**：步骤 0-3 完成后主函数余 1410 行（签名 36 + 函数体 1374）。第四步与前三步不同，属于**语义有风险的重点改动**，需满足两个前置条件才动手：
+1. **实机数据支撑**：装包实测后 `compiler instruction limit` 警告仍在，才值得继续；若已消失则停止（避免无收益重构）。
+2. **用户确认方案**：推荐用 `rememberXxxState()` 状态容器模式（与已完成的 `rememberPasswordListQuickFilterToggles` 同款），**不要再开 Host**——状态下沉后调用处仍需读写这些状态，再开 Host 会导致参数回调爆炸。分组顺序建议：对话框状态 → 选择状态 → 滚动状态 → 派生筛选结果（前两组机械安全，后两组涉及重组边界，需逐组装包回归）。
+
+> 接力的 AI：第四步动手前务必确认上面两个前置条件均已满足。
 
 ---
 
