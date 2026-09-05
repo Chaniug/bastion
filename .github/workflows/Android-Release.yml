@@ -147,6 +147,25 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
+      # build.gradle 用 `git describe --tags --exact-match HEAD` 取 release 版本名：
+      # 命中则 versionName = tag 去掉 v（与 Release 标题一致）；否则 fallback 成
+      # "1.0.<commit 数>"。手动 dispatch 时 HEAD 只是所选分支的一个普通 commit、此时
+      # tag 尚未创建（要等发布那一步才建），于是永远走 fallback。
+      #
+      # 实测后果（v1.0.325）：APK 内 versionName='1.0.1599'，但 Release 名是 v1.0.325；
+      # 而 UpdateChecker 是拿 tag 与 BuildConfig.VERSION_NAME 逐段数值比较的，
+      # [1,0,325] < [1,0,1599] → 判定"已是最新"，stable 渠道的更新检测因此实质失效。
+      #
+      # 这里先在本地打上目标 tag，让上面那条分支命中。仅本地生效，不 push；
+      # push tag 触发时 tag 本就存在，-f 覆盖亦幂等。
+      - name: Create local tag so versionName matches the release tag
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "${{ steps.meta.outputs.tag }}" HEAD
+          git describe --tags --exact-match HEAD
+
       - name: Build Release APK (stable, minified)
         shell: bash
         run: |
