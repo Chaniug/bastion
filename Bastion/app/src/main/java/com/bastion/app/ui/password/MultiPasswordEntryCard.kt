@@ -10,9 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +25,7 @@ import com.bastion.app.data.primaryLinkedAppPackageName
 import com.bastion.app.data.UnmatchedIconHandlingStrategy
 import com.bastion.app.ui.icons.UnmatchedIconFallback
 import com.bastion.app.ui.icons.shouldShowFallbackSlot
+import com.bastion.app.ui.rememberTotpSmoothProgress
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -445,12 +443,9 @@ private fun MultiPasswordAuthenticatorInlineRow(
             }
         }
         state.progress?.let { progress ->
+            // 数据源已降为秒级 tick，平滑由绘制层动画补齐（避免 20Hz 重组）。
             val animatedProgress = if (smoothProgress) {
-                animateFloatAsState(
-                    targetValue = progress,
-                    animationSpec = tween(durationMillis = 80, easing = LinearEasing),
-                    label = "multi_password_auth_progress"
-                ).value
+                rememberTotpSmoothProgress(progress)
             } else {
                 progress
             }

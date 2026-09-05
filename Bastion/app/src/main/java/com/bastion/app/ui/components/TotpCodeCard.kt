@@ -58,6 +58,7 @@ import com.bastion.app.util.VibrationPatterns
 import com.bastion.app.bitwarden.sync.SyncStatus
 import com.bastion.app.ui.icons.UnmatchedIconFallback
 import com.bastion.app.ui.icons.shouldShowFallbackSlot
+import com.bastion.app.ui.rememberTotpSmoothProgress
 import com.bastion.app.ui.rememberTotpTickerMillis
 
 /**
@@ -652,8 +653,20 @@ fun TotpCodeCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val shouldBlink = remainingSeconds <= 5 && totpData.otpType != OtpType.HOTP
+                // 闪烁相位改由独立动画驱动（500ms 渐隐渐显）：progress ticker 降为秒级后，
+                // 原先按 500ms 取模的闪烁会退化为 1s 周期；动画驱动与数据层解耦且不增加重组。
+                // 仅 shouldBlink 时组合，其余时间零开销。
                 val blinkAlpha = if (shouldBlink) {
-                    if (((progressTimeMillis / 500L) % 2L) == 0L) 1f else 0.5f
+                    val blinkTransition = rememberInfiniteTransition(label = "code_blink")
+                    blinkTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 0.5f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 500, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "code_blink_alpha"
+                    ).value
                 } else {
                     1f
                 }
@@ -859,14 +872,19 @@ private fun M3EProgressIndicator(
 ) {
     val safeProgress = if (progress.isFinite()) progress else 0f
     val clampedProgress = safeProgress.coerceIn(0f, 1f)
-    val animatedProgress by animateFloatAsState(
-        targetValue = clampedProgress,
-        animationSpec = tween(
-            durationMillis = if (smoothProgress) 50 else 280,
-            easing = if (smoothProgress) LinearEasing else FastOutSlowInEasing
-        ),
-        label = "m3e_progress"
-    )
+    val animatedProgress: Float = if (smoothProgress) {
+        // 数据源已降为秒级 tick，平滑由绘制层 1s 线性动画补齐（避免 20Hz 重组）。
+        rememberTotpSmoothProgress(clampedProgress)
+    } else {
+        animateFloatAsState(
+            targetValue = clampedProgress,
+            animationSpec = tween(
+                durationMillis = 280,
+                easing = FastOutSlowInEasing
+            ),
+            label = "m3e_progress"
+        ).value
+    }
 
     val waveOffset = if (style == ProgressBarStyle.WAVE) {
         val waveTransition = rememberInfiniteTransition(label = "m3e_wave")

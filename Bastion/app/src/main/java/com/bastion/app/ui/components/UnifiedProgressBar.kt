@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bastion.app.data.ProgressBarStyle
+import com.bastion.app.ui.rememberTotpSmoothProgress
 import com.bastion.app.ui.rememberTotpTickerMillis
 import kotlin.math.PI
 import kotlin.math.sin
@@ -140,21 +141,26 @@ private fun LinearProgressBar(
     modifier: Modifier = Modifier,
     smoothProgress: Boolean = true
 ) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(
-            durationMillis = if (smoothProgress) 50 else 200, 
-            easing = FastOutSlowInEasing
-        ),
-        label = "linear_progress"
-    )
-    
+    val animatedProgress: Float = if (smoothProgress) {
+        // 数据源已降为秒级 tick，平滑由绘制层 1s 线性动画补齐（避免 20Hz 重组）。
+        rememberTotpSmoothProgress(progress)
+    } else {
+        animateFloatAsState(
+            targetValue = progress.coerceIn(0f, 1f),
+            animationSpec = tween(
+                durationMillis = 200,
+                easing = FastOutSlowInEasing
+            ),
+            label = "linear_progress"
+        ).value
+    }
+
     Canvas(modifier = modifier) {
         val width = size.width
         val height = size.height
-        
+
         if (width <= 0f || height <= 0f) return@Canvas
-        
+
         val strokeWidth = height * 0.6f
         val centerY = height / 2f
         val progressWidth = width * animatedProgress
@@ -198,14 +204,19 @@ private fun WaveProgressBar(
     modifier: Modifier = Modifier,
     smoothProgress: Boolean = true
 ) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(
-            durationMillis = if (smoothProgress) 50 else 300, 
-            easing = FastOutSlowInEasing
-        ),
-        label = "wave_progress"
-    )
+    val animatedProgress: Float = if (smoothProgress) {
+        // 数据源已降为秒级 tick，平滑由绘制层 1s 线性动画补齐（避免 20Hz 重组）。
+        rememberTotpSmoothProgress(progress)
+    } else {
+        animateFloatAsState(
+            targetValue = progress.coerceIn(0f, 1f),
+            animationSpec = tween(
+                durationMillis = 300,
+                easing = FastOutSlowInEasing
+            ),
+            label = "wave_progress"
+        ).value
+    }
     
     // 波浪动画 - 让波浪缓慢流动
     val waveTransition = rememberInfiniteTransition(label = "wave_animation")

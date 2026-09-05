@@ -185,6 +185,7 @@ import com.bastion.app.ui.password.resolvePasswordPageDisplayedTypes
 import com.bastion.app.ui.password.resolvePasswordPageVisibleTypes
 import com.bastion.app.ui.password.sanitizeSelectedPasswordPageTypes
 import com.bastion.app.ui.password.rememberPasswordAuthenticatorDisplayState
+import com.bastion.app.ui.rememberTotpSmoothProgress
 import com.bastion.app.ui.rememberTotpTickerMillis
 import com.bastion.app.viewmodel.BankCardViewModel
 import com.bastion.app.viewmodel.CategoryFilter
@@ -3778,12 +3779,9 @@ private fun VaultV2AuthenticatorInlineRow(
 			}
 		}
 		state.progress?.let { progress ->
+			// 数据源已降为秒级 tick，平滑由绘制层动画补齐（避免 20Hz 重组）。
 			val animatedProgress = if (smoothProgress) {
-				animateFloatAsState(
-					targetValue = progress.coerceIn(0f, 1f),
-					animationSpec = tween(durationMillis = 80, easing = LinearEasing),
-					label = "vault_v2_auth_progress",
-				).value
+				rememberTotpSmoothProgress(progress)
 			} else {
 				progress.coerceIn(0f, 1f)
 			}
