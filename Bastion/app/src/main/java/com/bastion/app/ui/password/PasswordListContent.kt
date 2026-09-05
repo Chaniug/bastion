@@ -1304,18 +1304,7 @@ LaunchedEffect(quickFiltersExpanded) {
             searchQuery.isEmpty() &&
             !shouldGateInitialPasswordFirstFrame
     }
-    var showEmptyStateWithHeaders by remember {
-        mutableStateOf(false)
-    }
-    LaunchedEffect(shouldShowEmptyState) {
-        if (!shouldShowEmptyState) {
-            showEmptyStateWithHeaders = false
-            return@LaunchedEffect
-        }
-        delay(PASSWORD_EMPTY_STATE_DEBOUNCE_MS)
-        showEmptyStateWithHeaders = true
-    }
-    val listState = rememberPasswordListLazyListState(
+    val scrollState = rememberPasswordListScrollState(
         viewModel = viewModel,
         currentListItemKeys = passwordPageListItemKeys,
         scrollToTopRequestKey = scrollToTopRequestKey,
@@ -1325,73 +1314,11 @@ LaunchedEffect(quickFiltersExpanded) {
             isPasswordPageListModelReady &&
                 hasVisibleListItems &&
                 !shouldGateInitialPasswordFirstFrame,
-        onBackToTopVisibilityChange = onBackToTopVisibilityChange
+        onBackToTopVisibilityChange = onBackToTopVisibilityChange,
+        shouldShowEmptyState = shouldShowEmptyState,
+        usesLazyColumn = usesLazyColumn,
+        currentFilter = currentFilter
     )
-
-    // 顶部 Bar 收起判定（快照式）：滚动越过一个很小的阈值(8dp)就整体切换，
-    // 不随滚动距离连续缩放（用户反馈"逐渐缩小"不自然）。回到列表顶部自动恢复展开。
-    val scrollCollapseThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) {
-        8.dp.toPx()
-    }
-    val scrollCollapseFraction by remember(listState) {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0 ||
-                listState.firstVisibleItemScrollOffset.toFloat() > scrollCollapseThresholdPx
-            ) {
-                1f
-            } else {
-                0f
-            }
-        }
-    }
-
-    // 列表顶部留白跟随 Bar 当前高度联动：展开 88dp / 收起 48dp。
-    // 必须与 ExpressiveTopBar 的 barMinHeight 保持一致，否则首条内容会被 Bar 吞掉。
-    // 另加状态栏高度：沉浸式布局下内容从屏幕顶部开始，首条要落在状态栏+Bar 之下。
-    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val listTopPadding by animateDpAsState(
-        targetValue = statusBarTopPadding +
-            androidx.compose.ui.unit.lerp(72.dp, 48.dp, scrollCollapseFraction),
-        animationSpec = tween(200),
-        label = "list_top_padding"
-    )
-
-    var lastHandledFilterForScrollReset by remember {
-        mutableStateOf<CategoryFilter?>(null)
-    }
-    LaunchedEffect(currentFilter, usesLazyColumn) {
-        val previousFilter = lastHandledFilterForScrollReset
-        if (previousFilter == null) {
-            lastHandledFilterForScrollReset = currentFilter
-            return@LaunchedEffect
-        }
-        if (previousFilter == currentFilter) {
-            return@LaunchedEffect
-        }
-        lastHandledFilterForScrollReset = currentFilter
-        Log.d(
-            PASSWORD_SCROLL_LOG_TAG,
-            "source=v1_filter_change_force_top from=$previousFilter to=$currentFilter usesLazyColumn=$usesLazyColumn"
-        )
-        if (usesLazyColumn) {
-            runCatchingObserved {
-                listState.scrollToItem(0, 0)
-            }.onFailure { throwable ->
-                if (throwable is CancellationException) return@onFailure
-                Log.w(
-                    PASSWORD_SCROLL_LOG_TAG,
-                    "source=v1_filter_change_force_top_failed to=$currentFilter",
-                    throwable
-                )
-            }
-        }
-        viewModel.updatePasswordListScrollPosition(
-            0,
-            0,
-            null,
-            source = "v1_filter_change_force_top"
-        )
-    }
 
     val selectionHandlers = rememberPasswordListSelectionHandlers(
         context = context,
@@ -1500,7 +1427,7 @@ LaunchedEffect(quickFiltersExpanded) {
             hasVisibleCategoryQuickFilters = hasVisibleCategoryQuickFilters,
             aggregateUiState = aggregateUiState,
             emptyStateMessage = emptyStateMessage,
-            listState = listState,
+            listState = scrollState.listState,
             appSettings = appSettings,
             configuredQuickFilterItems = configuredQuickFilterItems,
             quickFolderStyle = quickFolderStyle,
@@ -1527,10 +1454,10 @@ LaunchedEffect(quickFiltersExpanded) {
             passwordEntries = passwordEntries,
             aggregateConfig = aggregateConfig,
             onNavigateToPasskeys = onNavigateToPasskeys,
-            listTopPadding = listTopPadding,
+            listTopPadding = scrollState.listTopPadding,
             quickFilterToggles = quickFilterToggles,
             effectiveQuickFolderBreadcrumbs = effectiveQuickFolderBreadcrumbs,
-            showEmptyStateWithHeaders = showEmptyStateWithHeaders,
+            showEmptyStateWithHeaders = scrollState.showEmptyStateWithHeaders,
             effectiveCategoryQuickFilterShortcuts = effectiveCategoryQuickFilterShortcuts,
             effectiveQuickFolderCardShortcuts = effectiveQuickFolderCardShortcuts,
             decryptAuthenticatorKeyForPreview = decryptAuthenticatorKeyForPreview
@@ -1583,7 +1510,7 @@ LaunchedEffect(quickFiltersExpanded) {
                 onTitleClick = { quickFiltersExpanded = !quickFiltersExpanded },
                 quickFiltersExpanded = quickFiltersExpanded,
                 onNavigateToPasskeys = onNavigateToPasskeys,
-                scrollCollapseFraction = scrollCollapseFraction,
+                scrollCollapseFraction = scrollState.scrollCollapseFraction,
                 quickFilterToggles = quickFilterToggles,
                 appSettings = appSettings,
                 aggregateUiState = aggregateUiState,
