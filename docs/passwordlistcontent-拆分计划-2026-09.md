@@ -248,8 +248,14 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 0 | `50c6192` | ✅ 已完成 | 快捷筛选状态下沉 |
 | 1 | `a7702b7` | ✅ 已完成（CI #33908818507 绿） | `configuredQuickFilterItems` + 重置 effect 下沉为 `rememberPasswordListConfiguredQuickFilterItems` |
 | 2 | `530a674` + `38bc726` | ✅ 已完成（CI #33934428304 绿） | 两个嵌套 Composable 提升为顶层 `PasswordListTopSectionHost` / `PasswordListMainPaneSection`；quickFilter 32 参数收拢为 `quickFilterToggles` 容器 |
-| 3 | `95954e3` + MoveSheet 提交 | ✅ 已完成（CI 绿） | 三个大块调用全部提升为顶层 Host：`PasswordListQuickStatusDialogsHost`（10 参数）/ `PasswordListDialogsHost`（31 参数）/ `PasswordBatchMoveSheetHost`（19 参数，17 同名转发 + 2 赋值 lambda，无计算型参数，指令数收益小但清单闭环）；主函数余 1410 行 |
-| 验证 | — | ⏳ 待用户装包 | logcat 无 `compiler instruction limit`（权威判定） |
+| 3 | `95954e3` + `c8efb57f` | ✅ 已完成（CI 绿） | 三个大块调用全部提升为顶层 Host：`PasswordListQuickStatusDialogsHost`（10 参数）/ `PasswordListDialogsHost`（31 参数）/ `PasswordBatchMoveSheetHost`（19 参数）；主函数余 1410 行 |
+| 实测 | c8efb57 包 | ⚠️ 未达标 | 2026-09-05 荣耀真机日志：`PasswordListContent` **18199 指令**（拆分前 18895，仅降 696/3.7%），330 次警告持续触发，仍超 16384 上限；`SimpleMainScreen` 16652 指令 17 次警告（另一大户，需单独拆）。结论：**调用块提升收益已尽，须做第四步状态下沉** |
+| 4 | — | 📋 计划待确认 | 见下方 [3.3 第四步](#33-第四步其余状态与派生-⏸-待实机数据决策--需用户确认后动手) |
+
+**实测数据明细（2026-09-05 10:04 导出，版本 1.0.0-dev-c8efb57）**：
+- 警告分布：`PasswordListContent` 330 次 / `SimpleMainScreen` 17 次，从启动 10:03:50 起每秒约 30 条持续触发（非一次性）
+- 主函数体量构成（c8efb57f 时点）：remember ×92、collectAsState ×17、LaunchedEffect ×18、BackHandler ×4、DisposableEffect ×1、derivedStateOf ×1；最大 UI 块 `Box`（1488-1612，125 行，内为 MainPaneSection 转发层，提升收益趋近零）
+- **指令大头在状态注册区（约 1080 行）**，而非 UI 调用块——继续提升调用块无收益，必须状态下沉
 
 > 接力的 AI：完成一步后请更新本表 + 在 [二、现状](#二现状截至-50c6192) 补充新提交的函数范围。
 >
