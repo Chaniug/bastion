@@ -39,8 +39,7 @@ internal class PasswordListScrollState(
 ) {
     val scrollCollapseFraction by scrollCollapseFractionState
     val listTopPadding by listTopPaddingState
-    var showEmptyStateWithHeaders by showEmptyStateWithHeadersState
-        private set
+    val showEmptyStateWithHeaders by showEmptyStateWithHeadersState
 }
 
 @Composable
