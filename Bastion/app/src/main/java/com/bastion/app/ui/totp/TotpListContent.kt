@@ -1131,8 +1131,10 @@ contentPadding = PaddingValues(
                             isSwiped = itemToDelete?.id == item.id,
                             // 【方案 A】默认锁定滑动（拖动排序时也锁）；长按激活后 3 秒内可滑；多选模式保留滑动可用
                             enabled = !isDragging && (isSelectionMode || armState.armed),
-                            armed = armState.armed && !isSelectionMode,
-                            allowSwipeLeft = !isSelectionMode,
+                            armed = armState.armed,
+                            // 长按激活（armed）时即使已进多选也放行左滑删除——否则长按进多选后删除路径被堵死；
+                            // 未激活的多选模式维持既有限制（只右滑选择，禁左滑删除）
+                            allowSwipeLeft = !isSelectionMode || armState.armed,
                             allowSwipeRight = true
                         ) {
                             // 包装卡片以支持拖动
