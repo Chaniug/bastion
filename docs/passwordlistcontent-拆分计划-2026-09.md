@@ -250,7 +250,10 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 2 | `530a674` + `38bc726` | ✅ 已完成（CI #33934428304 绿） | 两个嵌套 Composable 提升为顶层 `PasswordListTopSectionHost` / `PasswordListMainPaneSection`；quickFilter 32 参数收拢为 `quickFilterToggles` 容器 |
 | 3 | `95954e3` + `c8efb57f` | ✅ 已完成（CI 绿） | 三个大块调用全部提升为顶层 Host：`PasswordListQuickStatusDialogsHost`（10 参数）/ `PasswordListDialogsHost`（31 参数）/ `PasswordBatchMoveSheetHost`（19 参数）；主函数余 1410 行 |
 | 实测 | c8efb57 包 | ⚠️ 未达标 | 2026-09-05 荣耀真机日志：`PasswordListContent` **18199 指令**（拆分前 18895，仅降 696/3.7%），330 次警告持续触发，仍超 16384 上限；`SimpleMainScreen` 16652 指令 17 次警告（另一大户，需单独拆）。结论：**调用块提升收益已尽，须做第四步状态下沉** |
-| 4 | — | 📋 计划待确认 | 见下方 [3.3 第四步](#33-第四步其余状态与派生-⏸-待实机数据决策--需用户确认后动手) |
+| 4 | `323cb9c6` + `af476fa9` | ✅ 批1 已完成（CI 绿） | 对话框状态（17 var）下沉为 `PasswordListDialogState` 容器（独立文件，internal）；主函数 55 处读写点改 `dialogState.xxx`；`af476fa9` 同步修复源码守卫测试断言（CI #33938599186 红→绿） |
+| 4 | `377d1c64` | ✅ 批2 已完成（CI 绿） | 选择状态（3 var）下沉为 `PasswordListSelectionState` 容器；主函数 40 处替换；守卫测试断言同步更新 |
+| 4 | `1946ef5d` + `32e28c3d` | ✅ 批3 已完成（CI #33940176619 绿） | 滚动状态（listState/收起判定/顶距/空态防抖）下沉为 `PasswordListScrollState` 容器；`32e28c3d` 修复：**委托属性不能用 `private set`**，改 val 委托只读暴露 |
+| 4 | `55223e27` + `a33cf757` | ✅ 批4 已完成（CI #33941279186 绿） | manualStack 元数据 + 派生筛选链（groupingConfig→preStack 过滤→聚合堆叠→可见列表）下沉为 `PasswordListManualStackMeta` / `PasswordListDerivedFilters` 两个容器（同文件 private）；主函数删除 223 行（315..1468，体 1152 行，起始 1410 行）；`a33cf757` 修复编译（补 2 个异包 import + 容器可见性 private）。**待装包实测验证指令数** |
 
 **实测数据明细（2026-09-05 10:04 导出，版本 1.0.0-dev-c8efb57）**：
 - 警告分布：`PasswordListContent` 330 次 / `SimpleMainScreen` 17 次，从启动 10:03:50 起每秒约 30 条持续触发（非一次性）
@@ -269,3 +272,13 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 > - `selectedCount` 不再作为 host 参数，host 内直接 `selectedItemKeys.size` 计算；
 > - 踩坑记录：`PasswordBatchTransferGlobalProgressState` / `PasswordBatchDeleteGlobalProgressState` 定义在 `com.bastion.app.ui.password` 包，而 PasswordListContent.kt 的 package 是 `com.bastion.app.ui`——**同名目录≠同包**，参数类型需写全限定名（参照 MainPaneSection 写法）；`ManualStackDialogMode` / `QuickStatusKeePassSyncState` 虽然文件在 `ui/password/` 目录，但 package 声明是 `com.bastion.app.ui`，同包短名可直接用；
 > - 校验手段：内容锚定 + 括号配平定位调用块（行号漂移免疫），插入后全文件 `()` `{}` 配平 0/0、host 调用/定义各 1、全部参数类型按「import ∪ 同包 ∪ 内建」规则判定可解析。
+>
+> **步骤 4 实施备注（供后续参考）**：
+> - 四批全部采用「状态容器」模式：`internal/private class XxxState`（字段 `var x by mutableStateOf(...)`）+ `@Composable fun rememberXxxState(...)`，主函数读写点改为 `stateName.field` 属性访问——重组订阅语义与原 var 完全等价；
+> - **源码守卫测试是最大的回归面**：`MultiPasswordSaveRegressionGuardTest` 用 `source.contains("...源码文本...")` 断言实现细节，每批改动后都要同步更新断言（读容器文件 + 加前缀）。修复前先本地用 Python 模拟全部断言再提交，避免 CI 往返；
+> - **批 3 踩坑**：`var x by State<T>` 之后不能写 `private set`（Kotlin 委托属性不允许自定义 accessor，编译错误）——容器对内用 MutableState 实例写值，对外 val 委托只读暴露；
+> - **批 4 踩坑 1（前向引用）**：容器调用插在主函数的位置必须满足依赖顺序——`rememberPasswordListManualStackMeta` 依赖 `shouldLoadManualStackMetadata`，插入点必须在该 val 定义之后，不能想当然放在原 var 声明位置；
+> - **批 4 踩坑 2（异包类型，同步骤 3 的坑又踩一次）**：`PasswordAggregateManualStackBuildResult`（`com.bastion.app.ui.password` 包）与 `PasswordPageAggregateStackEntry`（`com.bastion.app.data` 包）此前从未在 PasswordListContent.kt 中以裸名出现（靠类型推断），容器类签名首次写出裸名即 unresolved——**凡容器签名新写出的类型名，逐一核对「import ∪ 同包 ∪ 同文件」**；
+> - **批 4 踩坑 3（可见性）**：`internal` 函数不能暴露 file-private 类型（`PasswordListQuickFilterToggles` 是 private class）——同文件容器函数应声明 `private`；private class 的属性可以暴露 internal 类型（可见性放宽方向合法）；
+> - **批 4 搬移零修改技巧**：派生链搬进容器时靠局部别名（`val effectiveManualStackGroupByEntryId = manualStackMeta.effectiveManualStackGroupByEntryId`）保持搬移代码原文不变，降低搬运 diff 风险；
+> - **语义等价性论证**：容器函数每次重组返回新对象，但下游 remember keys 全是值（Map/Set equals 内容比较），与原先「每重组重算 effectiveXxx val」行为一致，不引入多余重组。
