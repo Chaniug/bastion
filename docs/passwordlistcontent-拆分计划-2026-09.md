@@ -255,6 +255,7 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 4 | `1946ef5d` + `32e28c3d` | ✅ 批3 已完成（CI #33940176619 绿） | 滚动状态（listState/收起判定/顶距/空态防抖）下沉为 `PasswordListScrollState` 容器；`32e28c3d` 修复：**委托属性不能用 `private set`**，改 val 委托只读暴露 |
 | 4 | `55223e27` + `a33cf757` | ✅ 批4 已完成（CI #33941279186 绿） | manualStack 元数据 + 派生筛选链（groupingConfig→preStack 过滤→聚合堆叠→可见列表）下沉为 `PasswordListManualStackMeta` / `PasswordListDerivedFilters` 两个容器（同文件 private）；主函数删除 223 行（315..1468，体 1152 行，起始 1410 行）；`a33cf757` 修复编译（补 2 个异包 import + 容器可见性 private） |
 | 实测 | 77d70057 包 | ✅ PasswordListContent 达标 / ⚠️ SimpleMainScreen 仍超 | 2026-09-05 14:14 荣耀真机日志（主界面进出条目场景，版本 1.0.0-dev-77d7005）：**`PasswordListContent` 警告 0 次（批 4 生效，从 18199 降到 16384 以下）**；`SimpleMainScreen` **16652 指令 × 1 次警告**（超上限 268 条 / 1.6%）。结论：PasswordListContent 拆分收官；剩余目标改为 SimpleMainScreen，进入第五批（批 5） |
+| 5 | 见批 5 提交 | 🔄 已实施待验证 | 三组跨 tab 选择状态（TOTP/证件/银行卡，19 个 `var by remember` 注册 + 105 处引用）下沉为 `CrossTabSelectionState` 容器（`ui/CrossTabSelectionState.kt`，internal）；主函数 3 处写入口/6 处读出口/1 处条件读改 `state.field` 转发，读出口参数名保持不变；本地编译绿 + 6 个守卫测试类全绿。**待 CI + 装包实测指令数** |
 
 **实测数据明细（2026-09-05 10:04 导出，版本 1.0.0-dev-c8efb57）**：
 - 警告分布：`PasswordListContent` 330 次 / `SimpleMainScreen` 17 次，从启动 10:03:50 起每秒约 30 条持续触发（非一次性）

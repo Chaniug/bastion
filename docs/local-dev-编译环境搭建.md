@@ -172,3 +172,20 @@ da39a3ee5e6b4b0d3255bfef95601890afd80709    # ← 空文本 license 的 SHA1，�
 
 - ✅ 2026-09-05：`:app:compileDebugKotlin` 本地全链路跑通（含批 1-4 拆分后的代码），BUILD SUCCESSFUL。
 - [ ] GitHub fine-grained PAT（Actions: read + Contents: read，仅 bastion 仓库）配置后：`gh auth login --with-token` → `gh run view <id> --log-failed` 直接拉 CI 失败日志。
+
+## 12. 踩坑补充：单测路径需要 core-for-system-modules.jar（2026-09-05）
+
+`:app:compileDebugKotlin` 不需要它，但 `:app:testDebugUnitTest` 会级联 `compileDebugJavaWithJavac` / `compileDebugUnitTestJavaWithJavac`，其 `JdkImageTransform` 要对 `platforms/android-37.0/core-for-system-modules.jar` 执行 `javac --system=none --patch-module=java.base=<jar> module-info.java` 生成 jdk image。**该文件缺失或为空 ZIP 都会在 configuration 解析期报 "Failed to transform"**，`-x compileDebugJavaWithJavac` 也绕不过（transform 在 provider 解析期触发）。
+
+**已验证的构造方法**（无需下载官方 platform zip）：从本地 JDK 的 `java.base.jmod` 提取全部 classes（6723 个），剔除 `module-info.class` 后打包为该 jar（13.6MB）：
+
+```bash
+/root/.sdkman/candidates/java/20.fx-zulu/bin/jmod extract --dir /tmp/jsysmod/jbase \
+    /root/.sdkman/candidates/java/20.fx-zulu/jmods/java.base.jmod
+rm -f /tmp/jsysmod/jbase/classes/module-info.class
+cd /tmp/jsysmod/jbase/classes && \
+  $JDK/bin/jar --create --file /opt/android-sdk/platforms/android-37.0/core-for-system-modules.jar .
+```
+
+注意：与 build-tools 空 jar 不同，**这里必须是真类**（空 ZIP 会让 javac 因 java.base 为空而失败）。
+另：本地 JDK 20 跑全量单测有 53 个 `ClassFormatError` 级失败（BitwardenJsonExportTest 等），均为 JDK 20 加载测试类的兼容性问题，**CI（JDK 17）不受影响**，勿据此误判回归。

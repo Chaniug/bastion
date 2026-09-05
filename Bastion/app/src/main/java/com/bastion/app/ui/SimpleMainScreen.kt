@@ -906,30 +906,11 @@ fun SimpleMainScreen(
         runCatchingObserved { StackCardMode.valueOf(stackCardModeKey) }.getOrDefault(StackCardMode.AUTO)
     }
     
-    // TOTP的选择模式状态
-    var isTotpSelectionMode by remember { mutableStateOf(false) }
-    var selectedTotpCount by remember { mutableIntStateOf(0) }
-    var onExitTotpSelection by remember { mutableStateOf({}) }
-    var onSelectAllTotp by remember { mutableStateOf({}) }
-    var onMoveToCategoryTotp by remember { mutableStateOf({}) }
-    var onDeleteSelectedTotp by remember { mutableStateOf({}) }
-    
-    // 证件的选择模式状态
-    var isDocumentSelectionMode by remember { mutableStateOf(false) }
-    var selectedDocumentCount by remember { mutableIntStateOf(0) }
-    var onExitDocumentSelection by remember { mutableStateOf({}) }
-    var onSelectAllDocuments by remember { mutableStateOf({}) }
-    var onMoveToCategoryDocuments by remember { mutableStateOf({}) }
-    var onDeleteSelectedDocuments by remember { mutableStateOf({}) }
-    
-    // 银行卡的选择模式状态
-    var isBankCardSelectionMode by remember { mutableStateOf(false) }
-    var selectedBankCardCount by remember { mutableIntStateOf(0) }
-    var onExitBankCardSelection by remember { mutableStateOf({}) }
-    var onSelectAllBankCards by remember { mutableStateOf({}) }
-    var onMoveToCategoryBankCards by remember { mutableStateOf({}) }
-    var onDeleteSelectedBankCards by remember { mutableStateOf({}) }
-    var onFavoriteBankCards by remember { mutableStateOf({}) }  // 添加收藏回调
+    // TOTP/证件/银行卡三组跨 tab 选择模式桥接状态：原 19 个 var 注册下沉为
+    // CrossTabSelectionState 容器（拆分计划批 5，减少主函数内联 Compose 指令）
+    val totpSelectionState = rememberCrossTabSelectionState()
+    val documentSelectionState = rememberCrossTabSelectionState()
+    val bankCardSelectionState = rememberCrossTabSelectionState()
 
     // CardWallet state
     var cardWalletSubTab by rememberSaveable { mutableStateOf(CardWalletTab.ALL) }
@@ -1212,9 +1193,9 @@ fun SimpleMainScreen(
     var isNoteSelectionMode by remember { mutableStateOf(false) }
     val isAnySelectionMode =
         isPasswordSelectionMode ||
-            isTotpSelectionMode ||
-            isDocumentSelectionMode ||
-            isBankCardSelectionMode ||
+            totpSelectionState.isSelectionMode ||
+            documentSelectionState.isSelectionMode ||
+            bankCardSelectionState.isSelectionMode ||
             isNoteSelectionMode ||
             vaultV2PaneState.selectionCount > 0
     var generatorRefreshRequestKey by remember { mutableIntStateOf(0) }
@@ -1689,24 +1670,24 @@ fun SimpleMainScreen(
     val onCardWalletDocumentSelectionModeChange:
         (Boolean, Int, () -> Unit, () -> Unit, () -> Unit, () -> Unit) -> Unit =
         { isSelectionMode, count, onExit, onSelectAll, onMoveToCategory, onDelete ->
-            isDocumentSelectionMode = isSelectionMode
-            selectedDocumentCount = count
-            onExitDocumentSelection = onExit
-            onSelectAllDocuments = onSelectAll
-            onMoveToCategoryDocuments = onMoveToCategory
-            onDeleteSelectedDocuments = onDelete
+            documentSelectionState.isSelectionMode = isSelectionMode
+            documentSelectionState.selectedCount = count
+            documentSelectionState.onExit = onExit
+            documentSelectionState.onSelectAll = onSelectAll
+            documentSelectionState.onMoveToCategory = onMoveToCategory
+            documentSelectionState.onDelete = onDelete
         }
 
     val onCardWalletBankCardSelectionModeChange:
         (Boolean, Int, () -> Unit, () -> Unit, () -> Unit, () -> Unit, () -> Unit) -> Unit =
         { isSelectionMode, count, onExit, onSelectAll, onDelete, onFavorite, onMoveToCategory ->
-            isBankCardSelectionMode = isSelectionMode
-            selectedBankCardCount = count
-            onExitBankCardSelection = onExit
-            onSelectAllBankCards = onSelectAll
-            onMoveToCategoryBankCards = onMoveToCategory
-            onDeleteSelectedBankCards = onDelete
-            onFavoriteBankCards = onFavorite
+            bankCardSelectionState.isSelectionMode = isSelectionMode
+            bankCardSelectionState.selectedCount = count
+            bankCardSelectionState.onExit = onExit
+            bankCardSelectionState.onSelectAll = onSelectAll
+            bankCardSelectionState.onMoveToCategory = onMoveToCategory
+            bankCardSelectionState.onDelete = onDelete
+            bankCardSelectionState.onFavorite = onFavorite
         }
 
     val cardWalletContentState = CardWalletContentState(
@@ -1921,12 +1902,12 @@ fun SimpleMainScreen(
                     onNavigateToQuickTotpScan = onNavigateToQuickTotpScan,
                     onNavigateToFidoQrScan = onNavigateToFidoQrScan,
                     onTotpSelectionModeChange = { isSelectionMode, count, onExit, onSelectAll, onMoveToCategory, onDelete ->
-                        isTotpSelectionMode = isSelectionMode
-                        selectedTotpCount = count
-                        onExitTotpSelection = onExit
-                        onSelectAllTotp = onSelectAll
-                        onMoveToCategoryTotp = onMoveToCategory
-                        onDeleteSelectedTotp = onDelete
+                        totpSelectionState.isSelectionMode = isSelectionMode
+                        totpSelectionState.selectedCount = count
+                        totpSelectionState.onExit = onExit
+                        totpSelectionState.onSelectAll = onSelectAll
+                        totpSelectionState.onMoveToCategory = onMoveToCategory
+                        totpSelectionState.onDelete = onDelete
                     },
                     cardWalletSaveableStateHolder = cardWalletSaveableStateHolder,
                     bankCardViewModel = bankCardViewModel,
@@ -1998,25 +1979,25 @@ fun SimpleMainScreen(
                     onMoveToCategoryPasswords = onMoveToCategoryPasswords,
                     onManualStackPasswords = onManualStackPasswords,
                     onDeleteSelectedPasswords = onDeleteSelectedPasswords,
-                    isTotpSelectionMode = isTotpSelectionMode,
-                    selectedTotpCount = selectedTotpCount,
-                    onExitTotpSelection = onExitTotpSelection,
-                    onSelectAllTotp = onSelectAllTotp,
-                    onMoveToCategoryTotp = onMoveToCategoryTotp,
-                    onDeleteSelectedTotp = onDeleteSelectedTotp,
-                    isBankCardSelectionMode = isBankCardSelectionMode,
-                    selectedBankCardCount = selectedBankCardCount,
-                    onExitBankCardSelection = onExitBankCardSelection,
-                    onSelectAllBankCards = onSelectAllBankCards,
-                    onFavoriteBankCards = onFavoriteBankCards,
-                    onMoveToCategoryBankCards = onMoveToCategoryBankCards,
-                    onDeleteSelectedBankCards = onDeleteSelectedBankCards,
-                    isDocumentSelectionMode = isDocumentSelectionMode,
-                    selectedDocumentCount = selectedDocumentCount,
-                    onExitDocumentSelection = onExitDocumentSelection,
-                    onSelectAllDocuments = onSelectAllDocuments,
-                    onMoveToCategoryDocuments = onMoveToCategoryDocuments,
-                    onDeleteSelectedDocuments = onDeleteSelectedDocuments,
+                    isTotpSelectionMode = totpSelectionState.isSelectionMode,
+                    selectedTotpCount = totpSelectionState.selectedCount,
+                    onExitTotpSelection = totpSelectionState.onExit,
+                    onSelectAllTotp = totpSelectionState.onSelectAll,
+                    onMoveToCategoryTotp = totpSelectionState.onMoveToCategory,
+                    onDeleteSelectedTotp = totpSelectionState.onDelete,
+                    isBankCardSelectionMode = bankCardSelectionState.isSelectionMode,
+                    selectedBankCardCount = bankCardSelectionState.selectedCount,
+                    onExitBankCardSelection = bankCardSelectionState.onExit,
+                    onSelectAllBankCards = bankCardSelectionState.onSelectAll,
+                    onFavoriteBankCards = bankCardSelectionState.onFavorite,
+                    onMoveToCategoryBankCards = bankCardSelectionState.onMoveToCategory,
+                    onDeleteSelectedBankCards = bankCardSelectionState.onDelete,
+                    isDocumentSelectionMode = documentSelectionState.isSelectionMode,
+                    selectedDocumentCount = documentSelectionState.selectedCount,
+                    onExitDocumentSelection = documentSelectionState.onExit,
+                    onSelectAllDocuments = documentSelectionState.onSelectAll,
+                    onMoveToCategoryDocuments = documentSelectionState.onMoveToCategory,
+                    onDeleteSelectedDocuments = documentSelectionState.onDelete,
                     vaultV2PaneState = vaultV2PaneState,
                 )
             }
@@ -2320,12 +2301,12 @@ fun SimpleMainScreen(
                         onTotpOpen = handleTotpOpen,
                         onNavigateToQuickTotpScan = onNavigateToQuickTotpScan,
                         onSelectionModeChange = { isSelectionMode, count, onExit, onSelectAll, onMoveToCategory, onDelete ->
-                            isTotpSelectionMode = isSelectionMode
-                            selectedTotpCount = count
-                            onExitTotpSelection = onExit
-                            onSelectAllTotp = onSelectAll
-                            onMoveToCategoryTotp = onMoveToCategory
-                            onDeleteSelectedTotp = onDelete
+                            totpSelectionState.isSelectionMode = isSelectionMode
+                            totpSelectionState.selectedCount = count
+                            totpSelectionState.onExit = onExit
+                            totpSelectionState.onSelectAll = onSelectAll
+                            totpSelectionState.onMoveToCategory = onMoveToCategory
+                            totpSelectionState.onDelete = onDelete
                         },
                         isAddingTotpInline = isAddingTotpInline,
                         selectedTotpId = selectedTotpId,
@@ -2516,25 +2497,25 @@ fun SimpleMainScreen(
                 onMoveToCategoryPasswords = onMoveToCategoryPasswords,
                 onManualStackPasswords = onManualStackPasswords,
                 onDeleteSelectedPasswords = onDeleteSelectedPasswords,
-                isTotpSelectionMode = isTotpSelectionMode,
-                selectedTotpCount = selectedTotpCount,
-                onExitTotpSelection = onExitTotpSelection,
-                onSelectAllTotp = onSelectAllTotp,
-                onMoveToCategoryTotp = onMoveToCategoryTotp,
-                onDeleteSelectedTotp = onDeleteSelectedTotp,
-                isBankCardSelectionMode = isBankCardSelectionMode,
-                selectedBankCardCount = selectedBankCardCount,
-                onExitBankCardSelection = onExitBankCardSelection,
-                onSelectAllBankCards = onSelectAllBankCards,
-                onFavoriteBankCards = onFavoriteBankCards,
-                onMoveToCategoryBankCards = onMoveToCategoryBankCards,
-                onDeleteSelectedBankCards = onDeleteSelectedBankCards,
-                isDocumentSelectionMode = isDocumentSelectionMode,
-                selectedDocumentCount = selectedDocumentCount,
-                onExitDocumentSelection = onExitDocumentSelection,
-                onSelectAllDocuments = onSelectAllDocuments,
-                onMoveToCategoryDocuments = onMoveToCategoryDocuments,
-                onDeleteSelectedDocuments = onDeleteSelectedDocuments
+                isTotpSelectionMode = totpSelectionState.isSelectionMode,
+                selectedTotpCount = totpSelectionState.selectedCount,
+                onExitTotpSelection = totpSelectionState.onExit,
+                onSelectAllTotp = totpSelectionState.onSelectAll,
+                onMoveToCategoryTotp = totpSelectionState.onMoveToCategory,
+                onDeleteSelectedTotp = totpSelectionState.onDelete,
+                isBankCardSelectionMode = bankCardSelectionState.isSelectionMode,
+                selectedBankCardCount = bankCardSelectionState.selectedCount,
+                onExitBankCardSelection = bankCardSelectionState.onExit,
+                onSelectAllBankCards = bankCardSelectionState.onSelectAll,
+                onFavoriteBankCards = bankCardSelectionState.onFavorite,
+                onMoveToCategoryBankCards = bankCardSelectionState.onMoveToCategory,
+                onDeleteSelectedBankCards = bankCardSelectionState.onDelete,
+                isDocumentSelectionMode = documentSelectionState.isSelectionMode,
+                selectedDocumentCount = documentSelectionState.selectedCount,
+                onExitDocumentSelection = documentSelectionState.onExit,
+                onSelectAllDocuments = documentSelectionState.onSelectAll,
+                onMoveToCategoryDocuments = documentSelectionState.onMoveToCategory,
+                onDeleteSelectedDocuments = documentSelectionState.onDelete
             )
             }
         } else {
@@ -2721,12 +2702,12 @@ fun SimpleMainScreen(
                             onTotpOpen = handleTotpOpen,
                             onNavigateToQuickTotpScan = onNavigateToQuickTotpScan,
                             onSelectionModeChange = { isSelectionMode, count, onExit, onSelectAll, onMoveToCategory, onDelete ->
-                                isTotpSelectionMode = isSelectionMode
-                                selectedTotpCount = count
-                                onExitTotpSelection = onExit
-                                onSelectAllTotp = onSelectAll
-                                onMoveToCategoryTotp = onMoveToCategory
-                                onDeleteSelectedTotp = onDelete
+                                totpSelectionState.isSelectionMode = isSelectionMode
+                                totpSelectionState.selectedCount = count
+                                totpSelectionState.onExit = onExit
+                                totpSelectionState.onSelectAll = onSelectAll
+                                totpSelectionState.onMoveToCategory = onMoveToCategory
+                                totpSelectionState.onDelete = onDelete
                             },
                             isAddingTotpInline = isAddingTotpInline,
                             selectedTotpId = selectedTotpId,
@@ -2917,25 +2898,25 @@ fun SimpleMainScreen(
                     onMoveToCategoryPasswords = onMoveToCategoryPasswords,
                     onManualStackPasswords = onManualStackPasswords,
                     onDeleteSelectedPasswords = onDeleteSelectedPasswords,
-                    isTotpSelectionMode = isTotpSelectionMode,
-                    selectedTotpCount = selectedTotpCount,
-                    onExitTotpSelection = onExitTotpSelection,
-                    onSelectAllTotp = onSelectAllTotp,
-                    onMoveToCategoryTotp = onMoveToCategoryTotp,
-                    onDeleteSelectedTotp = onDeleteSelectedTotp,
-                    isBankCardSelectionMode = isBankCardSelectionMode,
-                    selectedBankCardCount = selectedBankCardCount,
-                    onExitBankCardSelection = onExitBankCardSelection,
-                    onSelectAllBankCards = onSelectAllBankCards,
-                    onFavoriteBankCards = onFavoriteBankCards,
-                    onMoveToCategoryBankCards = onMoveToCategoryBankCards,
-                    onDeleteSelectedBankCards = onDeleteSelectedBankCards,
-                    isDocumentSelectionMode = isDocumentSelectionMode,
-                    selectedDocumentCount = selectedDocumentCount,
-                    onExitDocumentSelection = onExitDocumentSelection,
-                    onSelectAllDocuments = onSelectAllDocuments,
-                    onMoveToCategoryDocuments = onMoveToCategoryDocuments,
-                    onDeleteSelectedDocuments = onDeleteSelectedDocuments
+                    isTotpSelectionMode = totpSelectionState.isSelectionMode,
+                    selectedTotpCount = totpSelectionState.selectedCount,
+                    onExitTotpSelection = totpSelectionState.onExit,
+                    onSelectAllTotp = totpSelectionState.onSelectAll,
+                    onMoveToCategoryTotp = totpSelectionState.onMoveToCategory,
+                    onDeleteSelectedTotp = totpSelectionState.onDelete,
+                    isBankCardSelectionMode = bankCardSelectionState.isSelectionMode,
+                    selectedBankCardCount = bankCardSelectionState.selectedCount,
+                    onExitBankCardSelection = bankCardSelectionState.onExit,
+                    onSelectAllBankCards = bankCardSelectionState.onSelectAll,
+                    onFavoriteBankCards = bankCardSelectionState.onFavorite,
+                    onMoveToCategoryBankCards = bankCardSelectionState.onMoveToCategory,
+                    onDeleteSelectedBankCards = bankCardSelectionState.onDelete,
+                    isDocumentSelectionMode = documentSelectionState.isSelectionMode,
+                    selectedDocumentCount = documentSelectionState.selectedCount,
+                    onExitDocumentSelection = documentSelectionState.onExit,
+                    onSelectAllDocuments = documentSelectionState.onSelectAll,
+                    onMoveToCategoryDocuments = documentSelectionState.onMoveToCategory,
+                    onDeleteSelectedDocuments = documentSelectionState.onDelete
                 )
                 }
             }
