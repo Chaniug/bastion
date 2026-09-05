@@ -308,7 +308,6 @@ fun PasskeyListScreen(
     var showCategoryFilterDialog by remember { mutableStateOf(false) }
     val categoryMgmt = rememberCategoryManagementState()
     var showTopActionsMenu by remember { mutableStateOf(false) }
-    var categoryPillBoundsInWindow by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var showBatchMoveCategoryDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var deletePasswordInput by remember { mutableStateOf("") }
@@ -1023,7 +1022,8 @@ fun PasskeyListScreen(
                 isSearchExpanded = isSearchExpanded,
                 onSearchExpandedChange = { isSearchExpanded = it },
                 searchHint = stringResource(R.string.passkey_search_placeholder),
-                onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+                // 性能：胶囊 bounds 逐帧回调且无消费方，会触发整屏重组；停用
+                onActionPillBoundsChanged = null,
                 scrollCollapseFraction = scrollCollapseFraction,
                 actions = {
                     onNavigateToAuthenticator?.let { navigateToAuthenticator ->
@@ -1244,6 +1244,8 @@ fun PasskeyListScreen(
                             }
                         }
                     } else {
+                        // 滚动掉帧采样：只在确实掉帧时输出一行摘要，正常滚动静默（见 ScrollJankMonitor）
+                        com.bastion.app.ui.perf.ScrollJankReporter(listState = listState, label = "passkeys")
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()

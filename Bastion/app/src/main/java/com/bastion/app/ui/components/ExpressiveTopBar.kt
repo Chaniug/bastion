@@ -211,6 +211,14 @@ fun ExpressiveTopBar(
     )
     // 胶囊垂直位置：保持完全位于顶栏背景内（此前下移 5dp 会使胶囊底部凸出背景区，已回退）
     val actionPillOffsetY = 0.dp
+    // 收起进度的平滑值（0=展开，1=收起）：顶栏其余属性都走 200ms 动画，
+    // 按钮组缩放此前直读快照值 scrollCollapseFraction → 切换瞬间硬跳一下（观感像卡顿），
+    // 这里改用同一条 200ms 插值，让外框与内部按钮同步缩放。
+    val collapseProgress by animateFloatAsState(
+        targetValue = scrollCollapseFraction,
+        animationSpec = tween(200),
+        label = "topbar_collapse_progress"
+    )
     // Bar 自身背景的透明度：展开时不透明（像相册顶部的白色头部栏），
     // 收起后 alpha→0 变透明，列表内容可从 Bar 底下穿过（关键：列表 contentPadding.top=0）。
     // 搜索框展开时始终保持不透明，否则输入时背景消失很怪。
@@ -474,8 +482,8 @@ fun ExpressiveTopBar(
                             Row(
                                 modifier = Modifier
                                     .graphicsLayer {
-                                        // 收起时按钮组跟随标题一起缩小（1.0→0.85）
-                                        val scale = 1f + (0.85f - 1f) * scrollCollapseFraction
+                                        // 收起时按钮组跟随标题一起缩小（1.0→0.85），跟随 200ms 插值同步缩放
+                                        val scale = 1f + (0.85f - 1f) * collapseProgress
                                         scaleX = scale
                                         scaleY = scale
                                     }

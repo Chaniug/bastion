@@ -145,7 +145,6 @@ fun NoteListScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedNoteIds by remember { mutableStateOf(setOf<Long>()) }
     var isCategorySheetVisible by remember { mutableStateOf(false) }
-    var categoryPillBoundsInWindow by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showBatchMoveCategoryDialog by remember { mutableStateOf(false) }
     var showBitwardenImageWarningDialog by remember { mutableStateOf(false) }
@@ -517,7 +516,8 @@ fun NoteListScreen(
                     }
                 },
                 searchHint = stringResource(R.string.search),
-                onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+                // 性能：胶囊 bounds 逐帧回调且无消费方，会触发整屏重组；停用
+                onActionPillBoundsChanged = null,
                 actions = {
                     if (settings.categorySelectionUiMode == com.bastion.app.data.CategorySelectionUiMode.CHIP_MENU) {
                         IconButton(onClick = { isCategorySheetVisible = true }) {

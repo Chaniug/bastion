@@ -96,8 +96,9 @@ internal fun PasswordListTopSection(
     onOpenStandaloneSettings: () -> Unit,
     isCategorySheetVisible: Boolean,
     onCategorySheetVisibleChange: (Boolean) -> Unit,
-    categoryPillBoundsInWindow: androidx.compose.ui.geometry.Rect?,
-    onCategoryPillBoundsChange: (androidx.compose.ui.geometry.Rect?) -> Unit,
+    // 参数保留（调用方链路不动），但当前无消费方：见下方 onActionPillBoundsChanged = null 的说明
+    @Suppress("UNUSED_PARAMETER") categoryPillBoundsInWindow: androidx.compose.ui.geometry.Rect?,
+    @Suppress("UNUSED_PARAMETER") onCategoryPillBoundsChange: (androidx.compose.ui.geometry.Rect?) -> Unit,
     showDisplayOptionsSheet: Boolean,
     onShowDisplayOptionsSheetChange: (Boolean) -> Unit,
     configuredQuickFilterItems: List<PasswordListQuickFilterItem>,
@@ -228,7 +229,10 @@ internal fun PasswordListTopSection(
             isSearchExpanded = isSearchExpanded,
             onSearchExpandedChange = onSearchExpandedChange,
             searchHint = stringResource(R.string.search_passwords_hint),
-            onActionPillBoundsChanged = if (isArchiveView) null else onCategoryPillBoundsChange,
+            // 性能：胶囊 onGloballyPositioned 在顶栏收起/展开动画期间逐帧回调，
+            // 写入的 bounds 状态在主函数被读取（订阅）→ 整个列表屏幕逐帧重组，滚动明显掉帧。
+            // 该 bounds 目前无任何消费方，停用回调（状态保留备用，不再写入即不会触发重组）。
+            onActionPillBoundsChanged = null,
             onTitleClick = onTitleClick,
             titleExpanded = quickFiltersExpanded,
             scrollCollapseFraction = scrollCollapseFraction,

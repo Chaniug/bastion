@@ -270,7 +270,6 @@ fun CardWalletScreen(
     var showTopActionsMenu by remember { mutableStateOf(false) }
     var showHistoryPage by rememberSaveable { mutableStateOf(false) }
     var showCategoryFilterDialog by remember { mutableStateOf(false) }
-    var categoryPillBoundsInWindow by remember { mutableStateOf<Rect?>(null) }
     var selectedCategoryFilter by rememberSaveable(stateSaver = cardWalletCategoryFilterSaver) {
         mutableStateOf<UnifiedCategoryFilterSelection>(UnifiedCategoryFilterSelection.All)
     }
@@ -1033,7 +1032,8 @@ fun CardWalletScreen(
                 }
             },
             searchHint = stringResource(R.string.topbar_search_hint),
-            onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+            // 性能：胶囊 bounds 逐帧回调且无消费方，会触发整屏重组；停用
+            onActionPillBoundsChanged = null,
             scrollCollapseFraction = scrollCollapseFraction,
             actions = {
                 if (appSettings.categorySelectionUiMode == com.bastion.app.data.CategorySelectionUiMode.CHIP_MENU) {

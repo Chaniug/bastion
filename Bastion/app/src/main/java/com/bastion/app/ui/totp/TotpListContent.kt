@@ -283,7 +283,6 @@ fun TotpListContent(
     
     // 分类选择状态
     var isCategorySheetVisible by rememberSaveable { mutableStateOf(false) }
-    var categoryPillBoundsInWindow by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val categories by viewModel.categories.collectAsState()
     val categoryMgmt = rememberCategoryManagementState()
     val currentFilter by viewModel.categoryFilter.collectAsState()
@@ -739,7 +738,8 @@ fun TotpListContent(
             isSearchExpanded = isSearchExpanded,
             onSearchExpandedChange = { isSearchExpanded = it },
             searchHint = stringResource(R.string.search_authenticator),
-            onActionPillBoundsChanged = { bounds -> categoryPillBoundsInWindow = bounds },
+            // 性能：胶囊 bounds 逐帧回调且无消费方，会触发整屏重组；停用
+            onActionPillBoundsChanged = null,
             scrollCollapseFraction = scrollCollapseFraction,
             actions = {
                 // 搜索按钮（无高亮底色，与密码页一致，固定首位）
@@ -1043,6 +1043,9 @@ fun TotpListContent(
                 localTotpItems = filteredTotpItems
             }
             
+            // 滚动掉帧采样：只在确实掉帧时输出一行摘要，正常滚动静默（见 ScrollJankMonitor）
+            com.bastion.app.ui.perf.ScrollJankReporter(listState = lazyListState, label = "totp")
+
             val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
                 // 只在多选模式下允许排序
                 if (isSelectionMode) {
