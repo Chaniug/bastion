@@ -27,9 +27,19 @@ class SwipeArmState {
     var armed: Boolean by mutableStateOf(false)
         private set
 
-    /** 长按激活：3 秒内允许该条目滑动。 */
+    /**
+     * 每次 arm() 递增，作为超时 LaunchedEffect 的 key。
+     *
+     * 只拿 armed 当 key 会有个隐蔽 bug：已激活时再次 arm()，armed 值没变 →
+     * LaunchedEffect 不重启 → 3 秒窗口仍从第一次激活起算，不会顺延。
+     */
+    var armToken by mutableStateOf(0)
+        private set
+
+    /** 长按激活：3 秒内允许该条目滑动（重复激活会重新计时）。 */
     fun arm() {
         armed = true
+        armToken++
     }
 
     /** 解除激活：滑动完成、点击卡片或超时后调用。 */
@@ -41,7 +51,7 @@ class SwipeArmState {
 @Composable
 fun rememberSwipeArmState(autoDisarmMillis: Long = 3_000L): SwipeArmState {
     val state = remember { SwipeArmState() }
-    LaunchedEffect(state.armed) {
+    LaunchedEffect(state.armToken, state.armed) {
         if (!state.armed) return@LaunchedEffect
         delay(autoDisarmMillis)
         state.disarm()

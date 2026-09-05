@@ -196,6 +196,17 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
             true
         }
         observeVaultSnapshots()
+        // 诊断：冷启动实测 loadVaults 会跑两次（各 1.0~1.4s，干的是完全相同的活）。
+        // 静态排查已排除 Activity 重建 / 外部调用 / observeVaultSnapshots / 自定义
+        // ViewModelStoreOwner 等路径，这里用实例指纹 + 创建堆栈确认到底是「一个实例
+        // 调了两次」还是「存在两个实例」。定位并修复后请删除本段。
+        Log.i(
+            "BASTION-PROFILE",
+            "BitwardenViewModel created instance=" +
+                Integer.toHexString(System.identityHashCode(this)) +
+                " stack=" + Throwable().stackTrace.take(9)
+                .joinToString(" <- ") { it.className.substringAfterLast('.') + "." + it.methodName }
+        )
         loadVaults(
             triggerStartupAutoSync = false,
             triggerActiveVaultAutoSync = false
@@ -218,8 +229,12 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         triggerActiveVaultAutoSync: Boolean = true
     ) {
         // 整段计时：本方法在 ViewModel init 与解锁/刷新后都会走，是判断「密码库
-        // 什么时候可见」的主坐标。注意它跑在 viewModelScope（主线程）上，若
-        // costMs 偏大说明主线程被里面的 IO/Keystore 操作堵住了。
+        // 什么时候可见」的主坐标。
+        //
+        // 注意 costMs 是**墙钟耗时**（含挂起等待），不等于主线程被阻塞：内部 IO
+        // 全部走 repository 的 suspend 方法，已切到 Dispatchers.IO，主线程只是在
+        // 等结果、期间照样能处理其他消息。判断主线程有没有被堵，要看 Choreographer
+        // 的 Skipped frames 或 Perfetto，别拿 costMs 当主线程耗时（曾因此误判过）。
         val loadVaultsStartedAt = System.currentTimeMillis()
         viewModelScope.launch {
             try {
@@ -270,7 +285,8 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
                     "BASTION-PROFILE",
                     "loadVaults costMs=${System.currentTimeMillis() - loadVaultsStartedAt} " +
                         "vaults=${_vaults.value.size} restored=${restoredVaultIds.size} " +
-                        "unlockState=${_unlockState.value}"
+                        "unlockState=${_unlockState.value} " +
+                        "instance=${Integer.toHexString(System.identityHashCode(this@BitwardenViewModel))}"
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "加载 Vault 失败", e)
