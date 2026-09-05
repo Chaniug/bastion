@@ -383,6 +383,16 @@ ScrollPerf: jank label=passwords frames=142 janky=9(6%) avg=17.1ms max=68ms
 已接入密码 / TOTP / 通行密钥三个列表（卡包用 reorderable state，类型不同未接入）。
 用途：量化卡顿、验证修复效果，避免"凭手感"判断。
 
+**挂载确认行**（后补）：采样器只在掉帧时输出，导致"日志里 0 行 ScrollPerf"无法区分
+"滚动真的流畅"还是"采样器没挂上"。因此每个 label 在整进程内打**一次**挂载确认：
+
+```
+ScrollPerf: attach label=passwords
+```
+
+判定口诀：装包后滚一遍列表 → 日志里**必须有 attach 行**（证明采样器在跑），
+attach 之后**没有 jank 行**（证明真的不掉帧）。二者缺一都说明结论不成立。
+
 ### 10.5 待观察项（本次未动，需实测数据决定）
 
 下列项在顶栏收起/展开的 200ms 内也会持续变化，若批 6 装包后仍有掉帧，按此顺序处理：
@@ -395,3 +405,29 @@ ScrollPerf: jank label=passwords frames=142 janky=9(6%) avg=17.1ms max=68ms
    如需修：字号改为整数档位切换（避免每帧重排）或收起时不再缩放字号（纯视觉取舍）。
 
 > 接力的 AI：处理 10.5 前请先导出日志确认 `ScrollPerf` 是否仍有 jank，避免无收益改动。
+
+### 10.6 日志降噪（2026-09-05，同批提交）
+
+导出日志时发现两类纯噪音、且会掩盖真实故障，已改：
+
+1. **协程取消被当故障记录**：`logSwallowed` 对 `j.u.c.CancellationException` 家族
+   （含 internal 的 `JobCancellationException`）**完全静默**——取消是控制流（服务断开、
+   界面退出、作用域取消），实测一次 OTP 通知会话结束就连打 11 条完整堆栈。
+   行为由 `SwallowedExceptionLoggerTest.logSwallowed_ignoresCancellationException` 锁住：
+   用例里真实 `async{}.cancel()` + `await()` 取出 `JobCancellationException` 实例
+   （该类是 internal，测试内无法直接构造；`joinAll` 一个被取消的 job 不会抛，必须用 `await`）。
+2. **探测性解析打完整堆栈**：`PasskeyCredentialIdCodec` 的 UUID / Base64 探测改用静默
+   `runCatching`——credentialId "不是 UUID" 是预期分支而非故障
+   （原实现一次 github 登录打 2 份 17 行堆栈）。
+
+> 日志准则：**能定位问题的才打**。控制流、预期分支、正常路径一律静默；
+> 真实故障保留完整堆栈 + 每 tag 60 秒 50 条限频。
+
+### 10.7 本地构建环境踩坑（沙箱专用，CI 不受影响）
+
+- Kotlin 编译器 `java.lang.InternalError: a fault occurred in an unsafe memory access operation`
+  （`jarfs.LargeDynamicMappedBuffer` mmap 失败）：加 `-Dkotlin.compiler.jvm.fast.jar.fs.mode=disabled`
+  即可绕过，与代码改动无关。
+- 本地跑单测约 53 条失败，全部来自 JDK 20 + android.jar stub：
+  mockk inline instrumentation 的 `InternalError` 与 `ClassFormatError: Absent Code attribute`。
+  CI 用 JDK 17，这些类在 CI 上是绿的；判定回归时按**堆栈特征**过滤，别误判为改动引入。

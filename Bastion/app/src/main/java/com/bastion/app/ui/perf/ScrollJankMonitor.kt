@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.util.Collections
 
 private const val TAG = "ScrollPerf"
 
@@ -77,10 +78,19 @@ class ScrollJankMonitor {
     }
 }
 
+/** 已打过挂载确认的 label：整进程每个列表只打一次，反复切 Tab 不会重复刷。 */
+private val attachedLabels: MutableSet<String> =
+    Collections.synchronizedSet(mutableSetOf())
+
 /**
  * 挂到列表上：滚动期间逐帧采样，滚动停止后按需输出一行摘要。
  *
  * 采样本身只是每帧一次减法与比较，开销可忽略；列表静止时不注册任何帧回调。
+ *
+ * 日志量：**最多两行**——
+ * 1. 挂载确认 `attach label=passwords`（整进程一次，证明采样器确实挂上了；
+ *    否则「0 行 jank」无法区分「滚动真的流畅」还是「采样器没跑」）；
+ * 2. 掉帧摘要，仅在一次滚动结束且确实掉帧时输出。
  */
 @Composable
 fun ScrollJankReporter(
@@ -89,6 +99,7 @@ fun ScrollJankReporter(
 ) {
     val monitor = remember { ScrollJankMonitor() }
     LaunchedEffect(listState, label) {
+        if (attachedLabels.add(label)) Log.d(TAG, "attach label=$label")
         snapshotFlow { listState.isScrollInProgress }
             .distinctUntilChanged()
             .collect { scrolling ->

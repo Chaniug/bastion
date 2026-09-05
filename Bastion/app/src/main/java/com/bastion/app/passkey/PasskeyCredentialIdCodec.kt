@@ -1,6 +1,5 @@
 package com.bastion.app.passkey
 
-import com.bastion.app.logging.runCatchingObserved
 import android.util.Base64
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -54,14 +53,17 @@ object PasskeyCredentialIdCodec {
      */
     fun toBitwardenCredentialId(credentialId: String?): String? = normalize(credentialId)
 
-    private fun parseUuid(value: String): UUID? = runCatchingObserved {
+    // 探测性解析：credentialId 既可能是 UUID 文本也可能是 Base64URL，"不是 UUID" 是预期
+    // 分支而非故障——用静默 runCatching，避免每次 WebAuthn 请求都打一条完整堆栈
+    // （实测 github 登录一次打 2 份 17 行堆栈，纯噪音）。
+    private fun parseUuid(value: String): UUID? = runCatching {
         UUID.fromString(value)
     }.getOrNull()
 
     private fun decodeFlexible(value: String): ByteArray? {
         val urlSafeFlags = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-        return runCatchingObserved { Base64.decode(value, urlSafeFlags) }.getOrNull()
-            ?: runCatchingObserved { Base64.decode(value, Base64.DEFAULT) }.getOrNull()
+        return runCatching { Base64.decode(value, urlSafeFlags) }.getOrNull()
+            ?: runCatching { Base64.decode(value, Base64.DEFAULT) }.getOrNull()
     }
 
     private fun toBase64Url(data: ByteArray): String {

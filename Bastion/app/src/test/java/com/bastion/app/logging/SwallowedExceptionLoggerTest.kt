@@ -1,7 +1,11 @@
 package com.bastion.app.logging
 
 import android.util.Log
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -83,6 +87,32 @@ class SwallowedExceptionLoggerTest {
             runCatchingObserved(tag = tag) { throw RuntimeException("swallowed #$it") }
         }
         assertEquals(50, records.size)
+    }
+
+    @Test
+    fun logSwallowed_ignoresCancellationException() {
+        // 协程取消是正常控制流（服务断开/界面退出/作用域取消），不是故障：
+        // 完全静默，避免一次会话结束连打十几条刷屏、掩盖真实异常。
+        val tag = uniqueTag()
+        logSwallowed(tag, Log.WARN, java.util.concurrent.CancellationException("cancelled"))
+
+        // 协程里最常见的形态是 JobCancellationException（internal 类，测试内无法直接构造）：
+        // 真实取消一个协程再取它抛出的实例，确保这份真实链路同样被静默。
+        val jobCancellation = runCatching {
+            runBlocking {
+                val deferred = async { delay(10_000) }
+                deferred.cancel()
+                deferred.await()
+            }
+        }.exceptionOrNull()
+        assertNotNull("预期取消协程会抛出 CancellationException", jobCancellation)
+        runCatchingObserved(tag = tag) { throw jobCancellation!! }
+
+        assertTrue("cancellation should never reach the sink", records.isEmpty())
+
+        // 同 tag 下的真实异常仍然照常上报，确认不是把整条通道关掉了
+        runCatchingObserved(tag = tag) { throw RuntimeException("real failure") }
+        assertEquals(1, records.size)
     }
 
     private data class SinkCall(
