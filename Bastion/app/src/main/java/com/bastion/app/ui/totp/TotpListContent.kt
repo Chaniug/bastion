@@ -1113,9 +1113,6 @@ contentPadding = PaddingValues(
                             Modifier
                         }
                         
-                        // 多选模式下已选中的条目：删除滑动不随 3 秒窗口失效（详见 allowSwipeLeft）
-                        val isItemSelected = selectedItems.contains(item.id)
-
                         // Keep right-swipe selection available in selection mode; only disable delete swipe there.
                         com.bastion.app.ui.gestures.SwipeActions(
                             onSwipeLeft = {
@@ -1137,14 +1134,12 @@ contentPadding = PaddingValues(
                                 }
                             },
                             isSwiped = itemToDelete?.id == item.id,
-                            // 【方案 A】默认锁定滑动（拖动排序时也锁）；长按激活**本条目**后 3 秒内可滑
-                            enabled = !isDragging && (armState.armed || isSelectionMode),
-                            // 选中态同样静态露出删除提示，让"可删"这件事看得见
-                            armed = armState.armed || (isSelectionMode && isItemSelected),
-                            // 多选模式下**已选中的条目**保持可左滑删除，不随 armed 的 3 秒窗口一起失效：
-                            // 多选操作栏已被底部悬浮胶囊遮挡，滑动是此时唯一的删除出口，若跟着超时关闭，
-                            // 就会出现"长按进多选后过几秒就删不掉"。未选中条目仍禁左滑，防误触不变。
-                            allowSwipeLeft = armState.armed || (isSelectionMode && isItemSelected),
+                            // 【方案 A】默认锁定滑动（拖动排序时也锁）；长按激活**本条目**后 3 秒内可滑。
+                            // 多选模式下仍允许滑动（右滑选条目），但禁左滑删除以防误触——这条语义由
+                            // TotpSwipeSelectionRegressionGuardTest 守卫，改这里前先读那个测试。
+                            enabled = !isDragging && (isSelectionMode || armState.armed),
+                            armed = armState.armed,
+                            allowSwipeLeft = !isSelectionMode || armState.armed,
                             allowSwipeRight = true
                         ) {
                             // 包装卡片以支持拖动
