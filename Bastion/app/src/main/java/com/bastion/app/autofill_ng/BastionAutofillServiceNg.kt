@@ -243,10 +243,17 @@ class BastionAutofillServiceNg : AutofillService() {
     ) {
         val requestId = fillRequestSequence.incrementAndGet()
         val startedAt = System.currentTimeMillis()
-        AutofillLogger.i(
+        // 自我请求预判：仅用于日志分级（received/callback 对 self 请求降 DEBUG），
+        // 与 processFillRequest 开头的快速短路判定同源（activityComponent 包名）。
+        val selfFastPath = request.fillContexts.lastOrNull()
+            ?.structure?.activityComponent?.packageName?.let { isSelfPackage(it) } == true
+        // 方法引用不可省略默认参数，三级全量传参；self 请求 received 仍记录（requestId
+        // 序列与 flags 对排查"面板不弹"有诊断价值），仅降级不丢失。
+        val logReceived = if (selfFastPath) AutofillLogger::d else AutofillLogger::i
+        logReceived(
             "AF",
             "onFillRequest received",
-            metadata = mapOf(
+            mapOf(
                 "requestId" to requestId,
                 "sdk" to Build.VERSION.SDK_INT,
                 "device" to "${Build.MANUFACTURER}/${Build.MODEL}",
@@ -260,10 +267,11 @@ class BastionAutofillServiceNg : AutofillService() {
                 val response = withContext(Dispatchers.Default) {
                     processFillRequest(request, cancellationSignal, requestId)
                 }
-                AutofillLogger.i(
+                val logResult = if (selfFastPath) AutofillLogger::d else AutofillLogger::i
+                logResult(
                     "AF",
                     "onFillRequest callback success",
-                    metadata = mapOf(
+                    mapOf(
                         "requestId" to requestId,
                         "hasResponse" to (response != null),
                         "cancelled" to cancellationSignal.isCanceled,
@@ -318,6 +326,19 @@ class BastionAutofillServiceNg : AutofillService() {
         }
         val structure = fillContext.structure
         val fallbackPackage = structure.activityComponent?.packageName.orEmpty()
+
+        // 自我请求快速短路：Bastion 自己的输入框永远不需要填充，无需解析结构树。
+        // 提前于 parser.parse 之前返回——既省解析开销，也避免产生 received/Parser×2/
+        // DIAG/weak-reparse/Skip/callback 七行零信息量流水线日志（真机日志实测：主界面
+        // 每次进出条目触发一轮，15/15 请求全部命中此路径）。
+        if (isSelfPackage(fallbackPackage)) {
+            AutofillLogger.d(
+                "AF",
+                "Skip fill request for Bastion itself (fast path): $fallbackPackage",
+                metadata = mapOf("requestId" to requestId),
+            )
+            return null
+        }
 
         if (fallbackPackage.isNotBlank() && autofillPreferences.isInBlacklist(fallbackPackage)) {
             AutofillLogger.i(
@@ -1702,14 +1723,16 @@ class BastionAutofillServiceNg : AutofillService() {
 
     override fun onConnected() {
         super.onConnected()
-        AutofillLogger.i("AF", "Service connected")
+        // 系统反复绑定/解绑 autofill service 属常态心跳（真机日志 5 分钟内 30+30 次），
+        // 降 DEBUG；真实故障另有 E 级日志，此处 INFO 级只会淹没有效信息。
+        AutofillLogger.d("AF", "Service connected")
     }
 
     override fun onDisconnected() {
         AutofillSessionGrants.clear()
         passwordMemoryByPackage.clear()
         super.onDisconnected()
-        AutofillLogger.i("AF", "Service disconnected")
+        AutofillLogger.d("AF", "Service disconnected")
     }
 
     private fun resolveEffectivePackageName(

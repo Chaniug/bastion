@@ -538,6 +538,46 @@ private object DeveloperLogDebugHelper {
         "SmartFieldDetector:V",
         "*:S"
     )
+
+    /**
+     * 应用进程内的系统组件噪音 tag：这些组件（Android 视图/insets/输入子系统 +
+     * 荣耀厂商扩展）在应用 pid 内打出大量与业务无关的内部日志，真机导出实测占
+     * System Logcat 段 95% 以上。规则：tag 命中且级别 < WARN 时过滤；W/E 保留
+     * （isCrashLogLine 依赖 libc 的 E 级识别崩溃，勿全滤）。
+     */
+    private val NOISY_SYSTEM_TAGS = setOf(
+        "VRI", "SurfaceControl", "Surface", "BLASTBufferQueue",
+        "BufferQueueProducer", "BufferQueueConsumer",
+        "InsetsController", "HnInsetsControllerEx", "ImeTracker", "ImeFocusController",
+        "InputMethodManager", "InputEvent", "InputEventReceiver",
+        "NavigationBarController", "ViewTreeObserver", "ViewRootImpl", "WindowOnBackDispatcher",
+        "FullScreenUtils", "HWUI", "Dialog", "Choreographer",
+        "HnViewRootImplEx", "HnWidgetTransparencyImpl", "HwViewRootImpl", "HwForceDarkManager",
+        "HwPhoneWindow", "HnPgAppThreadImpl", "VrrViewInfoHandler",
+        "libc", "libbinder", "SessionManager",
+    )
+
+    /**
+     * 纯调试噪音 tag：W/E 级亦无诊断价值（实测其 E 级全为 INSETS_DEBUG /
+     * 厂商调度器的固定格式输出），全级别过滤。
+     */
+    private val PURE_NOISE_SYSTEM_TAGS = setOf(
+        "RtgSchedManager", "RtgSchedIpcFile", "InsetsSourceConsumer",
+        "FixedFlowFrameManager", "AnimationPromotionHandler", "HiTouch", "DE_TS", "AwareLog",
+    )
+
+    /** 判定一行 logcat 是否为可过滤的系统噪音。 */
+    private fun isNoisySystemLog(line: String): Boolean {
+        val tag = logcatTagOf(line)
+        if (tag.isEmpty()) return false
+        fun matches(names: Set<String>) = names.any { tag == it || tag.startsWith(it) }
+        if (matches(PURE_NOISE_SYSTEM_TAGS)) return true
+        if (matches(NOISY_SYSTEM_TAGS)) {
+            val level = detectLevel(line)
+            return level != DeveloperLogLevel.WARN && level != DeveloperLogLevel.ERROR
+        }
+        return false
+    }
     // 固定 Locale.US 而非 Locale.getDefault()：
     // 这两处分别是日志时间戳与导出文件名，均为纯数字格式，与界面语言无关。
     // 固定 Locale 既符合 lint 的 ConstantLocale 要求，也避免日志/文件名随系统语言漂移。
@@ -553,7 +593,10 @@ private object DeveloperLogDebugHelper {
         // 替代原先 3 次串行的 logcat -d 读取（每次都会遍历整个环形缓冲，是抓取慢的主因）。
         val allLogcat = readLogcatFull()
         val autofillTagSet = AUTOFILL_LOG_TAGS.map { it.substringBefore(':') }.toSet()
-        val appProcessLogs = allLogcat.filter { logcatPidOf(it) == myPid }.joinToString("\n")
+        val appProcessLogs = allLogcat
+            .filter { logcatPidOf(it) == myPid }
+            .filterNot { isNoisySystemLog(it) }
+            .joinToString("\n")
         val crashLogs = allLogcat.filter { isCrashLogLine(it) }.joinToString("\n")
         val autofillTagLogs = allLogcat.filter { logcatTagOf(it) in autofillTagSet }.joinToString("\n")
         val selectedLogs = buildString {
@@ -615,7 +658,14 @@ private object DeveloperLogDebugHelper {
             }
             appendLine()
             appendLine("=== Autofill Structured Logs ===")
-            appendLine(autofillLogs.trim())
+            if (persistedAutofillLogs.isNotBlank()) {
+                // AutofillLogger 双写：内存环形缓冲（本段）与持久化文件（Persisted 段）
+                // 内容完全同源，同时导出会让报告近半行数是逐行重复。持久化段覆盖更全
+                // （1200 条 vs 300 条且跨进程重启保留），本段仅在持久化不可用时兜底输出。
+                appendLine("(与 Autofill Persisted Logs 段同源，为避免整段重复已省略；本段仅作持久化不可用时的兜底)")
+            } else {
+                appendLine(autofillLogs.trim())
+            }
             appendLine()
             appendLine("=== Autofill Persisted Logs ===")
             if (persistedAutofillLogs.isBlank()) {

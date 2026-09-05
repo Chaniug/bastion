@@ -28,6 +28,7 @@ import java.net.UnknownHostException
 import java.net.URL
 import java.security.MessageDigest
 import javax.net.ssl.SSLException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -41,6 +42,15 @@ object FaviconCache {
     private const val MAX_DISK_CACHE_MB = 24 // favicon 磁盘缓存体积上限（MB）
     private val pruneCounter = AtomicInteger(0) // 节流：每 25 次写入触发一次清理
     @Volatile var useThirdPartyFavicons: Boolean = false // 是否允许使用第三方服务补全 favicon（隐私开关，默认关）
+
+    /**
+     * 失败负缓存：domain hash -> 失败时间戳(ms)。
+     * 全部源拉取失败的域名在 TTL 内直接判定不可达，不再发起网络请求——
+     * 列表项每次重新进入 composition 都会调用 getIcon，无负缓存时会对同一
+     * 失败域名（如 DNS 不存在的内网域、超时的死站）在数秒内反复重试（真机日志实测 4s×4 次）。
+     */
+    private const val NEGATIVE_CACHE_TTL_MS = 10 * 60 * 1000L
+    private val negativeCache = ConcurrentHashMap<String, Long>()
 
     private val memoryCache = object : LruCache<String, ImageBitmap>(MAX_MEMORY_CACHE_BYTES_KB) {
         override fun sizeOf(key: String, value: ImageBitmap): Int {
@@ -88,10 +98,21 @@ object FaviconCache {
                 return@withContext cached
             }
 
-            // 3. 多源顺序尝试，第一个成功即返回
+            // 3. 失败负缓存命中：TTL 内直接返回 null（落到首字母头像兜底），不再打网络
+            val lastFailureAt = negativeCache[cacheKey]
+            if (lastFailureAt != null) {
+                if (System.currentTimeMillis() - lastFailureAt < NEGATIVE_CACHE_TTL_MS) {
+                    return@withContext null
+                }
+                negativeCache.remove(cacheKey, lastFailureAt)
+            }
+
+            // 4. 多源顺序尝试，第一个成功即返回
+            var anySuccess = false
             for (candidate in buildFaviconCandidates(domain)) {
                 val bitmap = fetchFaviconFromUrl(candidate, connectTimeoutMs = 3000, readTimeoutMs = 3500)
                 if (bitmap != null) {
+                    anySuccess = true
                     try {
                         val out = FileOutputStream(cacheFile)
                         bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)
@@ -105,6 +126,10 @@ object FaviconCache {
                     memoryCache.put(cacheKey, imageBitmap)
                     return@withContext imageBitmap
                 }
+            }
+            // 全部源失败：记录负缓存，TTL 内不再重试同一域名
+            if (!anySuccess) {
+                negativeCache[cacheKey] = System.currentTimeMillis()
             }
             null
         }
@@ -223,7 +248,8 @@ object FaviconCache {
                 e is SSLException ||
                 e is IOException
             if (commonNetworkIssue) {
-                Log.w(TAG, "Favicon source skipped for $faviconUrl: ${e.javaClass.simpleName}")
+                // DNS 解析不到 / 超时等网络类失败属预期路径（配合负缓存避免反复重试），降 DEBUG 避免刷 W
+                Log.d(TAG, "Favicon source skipped for $faviconUrl: ${e.javaClass.simpleName}")
             } else {
                 Log.w("FaviconCache", "Unexpected favicon fetch failure for $faviconUrl", e)
             }

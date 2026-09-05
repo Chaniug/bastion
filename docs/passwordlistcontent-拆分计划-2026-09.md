@@ -253,7 +253,8 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 4 | `323cb9c6` + `af476fa9` | ✅ 批1 已完成（CI 绿） | 对话框状态（17 var）下沉为 `PasswordListDialogState` 容器（独立文件，internal）；主函数 55 处读写点改 `dialogState.xxx`；`af476fa9` 同步修复源码守卫测试断言（CI #33938599186 红→绿） |
 | 4 | `377d1c64` | ✅ 批2 已完成（CI 绿） | 选择状态（3 var）下沉为 `PasswordListSelectionState` 容器；主函数 40 处替换；守卫测试断言同步更新 |
 | 4 | `1946ef5d` + `32e28c3d` | ✅ 批3 已完成（CI #33940176619 绿） | 滚动状态（listState/收起判定/顶距/空态防抖）下沉为 `PasswordListScrollState` 容器；`32e28c3d` 修复：**委托属性不能用 `private set`**，改 val 委托只读暴露 |
-| 4 | `55223e27` + `a33cf757` | ✅ 批4 已完成（CI #33941279186 绿） | manualStack 元数据 + 派生筛选链（groupingConfig→preStack 过滤→聚合堆叠→可见列表）下沉为 `PasswordListManualStackMeta` / `PasswordListDerivedFilters` 两个容器（同文件 private）；主函数删除 223 行（315..1468，体 1152 行，起始 1410 行）；`a33cf757` 修复编译（补 2 个异包 import + 容器可见性 private）。**待装包实测验证指令数** |
+| 4 | `55223e27` + `a33cf757` | ✅ 批4 已完成（CI #33941279186 绿） | manualStack 元数据 + 派生筛选链（groupingConfig→preStack 过滤→聚合堆叠→可见列表）下沉为 `PasswordListManualStackMeta` / `PasswordListDerivedFilters` 两个容器（同文件 private）；主函数删除 223 行（315..1468，体 1152 行，起始 1410 行）；`a33cf757` 修复编译（补 2 个异包 import + 容器可见性 private） |
+| 实测 | 77d70057 包 | ✅ PasswordListContent 达标 / ⚠️ SimpleMainScreen 仍超 | 2026-09-05 14:14 荣耀真机日志（主界面进出条目场景，版本 1.0.0-dev-77d7005）：**`PasswordListContent` 警告 0 次（批 4 生效，从 18199 降到 16384 以下）**；`SimpleMainScreen` **16652 指令 × 1 次警告**（超上限 268 条 / 1.6%）。结论：PasswordListContent 拆分收官；剩余目标改为 SimpleMainScreen，进入第五批（批 5） |
 
 **实测数据明细（2026-09-05 10:04 导出，版本 1.0.0-dev-c8efb57）**：
 - 警告分布：`PasswordListContent` 330 次 / `SimpleMainScreen` 17 次，从启动 10:03:50 起每秒约 30 条持续触发（非一次性）
@@ -282,3 +283,49 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 > - **批 4 踩坑 3（可见性）**：`internal` 函数不能暴露 file-private 类型（`PasswordListQuickFilterToggles` 是 private class）——同文件容器函数应声明 `private`；private class 的属性可以暴露 internal 类型（可见性放宽方向合法）；
 > - **批 4 搬移零修改技巧**：派生链搬进容器时靠局部别名（`val effectiveManualStackGroupByEntryId = manualStackMeta.effectiveManualStackGroupByEntryId`）保持搬移代码原文不变，降低搬运 diff 风险；
 > - **语义等价性论证**：容器函数每次重组返回新对象，但下游 remember keys 全是值（Map/Set equals 内容比较），与原先「每重组重算 effectiveXxx val」行为一致，不引入多余重组。
+
+---
+
+## 九、第五批（批 5）：SimpleMainScreen 指令超限（⏸ 待用户确认后动手）
+
+### 9.1 背景（2026-09-05 实测修正）
+
+批 4 装包实测（版本 1.0.0-dev-77d7005，荣耀真机，主界面进出条目场景）：
+
+| 函数 | 拆分前 | 当前 | 状态 |
+|------|--------|------|------|
+| `PasswordListContent` | 18895（330 次警告） | **16384 以下（0 次警告）** | ✅ 收官 |
+| `SimpleMainScreen` | 16652（17 次警告） | **16652（1 次警告）** | ⚠️ 超上限 268 条（1.6%） |
+
+**原批 5 预判修正**：本文档早前预判"批 5 = `groupedPasswords` 分组段下沉"（指向 PasswordListContent 链路，43 处引用）。实测 PasswordListContent 已达标，**该预判作废，批 5 目标修正为 `SimpleMainScreen`**（`ui/SimpleMainScreen.kt:750`，约 60 参数、函数体约 2500 行）。
+
+### 9.2 目标
+
+`SimpleMainScreen` 指令数 < 16384。**只需减 268+ 条（1.6%），拆一段中等复杂度的状态段即可达标**，属小批次收尾，非大批次重构。
+
+### 9.3 方案：沿用批 4 已验证的状态容器模式
+
+批 4 结论"指令大头在状态注册区（remember/collectAsState 的内联 Compose 代码），而非 UI 调用块"对 SimpleMainScreen 同样适用。注意：Kotlin 局部函数（`RenderMainSurface()`、`buildMainScreenHandlers()`、`tryActivateQueuedMiniHints()`）编译为独立合成方法，**不计入**主函数指令数，拆它们无收益。
+
+**候选下沉段（动手前需按函数体实测定夺，优先级序）**：
+
+1. **passwordPage 内容类型段**：`passwordPageVisibleContentTypes`（remember 派生）+ `passwordPageSelectedContentTypes`（rememberSaveable）+ 相关联动——一组内聚的派生状态，独立性强，预计单段减 200-400 条。
+2. **密码历史页模式段**：`passwordHistoryPageMode` + `passwordHistoryInitialTrashScopeKey` + 关联 rememberSaveable。
+3. **Bitwarden 页上下文段**：`isBitwardenPageContext` / `bitwardenStatusVaultId` 两个 when 派生 + 相关联动。
+
+任选其一实施后装包验证，达标即停（不为"更优雅"继续拆）。
+
+### 9.4 实施注意（沿用批 4 踩坑清单）
+
+- 容器模式：`internal/private class XxxState`（`var x by mutableStateOf(...)`）+ `@Composable fun rememberXxxState(...)`，主函数读写点改 `state.field`；
+- **前向引用**：容器调用插入点必须在依赖的 val 之后；
+- **异包类型**：容器签名首次写出的类型名逐一核对「import ∪ 同包 ∪ 同文件」；
+- **源码守卫测试**：`MultiPasswordSaveRegressionGuardTest` 有源码文本断言，改后同步更新；
+- SimpleMainScreen 参数 60+ 且被 `main/navigation` 多处调用，**不动签名**，只拆函数体内部状态。
+
+### 9.5 验证
+
+1. 本地：`scripts/localcheck.sh`（compileDebugKotlin）绿；
+2. CI：dev 分支 Android CI 绿；
+3. 装包实测：主界面进出条目 + 各 tab 切换后导出日志，`grep -i 'instruction limit'` 期望 **0 命中**；
+4. 回归确认：密码列表滚动/多选/对话框/聚合堆叠行为无变化。
