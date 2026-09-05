@@ -7,13 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +16,7 @@ import com.bastion.app.data.PasswordCardDisplayField
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.UnmatchedIconHandlingStrategy
 import com.bastion.app.ui.gestures.SwipeActions
+import com.bastion.app.ui.gestures.rememberSwipeArmState
 
 internal data class PasswordListCardBadge(
     val text: String,
@@ -53,35 +48,30 @@ internal fun PasswordListSingleCardItem(
     badge: PasswordListCardBadge? = null
 ) {
     // 【方案 A】滑动删除需先长按激活：默认锁定，列表滚动绝不会误触。
-    var armed by remember { mutableStateOf(false) }
-    // 激活后 3 秒无操作自动解除，避免条目长期停留在"可滑动"状态。
-    LaunchedEffect(armed) {
-        if (!armed) return@LaunchedEffect
-        delay(3000)
-        armed = false
-    }
+    // 激活后 3 秒无操作自动解除（逻辑统一在 SwipeArmState）。
+    val armState = rememberSwipeArmState()
 
     SwipeActions(
         onSwipeLeft = {
-            armed = false
+            armState.disarm()
             onSwipeLeft()
         },
         onSwipeRight = onSwipeRight,
         isSwiped = isSwiped,
-        enabled = armed,
+        enabled = armState.armed,
         // 右滑原本用于进入多选，多选入口已移除，故不再允许右滑。
         allowSwipeRight = false,
-        armed = armed
+        armed = armState.armed
     ) {
         PasswordEntryCard(
             entry = entry,
             onClick = {
-                armed = false
+                armState.disarm()
                 onClick()
             },
             // 长按 = 激活本条的滑动删除（不再进入多选模式）
             onLongClick = {
-                armed = true
+                armState.arm()
                 onLongClick()
             },
             onToggleFavorite = onToggleFavorite,

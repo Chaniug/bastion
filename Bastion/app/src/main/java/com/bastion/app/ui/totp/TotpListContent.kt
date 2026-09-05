@@ -393,6 +393,9 @@ fun TotpListContent(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedItems by remember { mutableStateOf(setOf<Long>()) }
 
+    // 【方案 A】防误触滑动门控：滑动默认锁定，长按条目激活后 3 秒内可滑
+    val armState = com.bastion.app.ui.gestures.rememberSwipeArmState()
+
     // 多选模式下按返回键：先取消选择（否则手势返回会直接触发"再按一次退出"）
     BackHandler(enabled = isSelectionMode) {
         isSelectionMode = false
@@ -1126,7 +1129,9 @@ contentPadding = PaddingValues(
                                 }
                             },
                             isSwiped = itemToDelete?.id == item.id,
-                            enabled = !isDragging,
+                            // 【方案 A】默认锁定滑动（拖动排序时也锁）；长按激活后 3 秒内可滑；多选模式保留滑动可用
+                            enabled = !isDragging && (isSelectionMode || armState.armed),
+                            armed = armState.armed && !isSelectionMode,
                             allowSwipeLeft = !isSelectionMode,
                             allowSwipeRight = true
                         ) {
@@ -1164,7 +1169,8 @@ contentPadding = PaddingValues(
                                         itemToShowQr = item
                                     },
                                     onLongClick = {
-                                        // 长按进入多选模式
+                                        // 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留进多选逻辑
+                                        armState.arm()
                                         haptic.performLongPress()
                                         if (!isSelectionMode) {
                                             isSelectionMode = true

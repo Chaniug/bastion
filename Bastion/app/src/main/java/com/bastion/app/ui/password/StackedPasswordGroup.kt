@@ -60,6 +60,11 @@ fun StackedPasswordGroup(
     val leadPassword = passwords.firstOrNull() ?: return
     val collapsedTitle = displayTitle?.takeIf { it.isNotBlank() } ?: leadPassword.title
 
+    // 【方案 A】防误触滑动门控：滑动默认锁定，长按激活后 3 秒内可滑，超时/点击自动解除。
+    // 各分支（合并卡、堆叠封面行、展开条目）共用同一个 armState。
+    val armState = com.bastion.app.ui.gestures.rememberSwipeArmState()
+    val haptic = rememberHapticFeedback()
+
     // 检查是否为多密码合并卡片(除密码外信息完全相同)。
     // remember(passwords) 缓存：组内密码数量在滚动重组期间不变时，避免每帧 O(n) 字符串拼接。
     val isMergedPasswordCard = remember(passwords) {
@@ -184,12 +189,14 @@ fun StackedPasswordGroup(
                 onSwipeLeft = { onSwipeLeft(leadPassword) },
                 onSwipeRight = { onGroupSwipeRight(passwords) },
                 isSwiped = leadPassword.id == swipedItemId,
-                enabled = true
+                // 【方案 A】普通模式默认锁定滑动，长按合并卡激活；多选分支保持始终可用
+                enabled = armState.armed,
+                armed = armState.armed
             ) {
                 PasswordEntryCard(
                     entry = displayEntry,
-                    onClick = { onOpenMultiPasswordDialog(passwords) },
-                    onLongClick = { onLongClick(leadPassword) },
+                    onClick = { armState.disarm(); onOpenMultiPasswordDialog(passwords) },
+                    onLongClick = { armState.arm(); onLongClick(leadPassword) },
                     onToggleFavorite = { passwords.forEach(onToggleFavorite) },
                     onToggleGroupCover = null,
                     isSelectionMode = false,
@@ -237,7 +244,6 @@ fun StackedPasswordGroup(
     
     // 🎯 下滑手势状态
     var swipeOffset by remember { mutableFloatStateOf(0f) }
-    val haptic = rememberHapticFeedback()
     
     Box(
         modifier = Modifier
@@ -310,7 +316,9 @@ fun StackedPasswordGroup(
                     if (!effectiveExpanded) onGroupSwipeRight(passwords)
                 },
                 isSwiped = leadPassword.id == swipedItemId,
-                enabled = !effectiveExpanded // Disable swipe actions on the container when expanded
+                // 【方案 A】收起态默认锁定滑动，长按封面行激活后 3 秒内可滑；多选模式保留滑动可用
+                enabled = isSelectionMode || (armState.armed && !effectiveExpanded),
+                armed = armState.armed && !effectiveExpanded
             ) {
                 Card(
                     modifier = Modifier
@@ -370,7 +378,17 @@ fun StackedPasswordGroup(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onToggleExpand() }
+                                    .combinedClickable(
+                                        onClick = {
+                                            armState.disarm()
+                                            onToggleExpand()
+                                        },
+                                        onLongClick = {
+                                            // 【方案 A】长按封面行激活滑动删除（3 秒窗口），与密码单卡一致
+                                            haptic.performLongPress()
+                                            armState.arm()
+                                        }
+                                    )
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -558,7 +576,9 @@ fun StackedPasswordGroup(
                                                 com.bastion.app.ui.gestures.SwipeActions(
                                                     onSwipeLeft = { onSwipeLeft(groupLeadPassword) },
                                                     onSwipeRight = { onSwipeRight(groupLeadPassword) },
-                                                    enabled = true
+                                                    // 【方案 A】展开条目：多选模式保留滑动；普通模式长按激活后 3 秒内可滑
+                                                    enabled = isSelectionMode || armState.armed,
+                                                    armed = armState.armed && !isSelectionMode
                                                 ) {
                                                     if (passwordGroup.size == 1) {
                                                         val password = groupLeadPassword
@@ -571,7 +591,7 @@ fun StackedPasswordGroup(
                                                                     onPasswordClick(password)
                                                                 }
                                                             },
-                                                            onLongClick = { onLongClick(password) },
+                                                            onLongClick = { armState.arm(); onLongClick(password) },
                                                             onToggleFavorite = { onToggleFavorite(password) },
                                                             onToggleGroupCover = if (passwords.size > 1) {
                                                                 { onToggleGroupCover(password) }
@@ -605,7 +625,7 @@ fun StackedPasswordGroup(
                                                             onCardClick = if (!isSelectionMode) {
                                                                 { onOpenMultiPasswordDialog(passwordGroup) }
                                                             } else null,
-                                                            onLongClick = { onLongClick(groupLeadPassword) },
+                                                            onLongClick = { armState.arm(); onLongClick(groupLeadPassword) },
                                                             onToggleFavorite = { password -> onToggleFavorite(password) },
                                                             onToggleGroupCover = if (passwords.size > 1) {
                                                                 { password -> onToggleGroupCover(password) }
@@ -633,7 +653,7 @@ fun StackedPasswordGroup(
                                                         PasswordEntryCard(
                                                             entry = displayEntry,
                                                             onClick = { onOpenMultiPasswordDialog(passwordGroup) },
-                                                            onLongClick = { onLongClick(groupLeadPassword) },
+                                                            onLongClick = { armState.arm(); onLongClick(groupLeadPassword) },
                                                             onToggleFavorite = { passwordGroup.forEach(onToggleFavorite) },
                                                             onToggleGroupCover = if (passwords.size > 1) {
                                                                 {

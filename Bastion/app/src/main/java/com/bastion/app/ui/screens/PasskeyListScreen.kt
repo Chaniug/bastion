@@ -314,6 +314,8 @@ fun PasskeyListScreen(
     var deletePasswordInput by remember { mutableStateOf("") }
     var deletePasswordError by remember { mutableStateOf(false) }
     val haptic = rememberHapticFeedback()
+    // 【方案 A】防误触滑动门控：滑动默认锁定，长按条目激活后 3 秒内可滑
+    val armState = com.bastion.app.ui.gestures.rememberSwipeArmState()
     val settingsManager = remember { SettingsManager(context) }
     val savedCategoryFilterState by settingsManager
         .categoryFilterStateFlow(SettingsManager.CategoryFilterScope.PASSKEY)
@@ -1289,7 +1291,9 @@ fun PasskeyListScreen(
                                             selectionMode = updatedSelection.isNotEmpty()
                                         },
                                         isSwiped = isPendingDelete,
-                                        enabled = true,
+                                        // 【方案 A】默认锁定滑动；长按激活后 3 秒内可滑；多选模式保留滑动可用
+                                        enabled = selectionMode || armState.armed,
+                                        armed = armState.armed && !selectionMode,
                                         modifier = Modifier
                                     ) {
                                         PasskeyListItem(
@@ -1318,6 +1322,8 @@ fun PasskeyListScreen(
                                                 selectionMode = updatedSelection.isNotEmpty()
                                             },
                                             onLongPress = {
+                                                // 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留进多选逻辑
+                                                armState.arm()
                                                 haptic.performLongPress()
                                                 if (!selectionMode) {
                                                     selectionMode = true

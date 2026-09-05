@@ -115,6 +115,9 @@ import com.bastion.app.ui.cardwallet.isBitwardenWalletScope
 import com.bastion.app.ui.cardwallet.toBillingAddressWalletListItem
 import com.bastion.app.ui.cardwallet.toBankCardWalletListItem
 import com.bastion.app.ui.cardwallet.toDocumentWalletListItem
+import com.bastion.app.ui.gestures.SwipeActions
+import com.bastion.app.ui.gestures.rememberSwipeArmState
+import com.bastion.app.ui.haptic.rememberHapticFeedback
 import com.bastion.app.ui.components.BankCardCard
 import com.bastion.app.ui.components.BillingAddressCard
 import com.bastion.app.ui.components.CreateCategoryDialog
@@ -290,6 +293,9 @@ fun CardWalletScreen(
     }
 
     var itemToDelete by remember { mutableStateOf<SecureItem?>(null) }
+    // 【方案 A】防误触滑动门控：滑动默认锁定，长按条目激活后 3 秒内可滑
+    val armState = rememberSwipeArmState()
+    val haptic = rememberHapticFeedback()
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
     var showVerifyDialog by remember { mutableStateOf(false) }
     var verifyPassword by remember { mutableStateOf("") }
@@ -1348,6 +1354,24 @@ fun CardWalletScreen(
                                         Modifier
                                     }
 
+                                    SwipeActions(
+                                        onSwipeLeft = {
+                                            // 左滑删除：复用既有确认弹窗（MoreVert 菜单删除路径保留）
+                                            haptic.performWarning()
+                                            itemToDelete = item
+                                        },
+                                        onSwipeRight = {
+                                            // 右滑选择
+                                            haptic.performSuccess()
+                                            if (!isSelectionMode) isSelectionMode = true
+                                            selectedIds = if (isSelected) selectedIds - item.id else selectedIds + item.id
+                                            if (selectedIds.isEmpty()) isSelectionMode = false
+                                        },
+                                        isSwiped = itemToDelete?.id == item.id,
+                                        // 【方案 A】默认锁定滑动；长按激活后 3 秒内可滑；多选模式保留滑动可用
+                                        enabled = isSelectionMode || armState.armed,
+                                        armed = armState.armed && !isSelectionMode
+                                    ) {
                                     when (walletItem.type) {
                                         WalletListItemType.BANK_CARD -> BankCardCard(
                                             item = item,
@@ -1364,6 +1388,8 @@ fun CardWalletScreen(
                                             isSelectionMode = isSelectionMode,
                                             isSelected = isSelected,
                                             onLongClick = {
+                                                // 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留进多选逻辑
+                                                armState.arm()
                                                 if (!isSelectionMode) {
                                                     isSelectionMode = true
                                                     selectedIds = setOf(item.id)
@@ -1393,6 +1419,8 @@ fun CardWalletScreen(
                                             isSelectionMode = isSelectionMode,
                                             isSelected = isSelected,
                                             onLongClick = {
+                                                // 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留进多选逻辑
+                                                armState.arm()
                                                 if (!isSelectionMode) {
                                                     isSelectionMode = true
                                                     selectedIds = setOf(item.id)
@@ -1422,6 +1450,8 @@ fun CardWalletScreen(
                                             isSelectionMode = isSelectionMode,
                                             isSelected = isSelected,
                                             onLongClick = {
+                                                // 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留进多选逻辑
+                                                armState.arm()
                                                 if (!isSelectionMode) {
                                                     isSelectionMode = true
                                                     selectedIds = setOf(item.id)
@@ -1436,6 +1466,7 @@ fun CardWalletScreen(
                                             addressData = walletItem.billingAddressData
                                         )
 
+                                    }
                                     }
                                 }
                             }

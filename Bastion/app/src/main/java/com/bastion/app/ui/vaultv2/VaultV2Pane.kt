@@ -3231,6 +3231,8 @@ private fun VaultV2List(
 	onOpenItem: (VaultV2Item) -> Unit,
 ) {
 	val categoryQuickFilterScrollState = rememberScrollState()
+	// 【方案 A】防误触滑动门控：滑动默认锁定，长按条目激活后 3 秒内可滑
+	val armState = com.bastion.app.ui.gestures.rememberSwipeArmState()
 
 	LazyColumn(
 		state = listState,
@@ -3312,17 +3314,20 @@ private fun VaultV2List(
 
 			items(itemsInSection, key = { item -> item.key }) { item ->
 				val selected = item.key in selectedKeys
-				SwipeActions(
-					onSwipeLeft = { onRequestDeleteItem(item) },
-					onSwipeRight = {
-						if (selected) {
-							selectedKeys.remove(item.key)
-						} else {
-							selectedKeys.add(item.key)
-						}
-					},
-					isSwiped = false
-				) {
+			SwipeActions(
+				onSwipeLeft = { onRequestDeleteItem(item) },
+				onSwipeRight = {
+					if (selected) {
+						selectedKeys.remove(item.key)
+					} else {
+						selectedKeys.add(item.key)
+					}
+				},
+				isSwiped = false,
+				// 【方案 A】默认锁定滑动；长按激活后 3 秒内可滑；多选模式保留滑动可用
+				enabled = selectedKeys.isNotEmpty() || armState.armed,
+				armed = armState.armed && selectedKeys.isEmpty()
+			) {
 					VaultV2ItemCard(
 						item = item,
 						boundPassword = when (item.type) {
@@ -3344,13 +3349,15 @@ private fun VaultV2List(
 								onOpenItem(item)
 							}
 						},
-						onLongClick = {
-							if (selected) {
-								selectedKeys.remove(item.key)
-							} else {
-								selectedKeys.add(item.key)
-							}
+					onLongClick = {
+						// 【方案 A】长按同时激活滑动删除（3 秒窗口）+ 保留切换选中逻辑
+						armState.arm()
+						if (selected) {
+							selectedKeys.remove(item.key)
+						} else {
+							selectedKeys.add(item.key)
 						}
+					}
 					)
 				}
 			}
