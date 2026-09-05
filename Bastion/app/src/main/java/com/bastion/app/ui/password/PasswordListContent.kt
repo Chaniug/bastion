@@ -1447,7 +1447,7 @@ LaunchedEffect(quickFiltersExpanded) {
         onSelectionModeChange = onSelectionModeChange
     )
 
-    PasswordBatchMoveSheet(
+    PasswordBatchMoveSheetHost(
         visible = showMoveToCategoryDialog,
         categories = categories,
         keepassDatabases = keepassDatabases,
@@ -2574,5 +2574,50 @@ private fun PasswordListDialogsHost(
         onSingleItemPasswordInputChange = onSingleItemPasswordInputChange,
         showSingleItemPasswordVerify = showSingleItemPasswordVerify,
         onShowSingleItemPasswordVerifyChange = onShowSingleItemPasswordVerifyChange,
+    )
+}
+
+@Composable
+private fun PasswordBatchMoveSheetHost(
+    visible: Boolean,
+    categories: List<Category>,
+    keepassDatabases: List<com.bastion.app.data.LocalKeePassDatabase>,
+    bitwardenVaults: List<com.bastion.app.data.bitwarden.BitwardenVault>,
+    database: com.bastion.app.data.PasswordDatabase,
+    localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
+    securityManager: SecurityManager,
+    selectedPasswords: Set<Long>,
+    selectedSupplementaryItems: List<PasswordAggregateListItemUi>,
+    passwordEntries: List<PasswordEntry>,
+    aggregateUiState: PasswordListAggregateUiState,
+    viewModel: PasswordViewModel,
+    bitwardenRepository: com.bastion.app.bitwarden.repository.BitwardenRepository,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    onRenameCategory: (Category) -> Unit,
+    onDeleteCategory: (Category) -> Unit,
+    onDismiss: () -> Unit,
+    onSelectionCleared: () -> Unit
+) {
+    PasswordBatchMoveSheet(
+        visible = visible,
+        categories = categories,
+        keepassDatabases = keepassDatabases,
+        bitwardenVaults = bitwardenVaults,
+        database = database,
+        localKeePassViewModel = localKeePassViewModel,
+        securityManager = securityManager,
+        selectedPasswords = selectedPasswords,
+        selectedSupplementaryItems = selectedSupplementaryItems,
+        passwordEntries = passwordEntries,
+        aggregateUiState = aggregateUiState,
+        viewModel = viewModel,
+        bitwardenRepository = bitwardenRepository,
+        context = context,
+        coroutineScope = coroutineScope,
+        onRenameCategory = onRenameCategory,
+        onDeleteCategory = onDeleteCategory,
+        onDismiss = onDismiss,
+        onSelectionCleared = onSelectionCleared
     )
 }
