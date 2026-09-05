@@ -409,7 +409,13 @@ fun TotpListContent(
     val appSettings by settingsManager.settingsFlow.collectAsState(initial = com.bastion.app.data.AppSettings())
     val activity = context as? FragmentActivity
     val biometricHelper = remember { BiometricHelper(context) }
-    val canUseBiometric = activity != null && appSettings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    // 必须缓存：isBiometricAvailable() 内部是 canAuthenticate()，每次调用都要跨进程
+    // Binder 打 BiometricService。本页有 sharedTickSeconds（TOTP 倒计时，**每秒**更新一次），
+    // 不缓存就等于每秒打一次指纹服务，是实打实的耗电点。
+    // 只在 activity / biometricEnabled 变化时才重算。
+    val canUseBiometric = remember(activity, appSettings.biometricEnabled) {
+        activity != null && appSettings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    }
     val sharedTickSeconds by produceState(initialValue = System.currentTimeMillis() / 1000) {
         while (true) {
             value = System.currentTimeMillis() / 1000

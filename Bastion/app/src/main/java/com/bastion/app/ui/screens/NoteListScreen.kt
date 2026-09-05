@@ -214,7 +214,12 @@ fun NoteListScreen(
         }
     }
     val biometricHelper = remember { BiometricHelper(context) }
-    val canUseBiometric = activity != null && settings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    // 必须缓存：isBiometricAvailable() 内部是 canAuthenticate()，每次调用都要跨进程
+    // Binder 打 BiometricService。不缓存的话会在**每次重组**执行一次（实测密码页同款
+    // 写法达 81 次/秒），是实打实的耗电点。只在 activity / biometricEnabled 变化时重算。
+    val canUseBiometric = remember(activity, settings.biometricEnabled) {
+        activity != null && settings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    }
     val notes by viewModel.allNotes.collectAsState(initial = emptyList())
     var selectedCategoryFilter by remember { mutableStateOf<NoteCategoryFilter>(NoteCategoryFilter.All) }
     val savedCategoryFilterState by settingsManager

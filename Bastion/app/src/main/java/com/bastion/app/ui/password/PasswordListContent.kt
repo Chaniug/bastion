@@ -619,7 +619,13 @@ fun PasswordListContent(
     val context = androidx.compose.ui.platform.LocalContext.current
     val activity = context as? FragmentActivity
     val biometricHelper = remember { BiometricHelper(context) }
-    val canUseBiometric = activity != null && appSettings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    // 必须缓存：isBiometricAvailable() 内部是 canAuthenticate()，每次调用都要跨进程
+    // Binder 打 BiometricService。不缓存的话会在**每次重组**执行一次——实测密码页常驻
+    // 前台时高达 81 次/秒（15 秒采样 1218 次），是实打实的耗电点。
+    // 只在 activity / biometricEnabled 变化时才需要重算。
+    val canUseBiometric = remember(activity, appSettings.biometricEnabled) {
+        activity != null && appSettings.biometricEnabled && biometricHelper.isBiometricAvailable()
+    }
     val database = remember { com.bastion.app.data.PasswordDatabase.getDatabase(context) }
     val attachmentParentIds by database.attachmentDao()
         .observeParentsWithActiveAttachments()
