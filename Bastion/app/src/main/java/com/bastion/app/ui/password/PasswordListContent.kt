@@ -702,9 +702,6 @@ fun PasswordListContent(
     val expandedGroups by viewModel.expandedGroups.collectAsState()
     // 15 个快捷筛选开关 + WIFI/SSH/条码的存在性派生值，已下沉到独立组合函数。
     val quickFilterToggles = rememberPasswordListQuickFilterToggles(passwordEntries)
-    var manualStackGroupByEntryId by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
-    var noStackEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var lastCustomFieldEntryIds by remember { mutableStateOf<List<Long>>(emptyList()) }
     val configuredQuickFilterItems = rememberPasswordListConfiguredQuickFilterItems(
         appSettings = appSettings,
         aggregateUiState = aggregateUiState,
@@ -772,6 +769,12 @@ fun PasswordListContent(
             quickFilterToggles.manualStackOnly ||
             quickFilterToggles.neverStack ||
             quickFilterToggles.unstacked
+    val manualStackMeta = rememberPasswordListManualStackMeta(
+        passwordEntries = passwordEntries,
+        deletedItemIds = deletedItemIds,
+        shouldLoadManualStackMetadata = shouldLoadManualStackMetadata,
+        viewModel = viewModel
+    )
     val emptyStateMessage = remember(
         currentFilter,
         quickFoldersEnabledForCurrentFilter,
@@ -790,179 +793,23 @@ fun PasswordListContent(
                         )
         )
     }
-    val effectiveManualStackGroupByEntryId =
-        if (shouldLoadManualStackMetadata) manualStackGroupByEntryId else emptyMap()
-    val effectiveNoStackEntryIds =
-        if (shouldLoadManualStackMetadata) noStackEntryIds else emptySet()
-    val groupingConfig = remember(
-        isLocalOnlyView,
-        effectiveStackCardMode,
-        effectiveGroupMode,
-        appSettings.passwordWebsiteStackMatchMode,
-        effectiveNoStackEntryIds,
-        effectiveManualStackGroupByEntryId,
-        context
-    ) {
-        PasswordGroupingConfig(
-            isLocalOnlyView = isLocalOnlyView,
-            effectiveStackCardMode = effectiveStackCardMode,
-            effectiveGroupMode = effectiveGroupMode,
-            websiteStackMatchMode = appSettings.passwordWebsiteStackMatchMode,
-            effectiveNoStackEntryIds = effectiveNoStackEntryIds,
-            effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
-            untitledLabel = context.getString(R.string.untitled)
-        )
-    }
-    
-    val preStackFilteredPasswordEntries = remember(
-        passwordEntries,
-        deletedItemIds,
-        quickFoldersEnabledForCurrentFilter,
-        currentFilter,
-        configuredQuickFilterItems,
-        quickFilterToggles.favorite,
-        quickFilterToggles.twoFa,
-        quickFilterToggles.notes,
-        quickFilterToggles.passkey,
-        quickFilterToggles.boundNote,
-        quickFilterToggles.attachments,
-        activeAttachmentParentIds,
-        quickFilterToggles.uncategorized,
-        quickFilterToggles.localOnly,
-        quickFilterToggles.neverStack,
-        quickFilterToggles.wifi,
-        quickFilterToggles.sshKey,
-        quickFilterToggles.barcode,
-        effectiveNoStackEntryIds,
-        aggregateUiState.hasActiveContentTypeFilter,
-        aggregateUiState.contentTypeFilterTypes
-    ) {
-        filterPreStackPasswordEntries(
-            passwordEntries = passwordEntries,
-            deletedItemIds = deletedItemIds,
-            quickFoldersEnabledForCurrentFilter = quickFoldersEnabledForCurrentFilter,
-            currentFilter = currentFilter,
-            configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterToggles.favorite,
-            quickFilter2fa = quickFilterToggles.twoFa,
-            quickFilterNotes = quickFilterToggles.notes,
-            quickFilterPasskey = quickFilterToggles.passkey,
-            quickFilterBoundNote = quickFilterToggles.boundNote,
-            quickFilterAttachments = quickFilterToggles.attachments,
-            activeAttachmentParentIds = activeAttachmentParentIds,
-            quickFilterUncategorized = quickFilterToggles.uncategorized,
-            quickFilterLocalOnly = quickFilterToggles.localOnly,
-            quickFilterNeverStack = quickFilterToggles.neverStack,
-            quickFilterWifi = quickFilterToggles.wifi,
-            quickFilterSshKey = quickFilterToggles.sshKey,
-            quickFilterBarcode = quickFilterToggles.barcode,
-            effectiveNoStackEntryIds = effectiveNoStackEntryIds,
-            hasActiveContentTypeFilter = aggregateUiState.hasActiveContentTypeFilter,
-            contentTypeFilterTypes = aggregateUiState.contentTypeFilterTypes
-        )
-    }
-
-    val preStackFilteredAggregateItems = remember(
-        aggregateUiState.visibleItems,
-        configuredQuickFilterItems,
-        quickFilterToggles.favorite,
-        quickFilterToggles.twoFa,
-        quickFilterToggles.notes,
-        quickFilterToggles.uncategorized,
-        quickFilterToggles.localOnly,
-        quickFilterToggles.wifi,
-        quickFilterToggles.sshKey,
-        quickFilterToggles.barcode,
-        quickFilterToggles.neverStack,
-        currentFilter,
-        effectiveStackCardMode
-    ) {
-        filterPasswordAggregateItemsByQuickFilters(
-            items = aggregateUiState.visibleItems,
-            currentFilter = currentFilter,
-            configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = quickFilterToggles.favorite,
-            quickFilter2fa = quickFilterToggles.twoFa,
-            quickFilterNotes = quickFilterToggles.notes,
-            quickFilterUncategorized = quickFilterToggles.uncategorized,
-            quickFilterLocalOnly = quickFilterToggles.localOnly,
-            quickFilterWifi = quickFilterToggles.wifi,
-            quickFilterSshKey = quickFilterToggles.sshKey,
-            quickFilterBarcode = quickFilterToggles.barcode,
-            quickFilterManualStackOnly = false,
-            quickFilterNeverStack = quickFilterToggles.neverStack,
-            quickFilterUnstacked = false,
-            effectiveStackCardMode = effectiveStackCardMode,
-            manualStackedKeys = emptySet()
-        )
-    }
-    val manualAggregateStackBuildResult = remember(
-        aggregateStackEntries,
-        preStackFilteredPasswordEntries,
-        preStackFilteredAggregateItems
-    ) {
-        buildPasswordAggregateManualStackGroups(
-            stackEntries = aggregateStackEntries,
-            passwords = preStackFilteredPasswordEntries,
-            aggregateItems = preStackFilteredAggregateItems
-        )
-    }
-    val validAggregateStackedItemKeys = remember(manualAggregateStackBuildResult.stackedItemKeys) {
-        manualAggregateStackBuildResult.stackedItemKeys
-    }
-    val visiblePasswordEntries = remember(
-        preStackFilteredPasswordEntries,
-        configuredQuickFilterItems,
-        quickFilterToggles.manualStackOnly,
-        quickFilterToggles.unstacked,
-        effectiveStackCardMode,
-        effectiveManualStackGroupByEntryId,
-        validAggregateStackedItemKeys,
-        manualAggregateStackBuildResult.stackedPasswordIds,
-        groupingConfig
-    ) {
-        filterPasswordEntriesByStackQuickFilters(
-            items = preStackFilteredPasswordEntries,
-            configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
-            quickFilterUnstacked = quickFilterToggles.unstacked,
-            effectiveStackCardMode = effectiveStackCardMode,
-            effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
-            aggregateManualStackedItemKeys = validAggregateStackedItemKeys,
-            aggregateManualStackedPasswordIds = manualAggregateStackBuildResult.stackedPasswordIds,
-            groupingConfig = groupingConfig
-        )
-    }
-    val visibleAggregateItems = remember(
-        preStackFilteredAggregateItems,
-        configuredQuickFilterItems,
-        quickFilterToggles.manualStackOnly,
-        quickFilterToggles.unstacked,
-        quickFilterToggles.wifi,
-        quickFilterToggles.sshKey,
-        quickFilterToggles.barcode,
-        effectiveStackCardMode,
-        validAggregateStackedItemKeys
-    ) {
-        filterPasswordAggregateItemsByQuickFilters(
-            items = preStackFilteredAggregateItems,
-            currentFilter = currentFilter,
-            configuredQuickFilterItems = configuredQuickFilterItems,
-            quickFilterFavorite = false,
-            quickFilter2fa = false,
-            quickFilterNotes = false,
-            quickFilterUncategorized = false,
-            quickFilterLocalOnly = false,
-            quickFilterWifi = quickFilterToggles.wifi,
-            quickFilterSshKey = quickFilterToggles.sshKey,
-            quickFilterBarcode = quickFilterToggles.barcode,
-            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
-            quickFilterNeverStack = false,
-            quickFilterUnstacked = quickFilterToggles.unstacked,
-            effectiveStackCardMode = effectiveStackCardMode,
-            manualStackedKeys = validAggregateStackedItemKeys
-        )
-    }
+    val derivedFilters = rememberPasswordListDerivedFilters(
+        passwordEntries = passwordEntries,
+        deletedItemIds = deletedItemIds,
+        quickFoldersEnabledForCurrentFilter = quickFoldersEnabledForCurrentFilter,
+        currentFilter = currentFilter,
+        configuredQuickFilterItems = configuredQuickFilterItems,
+        quickFilterToggles = quickFilterToggles,
+        activeAttachmentParentIds = activeAttachmentParentIds,
+        manualStackMeta = manualStackMeta,
+        aggregateUiState = aggregateUiState,
+        effectiveStackCardMode = effectiveStackCardMode,
+        aggregateStackEntries = aggregateStackEntries,
+        isLocalOnlyView = isLocalOnlyView,
+        effectiveGroupMode = effectiveGroupMode,
+        appSettings = appSettings,
+        context = context
+    )
     LaunchedEffect(selectionState.isSelectionMode, selectionState.selectedItemKeys) {
         if (selectionState.isSelectionMode && selectionState.selectedItemKeys.isEmpty()) {
             selectionState.isSelectionMode = false
@@ -972,53 +819,6 @@ fun PasswordListContent(
         }
     }
 
-    LaunchedEffect(passwordEntries, deletedItemIds, shouldLoadManualStackMetadata) {
-        if (!shouldLoadManualStackMetadata) {
-            manualStackGroupByEntryId = emptyMap()
-            noStackEntryIds = emptySet()
-            lastCustomFieldEntryIds = emptyList()
-            return@LaunchedEffect
-        }
-        val entriesSnapshot = passwordEntries
-        val deletedIdsSnapshot = deletedItemIds
-        val allIds = withContext(Dispatchers.Default) {
-            entriesSnapshot
-                .asSequence()
-                .map { it.id }
-                .filter { id -> id !in deletedIdsSnapshot }
-                .toList()
-        }
-        if (allIds.isEmpty()) {
-            manualStackGroupByEntryId = emptyMap()
-            noStackEntryIds = emptySet()
-            lastCustomFieldEntryIds = emptyList()
-            return@LaunchedEffect
-        }
-        if (allIds == lastCustomFieldEntryIds) {
-            return@LaunchedEffect
-        }
-        lastCustomFieldEntryIds = allIds
-        val fieldMap = withContext(Dispatchers.IO) {
-            viewModel.getCustomFieldsByEntryIds(allIds)
-        }
-        val (manualStackMap, noStackIds) = withContext(Dispatchers.Default) {
-            val manualStack = fieldMap.mapNotNull { (entryId, fields) ->
-                val groupId = fields.firstOrNull {
-                    it.title == MONICA_MANUAL_STACK_GROUP_FIELD_TITLE
-                }?.value?.takeIf { value -> value.isNotBlank() }
-                groupId?.let { entryId to it }
-            }.toMap()
-            val noStack = fieldMap.mapNotNull { (entryId, fields) ->
-                val hasNoStack = fields.any {
-                    it.title == MONICA_NO_STACK_FIELD_TITLE && it.value != "0"
-                }
-                if (hasNoStack) entryId else null
-            }.toSet()
-            manualStack to noStack
-        }
-        manualStackGroupByEntryId = manualStackMap
-        noStackEntryIds = noStackIds
-    }
     
     // 根据分组模式对密码进行分组（后台线程计算，避免阻塞首滑）
     var groupedPasswords by remember {
@@ -1028,18 +828,18 @@ fun PasswordListContent(
         mutableStateOf(false)
     }
     val visiblePasswordsForAutoGrouping = remember(
-        visiblePasswordEntries,
-        manualAggregateStackBuildResult.stackedPasswordIds
+        derivedFilters.visiblePasswordEntries,
+        derivedFilters.manualAggregateStackBuildResult.stackedPasswordIds
     ) {
-        visiblePasswordEntries.filter { it.id !in manualAggregateStackBuildResult.stackedPasswordIds }
+        derivedFilters.visiblePasswordEntries.filter { it.id !in derivedFilters.manualAggregateStackBuildResult.stackedPasswordIds }
     }
     LaunchedEffect(
         visiblePasswordsForAutoGrouping,
         effectiveGroupMode,
         appSettings.passwordWebsiteStackMatchMode,
         effectiveStackCardMode,
-        effectiveManualStackGroupByEntryId,
-        effectiveNoStackEntryIds
+        manualStackMeta.effectiveManualStackGroupByEntryId,
+        manualStackMeta.effectiveNoStackEntryIds
     ) {
         val sourceEntries = visiblePasswordsForAutoGrouping
         if (sourceEntries.isEmpty()) {
@@ -1051,7 +851,7 @@ fun PasswordListContent(
         groupedPasswords = withContext(Dispatchers.Default) {
             buildGroupedPasswordsForEntries(
                 sourceEntries = sourceEntries,
-                config = groupingConfig
+                config = derivedFilters.groupingConfig
             )
         }
         hasGroupedPasswordsReadyForCurrentInputs = true
@@ -1122,14 +922,14 @@ fun PasswordListContent(
     val shouldGateInitialPasswordFirstFrame = initialRenderState.shouldGateInitialContent
     val effectiveVisibleAggregateItems = remember(
         shouldGateInitialPasswordFirstFrame,
-        visibleAggregateItems,
-        manualAggregateStackBuildResult.stackedAggregateKeys
+        derivedFilters.visibleAggregateItems,
+        derivedFilters.manualAggregateStackBuildResult.stackedAggregateKeys
     ) {
         if (shouldGateInitialPasswordFirstFrame) {
             emptyList()
         } else {
-            visibleAggregateItems.filter { item ->
-                item.key !in manualAggregateStackBuildResult.stackedAggregateKeys
+            derivedFilters.visibleAggregateItems.filter { item ->
+                item.key !in derivedFilters.manualAggregateStackBuildResult.stackedAggregateKeys
             }
         }
     }
@@ -1183,7 +983,7 @@ fun PasswordListContent(
             groupedPasswords = groupedPasswordsForRender,
             supplementaryItems = effectiveVisibleAggregateItems,
             groupMode = effectiveGroupMode,
-            manualStackGroups = manualAggregateStackBuildResult.groups
+            manualStackGroups = derivedFilters.manualAggregateStackBuildResult.groups
         )
     }
     val passwordPageListItemKeys = remember(passwordPageListItems) {
@@ -1279,11 +1079,11 @@ LaunchedEffect(quickFiltersExpanded) {
         hasVisibleListItems,
         hasScrollableHeaderContent,
         searchQuery,
-        visiblePasswordEntries,
+        derivedFilters.visiblePasswordEntries,
         effectiveVisibleAggregateItems
     ) {
         if (!isPasswordPageListModelReady) {
-            visiblePasswordEntries.isNotEmpty() ||
+            derivedFilters.visiblePasswordEntries.isNotEmpty() ||
                 effectiveVisibleAggregateItems.isNotEmpty() ||
                 hasScrollableHeaderContent ||
                 searchQuery.isNotEmpty()
@@ -2528,5 +2328,288 @@ private fun PasswordBatchMoveSheetHost(
         onDeleteCategory = onDeleteCategory,
         onDismiss = onDismiss,
         onSelectionCleared = onSelectionCleared
+    )
+}
+
+
+internal class PasswordListManualStackMeta(
+    val effectiveManualStackGroupByEntryId: Map<Long, String>,
+    val effectiveNoStackEntryIds: Set<Long>
+)
+
+@Composable
+internal fun rememberPasswordListManualStackMeta(
+    passwordEntries: List<PasswordEntry>,
+    deletedItemIds: Set<Long>,
+    shouldLoadManualStackMetadata: Boolean,
+    viewModel: PasswordViewModel
+): PasswordListManualStackMeta {
+    var manualStackGroupByEntryId by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
+    var noStackEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var lastCustomFieldEntryIds by remember { mutableStateOf<List<Long>>(emptyList()) }
+    LaunchedEffect(passwordEntries, deletedItemIds, shouldLoadManualStackMetadata) {
+        if (!shouldLoadManualStackMetadata) {
+            manualStackGroupByEntryId = emptyMap()
+            noStackEntryIds = emptySet()
+            lastCustomFieldEntryIds = emptyList()
+            return@LaunchedEffect
+        }
+        val entriesSnapshot = passwordEntries
+        val deletedIdsSnapshot = deletedItemIds
+        val allIds = withContext(Dispatchers.Default) {
+            entriesSnapshot
+                .asSequence()
+                .map { it.id }
+                .filter { id -> id !in deletedIdsSnapshot }
+                .toList()
+        }
+        if (allIds.isEmpty()) {
+            manualStackGroupByEntryId = emptyMap()
+            noStackEntryIds = emptySet()
+            lastCustomFieldEntryIds = emptyList()
+            return@LaunchedEffect
+        }
+        if (allIds == lastCustomFieldEntryIds) {
+            return@LaunchedEffect
+        }
+        lastCustomFieldEntryIds = allIds
+        val fieldMap = withContext(Dispatchers.IO) {
+            viewModel.getCustomFieldsByEntryIds(allIds)
+        }
+        val (manualStackMap, noStackIds) = withContext(Dispatchers.Default) {
+            val manualStack = fieldMap.mapNotNull { (entryId, fields) ->
+                val groupId = fields.firstOrNull {
+                    it.title == MONICA_MANUAL_STACK_GROUP_FIELD_TITLE
+                }?.value?.takeIf { value -> value.isNotBlank() }
+                groupId?.let { entryId to it }
+            }.toMap()
+            val noStack = fieldMap.mapNotNull { (entryId, fields) ->
+                val hasNoStack = fields.any {
+                    it.title == MONICA_NO_STACK_FIELD_TITLE && it.value != "0"
+                }
+                if (hasNoStack) entryId else null
+            }.toSet()
+            manualStack to noStack
+        }
+        manualStackGroupByEntryId = manualStackMap
+        noStackEntryIds = noStackIds
+    }
+    val effectiveManualStackGroupByEntryId =
+        if (shouldLoadManualStackMetadata) manualStackGroupByEntryId else emptyMap()
+    val effectiveNoStackEntryIds =
+        if (shouldLoadManualStackMetadata) noStackEntryIds else emptySet()
+    return PasswordListManualStackMeta(
+        effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
+        effectiveNoStackEntryIds = effectiveNoStackEntryIds
+    )
+}
+
+internal class PasswordListDerivedFilters(
+    val groupingConfig: PasswordGroupingConfig,
+    val preStackFilteredPasswordEntries: List<PasswordEntry>,
+    val preStackFilteredAggregateItems: List<PasswordAggregateListItemUi>,
+    val manualAggregateStackBuildResult: PasswordAggregateManualStackBuildResult,
+    val validAggregateStackedItemKeys: Set<String>,
+    val visiblePasswordEntries: List<PasswordEntry>,
+    val visibleAggregateItems: List<PasswordAggregateListItemUi>
+)
+
+@Composable
+internal fun rememberPasswordListDerivedFilters(
+    passwordEntries: List<PasswordEntry>,
+    deletedItemIds: Set<Long>,
+    quickFoldersEnabledForCurrentFilter: Boolean,
+    currentFilter: CategoryFilter,
+    configuredQuickFilterItems: List<PasswordListQuickFilterItem>,
+    quickFilterToggles: PasswordListQuickFilterToggles,
+    activeAttachmentParentIds: Set<Long>,
+    manualStackMeta: PasswordListManualStackMeta,
+    aggregateUiState: PasswordListAggregateUiState,
+    effectiveStackCardMode: StackCardMode,
+    aggregateStackEntries: List<PasswordPageAggregateStackEntry>,
+    isLocalOnlyView: Boolean,
+    effectiveGroupMode: String,
+    appSettings: AppSettings,
+    context: Context
+): PasswordListDerivedFilters {
+    val effectiveManualStackGroupByEntryId = manualStackMeta.effectiveManualStackGroupByEntryId
+    val effectiveNoStackEntryIds = manualStackMeta.effectiveNoStackEntryIds
+    val groupingConfig = remember(
+        isLocalOnlyView,
+        effectiveStackCardMode,
+        effectiveGroupMode,
+        appSettings.passwordWebsiteStackMatchMode,
+        effectiveNoStackEntryIds,
+        effectiveManualStackGroupByEntryId,
+        context
+    ) {
+        PasswordGroupingConfig(
+            isLocalOnlyView = isLocalOnlyView,
+            effectiveStackCardMode = effectiveStackCardMode,
+            effectiveGroupMode = effectiveGroupMode,
+            websiteStackMatchMode = appSettings.passwordWebsiteStackMatchMode,
+            effectiveNoStackEntryIds = effectiveNoStackEntryIds,
+            effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
+            untitledLabel = context.getString(R.string.untitled)
+        )
+    }
+    
+    val preStackFilteredPasswordEntries = remember(
+        passwordEntries,
+        deletedItemIds,
+        quickFoldersEnabledForCurrentFilter,
+        currentFilter,
+        configuredQuickFilterItems,
+        quickFilterToggles.favorite,
+        quickFilterToggles.twoFa,
+        quickFilterToggles.notes,
+        quickFilterToggles.passkey,
+        quickFilterToggles.boundNote,
+        quickFilterToggles.attachments,
+        activeAttachmentParentIds,
+        quickFilterToggles.uncategorized,
+        quickFilterToggles.localOnly,
+        quickFilterToggles.neverStack,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
+        effectiveNoStackEntryIds,
+        aggregateUiState.hasActiveContentTypeFilter,
+        aggregateUiState.contentTypeFilterTypes
+    ) {
+        filterPreStackPasswordEntries(
+            passwordEntries = passwordEntries,
+            deletedItemIds = deletedItemIds,
+            quickFoldersEnabledForCurrentFilter = quickFoldersEnabledForCurrentFilter,
+            currentFilter = currentFilter,
+            configuredQuickFilterItems = configuredQuickFilterItems,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            quickFilterNotes = quickFilterToggles.notes,
+            quickFilterPasskey = quickFilterToggles.passkey,
+            quickFilterBoundNote = quickFilterToggles.boundNote,
+            quickFilterAttachments = quickFilterToggles.attachments,
+            activeAttachmentParentIds = activeAttachmentParentIds,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            effectiveNoStackEntryIds = effectiveNoStackEntryIds,
+            hasActiveContentTypeFilter = aggregateUiState.hasActiveContentTypeFilter,
+            contentTypeFilterTypes = aggregateUiState.contentTypeFilterTypes
+        )
+    }
+
+    val preStackFilteredAggregateItems = remember(
+        aggregateUiState.visibleItems,
+        configuredQuickFilterItems,
+        quickFilterToggles.favorite,
+        quickFilterToggles.twoFa,
+        quickFilterToggles.notes,
+        quickFilterToggles.uncategorized,
+        quickFilterToggles.localOnly,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
+        quickFilterToggles.neverStack,
+        currentFilter,
+        effectiveStackCardMode
+    ) {
+        filterPasswordAggregateItemsByQuickFilters(
+            items = aggregateUiState.visibleItems,
+            currentFilter = currentFilter,
+            configuredQuickFilterItems = configuredQuickFilterItems,
+            quickFilterFavorite = quickFilterToggles.favorite,
+            quickFilter2fa = quickFilterToggles.twoFa,
+            quickFilterNotes = quickFilterToggles.notes,
+            quickFilterUncategorized = quickFilterToggles.uncategorized,
+            quickFilterLocalOnly = quickFilterToggles.localOnly,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            quickFilterManualStackOnly = false,
+            quickFilterNeverStack = quickFilterToggles.neverStack,
+            quickFilterUnstacked = false,
+            effectiveStackCardMode = effectiveStackCardMode,
+            manualStackedKeys = emptySet()
+        )
+    }
+    val manualAggregateStackBuildResult = remember(
+        aggregateStackEntries,
+        preStackFilteredPasswordEntries,
+        preStackFilteredAggregateItems
+    ) {
+        buildPasswordAggregateManualStackGroups(
+            stackEntries = aggregateStackEntries,
+            passwords = preStackFilteredPasswordEntries,
+            aggregateItems = preStackFilteredAggregateItems
+        )
+    }
+    val validAggregateStackedItemKeys = remember(manualAggregateStackBuildResult.stackedItemKeys) {
+        manualAggregateStackBuildResult.stackedItemKeys
+    }
+    val visiblePasswordEntries = remember(
+        preStackFilteredPasswordEntries,
+        configuredQuickFilterItems,
+        quickFilterToggles.manualStackOnly,
+        quickFilterToggles.unstacked,
+        effectiveStackCardMode,
+        effectiveManualStackGroupByEntryId,
+        validAggregateStackedItemKeys,
+        manualAggregateStackBuildResult.stackedPasswordIds,
+        groupingConfig
+    ) {
+        filterPasswordEntriesByStackQuickFilters(
+            items = preStackFilteredPasswordEntries,
+            configuredQuickFilterItems = configuredQuickFilterItems,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
+            effectiveStackCardMode = effectiveStackCardMode,
+            effectiveManualStackGroupByEntryId = effectiveManualStackGroupByEntryId,
+            aggregateManualStackedItemKeys = validAggregateStackedItemKeys,
+            aggregateManualStackedPasswordIds = manualAggregateStackBuildResult.stackedPasswordIds,
+            groupingConfig = groupingConfig
+        )
+    }
+    val visibleAggregateItems = remember(
+        preStackFilteredAggregateItems,
+        configuredQuickFilterItems,
+        quickFilterToggles.manualStackOnly,
+        quickFilterToggles.unstacked,
+        quickFilterToggles.wifi,
+        quickFilterToggles.sshKey,
+        quickFilterToggles.barcode,
+        effectiveStackCardMode,
+        validAggregateStackedItemKeys
+    ) {
+        filterPasswordAggregateItemsByQuickFilters(
+            items = preStackFilteredAggregateItems,
+            currentFilter = currentFilter,
+            configuredQuickFilterItems = configuredQuickFilterItems,
+            quickFilterFavorite = false,
+            quickFilter2fa = false,
+            quickFilterNotes = false,
+            quickFilterUncategorized = false,
+            quickFilterLocalOnly = false,
+            quickFilterWifi = quickFilterToggles.wifi,
+            quickFilterSshKey = quickFilterToggles.sshKey,
+            quickFilterBarcode = quickFilterToggles.barcode,
+            quickFilterManualStackOnly = quickFilterToggles.manualStackOnly,
+            quickFilterNeverStack = false,
+            quickFilterUnstacked = quickFilterToggles.unstacked,
+            effectiveStackCardMode = effectiveStackCardMode,
+            manualStackedKeys = validAggregateStackedItemKeys
+        )
+    }
+    return PasswordListDerivedFilters(
+        groupingConfig = groupingConfig,
+        preStackFilteredPasswordEntries = preStackFilteredPasswordEntries,
+        preStackFilteredAggregateItems = preStackFilteredAggregateItems,
+        manualAggregateStackBuildResult = manualAggregateStackBuildResult,
+        validAggregateStackedItemKeys = validAggregateStackedItemKeys,
+        visiblePasswordEntries = visiblePasswordEntries,
+        visibleAggregateItems = visibleAggregateItems
     )
 }
