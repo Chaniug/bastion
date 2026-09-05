@@ -377,12 +377,7 @@ fun PasswordListContent(
     val fastScrollProgress by viewModel.fastScrollProgress.collectAsState()
     val quickStatusTransferState by PasswordBatchTransferProgressTracker.progress.collectAsState()
     val quickStatusDeleteState by PasswordBatchDeleteProgressTracker.progress.collectAsState()
-    var showQuickStatusTransferDialog by remember { mutableStateOf(false) }
-    var showQuickStatusDeleteDialog by remember { mutableStateOf(false) }
-    var showQuickStatusKeePassSyncDialog by remember { mutableStateOf(false) }
-    var backgroundedTransferOperationId by remember { mutableStateOf<Long?>(null) }
-    var backgroundedDeleteOperationId by remember { mutableStateOf<Long?>(null) }
-    var backgroundedKeePassSyncKey by remember { mutableStateOf<String?>(null) }
+    val dialogState = rememberPasswordListDialogState()
 
     // 收集 VM 暴露的"手动 sync 进行中"数据库 id 集合，用于区分自动 / 手动 sync 的弹窗策略。
     // 自动 sync（PAGE_VISIBLE / PENDING_UPLOAD 触发的）静默不弹"正在同步"对话框，
@@ -547,7 +542,7 @@ fun PasswordListContent(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 quickStatusKeePassSyncState?.let { state ->
-                    backgroundedKeePassSyncKey = state.dialogSuppressionKey()
+                    dialogState.backgroundedKeePassSyncKey = state.dialogSuppressionKey()
                 }
             }
         }
@@ -569,23 +564,23 @@ fun PasswordListContent(
     LaunchedEffect(quickStatusTransferState?.operationId, quickStatusBannerEnabled) {
         val state = quickStatusTransferState
         if (state == null) {
-            showQuickStatusTransferDialog = false
-            backgroundedTransferOperationId = null
+            dialogState.showQuickStatusTransferDialog = false
+            dialogState.backgroundedTransferOperationId = null
             return@LaunchedEffect
         }
-        if (!quickStatusBannerEnabled && state.operationId != backgroundedTransferOperationId) {
-            showQuickStatusTransferDialog = true
+        if (!quickStatusBannerEnabled && state.operationId != dialogState.backgroundedTransferOperationId) {
+            dialogState.showQuickStatusTransferDialog = true
         }
     }
     LaunchedEffect(quickStatusDeleteState?.operationId, quickStatusBannerEnabled) {
         val state = quickStatusDeleteState
         if (state == null) {
-            showQuickStatusDeleteDialog = false
-            backgroundedDeleteOperationId = null
+            dialogState.showQuickStatusDeleteDialog = false
+            dialogState.backgroundedDeleteOperationId = null
             return@LaunchedEffect
         }
-        if (!quickStatusBannerEnabled && state.operationId != backgroundedDeleteOperationId) {
-            showQuickStatusDeleteDialog = true
+        if (!quickStatusBannerEnabled && state.operationId != dialogState.backgroundedDeleteOperationId) {
+            dialogState.showQuickStatusDeleteDialog = true
         }
     }
     LaunchedEffect(
@@ -598,16 +593,16 @@ fun PasswordListContent(
     ) {
         val state = quickStatusKeePassSyncState
         if (state == null) {
-            showQuickStatusKeePassSyncDialog = false
-            backgroundedKeePassSyncKey = null
+            dialogState.showQuickStatusKeePassSyncDialog = false
+            dialogState.backgroundedKeePassSyncKey = null
             return@LaunchedEffect
         }
         val stateKey = state.dialogSuppressionKey()
         // CONFLICT 状态必须弹（绕过 onPause 自动抑制与 backgroundedKey 检查），用户需要解决冲突。
         val mustShow = state.status == KeePassSyncStatus.CONFLICT ||
             state.coordinatorPhase == SyncPhase.CONFLICT
-        if (mustShow || (!quickStatusBannerEnabled && stateKey != backgroundedKeePassSyncKey)) {
-            showQuickStatusKeePassSyncDialog = true
+        if (mustShow || (!quickStatusBannerEnabled && stateKey != dialogState.backgroundedKeePassSyncKey)) {
+            dialogState.showQuickStatusKeePassSyncDialog = true
         }
     }
     
@@ -615,16 +610,8 @@ fun PasswordListContent(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedItemKeys by remember { mutableStateOf(setOf<String>()) }
     var swipeSelectionAnchorKey by remember { mutableStateOf<String?>(null) }
-    var showBatchDeleteDialog by remember { mutableStateOf(false) }
-    var showMoveToCategoryDialog by remember { mutableStateOf(false) }
-    var showManualStackConfirmDialog by remember { mutableStateOf(false) }
-    var selectedManualStackMode by remember { mutableStateOf(ManualStackDialogMode.STACK) }
     
     // 详情对话框状态
-    var showDetailDialog by remember { mutableStateOf(false) }
-    var selectedPasswordForDetail by remember { mutableStateOf<com.bastion.app.data.PasswordEntry?>(null) }
-    var passwordInput by remember { mutableStateOf("") }
-    var passwordError by remember { mutableStateOf(false) }
     
     
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -709,9 +696,6 @@ fun PasswordListContent(
     )
     
     // 添加单项删除对话框状态
-    var itemToDelete by remember { mutableStateOf<com.bastion.app.data.PasswordEntry?>(null) }
-    var singleItemPasswordInput by remember { mutableStateOf("") }
-    var showSingleItemPasswordVerify by remember { mutableStateOf(false) }
     
     // 添加已删除项ID集合（用于在验证前隐藏项）
     var deletedItemIds by remember { mutableStateOf(setOf<Long>()) }
@@ -1430,12 +1414,12 @@ LaunchedEffect(quickFiltersExpanded) {
             selectedItemKeys = it
             if (it.isEmpty()) swipeSelectionAnchorKey = null
         },
-        onShowMoveToCategoryDialog = { showMoveToCategoryDialog = true },
+        onShowMoveToCategoryDialog = { dialogState.showMoveToCategoryDialog = true },
         onShowManualStackConfirmDialog = {
-            selectedManualStackMode = ManualStackDialogMode.STACK
-            showManualStackConfirmDialog = true
+            dialogState.selectedManualStackMode = ManualStackDialogMode.STACK
+            dialogState.showManualStackConfirmDialog = true
         },
-        onShowBatchDeleteDialog = { showBatchDeleteDialog = true }
+        onShowBatchDeleteDialog = { dialogState.showBatchDeleteDialog = true }
     )
 
     BindPasswordListSelectionModeChange(
@@ -1448,7 +1432,7 @@ LaunchedEffect(quickFiltersExpanded) {
     )
 
     PasswordBatchMoveSheetHost(
-        visible = showMoveToCategoryDialog,
+        visible = dialogState.showMoveToCategoryDialog,
         categories = categories,
         keepassDatabases = keepassDatabases,
         bitwardenVaults = bitwardenVaults,
@@ -1465,7 +1449,7 @@ LaunchedEffect(quickFiltersExpanded) {
         coroutineScope = coroutineScope,
         onRenameCategory = onRenameCategory,
         onDeleteCategory = onDeleteCategory,
-        onDismiss = { showMoveToCategoryDialog = false },
+        onDismiss = { dialogState.showMoveToCategoryDialog = false },
         onSelectionCleared = {
             isSelectionMode = false
             selectedItemKeys = emptySet()
@@ -1497,13 +1481,13 @@ LaunchedEffect(quickFiltersExpanded) {
             showPinnedQuickFolderPathBanner = showPinnedQuickFolderPathBanner,
             quickStatusTransferState = quickStatusTransferState,
             onShowQuickStatusTransferDialog = {
-                backgroundedTransferOperationId = null
-                showQuickStatusTransferDialog = true
+                dialogState.backgroundedTransferOperationId = null
+                dialogState.showQuickStatusTransferDialog = true
             },
             quickStatusDeleteState = quickStatusDeleteState,
             onShowQuickStatusDeleteDialog = {
-                backgroundedDeleteOperationId = null
-                showQuickStatusDeleteDialog = true
+                dialogState.backgroundedDeleteOperationId = null
+                dialogState.showQuickStatusDeleteDialog = true
             },
             quickStatusBitwardenSyncState = quickStatusBitwardenSyncState,
             quickStatusKeePassSyncState = quickStatusKeePassSyncState,
@@ -1525,8 +1509,8 @@ LaunchedEffect(quickFiltersExpanded) {
             passwordPageListItems = passwordPageListItems,
             effectiveStackCardMode = effectiveStackCardMode,
             expandedGroups = expandedGroups,
-            itemToDelete = itemToDelete,
-            onItemToDeleteChange = { itemToDelete = it },
+            itemToDelete = dialogState.itemToDelete,
+            onItemToDeleteChange = { dialogState.itemToDelete = it },
             isSelectionMode = isSelectionMode,
             onSelectionModeChange = { isSelectionMode = it },
             selectedItemKeys = selectedItemKeys,
@@ -1534,8 +1518,8 @@ LaunchedEffect(quickFiltersExpanded) {
             swipeSelectionAnchorKey = swipeSelectionAnchorKey,
             onSwipeSelectionAnchorKeyChange = { swipeSelectionAnchorKey = it },
             selectedPasswords = selectedPasswords,
-            showBatchDeleteDialog = showBatchDeleteDialog,
-            onShowBatchDeleteDialogChange = { showBatchDeleteDialog = it },
+            showBatchDeleteDialog = dialogState.showBatchDeleteDialog,
+            onShowBatchDeleteDialogChange = { dialogState.showBatchDeleteDialog = it },
             viewModel = viewModel,
             haptic = haptic,
             onPasswordClick = onPasswordClick,
@@ -1612,38 +1596,38 @@ LaunchedEffect(quickFiltersExpanded) {
     }
 
     PasswordListQuickStatusDialogsHost(
-        showQuickStatusTransferDialog = showQuickStatusTransferDialog,
+        showQuickStatusTransferDialog = dialogState.showQuickStatusTransferDialog,
         quickStatusTransferState = quickStatusTransferState,
         onMoveTransferToBackground = {
-            backgroundedTransferOperationId = quickStatusTransferState?.operationId
-            showQuickStatusTransferDialog = false
+            dialogState.backgroundedTransferOperationId = quickStatusTransferState?.operationId
+            dialogState.showQuickStatusTransferDialog = false
         },
-        showQuickStatusDeleteDialog = showQuickStatusDeleteDialog,
+        showQuickStatusDeleteDialog = dialogState.showQuickStatusDeleteDialog,
         quickStatusDeleteState = quickStatusDeleteState,
         onMoveDeleteToBackground = {
-            backgroundedDeleteOperationId = quickStatusDeleteState?.operationId
-            showQuickStatusDeleteDialog = false
+            dialogState.backgroundedDeleteOperationId = quickStatusDeleteState?.operationId
+            dialogState.showQuickStatusDeleteDialog = false
         },
-        showQuickStatusKeePassSyncDialog = showQuickStatusKeePassSyncDialog,
+        showQuickStatusKeePassSyncDialog = dialogState.showQuickStatusKeePassSyncDialog,
         quickStatusKeePassSyncState = quickStatusKeePassSyncState,
         onMoveKeePassSyncToBackground = { state ->
-            backgroundedKeePassSyncKey = state.dialogSuppressionKey()
-            showQuickStatusKeePassSyncDialog = false
+            dialogState.backgroundedKeePassSyncKey = state.dialogSuppressionKey()
+            dialogState.showQuickStatusKeePassSyncDialog = false
         },
         onRunKeePassSyncNow = { state ->
-            backgroundedKeePassSyncKey = null
+            dialogState.backgroundedKeePassSyncKey = null
             state.onSync()
-            showQuickStatusKeePassSyncDialog = false
+            dialogState.showQuickStatusKeePassSyncDialog = false
         }
     )
     
     PasswordListDialogsHost(
-        showManualStackConfirmDialog = showManualStackConfirmDialog,
-        onShowManualStackConfirmDialogChange = { showManualStackConfirmDialog = it },
+        showManualStackConfirmDialog = dialogState.showManualStackConfirmDialog,
+        onShowManualStackConfirmDialogChange = { dialogState.showManualStackConfirmDialog = it },
         selectedItemKeys = selectedItemKeys,
         selectedPasswords = selectedPasswords,
-        selectedManualStackMode = selectedManualStackMode,
-        onSelectedManualStackModeChange = { selectedManualStackMode = it },
+        selectedManualStackMode = dialogState.selectedManualStackMode,
+        onSelectedManualStackModeChange = { dialogState.selectedManualStackMode = it },
         onApplyManualStackMode = { dialogMode, itemKeys, passwordIds ->
             val validItemKeys = itemKeys.filterTo(linkedSetOf()) { it.isNotBlank() }
             if (
@@ -1734,25 +1718,25 @@ LaunchedEffect(quickFiltersExpanded) {
             selectedItemKeys = emptySet()
             swipeSelectionAnchorKey = null
         },
-        showBatchDeleteDialog = showBatchDeleteDialog,
-        onShowBatchDeleteDialogChange = { showBatchDeleteDialog = it },
-        passwordInput = passwordInput,
+        showBatchDeleteDialog = dialogState.showBatchDeleteDialog,
+        onShowBatchDeleteDialogChange = { dialogState.showBatchDeleteDialog = it },
+        passwordInput = dialogState.passwordInput,
         onPasswordInputChange = {
-            passwordInput = it
-            passwordError = false
+            dialogState.passwordInput = it
+            dialogState.passwordError = false
         },
-        passwordError = passwordError,
-        onPasswordErrorChange = { passwordError = it },
+        passwordError = dialogState.passwordError,
+        onPasswordErrorChange = { dialogState.passwordError = it },
         canUseBiometric = canUseBiometric,
         activity = activity,
         biometricHelper = biometricHelper,
-        itemToDelete = itemToDelete,
-        onItemToDeleteChange = { itemToDelete = it },
+        itemToDelete = dialogState.itemToDelete,
+        onItemToDeleteChange = { dialogState.itemToDelete = it },
         appSettings = appSettings,
-        singleItemPasswordInput = singleItemPasswordInput,
-        onSingleItemPasswordInputChange = { singleItemPasswordInput = it },
-        showSingleItemPasswordVerify = showSingleItemPasswordVerify,
-        onShowSingleItemPasswordVerifyChange = { showSingleItemPasswordVerify = it },
+        singleItemPasswordInput = dialogState.singleItemPasswordInput,
+        onSingleItemPasswordInputChange = { dialogState.singleItemPasswordInput = it },
+        showSingleItemPasswordVerify = dialogState.showSingleItemPasswordVerify,
+        onShowSingleItemPasswordVerifyChange = { dialogState.showSingleItemPasswordVerify = it },
         passwordEntries = passwordEntries,
         selectedSupplementaryItems = selectedSupplementaryItems
     )
