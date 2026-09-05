@@ -284,7 +284,9 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
+import com.bastion.app.bitwarden.viewmodel.BitwardenViewModel
 
 private val stringSetSaver = Saver<Set<String>, ArrayList<String>>(
     save = { value -> ArrayList(value) },
