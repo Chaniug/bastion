@@ -22,6 +22,7 @@ import android.text.InputType
 import android.util.Log
 import android.view.inputmethod.InlineSuggestionsRequest
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -115,6 +116,19 @@ class BastionAutofillServiceNg : AutofillService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /**
+     * 启动配置观测协程：collect 依赖 scope 存活。scope 被取消（服务断开/系统回收）时,
+     * CancellationException 属正常控制流, 静默; 其余真实故障才记 [AutofillLogger.w]。
+     */
+    private fun launchObserved(tag: String, message: String, block: suspend () -> Unit) {
+        scope.launch {
+            runCatchingObserved { block() }.onFailure { e ->
+                if (e is CancellationException) return@onFailure
+                AutofillLogger.w(tag, "$message: ${e.message}")
+            }
+        }
+    }
+
     private lateinit var passwordRepository: PasswordRepository
     private lateinit var autofillPreferences: AutofillPreferences
     private lateinit var settingsManager: SettingsManager
@@ -155,70 +169,48 @@ class BastionAutofillServiceNg : AutofillService() {
         // 消除 onFillRequest / AccountFillPolicy / FilledDataBuilderNg 内的 runBlocking 读取。
         AutofillConfigCache.preload(applicationContext)
         // 观测设置流，持续刷新缓存字段；collect 立即发射当前值，之后每次变更刷新。
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "settings observation failed") {
                 settingsManager.settingsFlow.collect { s ->
                     AutofillConfigCache.autoLockMinutes = s.autoLockMinutes
                     AutofillConfigCache.separateUsernameAccountEnabled = s.separateUsernameAccountEnabled
                     AutofillConfigCache.language = s.language.name
                     AutofillConfigCache.autofillAuthRequired = s.autofillAuthRequired
                 }
-            }.onFailure { AutofillLogger.w("AFCACHE", "settings observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "inline suggestion observation failed") {
                 autofillPreferences.isInlineSuggestionsEnabled.collect { v ->
                     AutofillConfigCache.isInlineSuggestionsEnabled = v
                 }
-            }.onFailure { AutofillLogger.w("AFCACHE", "inline suggestion observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "autofill-enabled observation failed") {
                 autofillPreferences.isAutofillEnabled.collect { v ->
                     AutofillConfigCache.isAutofillEnabled = v
                 }
-            }.onFailure { AutofillLogger.w("AFCACHE", "autofill-enabled observation failed: ${it.message}") }
         }
         // Phase C onFillRequest 全量缓存化（方案 B 延伸）：8 路配置观测
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "v2-respect-off observation failed") {
                 autofillPreferences.isV2RespectAutofillOffEnabled.collect { AutofillConfigCache.isV2RespectAutofillOffEnabled = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "v2-respect-off observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "source-filter observation failed") {
                 autofillPreferences.v2DefaultSourceFilter.collect { AutofillConfigCache.v2DefaultSourceFilter = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "source-filter observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "keepass-db-id observation failed") {
                 autofillPreferences.v2DefaultKeepassDatabaseId.collect { AutofillConfigCache.v2DefaultKeepassDatabaseId = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "keepass-db-id observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "bitwarden-vault-id observation failed") {
                 autofillPreferences.v2DefaultBitwardenVaultId.collect { AutofillConfigCache.v2DefaultBitwardenVaultId = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "bitwarden-vault-id observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "strict-mode observation failed") {
                 autofillPreferences.isBitwardenStrictModeEnabled.collect { AutofillConfigCache.isBitwardenStrictModeEnabled = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "strict-mode observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "subdomain-match observation failed") {
                 autofillPreferences.isBitwardenSubdomainMatchEnabled.collect { AutofillConfigCache.isBitwardenSubdomainMatchEnabled = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "subdomain-match observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "domain-strategy observation failed") {
                 autofillPreferences.domainMatchStrategy.collect { AutofillConfigCache.domainMatchStrategy = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "domain-strategy observation failed: ${it.message}") }
         }
-        scope.launch {
-            runCatchingObserved {
+        launchObserved("AFCACHE", "password-suggestion observation failed") {
                 autofillPreferences.isPasswordSuggestionEnabled.collect { AutofillConfigCache.isPasswordSuggestionEnabled = it }
-            }.onFailure { AutofillLogger.w("AFCACHE", "password-suggestion observation failed: ${it.message}") }
         }
         ContextCompat.registerReceiver(
             this,
@@ -227,9 +219,8 @@ class BastionAutofillServiceNg : AutofillService() {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         screenOffReceiverRegistered = true
-        scope.launch {
-            runCatchingObserved { autofillPreferences.ensureBitwardenV2EngineMode() }
-                .onFailure { AutofillLogger.w("AF", "Failed to enforce V2 engine mode: ${it.message}") }
+        launchObserved("AF", "Failed to enforce V2 engine mode") {
+            autofillPreferences.ensureBitwardenV2EngineMode()
         }
 
         AutofillLogger.i("AF", "BastionAutofillServiceNg created")

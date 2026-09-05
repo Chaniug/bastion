@@ -71,7 +71,8 @@ object AutofillSecretResolver {
         }
 
         // Legacy V1 payload format: Base64(12-byte IV + encrypted bytes + 16-byte GCM tag)
-        val decoded = runCatchingObserved {
+        // 探测性解码: 对明文字段必然抛 "bad base-64", 属预期失败, 用静默 runCatching（不要 runCatchingObserved）
+        val decoded = runCatching {
             Base64.decode(value, Base64.DEFAULT)
         }.getOrNull() ?: return false
 

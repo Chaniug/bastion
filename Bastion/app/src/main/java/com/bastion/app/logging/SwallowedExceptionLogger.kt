@@ -58,13 +58,18 @@ fun setSwallowedExceptionSink(sink: (tag: String, priority: Int, throwable: Thro
 
 /**
  * 记录一次被吞掉的异常。DEBUG 构建才生效。
+ *
+ * 协程取消（[java.util.concurrent.CancellationException] 家族，含 JobCancellationException）
+ * 属正常控制流而非故障：降级为 [Log.DEBUG]，避免服务断开等场景刷屏掩盖真实故障。
  */
 fun logSwallowed(tag: String?, priority: Int, throwable: Throwable?) {
     if (!BuildConfig.DEBUG) return                 // release 全剔除，绝不留异常栈
     val t = tag ?: DEFAULT_TAG
     if (!shouldLog(t)) return                      // 限频
+    val effectivePriority =
+        if (throwable is java.util.concurrent.CancellationException) Log.DEBUG else priority
     try {
-        swallowedExceptionSink(t, priority, throwable)
+        swallowedExceptionSink(t, effectivePriority, throwable)
     } catch (_: Throwable) {
         // 日志 sink 自身绝不能抛异常拖垮调用方（如 JVM 单测里 android.util.Log 未 mock 时会抛 RuntimeException）
     }
