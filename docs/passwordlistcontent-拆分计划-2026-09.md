@@ -255,7 +255,7 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 4 | `1946ef5d` + `32e28c3d` | ✅ 批3 已完成（CI #33940176619 绿） | 滚动状态（listState/收起判定/顶距/空态防抖）下沉为 `PasswordListScrollState` 容器；`32e28c3d` 修复：**委托属性不能用 `private set`**，改 val 委托只读暴露 |
 | 4 | `55223e27` + `a33cf757` | ✅ 批4 已完成（CI #33941279186 绿） | manualStack 元数据 + 派生筛选链（groupingConfig→preStack 过滤→聚合堆叠→可见列表）下沉为 `PasswordListManualStackMeta` / `PasswordListDerivedFilters` 两个容器（同文件 private）；主函数删除 223 行（315..1468，体 1152 行，起始 1410 行）；`a33cf757` 修复编译（补 2 个异包 import + 容器可见性 private） |
 | 实测 | 77d70057 包 | ✅ PasswordListContent 达标 / ⚠️ SimpleMainScreen 仍超 | 2026-09-05 14:14 荣耀真机日志（主界面进出条目场景，版本 1.0.0-dev-77d7005）：**`PasswordListContent` 警告 0 次（批 4 生效，从 18199 降到 16384 以下）**；`SimpleMainScreen` **16652 指令 × 1 次警告**（超上限 268 条 / 1.6%）。结论：PasswordListContent 拆分收官；剩余目标改为 SimpleMainScreen，进入第五批（批 5） |
-| 5 | 见批 5 提交 | 🔄 已实施待验证 | 三组跨 tab 选择状态（TOTP/证件/银行卡，19 个 `var by remember` 注册 + 105 处引用）下沉为 `CrossTabSelectionState` 容器（`ui/CrossTabSelectionState.kt`，internal）；主函数 3 处写入口/6 处读出口/1 处条件读改 `state.field` 转发，读出口参数名保持不变；本地编译绿 + 6 个守卫测试类全绿。**待 CI + 装包实测指令数** |
+| 5 | `6ecf9a1`（待补） | ✅ 已完成（实测达标） | 三组跨 tab 选择状态（TOTP/证件/银行卡，19 个 `var by remember` 注册 + 105 处引用）下沉为 `CrossTabSelectionState` 容器（`ui/CrossTabSelectionState.kt`，internal）。**实测结论：2026-09-05 20:04 荣耀真机日志（版本 `1.0.0-dev-47b56c1`，进程全生命周期 36 秒，含密码列表点条目/返回路径）`compiler instruction limit` 警告 0 条**——`PasswordListContent` 与 `SimpleMainScreen` 双双降至 16384 以下，**JIT 拆分任务整体收官** |
 
 **实测数据明细（2026-09-05 10:04 导出，版本 1.0.0-dev-c8efb57）**：
 - 警告分布：`PasswordListContent` 330 次 / `SimpleMainScreen` 17 次，从启动 10:03:50 起每秒约 30 条持续触发（非一次性）
@@ -287,7 +287,10 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 
 ---
 
-## 九、第五批（批 5）：SimpleMainScreen 指令超限（⏸ 待用户确认后动手）
+## 九、第五批（批 5）：SimpleMainScreen 指令超限（✅ 已收官，2026-09-05 实测 0 警告）
+
+> **收官结论**：JIT 指令上限问题已全部解决（PasswordListContent + SimpleMainScreen）。
+> 后续性能工作转入「重组/布局」方向，见 [十、批 6](#十批-6重组与布局方向)。
 
 ### 9.1 背景（2026-09-05 实测修正）
 
@@ -330,3 +333,65 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 2. CI：dev 分支 Android CI 绿；
 3. 装包实测：主界面进出条目 + 各 tab 切换后导出日志，`grep -i 'instruction limit'` 期望 **0 命中**；
 4. 回归确认：密码列表滚动/多选/对话框/聚合堆叠行为无变化。
+
+**实测结果（2026-09-05 20:04，荣耀 BKQ-AN00 / API 37，版本 `1.0.0-dev-47b56c1`）**：
+日志覆盖进程启动至导出的完整 36 秒（含密码列表点开条目、返回、滚动恢复路径），
+`instruction limit` **0 命中** ✅，第 1-3 项均通过。
+
+---
+
+## 十、批 6：重组与布局方向（🔄 进行中）
+
+指令上限解决后，实机卡顿的主因转向「每帧重组 / 每帧重新布局」。
+
+### 10.1 已修：顶栏胶囊逐帧回调触发整屏重组（`6ef9262b`）
+
+**根因链**：
+
+```
+ExpressiveTopBar 胶囊 onGloballyPositioned   （顶栏收起/展开动画期间逐帧回调）
+  → categoryPillBoundsInWindow = bounds      （写 State）
+  → PasswordListContent / TotpListContent / PasskeyListScreen / CardWalletScreen / NoteListScreen
+    主函数读取该 state（订阅）
+  → 200ms 动画内每帧重组整个列表屏幕
+```
+
+关键点：该 bounds 在**全部 5 个界面都无消费方**（`PasswordListTopSection` 接收后从未使用），是死状态。
+
+**修复**：5 个界面停用 `onActionPillBoundsChanged` 回调（密码界面保留参数链路不动 Host 签名，其余 4 个直接移除死状态）。
+
+### 10.2 已修：胶囊内按钮缩放与外框不同步（`6ef9262b`）
+
+`ExpressiveTopBar` 顶栏所有属性都走 200ms 动画，唯独按钮组缩放直读快照值 `scrollCollapseFraction`
+→ 切换瞬间硬跳一下（用户手感为"卡顿"，实为无插值的突变）。改为跟随新增的 `collapseProgress`（同一条 200ms 插值）。
+
+### 10.3 已修：密码条目返回重影（`646b15b5`）
+
+`PasswordEntryCard.sharedBounds` 原用 `ResizeMode.RemeasureToBounds`：详情返回列表时，
+详情页内容被按卡片尺寸**重新布局**后再绘制 → 短暂出现"条目仍是打开状态"的重影。
+卡片类共享元素改 `ResizeMode.scaleToBounds()`：内容不重排，只做尺寸过渡。
+
+### 10.4 诊断手段：滚动掉帧采样（`646b15b5`）
+
+新增 `ui/perf/ScrollJankMonitor.kt`：`ScrollJankReporter(listState, label)` 在滚动期间逐帧采样，
+**仅在一次滚动结束且确实掉帧时输出一行摘要**，正常滚动完全静默：
+
+```
+ScrollPerf: jank label=passwords frames=142 janky=9(6%) avg=17.1ms max=68ms
+```
+
+已接入密码 / TOTP / 通行密钥三个列表（卡包用 reorderable state，类型不同未接入）。
+用途：量化卡顿、验证修复效果，避免"凭手感"判断。
+
+### 10.5 待观察项（本次未动，需实测数据决定）
+
+下列项在顶栏收起/展开的 200ms 内也会持续变化，若批 6 装包后仍有掉帧，按此顺序处理：
+
+1. **列表顶部 padding 动画**（`PasswordListScrollState.listTopPadding`）：72→48dp 联动，
+   LazyColumn 的 contentPadding 每帧变化 → 可见项每帧重新 measure/layout。
+   如需修：可改为「动画期间用固定 padding，动画结束后一次性对齐」（视觉取舍，需确认）。
+2. **标题字号动画**（`ExpressiveTopBar.titleFontSize` 32→16sp）：每帧触发 Text 重新布局；
+   且 `onTextLayout` 里回写 `titleAutoScale` 会形成布局→状态→重组的连锁。
+   如需修：字号改为整数档位切换（避免每帧重排）或收起时不再缩放字号（纯视觉取舍）。
+
+> 接力的 AI：处理 10.5 前请先导出日志确认 `ScrollPerf` 是否仍有 jank，避免无收益改动。
