@@ -1135,11 +1135,13 @@ contentPadding = PaddingValues(
                             },
                             isSwiped = itemToDelete?.id == item.id,
                             // 【方案 A】默认锁定滑动（拖动排序时也锁）；长按激活**本条目**后 3 秒内可滑。
-                            // 多选模式下仍允许滑动（右滑选条目），但禁左滑删除以防误触——这条语义由
-                            // TotpSwipeSelectionRegressionGuardTest 守卫，改这里前先读那个测试。
+                            // 多选模式下仍允许滑动（右滑选条目）。左滑删除在多选下仅对**已选中**条目放行：
+                            // 未选中的仍禁删（防误触语义由 TotpSwipeSelectionRegressionGuardTest 守卫，改前先读那个测试）。
+                            // 修复（2026-09-05 实机复现）：此前多选下左滑完全依赖 armed 的 3 秒窗口，
+                            // 超时后连已选中的条目也删不掉——多选操作栏又被悬浮胶囊遮挡，滑动是唯一删除出口。
                             enabled = !isDragging && (isSelectionMode || armState.armed),
                             armed = armState.armed,
-                            allowSwipeLeft = !isSelectionMode || armState.armed,
+                            allowSwipeLeft = !isSelectionMode || armState.armed || selectedItems.contains(item.id),
                             allowSwipeRight = true
                         ) {
                             // 包装卡片以支持拖动
