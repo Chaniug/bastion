@@ -1588,6 +1588,7 @@
     <string name="clipboard_auto_clear_description">复制账号和密码后，自动从剪贴板清除。</string>
     <string name="clipboard_auto_clear_never">永不</string>
     <string name="clipboard_auto_clear_seconds">%1$d 秒</string>
+    <string name="clipboard_auto_clear_minutes">%1$d 分钟</string>
     <string name="extensions_more_coming_soon">更多功能即将推出…</string>
     <string name="copy_next_code_when_expiring">即将过期时复制新验证码</string>
     <string name="copy_next_code_when_expiring_description">倒计时剩余 5 秒内点击复制时，自动复制下一个验证码</string>

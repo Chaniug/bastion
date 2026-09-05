@@ -76,7 +76,9 @@ object BitwardenCrypto {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is SymmetricCryptoKey) return false
-            return encKey.contentEquals(other.encKey) && macKey.contentEquals(other.macKey)
+            // 恒定时间比较：密钥材料即便仅在内部比较，也统一走防时序原语。
+            return MessageDigest.isEqual(encKey, other.encKey) &&
+                MessageDigest.isEqual(macKey, other.macKey)
         }
         
         override fun hashCode(): Int {

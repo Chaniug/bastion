@@ -54,7 +54,8 @@ fun ExtensionsScreen(
     val scrollState = rememberScrollState()
 
     var showClipboardAutoClearDialog by remember { mutableStateOf(false) }
-    val clipboardAutoClearOptions = remember { listOf(0, 10, 20, 30, 60) }
+    // 300 秒 = 5 分钟，对齐 Bitwarden 2026.4.1 的剪贴板自动清除安全默认。
+    val clipboardAutoClearOptions = remember { listOf(0, 10, 20, 30, 60, 300) }
 
     if (showClipboardAutoClearDialog) {
         AlertDialog(
@@ -250,10 +251,11 @@ fun ExtensionsScreen(
 
 @Composable
 private fun clipboardAutoClearLabel(seconds: Int): String {
-    return if (seconds <= 0) {
-        stringResource(R.string.clipboard_auto_clear_never)
-    } else {
-        stringResource(R.string.clipboard_auto_clear_seconds, seconds)
+    return when {
+        seconds <= 0 -> stringResource(R.string.clipboard_auto_clear_never)
+        // 整分钟档位（60/300）显示为分钟，与默认值「5 分钟」呼应。
+        seconds % 60 == 0 -> stringResource(R.string.clipboard_auto_clear_minutes, seconds / 60)
+        else -> stringResource(R.string.clipboard_auto_clear_seconds, seconds)
     }
 }
 

@@ -497,7 +497,7 @@ data class AppSettings(
     val biometricEnabled: Boolean = false, // 生物识别认证默认关闭
     val autoLockMinutes: Int = 5, // Auto lock after X minutes of inactivity
     val screenshotProtectionEnabled: Boolean = false, // Prevent screenshots by default
-    val clipboardAutoClearSeconds: Int = 0, // 复制账号/密码后自动清除剪切板，0=关闭
+    val clipboardAutoClearSeconds: Int = 300, // 复制账号/密码后自动清除剪切板，0=关闭；默认 5 分钟（对齐 Bitwarden 安全默认）
     val quickSetupCompleted: Boolean = false, // 首次快速初始化是否已完成/跳过
     val bottomNavVisibility: BottomNavVisibility = BottomNavVisibility(),
     val bottomNavOrder: List<BottomNavContentTab> = BottomNavContentTab.DEFAULT_ORDER,

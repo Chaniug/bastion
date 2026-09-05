@@ -278,7 +278,12 @@ class SecurityManager(private val context: Context) {
         } ?: return false
 
         val (computedHash, _) = hashMasterPassword(inputPassword, storedSalt, getStoredMasterPasswordIterations())
-        val result = computedHash == storedHash
+        // 恒定时间比较（对齐 Keyguard / Bitwarden 的防时序侧信道做法），
+        // 避免 hash 字符串逐位比较泄漏前缀匹配进度。
+        val result = MessageDigest.isEqual(
+            computedHash.toByteArray(Charsets.UTF_8),
+            storedHash.toByteArray(Charsets.UTF_8)
+        )
         android.util.Log.d("SecurityManager", "Password verification result: $result")
         if (result) {
             try {
@@ -1908,6 +1913,11 @@ class SecurityManager(private val context: Context) {
      */
     fun verifyBitwardenMasterPasswordHash(masterPasswordHash: String): Boolean {
         val storedHash = sharedPreferences.getString(BITWARDEN_MASTER_KEY_HASH_KEY, null)
-        return storedHash != null && storedHash == masterPasswordHash
+            ?: return false
+        // 恒定时间比较，防时序侧信道（同 verifyMasterPassword）。
+        return MessageDigest.isEqual(
+            storedHash.toByteArray(Charsets.UTF_8),
+            masterPasswordHash.toByteArray(Charsets.UTF_8)
+        )
     }
 }

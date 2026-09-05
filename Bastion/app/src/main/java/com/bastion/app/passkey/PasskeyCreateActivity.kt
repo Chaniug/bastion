@@ -678,7 +678,8 @@ class PasskeyCreateActivity : FragmentActivity() {
             )
             pendingClientDataHash?.let { providedHash ->
                 val computedHash = MessageDigest.getInstance("SHA-256").digest(clientDataJsonBytes)
-                if (!providedHash.contentEquals(computedHash)) {
+                // 恒定时间比较，防时序侧信道（统一 hash 比对原语）。
+                if (!MessageDigest.isEqual(providedHash, computedHash)) {
                     Log.w(TAG, "Provided clientDataHash differs from locally built clientDataJSON hash")
                 }
             }

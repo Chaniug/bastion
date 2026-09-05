@@ -499,7 +499,9 @@ class SettingsManager(private val context: Context) {
             quickSetupCompleted = preferences[QUICK_SETUP_COMPLETED_KEY] ?: false,
             autoLockMinutes = preferences[AUTO_LOCK_MINUTES_KEY] ?: 5,
             screenshotProtectionEnabled = preferences[SCREENSHOT_PROTECTION_KEY] ?: true,
-            clipboardAutoClearSeconds = preferences[CLIPBOARD_AUTO_CLEAR_SECONDS_KEY] ?: 0,
+            // 对齐 Bitwarden 2026.4.1 的安全默认：剪贴板自动清除默认 5 分钟。
+            // 仅影响从未写入过该设置的用户（DataStore 有值则原样保留）。
+            clipboardAutoClearSeconds = preferences[CLIPBOARD_AUTO_CLEAR_SECONDS_KEY] ?: 300,
             bottomNavVisibility = BottomNavVisibility(
                 vaultV2 = preferences[SHOW_VAULT_V2_TAB_KEY] ?: false,
                 passwords = preferences[SHOW_PASSWORDS_TAB_KEY] ?: true,
