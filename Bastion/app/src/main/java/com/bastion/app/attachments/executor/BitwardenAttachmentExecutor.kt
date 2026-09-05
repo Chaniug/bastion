@@ -231,7 +231,8 @@ class BitwardenAttachmentExecutor(
             ?: throw AttachmentError.CryptoError
         val attachmentKey = BitwardenAttachmentCrypto.unwrapAttachmentKey(fileKeyEnc, wrappingKey)
 
-        val downloadUrl = remote.url ?: run {
+        // 实时向服务端取一次有效下载地址（带签名，短时效）。
+        suspend fun fetchDownloadUrl(): String {
             val info = try {
                 vaultApi.getAttachmentDownload(
                     authorization = bearer(accessToken),
@@ -246,19 +247,37 @@ class BitwardenAttachmentExecutor(
                 attachmentKey.clear()
                 throw AttachmentError.NetworkError(info.code())
             }
-            info.body()?.url ?: run {
+            val url = info.body()?.url
+            if (url == null) {
                 attachmentKey.clear()
                 throw AttachmentError.NetworkError(info.code())
             }
+            return url
         }
+
+        // 缓存的同步地址可能已过期（Azure 签名短时效）：先试缓存地址，
+        // 403/404 时重取真实地址重试一次（对齐 Monica「附件下载重新获取有效地址」）。
+        var usedUrl = remote.url ?: fetchDownloadUrl()
+        var refreshedUrl: String? = null
 
         val ciphertextTmp = File.createTempFile("bw_dl_", ".bin", context.applicationContext.cacheDir)
         try {
-            val request = Request.Builder().url(downloadUrl).get().build()
-            val response = try {
-                httpClient.newCall(request).execute()
+            var response = try {
+                httpClient.newCall(Request.Builder().url(usedUrl).get().build()).execute()
             } catch (e: IOException) {
                 throw AttachmentError.NetworkError(null)
+            }
+            if ((response.code == HttpURLConnection.HTTP_FORBIDDEN ||
+                    response.code == HttpURLConnection.HTTP_NOT_FOUND) && remote.url != null
+            ) {
+                response.close()
+                refreshedUrl = fetchDownloadUrl()
+                usedUrl = refreshedUrl
+                response = try {
+                    httpClient.newCall(Request.Builder().url(usedUrl).get().build()).execute()
+                } catch (e: IOException) {
+                    throw AttachmentError.NetworkError(null)
+                }
             }
             response.use { resp ->
                 if (!resp.isSuccessful) throw AttachmentError.NetworkError(resp.code)
@@ -298,6 +317,8 @@ class BitwardenAttachmentExecutor(
                 wrappedCek = wrappedLocalCek,
                 sha256Hex = hash,
                 sizeBytes = blob.sizeBytes.takeIf { it > 0 } ?: existing.sizeBytes,
+                // 重取过的新地址写回，减少下次再次过期的概率。
+                bitwardenUrl = refreshedUrl ?: existing.bitwardenUrl,
                 bitwardenFileKeyEnc = fileKeyEnc,
                 downloadState = AttachmentDownloadState.DOWNLOADED.name,
                 updatedAt = System.currentTimeMillis()
