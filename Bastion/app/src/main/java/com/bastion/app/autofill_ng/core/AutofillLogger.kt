@@ -276,8 +276,13 @@ object AutofillLogger {
 
     /**
      * 封装 android.util.Log，避免在 JVM 单元测试环境崩溃
+     *
+     * DEBUG 级不打 logcat：内存缓冲与持久化文件（导出报告的 Autofill 段）已有
+     * 全量记录，logcat 的 DEBUG 输出是纯重复——真机实测占 System Logcat 段
+     * 约 500 行/次导出。INFO/WARN/ERROR 照常输出，logcat 实时排查仍可用。
      */
     private fun emitAndroidLog(level: Level, message: String) {
+        if (level == Level.DEBUG) return
         try {
             when (level) {
                 Level.DEBUG -> Log.d(TAG, message)

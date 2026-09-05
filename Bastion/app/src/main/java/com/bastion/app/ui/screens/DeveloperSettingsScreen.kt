@@ -548,22 +548,30 @@ private object DeveloperLogDebugHelper {
     private val NOISY_SYSTEM_TAGS = setOf(
         "VRI", "SurfaceControl", "Surface", "BLASTBufferQueue",
         "BufferQueueProducer", "BufferQueueConsumer",
-        "InsetsController", "HnInsetsControllerEx", "ImeTracker", "ImeFocusController",
-        "InputMethodManager", "InputEvent", "InputEventReceiver",
-        "NavigationBarController", "ViewTreeObserver", "ViewRootImpl", "WindowOnBackDispatcher",
+        "ImeTracker", "ImeFocusController",
+        "InputEvent", "InputEventReceiver",
+        "NavigationBarController", "ViewRootImpl", "WindowOnBackDispatcher",
         "FullScreenUtils", "HWUI", "Dialog", "Choreographer",
         "HnViewRootImplEx", "HnWidgetTransparencyImpl", "HwViewRootImpl", "HwForceDarkManager",
         "HwPhoneWindow", "HnPgAppThreadImpl", "VrrViewInfoHandler",
-        "libc", "libbinder", "SessionManager",
+        "SessionManager",
+        // ART JIT 编译日志（jit_compiled:[OK]...）与厂商 FMPS 等以进程名为 tag 的
+        // 系统输出；应用代码从不主动用进程名做 tag（应用日志 tag 均为具体组件名），不冲突。
+        "com.bastion.app",
     )
 
     /**
      * 纯调试噪音 tag：W/E 级亦无诊断价值（实测其 E 级全为 INSETS_DEBUG /
-     * 厂商调度器的固定格式输出），全级别过滤。
+     * 厂商调度器/IME 的固定格式输出），全级别过滤。
+     * libc 的 E 级（崩溃信号）由 crashLogs 段从原始 logcat 独立提取，
+     * 不受本名单影响；此处滤掉的是 libc W 级 ro.debuggable 纯噪音。
      */
     private val PURE_NOISE_SYSTEM_TAGS = setOf(
         "RtgSchedManager", "RtgSchedIpcFile", "InsetsSourceConsumer",
         "FixedFlowFrameManager", "AnimationPromotionHandler", "HiTouch", "DE_TS", "AwareLog",
+        "InsetsController", "HnInsetsControllerEx",
+        "InputMethodManager", "libc", "libbinder",
+        "ViewTreeObserver", "HwAppInnerBoostImpl", "AwareBitmapCacher",
     )
 
     /** 判定一行 logcat 是否为可过滤的系统噪音。 */

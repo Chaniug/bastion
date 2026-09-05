@@ -223,7 +223,9 @@ class BastionAutofillServiceNg : AutofillService() {
             autofillPreferences.ensureBitwardenV2EngineMode()
         }
 
-        AutofillLogger.i("AF", "BastionAutofillServiceNg created")
+        // DEBUG：服务创建为常规生命周期事件，仅保留在诊断缓冲，不打 logcat；
+        // 措辞避免 20+ 位纯字母数字串（类名）被 sanitize 误判为 token。
+        AutofillLogger.d("AF", "Autofill service created")
     }
 
     override fun onDestroy() {
