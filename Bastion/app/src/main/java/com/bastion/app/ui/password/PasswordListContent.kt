@@ -1611,7 +1611,7 @@ LaunchedEffect(quickFiltersExpanded) {
         }
     }
 
-    PasswordListQuickStatusDialogs(
+    PasswordListQuickStatusDialogsHost(
         showQuickStatusTransferDialog = showQuickStatusTransferDialog,
         quickStatusTransferState = quickStatusTransferState,
         onMoveTransferToBackground = {
@@ -1637,12 +1637,11 @@ LaunchedEffect(quickFiltersExpanded) {
         }
     )
     
-    PasswordListDialogs(
+    PasswordListDialogsHost(
         showManualStackConfirmDialog = showManualStackConfirmDialog,
         onShowManualStackConfirmDialogChange = { showManualStackConfirmDialog = it },
         selectedItemKeys = selectedItemKeys,
         selectedPasswords = selectedPasswords,
-        selectedCount = selectedItemKeys.size,
         selectedManualStackMode = selectedManualStackMode,
         onSelectedManualStackModeChange = { selectedManualStackMode = it },
         onApplyManualStackMode = { dialogMode, itemKeys, passwordIds ->
@@ -1665,9 +1664,6 @@ LaunchedEffect(quickFiltersExpanded) {
         viewModel = viewModel,
         context = context,
         coroutineScope = coroutineScope,
-        enableBatchDeleteProgress = selectedPasswords.any { id ->
-            passwordEntries.any { it.id == id && it.keepassDatabaseId != null }
-        } || selectedSupplementaryItems.any { it.entry.keepassDatabaseId != null },
         onDeleteSelection = { onProgress ->
             val selectedPasswordIdsSnapshot = selectedPasswords.toSet()
             val selectedSupplementaryItemsSnapshot = selectedSupplementaryItems.toList()
@@ -1756,7 +1752,9 @@ LaunchedEffect(quickFiltersExpanded) {
         singleItemPasswordInput = singleItemPasswordInput,
         onSingleItemPasswordInputChange = { singleItemPasswordInput = it },
         showSingleItemPasswordVerify = showSingleItemPasswordVerify,
-        onShowSingleItemPasswordVerifyChange = { showSingleItemPasswordVerify = it }
+        onShowSingleItemPasswordVerifyChange = { showSingleItemPasswordVerify = it },
+        passwordEntries = passwordEntries,
+        selectedSupplementaryItems = selectedSupplementaryItems
     )
 }
 
@@ -2478,5 +2476,103 @@ private fun PasswordListTopSectionHost(
         onScanFidoQr = onScanFidoQr,
         onTitleClick = onTitleClick,
         quickFiltersExpanded = quickFiltersExpanded
+    )
+}
+
+@Composable
+private fun PasswordListQuickStatusDialogsHost(
+    showQuickStatusTransferDialog: Boolean,
+    quickStatusTransferState: com.bastion.app.ui.password.PasswordBatchTransferGlobalProgressState?,
+    onMoveTransferToBackground: () -> Unit,
+    showQuickStatusDeleteDialog: Boolean,
+    quickStatusDeleteState: com.bastion.app.ui.password.PasswordBatchDeleteGlobalProgressState?,
+    onMoveDeleteToBackground: () -> Unit,
+    showQuickStatusKeePassSyncDialog: Boolean,
+    quickStatusKeePassSyncState: QuickStatusKeePassSyncState?,
+    onMoveKeePassSyncToBackground: (QuickStatusKeePassSyncState) -> Unit,
+    onRunKeePassSyncNow: (QuickStatusKeePassSyncState) -> Unit
+) {
+    PasswordListQuickStatusDialogs(
+        showQuickStatusTransferDialog = showQuickStatusTransferDialog,
+        quickStatusTransferState = quickStatusTransferState,
+        onMoveTransferToBackground = onMoveTransferToBackground,
+        showQuickStatusDeleteDialog = showQuickStatusDeleteDialog,
+        quickStatusDeleteState = quickStatusDeleteState,
+        onMoveDeleteToBackground = onMoveDeleteToBackground,
+        showQuickStatusKeePassSyncDialog = showQuickStatusKeePassSyncDialog,
+        quickStatusKeePassSyncState = quickStatusKeePassSyncState,
+        onMoveKeePassSyncToBackground = onMoveKeePassSyncToBackground,
+        onRunKeePassSyncNow = onRunKeePassSyncNow,
+    )
+}
+
+@Composable
+private fun PasswordListDialogsHost(
+    showManualStackConfirmDialog: Boolean,
+    onShowManualStackConfirmDialogChange: (Boolean) -> Unit,
+    selectedItemKeys: Set<String>,
+    selectedPasswords: Set<Long>,
+    selectedManualStackMode: ManualStackDialogMode,
+    onSelectedManualStackModeChange: (ManualStackDialogMode) -> Unit,
+    onApplyManualStackMode: suspend (ManualStackDialogMode, Set<String>, Set<Long>) -> Int,
+    viewModel: PasswordViewModel,
+    context: Context,
+    coroutineScope: kotlinx.coroutines.CoroutineScope,
+    onDeleteSelection: suspend (onProgress: (processed: Int, total: Int) -> Unit) -> Int,
+    onBatchDeleteStarted: () -> Unit,
+    onSelectionCleared: () -> Unit,
+    showBatchDeleteDialog: Boolean,
+    onShowBatchDeleteDialogChange: (Boolean) -> Unit,
+    passwordInput: String,
+    onPasswordInputChange: (String) -> Unit,
+    passwordError: Boolean,
+    onPasswordErrorChange: (Boolean) -> Unit,
+    canUseBiometric: Boolean,
+    activity: FragmentActivity?,
+    biometricHelper: BiometricHelper,
+    itemToDelete: PasswordEntry?,
+    onItemToDeleteChange: (PasswordEntry?) -> Unit,
+    appSettings: AppSettings,
+    singleItemPasswordInput: String,
+    onSingleItemPasswordInputChange: (String) -> Unit,
+    showSingleItemPasswordVerify: Boolean,
+    onShowSingleItemPasswordVerifyChange: (Boolean) -> Unit,
+    passwordEntries: List<PasswordEntry>,
+    selectedSupplementaryItems: List<PasswordAggregateListItemUi>
+) {
+    PasswordListDialogs(
+        showManualStackConfirmDialog = showManualStackConfirmDialog,
+        onShowManualStackConfirmDialogChange = onShowManualStackConfirmDialogChange,
+        selectedItemKeys = selectedItemKeys,
+        selectedPasswords = selectedPasswords,
+        selectedCount = selectedItemKeys.size,
+        selectedManualStackMode = selectedManualStackMode,
+        onSelectedManualStackModeChange = onSelectedManualStackModeChange,
+        onApplyManualStackMode = onApplyManualStackMode,
+        viewModel = viewModel,
+        context = context,
+        coroutineScope = coroutineScope,
+        enableBatchDeleteProgress = selectedPasswords.any { id ->
+            passwordEntries.any { it.id == id && it.keepassDatabaseId != null }
+        } || selectedSupplementaryItems.any { it.entry.keepassDatabaseId != null },
+        onDeleteSelection = onDeleteSelection,
+        onBatchDeleteStarted = onBatchDeleteStarted,
+        onSelectionCleared = onSelectionCleared,
+        showBatchDeleteDialog = showBatchDeleteDialog,
+        onShowBatchDeleteDialogChange = onShowBatchDeleteDialogChange,
+        passwordInput = passwordInput,
+        onPasswordInputChange = onPasswordInputChange,
+        passwordError = passwordError,
+        onPasswordErrorChange = onPasswordErrorChange,
+        canUseBiometric = canUseBiometric,
+        activity = activity,
+        biometricHelper = biometricHelper,
+        itemToDelete = itemToDelete,
+        onItemToDeleteChange = onItemToDeleteChange,
+        appSettings = appSettings,
+        singleItemPasswordInput = singleItemPasswordInput,
+        onSingleItemPasswordInputChange = onSingleItemPasswordInputChange,
+        showSingleItemPasswordVerify = showSingleItemPasswordVerify,
+        onShowSingleItemPasswordVerifyChange = onShowSingleItemPasswordVerifyChange,
     )
 }

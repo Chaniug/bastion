@@ -239,10 +239,21 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 
 | 步骤 | 提交 | 状态 | 说明 |
 |------|------|------|------|
-| 0 | — | ✅ 已完成 | 快捷筛选状态下沉 `50c6192` |
-| 1 | — | ⏳ 待办 | `configuredQuickFilterItems` + 重置 effect |
-| 2 | — | ⏳ 待办 | 两个嵌套 Composable 提升为顶层 |
-| 3 | — | ⏳ 待办 | 其余状态按职责分组下沉 |
-| 验证 | — | ⏳ 待办 | logcat 无 `compiler instruction limit` |
+| 0 | `50c6192` | ✅ 已完成 | 快捷筛选状态下沉 |
+| 1 | `a7702b7` | ✅ 已完成（CI #33908818507 绿） | `configuredQuickFilterItems` + 重置 effect 下沉为 `rememberPasswordListConfiguredQuickFilterItems` |
+| 2 | `530a674` + `38bc726` | ✅ 已完成（CI #33934428304 绿） | 两个嵌套 Composable 提升为顶层 `PasswordListTopSectionHost` / `PasswordListMainPaneSection`；quickFilter 32 参数收拢为 `quickFilterToggles` 容器 |
+| 3 | — | 🔄 代码完成待 CI | `PasswordListQuickStatusDialogs`（10 参数）/ `PasswordListDialogs`（31 参数）已提升为顶层 `PasswordListQuickStatusDialogsHost` / `PasswordListDialogsHost`；`PasswordBatchMoveSheet` 视实测结果决定是否继续 |
+| 验证 | — | ⏳ 待用户装包 | logcat 无 `compiler instruction limit`（权威判定） |
 
 > 接力的 AI：完成一步后请更新本表 + 在 [二、现状](#二现状截至-50c6192) 补充新提交的函数范围。
+>
+> **步骤 2 实施备注（供后续参考）**：
+> - host 函数参数类型直接从子组件签名复制（零推断风险）；调用处除「修改外部 var 的 setter lambda」外全部 `xxx = xxx` 同名转发；
+> - 修改外部 var 的 13 个 setter lambda 仍由主函数创建后传入（捕获语义不变）；
+> - 踩坑记录：提升为顶层后参数需要显式类型名，`BitwardenViewModel`、`CoroutineScope` 此前从未被 import（嵌套函数靠类型推断），需补齐（`38bc726`）。
+>
+> **步骤 3 实施备注（供后续参考）**：
+> - 4 个赋值 lambda（QS）+ 12 个赋值 lambda（DLG，含超大的 `onDeleteSelection` 整体转发）仍由主函数创建，host 内 `xxx = xxx` 简单转发，捕获语义不变；
+> - `selectedCount` 不再作为 host 参数，host 内直接 `selectedItemKeys.size` 计算；
+> - 踩坑记录：`PasswordBatchTransferGlobalProgressState` / `PasswordBatchDeleteGlobalProgressState` 定义在 `com.bastion.app.ui.password` 包，而 PasswordListContent.kt 的 package 是 `com.bastion.app.ui`——**同名目录≠同包**，参数类型需写全限定名（参照 MainPaneSection 写法）；`ManualStackDialogMode` / `QuickStatusKeePassSyncState` 虽然文件在 `ui/password/` 目录，但 package 声明是 `com.bastion.app.ui`，同包短名可直接用；
+> - 校验手段：内容锚定 + 括号配平定位调用块（行号漂移免疫），插入后全文件 `()` `{}` 配平 0/0、host 调用/定义各 1、全部参数类型按「import ∪ 同包 ∪ 内建」规则判定可解析。
