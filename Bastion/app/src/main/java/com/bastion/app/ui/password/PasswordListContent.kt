@@ -607,9 +607,7 @@ fun PasswordListContent(
     }
     
     // 选择模式状态
-    var isSelectionMode by remember { mutableStateOf(false) }
-    var selectedItemKeys by remember { mutableStateOf(setOf<String>()) }
-    var swipeSelectionAnchorKey by remember { mutableStateOf<String?>(null) }
+    val selectionState = rememberPasswordListSelectionState()
     
     // 详情对话框状态
     
@@ -653,14 +651,14 @@ fun PasswordListContent(
     }
 
     // Handle back press for selection mode
-    BackHandler(enabled = isSelectionMode) {
-        isSelectionMode = false
-        selectedItemKeys = emptySet()
-        swipeSelectionAnchorKey = null
+    BackHandler(enabled = selectionState.isSelectionMode) {
+        selectionState.isSelectionMode = false
+        selectionState.selectedItemKeys = emptySet()
+        selectionState.swipeSelectionAnchorKey = null
     }
 
     // 在归档页按返回键时，先退出归档回到密码主列表
-    BackHandler(enabled = isArchiveView && !isSelectionMode && !isSearchExpanded) {
+    BackHandler(enabled = isArchiveView && !selectionState.isSelectionMode && !isSearchExpanded) {
         viewModel.closeArchiveView()
     }
     // Category sheet state
@@ -762,7 +760,7 @@ fun PasswordListContent(
 
     BackHandler(
         enabled = !isSearchExpanded &&
-            !isSelectionMode &&
+            !selectionState.isSelectionMode &&
             !isArchiveView &&
             quickFolderSystemBackTarget != null
     ) {
@@ -965,12 +963,12 @@ fun PasswordListContent(
             manualStackedKeys = validAggregateStackedItemKeys
         )
     }
-    LaunchedEffect(isSelectionMode, selectedItemKeys) {
-        if (isSelectionMode && selectedItemKeys.isEmpty()) {
-            isSelectionMode = false
+    LaunchedEffect(selectionState.isSelectionMode, selectionState.selectedItemKeys) {
+        if (selectionState.isSelectionMode && selectionState.selectedItemKeys.isEmpty()) {
+            selectionState.isSelectionMode = false
         }
-        if (selectedItemKeys.isEmpty()) {
-            swipeSelectionAnchorKey = null
+        if (selectionState.selectedItemKeys.isEmpty()) {
+            selectionState.swipeSelectionAnchorKey = null
         }
     }
 
@@ -1200,10 +1198,10 @@ fun PasswordListContent(
     val visibleSelectableKeys = remember(visiblePageCards) {
         visiblePageCards.mapTo(linkedSetOf<String>()) { card -> card.key }
     }
-    val selectedPageCards = remember(passwordPageListItems, selectedItemKeys) {
+    val selectedPageCards = remember(passwordPageListItems, selectionState.selectedItemKeys) {
         resolveSelectedPasswordPageCardItems(
             items = passwordPageListItems,
-            selectedKeys = selectedItemKeys
+            selectedKeys = selectionState.selectedItemKeys
         )
     }
     val selectedPasswords = remember(selectedPageCards) {
@@ -1217,8 +1215,8 @@ fun PasswordListContent(
     }
 
     LaunchedEffect(visibleSelectableKeys) {
-        if (selectedItemKeys.isEmpty()) return@LaunchedEffect
-        selectedItemKeys = selectedItemKeys.intersect(visibleSelectableKeys)
+        if (selectionState.selectedItemKeys.isEmpty()) return@LaunchedEffect
+        selectionState.selectedItemKeys = selectionState.selectedItemKeys.intersect(visibleSelectableKeys)
     }
     val hasVisibleQuickFilters = remember(
         configuredQuickFilterItems,
@@ -1399,20 +1397,20 @@ LaunchedEffect(quickFiltersExpanded) {
         context = context,
         coroutineScope = coroutineScope,
         viewModel = viewModel,
-        selectedItemKeys = selectedItemKeys,
+        selectedItemKeys = selectionState.selectedItemKeys,
         visibleSelectableKeys = visibleSelectableKeys,
         selectedPasswords = selectedPasswords,
         passwordEntries = passwordEntries,
         selectedSupplementaryItems = selectedSupplementaryItems,
         aggregateUiState = aggregateUiState,
         onClearSelection = {
-            isSelectionMode = false
-            selectedItemKeys = emptySet()
-            swipeSelectionAnchorKey = null
+            selectionState.isSelectionMode = false
+            selectionState.selectedItemKeys = emptySet()
+            selectionState.swipeSelectionAnchorKey = null
         },
         onSelectedItemKeysChange = {
-            selectedItemKeys = it
-            if (it.isEmpty()) swipeSelectionAnchorKey = null
+            selectionState.selectedItemKeys = it
+            if (it.isEmpty()) selectionState.swipeSelectionAnchorKey = null
         },
         onShowMoveToCategoryDialog = { dialogState.showMoveToCategoryDialog = true },
         onShowManualStackConfirmDialog = {
@@ -1423,8 +1421,8 @@ LaunchedEffect(quickFiltersExpanded) {
     )
 
     BindPasswordListSelectionModeChange(
-        isSelectionMode = isSelectionMode,
-        selectedItemKeys = selectedItemKeys,
+        isSelectionMode = selectionState.isSelectionMode,
+        selectedItemKeys = selectionState.selectedItemKeys,
         selectedPasswords = selectedPasswords,
         selectedSupplementaryItems = selectedSupplementaryItems,
         handlers = selectionHandlers,
@@ -1451,9 +1449,9 @@ LaunchedEffect(quickFiltersExpanded) {
         onDeleteCategory = onDeleteCategory,
         onDismiss = { dialogState.showMoveToCategoryDialog = false },
         onSelectionCleared = {
-            isSelectionMode = false
-            selectedItemKeys = emptySet()
-            swipeSelectionAnchorKey = null
+            selectionState.isSelectionMode = false
+            selectionState.selectedItemKeys = emptySet()
+            selectionState.swipeSelectionAnchorKey = null
         }
     )
 
@@ -1511,12 +1509,12 @@ LaunchedEffect(quickFiltersExpanded) {
             expandedGroups = expandedGroups,
             itemToDelete = dialogState.itemToDelete,
             onItemToDeleteChange = { dialogState.itemToDelete = it },
-            isSelectionMode = isSelectionMode,
-            onSelectionModeChange = { isSelectionMode = it },
-            selectedItemKeys = selectedItemKeys,
-            onSelectedItemKeysChange = { selectedItemKeys = it },
-            swipeSelectionAnchorKey = swipeSelectionAnchorKey,
-            onSwipeSelectionAnchorKeyChange = { swipeSelectionAnchorKey = it },
+            isSelectionMode = selectionState.isSelectionMode,
+            onSelectionModeChange = { selectionState.isSelectionMode = it },
+            selectedItemKeys = selectionState.selectedItemKeys,
+            onSelectedItemKeysChange = { selectionState.selectedItemKeys = it },
+            swipeSelectionAnchorKey = selectionState.swipeSelectionAnchorKey,
+            onSwipeSelectionAnchorKeyChange = { selectionState.swipeSelectionAnchorKey = it },
             selectedPasswords = selectedPasswords,
             showBatchDeleteDialog = dialogState.showBatchDeleteDialog,
             onShowBatchDeleteDialogChange = { dialogState.showBatchDeleteDialog = it },
@@ -1624,7 +1622,7 @@ LaunchedEffect(quickFiltersExpanded) {
     PasswordListDialogsHost(
         showManualStackConfirmDialog = dialogState.showManualStackConfirmDialog,
         onShowManualStackConfirmDialogChange = { dialogState.showManualStackConfirmDialog = it },
-        selectedItemKeys = selectedItemKeys,
+        selectedItemKeys = selectionState.selectedItemKeys,
         selectedPasswords = selectedPasswords,
         selectedManualStackMode = dialogState.selectedManualStackMode,
         onSelectedManualStackModeChange = { dialogState.selectedManualStackMode = it },
@@ -1651,7 +1649,7 @@ LaunchedEffect(quickFiltersExpanded) {
         onDeleteSelection = { onProgress ->
             val selectedPasswordIdsSnapshot = selectedPasswords.toSet()
             val selectedSupplementaryItemsSnapshot = selectedSupplementaryItems.toList()
-            val selectedItemKeysSnapshot = selectedItemKeys.toList()
+            val selectedItemKeysSnapshot = selectionState.selectedItemKeys.toList()
             val selectedPasswordEntries = passwordEntries.filter { it.id in selectedPasswordIdsSnapshot }
             val totalToProcess = selectedPasswordEntries.size + selectedSupplementaryItemsSnapshot.size
             var processedCount = 0
@@ -1709,14 +1707,14 @@ LaunchedEffect(quickFiltersExpanded) {
             deletedPasswordCount + selectedSupplementaryItemsSnapshot.size
         },
         onBatchDeleteStarted = {
-            isSelectionMode = false
-            selectedItemKeys = emptySet()
-            swipeSelectionAnchorKey = null
+            selectionState.isSelectionMode = false
+            selectionState.selectedItemKeys = emptySet()
+            selectionState.swipeSelectionAnchorKey = null
         },
         onSelectionCleared = {
-            isSelectionMode = false
-            selectedItemKeys = emptySet()
-            swipeSelectionAnchorKey = null
+            selectionState.isSelectionMode = false
+            selectionState.selectedItemKeys = emptySet()
+            selectionState.swipeSelectionAnchorKey = null
         },
         showBatchDeleteDialog = dialogState.showBatchDeleteDialog,
         onShowBatchDeleteDialogChange = { dialogState.showBatchDeleteDialog = it },

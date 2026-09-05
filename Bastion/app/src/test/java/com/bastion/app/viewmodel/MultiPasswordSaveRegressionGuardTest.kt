@@ -786,9 +786,9 @@ class MultiPasswordSaveRegressionGuardTest {
                 dialogsSource.contains("PasswordBatchDeleteProgressTracker.complete(successCount)") &&
                 listContentSource.contains("val selectedPasswordIdsSnapshot = selectedPasswords.toSet()") &&
                 listContentSource.contains("val selectedSupplementaryItemsSnapshot = selectedSupplementaryItems.toList()") &&
-                listContentSource.contains("val selectedItemKeysSnapshot = selectedItemKeys.toList()") &&
+                listContentSource.contains("val selectedItemKeysSnapshot = selectionState.selectedItemKeys.toList()") &&
                 listContentSource.contains("onBatchDeleteStarted = {") &&
-                listContentSource.contains("selectedItemKeys = emptySet()")
+                listContentSource.contains("selectionState.selectedItemKeys = emptySet()")
         )
         assertFalse(
             "The old confirmation-owned batch delete progress dialog must not come back; fallback auto-open is driven by the global quick status state.",
