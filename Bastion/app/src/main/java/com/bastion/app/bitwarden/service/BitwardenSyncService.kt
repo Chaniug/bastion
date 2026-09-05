@@ -385,9 +385,11 @@ class BitwardenSyncService(
                 // 对 deletedDate 非空条目的软删逻辑处理。
                 if (!isIncremental) {
                     if (activeServerCipherIds.isEmpty()) {
+                        // 三者都必须保留本地未上传（cipher_id 为空）的记录：
+                        // 服务器返回空列表≠本地新数据可丢弃，防止异常空响应清空用户数据。
                         passwordEntryDao.deleteAllSyncedBitwardenEntries(vault.id)
                         secureItemDao.deleteAllSyncedBitwardenEntries(vault.id)
-                        passkeyDao.deleteAllByBitwardenVaultId(vault.id)
+                        passkeyDao.deleteAllSyncedBitwardenPasskeys(vault.id)
                     } else {
                         passwordEntryDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)
                         secureItemDao.deleteBitwardenEntriesNotIn(vault.id, activeServerCipherIds)

@@ -292,10 +292,27 @@ interface PasskeyDao {
     suspend fun getBitwardenEntriesCount(vaultId: Long): Int
 
     /**
-     * 删除指定 Vault 的所有同步 Passkeys
+     * 删除指定 Vault 的所有 Passkeys（仅限用户显式登出 / 强制清缓存路径）。
      */
     @Query("DELETE FROM passkeys WHERE bitwarden_vault_id = :vaultId")
     suspend fun deleteAllByBitwardenVaultId(vaultId: Long)
+
+    /**
+     * 删除指定 Vault 下所有已绑定服务器 cipher 的 Passkeys（全量同步清理用）。
+     *
+     * 必须保留 bitwarden_cipher_id 为空的本地新建记录——它们尚未上传，
+     * 若在全量同步清空时一并删除，一次"服务器返回空列表"的同步就会
+     * 永久丢失本地未同步的通行密钥（对齐密码/SecureItem 的
+     * deleteAllSyncedBitwardenEntries 语义）。
+     */
+    @Query(
+        """
+        DELETE FROM passkeys
+        WHERE bitwarden_vault_id = :vaultId
+          AND bitwarden_cipher_id IS NOT NULL
+        """
+    )
+    suspend fun deleteAllSyncedBitwardenPasskeys(vaultId: Long)
 
     /**
      * 删除不在服务器返回集合中的 Bitwarden Passkeys
