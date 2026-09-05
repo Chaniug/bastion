@@ -598,6 +598,9 @@ class MultiPasswordSaveRegressionGuardTest {
         val passwordRepositorySource = projectFile(
             "app/src/main/java/com/bastion/app/repository/PasswordRepository.kt"
         ).readText()
+        val dialogStateSource = projectFile(
+            "app/src/main/java/com/bastion/app/ui/password/PasswordListDialogState.kt"
+        ).readText()
 
         assertTrue(
             "The transfer tracker must keep a short success phase so the quick status bar can show the completed result before returning to breadcrumbs.",
@@ -613,17 +616,18 @@ class MultiPasswordSaveRegressionGuardTest {
         assertTrue(
             "The normal password page must show transfer progress in the quick status bar when the path banner is enabled, and auto-open the progress dialog when the banner is disabled.",
             listContentSource.contains("PasswordBatchTransferProgressTracker.progress.collectAsState()") &&
-                listContentSource.contains("var showQuickStatusTransferDialog by remember { mutableStateOf(false) }") &&
-                listContentSource.contains("var backgroundedTransferOperationId by remember { mutableStateOf<Long?>(null) }") &&
+                dialogStateSource.contains("var showQuickStatusTransferDialog by mutableStateOf(false)") &&
+                dialogStateSource.contains("var backgroundedTransferOperationId by mutableStateOf<Long?>(null)") &&
+                listContentSource.contains("val dialogState = rememberPasswordListDialogState()") &&
                 listContentSource.contains("val quickStatusBannerEnabled = quickFolderPathBannerEnabledForCurrentFilter") &&
                 listContentSource.contains("LaunchedEffect(quickStatusTransferState?.operationId, quickStatusBannerEnabled)") &&
-                listContentSource.contains("if (!quickStatusBannerEnabled && state.operationId != backgroundedTransferOperationId)") &&
+                listContentSource.contains("if (!quickStatusBannerEnabled && state.operationId != dialogState.backgroundedTransferOperationId)") &&
                 listContentSource.contains("val hasQuickStatusProgress =") &&
                 listContentSource.contains("quickStatusBannerEnabled &&") &&
                 listContentSource.contains("quickStatusTransferState = quickStatusTransferState") &&
                 listContentSource.contains("onQuickStatusTransferClick = {") &&
-                listContentSource.contains("backgroundedTransferOperationId = null") &&
-                listContentSource.contains("backgroundedTransferOperationId = quickStatusTransferState?.operationId") &&
+                listContentSource.contains("dialogState.backgroundedTransferOperationId = null") &&
+                listContentSource.contains("dialogState.backgroundedTransferOperationId = quickStatusTransferState?.operationId") &&
                 listContentSource.contains("PasswordListQuickStatusDialogs(") &&
                 quickStatusDialogsSource.contains("quickStatusTransferState?.toDialogUiState()?.let") &&
                 mainPaneSource.contains("quickStatusTransferState: PasswordBatchTransferGlobalProgressState? = null") &&
@@ -729,6 +733,9 @@ class MultiPasswordSaveRegressionGuardTest {
         val dialogsSource = projectFile(
             "app/src/main/java/com/bastion/app/ui/password/PasswordListDialogs.kt"
         ).readText()
+        val dialogStateSource = projectFile(
+            "app/src/main/java/com/bastion/app/ui/password/PasswordListDialogState.kt"
+        ).readText()
 
         assertTrue(
             "Batch delete progress must keep a short success state so the quick status bar can show the completed result before returning to breadcrumbs.",
@@ -743,15 +750,15 @@ class MultiPasswordSaveRegressionGuardTest {
         assertTrue(
             "The normal password page must collect delete progress, show it in the quick status bar when enabled, and auto-open details when the path banner is disabled.",
             listContentSource.contains("PasswordBatchDeleteProgressTracker.progress.collectAsState()") &&
-                listContentSource.contains("var showQuickStatusDeleteDialog by remember { mutableStateOf(false) }") &&
-                listContentSource.contains("var backgroundedDeleteOperationId by remember { mutableStateOf<Long?>(null) }") &&
+                dialogStateSource.contains("var showQuickStatusDeleteDialog by mutableStateOf(false)") &&
+                dialogStateSource.contains("var backgroundedDeleteOperationId by mutableStateOf<Long?>(null)") &&
                 listContentSource.contains("LaunchedEffect(quickStatusDeleteState?.operationId, quickStatusBannerEnabled)") &&
-                listContentSource.contains("if (!quickStatusBannerEnabled && state.operationId != backgroundedDeleteOperationId)") &&
+                listContentSource.contains("if (!quickStatusBannerEnabled && state.operationId != dialogState.backgroundedDeleteOperationId)") &&
                 listContentSource.contains("quickStatusDeleteState != null") &&
                 listContentSource.contains("quickStatusDeleteState = quickStatusDeleteState") &&
                 listContentSource.contains("onQuickStatusDeleteClick = {") &&
-                listContentSource.contains("backgroundedDeleteOperationId = null") &&
-                listContentSource.contains("backgroundedDeleteOperationId = quickStatusDeleteState?.operationId") &&
+                listContentSource.contains("dialogState.backgroundedDeleteOperationId = null") &&
+                listContentSource.contains("dialogState.backgroundedDeleteOperationId = quickStatusDeleteState?.operationId") &&
                 listContentSource.contains("PasswordListQuickStatusDialogs(") &&
                 quickStatusDialogsSource.contains("quickStatusDeleteState?.toDialogUiState()?.let") &&
                 mainPaneSource.contains("quickStatusDeleteState: PasswordBatchDeleteGlobalProgressState? = null") &&
