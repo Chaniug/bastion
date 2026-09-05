@@ -95,6 +95,8 @@ internal fun PasswordListScrollableContent(
     listTopPadding: Dp = 0.dp,
     renderPasswordRows: LazyListScope.() -> Unit
 ) {
+    // 滚动掉帧采样：只在确实掉帧时输出一行摘要，正常滚动静默（见 ScrollJankMonitor）
+    com.bastion.app.ui.perf.ScrollJankReporter(listState = listState, label = "passwords")
     val categoryQuickFilterScrollState = rememberScrollState()
 
     LazyColumn(

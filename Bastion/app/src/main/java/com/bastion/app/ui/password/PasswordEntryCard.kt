@@ -69,7 +69,10 @@ fun PasswordEntryCard(
             sharedModifier = Modifier.sharedBounds(
                 sharedContentState = rememberSharedContentState(key = "password_card_${entry.id}"),
                 animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = androidx.compose.animation.SharedTransitionScope.ResizeMode.RemeasureToBounds
+                // RemeasureToBounds 会在过渡期间按目标尺寸重新布局内容：详情返回列表时，
+                // 详情页内容被重排成卡片尺寸后再绘制 → 肉眼可见「条目仍是打开状态」的重影。
+                // 卡片类共享元素用缩放模式即可：内容不重排，只做尺寸过渡，返回更干净。
+                resizeMode = androidx.compose.animation.SharedTransitionScope.ResizeMode.scaleToBounds()
             )
         }
     }
