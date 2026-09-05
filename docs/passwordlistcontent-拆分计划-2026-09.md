@@ -242,7 +242,7 @@ Kotlin 的命名参数 `xxx = value` 与赋值 `xxx = value` 在文本上完全�
 | 0 | `50c6192` | ✅ 已完成 | 快捷筛选状态下沉 |
 | 1 | `a7702b7` | ✅ 已完成（CI #33908818507 绿） | `configuredQuickFilterItems` + 重置 effect 下沉为 `rememberPasswordListConfiguredQuickFilterItems` |
 | 2 | `530a674` + `38bc726` | ✅ 已完成（CI #33934428304 绿） | 两个嵌套 Composable 提升为顶层 `PasswordListTopSectionHost` / `PasswordListMainPaneSection`；quickFilter 32 参数收拢为 `quickFilterToggles` 容器 |
-| 3 | — | 🔄 代码完成待 CI | `PasswordListQuickStatusDialogs`（10 参数）/ `PasswordListDialogs`（31 参数）已提升为顶层 `PasswordListQuickStatusDialogsHost` / `PasswordListDialogsHost`；`PasswordBatchMoveSheet` 视实测结果决定是否继续 |
+| 3 | `95954e3` | ✅ 已完成（CI #33935463617 绿） | `PasswordListQuickStatusDialogs`（10 参数）/ `PasswordListDialogs`（31 参数）提升为顶层 `PasswordListQuickStatusDialogsHost` / `PasswordListDialogsHost`；主函数余 1410 行，下一候选 `PasswordBatchMoveSheet`（视实机验证结果决定是否继续） |
 | 验证 | — | ⏳ 待用户装包 | logcat 无 `compiler instruction limit`（权威判定） |
 
 > 接力的 AI：完成一步后请更新本表 + 在 [二、现状](#二现状截至-50c6192) 补充新提交的函数范围。
