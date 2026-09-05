@@ -139,6 +139,7 @@ import com.bastion.app.data.KeePassSyncStatus
 import com.bastion.app.data.PasskeyEntry
 import com.bastion.app.data.PasswordListQuickFilterItem
 import com.bastion.app.data.PasswordListTopModule
+import com.bastion.app.data.PasswordPageAggregateStackEntry
 import com.bastion.app.data.PasswordPageContentType
 import com.bastion.app.data.PasswordEntry
 import com.bastion.app.data.OperationLogItemType
@@ -205,6 +206,7 @@ import com.bastion.app.ui.components.UnifiedMoveAction
 import com.bastion.app.ui.components.UnifiedMoveCategoryTarget
 import com.bastion.app.ui.password.PasswordAggregateCardStyle
 import com.bastion.app.ui.password.PasswordAggregateListItemUi
+import com.bastion.app.ui.password.PasswordAggregateManualStackBuildResult
 import com.bastion.app.ui.password.PasswordAggregateRetainedStateViewModel
 import com.bastion.app.ui.password.PasswordAggregateWalletItemType
 import com.bastion.app.ui.password.PasswordListCardBadge
@@ -2338,7 +2340,7 @@ internal class PasswordListManualStackMeta(
 )
 
 @Composable
-internal fun rememberPasswordListManualStackMeta(
+private fun rememberPasswordListManualStackMeta(
     passwordEntries: List<PasswordEntry>,
     deletedItemIds: Set<Long>,
     shouldLoadManualStackMetadata: Boolean,
@@ -2404,7 +2406,7 @@ internal fun rememberPasswordListManualStackMeta(
     )
 }
 
-internal class PasswordListDerivedFilters(
+private class PasswordListDerivedFilters(
     val groupingConfig: PasswordGroupingConfig,
     val preStackFilteredPasswordEntries: List<PasswordEntry>,
     val preStackFilteredAggregateItems: List<PasswordAggregateListItemUi>,
@@ -2415,7 +2417,7 @@ internal class PasswordListDerivedFilters(
 )
 
 @Composable
-internal fun rememberPasswordListDerivedFilters(
+private fun rememberPasswordListDerivedFilters(
     passwordEntries: List<PasswordEntry>,
     deletedItemIds: Set<Long>,
     quickFoldersEnabledForCurrentFilter: Boolean,
