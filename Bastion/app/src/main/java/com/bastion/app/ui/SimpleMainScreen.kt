@@ -756,7 +756,9 @@ fun SimpleMainScreen(
     billingAddressViewModel: BillingAddressViewModel,
     generatorViewModel: GeneratorViewModel = viewModel(), // 添加GeneratorViewModel
     noteViewModel: NoteViewModel = viewModel(),
-    bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = viewModel(),
+    // Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+    // 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+    bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = activityViewModel(),
     passkeyViewModel: PasskeyViewModel,  // Passkey ViewModel
     localKeePassViewModel: com.bastion.app.viewmodel.LocalKeePassViewModel,
     securityManager: SecurityManager,

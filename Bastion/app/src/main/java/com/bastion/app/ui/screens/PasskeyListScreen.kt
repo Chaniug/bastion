@@ -82,6 +82,7 @@ import com.bastion.app.data.model.StorageTarget
 import com.bastion.app.keepass.KeePassPasskeyCredentialConflictException
 import com.bastion.app.repository.KeePassCompatibilityBridge
 import com.bastion.app.repository.KeePassWorkspaceRepository
+import com.bastion.app.ui.activityViewModel
 import com.bastion.app.ui.PasswordListCategoryChipMenuBottomActions
 import com.bastion.app.ui.components.CreateCategoryDialog
 import com.bastion.app.ui.components.CreateDialogTarget
@@ -447,7 +448,9 @@ fun PasskeyListScreen(
         is UnifiedCategoryFilterSelection.BitwardenVaultUncategorizedFilter -> filter.vaultId
         else -> null
     }
-    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = viewModel()
+    // Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+    // 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = activityViewModel()
     val bitwardenSyncStatusByVault by bitwardenViewModel.syncStatusByVault.collectAsState()
     val isTopBarSyncing = selectedBitwardenVaultId?.let { vaultId ->
         bitwardenSyncStatusByVault[vaultId].isUserVisibleSyncInProgress()

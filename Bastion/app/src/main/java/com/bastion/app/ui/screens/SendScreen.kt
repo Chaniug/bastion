@@ -139,6 +139,7 @@ import com.bastion.app.bitwarden.sync.buildHeadline
 import com.bastion.app.bitwarden.sync.isUserVisibleSyncInProgress
 import com.bastion.app.data.bitwarden.BitwardenSend
 import com.bastion.app.data.bitwarden.BitwardenVault
+import com.bastion.app.ui.activityViewModel
 import com.bastion.app.ui.components.ExpressiveTopBar
 import com.bastion.app.ui.common.pull.calculateDampedPullOffset
 import com.bastion.app.util.VibrationPatterns
@@ -162,7 +163,9 @@ fun SendScreen(
     showTopBar: Boolean = true,
     showStandaloneSettingsEntry: Boolean = false,
     onOpenStandaloneSettings: () -> Unit = {},
-    bitwardenViewModel: BitwardenViewModel = viewModel(),
+    // Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+    // 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+    bitwardenViewModel: BitwardenViewModel = activityViewModel(),
     onBitwardenEvent: ((BitwardenViewModel.BitwardenEvent) -> Boolean)? = null
 ) {
     val sends by bitwardenViewModel.sendsAcrossVaults.collectAsState()

@@ -19,6 +19,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import com.bastion.app.ui.activityViewModel
 import com.bastion.app.ui.navigation.easyNotesScreenEnter
 import com.bastion.app.ui.navigation.easyNotesScreenExit
 import com.bastion.app.ui.navigation.parentPageEnter
@@ -3582,7 +3583,7 @@ fun BastionContent(
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = 
-                androidx.lifecycle.viewmodel.compose.viewModel()
+                activityViewModel()
             com.bastion.app.bitwarden.ui.BitwardenLoginScreen(
                 viewModel = bitwardenViewModel,
                 onNavigateBack = {
@@ -3605,7 +3606,7 @@ fun BastionContent(
             popExitTransition = { easyNotesScreenExit() }
         ) {
             val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = 
-                androidx.lifecycle.viewmodel.compose.viewModel()
+                activityViewModel()
             com.bastion.app.bitwarden.ui.BitwardenSettingsScreen(
                 viewModel = bitwardenViewModel,
                 onNavigateBack = {

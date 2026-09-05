@@ -137,6 +137,7 @@ import com.bastion.app.data.model.PasskeyBindingCodec
 import com.bastion.app.data.UnmatchedIconHandlingStrategy
 import com.bastion.app.notes.domain.NoteContentCodec
 import com.bastion.app.security.SecurityManager
+import com.bastion.app.ui.activityViewModel
 import com.bastion.app.ui.PasswordListCategoryChipMenu
 import com.bastion.app.ui.passwordPageContentTypeSetSaver
 import com.bastion.app.ui.buildCategoryMenuQuickFilterBindings
@@ -1307,7 +1308,9 @@ fun VaultV2Pane(
 	val activeAttachmentParentIds = remember(attachmentParentIds) { attachmentParentIds.toSet() }
 	val density = LocalDensity.current
 	val scope = rememberCoroutineScope()
-	val bitwardenViewModel: BitwardenViewModel = viewModel()
+	// Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+	// 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+	val bitwardenViewModel: BitwardenViewModel = activityViewModel()
 	val bitwardenRepository = remember(context) {
 		com.bastion.app.bitwarden.repository.BitwardenRepository.getInstance(context)
 	}

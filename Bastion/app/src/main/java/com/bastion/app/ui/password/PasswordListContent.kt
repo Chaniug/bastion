@@ -457,7 +457,9 @@ fun PasswordListContent(
             (status.target as? SyncTarget.KeePassDatabase)?.databaseId == selectedId
         }
     }
-    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = viewModel()
+    // Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+    // 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = activityViewModel()
     val bitwardenSyncStatusByVault by bitwardenViewModel.syncStatusByVault.collectAsState()
     val selectedBitwardenFoldersFlow = remember(selectedBitwardenVaultId, viewModel) {
         selectedBitwardenVaultId?.let(viewModel::getBitwardenFolders)

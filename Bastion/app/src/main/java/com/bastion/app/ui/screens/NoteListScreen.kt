@@ -93,6 +93,7 @@ import com.bastion.app.utils.BiometricHelper
 import com.bastion.app.utils.SettingsManager
 import com.bastion.app.utils.decodeKeePassPathForDisplay
 import com.bastion.app.utils.planLocalCategoryMove
+import com.bastion.app.ui.activityViewModel
 import com.bastion.app.ui.category.CategoryManagementTrailingContent
 import com.bastion.app.ui.category.CategoryManagementCreateDialog
 import com.bastion.app.ui.category.rememberCategoryManagementState
@@ -322,7 +323,9 @@ fun NoteListScreen(
         is NoteCategoryFilter.KeePassDatabaseUncategorized -> filter.databaseId
         else -> null
     }
-    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = viewModel()
+    // Activity 级共享实例：默认的 viewModel() 会按 NavBackStackEntry 各建一个，
+    // 导致 BitwardenViewModel 出现多个副本（详见 activityViewModel 文档）。
+    val bitwardenViewModel: com.bastion.app.bitwarden.viewmodel.BitwardenViewModel = activityViewModel()
     val bitwardenSyncStatusByVault by bitwardenViewModel.syncStatusByVault.collectAsState()
     val isTopBarSyncing = selectedBitwardenVaultId?.let { vaultId ->
         bitwardenSyncStatusByVault[vaultId].isUserVisibleSyncInProgress()
