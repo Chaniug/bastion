@@ -119,7 +119,75 @@ adb logcat | grep -E "PasswordViewModel|SecurityManager|BitwardenRepository"
    `BitwardenOfflineSecretCache.clearMemoryCache()`（该方法已存在，目前在
    `BitwardenViewModel` 锁定时调用一次），并对齐官方「lock 即清」语义。
    当前预热移除后，内存中明文只会来自真实查看/复制，暴露面已大幅缩小，故此条优先级下降。
-3. **`BitwardenViewModel.warmBitwardenOfflineSecretCacheForVault()`**：手动同步完成后
-   仍会整库「解密 + 加密 + `apply()` 写盘」一次（N×3 操作，且会阻塞同步完成回调）。
-   本次未动 —— 同步摘要里的 `offlineReadyCount` 依赖它的返回值，改动牵涉 UI 语义。
-   密钥缓存已让它便宜很多，建议后续改成批量 `commit()` 或改为后台低优先级任务。
+3. ~~**`BitwardenViewModel.warmBitwardenOfflineSecretCacheForVault()` 阻塞同步完成回调**~~
+   —— **已修复（见 §六）**：手动同步的整库预热改为后台调度
+   （`scheduleManualOfflineCacheWarm`，1.5s 延迟 + `Dispatchers.IO`），
+   与早已异步化的静默路径对称。原先卡住改动的「`offlineReadyCount` 依赖返回值」
+   这一层担忧已排除：经核算 `warmedCount ≤ availableOfflineCount` 恒成立，
+   `maxOf` 从来只取 DAO 计数，同步预热对显示数字零贡献。
+4. **预热写盘仍是 N 次 `apply()` + O(N²) 内存拷贝**（本次未动，建议下一轮）：
+   `BitwardenOfflineSecretCache.remember()` 每条都做一次
+   `encryptDataLegacyCompat()` + 一次 `prefs.edit().apply()`，且 `putMemory()`
+   每次都 `memoryCache.toMutableMap()` 全量拷贝（上限 1000 条时冷启动首轮为
+   O(N²)）。改成「批量 `edit()` 一次提交 + 单次构建 map」可显著缩短预热窗口，
+   代价是要给    `BitwardenOfflineSecretCache` 加一个批量 API。背景化后这条
+   已从「卡 UI」降级为「缩短后台窗口」，优先级中等。
+
+## 六、修复记录：手动同步完成后的整库预热改为后台调度
+
+### 背景：两条同步路径不对称
+
+| 路径 | 预热方式 | 位置 |
+| --- | --- | --- |
+| 静默自动同步 | 后台异步：`viewModelScope` + `delay(12s)` + `Dispatchers.IO` + 可取消 job | `scheduleSilentOfflineCacheWarm()` |
+| **手动点同步** | **同步阻塞**：在 `SyncResult.Success` 分支里直接调用 | 原 `BitwardenViewModel.kt:1484` |
+
+结果是「自动同步很顺、手动点同步反而卡」，且库越大越明显 —— 手动路径会把
+N 条 ×（最多 3 轮 `decryptData` + 1 次 `encryptDataLegacyCompat` + 1 次
+`prefs.apply()`）全部压在同步完成回调上。
+
+### 卡点排除：预热返回值其实从未被使用
+
+原先不敢改，是因为同步摘要里的 `offlineReadyCount` 看起来依赖预热返回值：
+
+```kotlin
+val warmedCount = if (silent) 0 else warmBitwardenOfflineSecretCacheForVault(vault.id)
+val offlineReadyCount = maxOf(result.availableOfflineCount, warmedCount)
+```
+
+核算两者口径后确认这个担忧不成立：
+
+- `result.availableOfflineCount` = `getAvailableOfflineSecretCount(vaultId)`
+  = `SELECT COUNT(*) FROM password_entries WHERE bitwarden_vault_id=? AND isDeleted=0 AND isArchived=0`
+  —— **未删除未归档的条目总数**（Room 计数查询，不解密）。
+- `warmedCount` = 其中「已绑定 cipher 且 `password` 非空且解密成功」的条数
+  —— 是前者的**子集**。
+
+因此 `warmedCount ≤ availableOfflineCount` 恒成立，`maxOf` 从来只取后者。
+**那次昂贵的同步预热对显示数字零贡献**，它唯一的产出是副作用（填充离线缓存）。
+所以后台化是零语义损失的改动。
+
+### 改动内容
+
+1. `BitwardenViewModel` 新增 `MANUAL_SYNC_CACHE_WARM_DELAY_MS = 1_500L`
+   （同步完成 → 列表刷新先落地，1.5s 后再后台预热；不像静默路径能等 12s）。
+2. 抽出公共的 `scheduleOfflineCacheWarm(vaultId, delayMs)`，
+   `scheduleSilentOfflineCacheWarm` / `scheduleManualOfflineCacheWarm` 分别委托它
+   （12s / 1.5s）。两条路径共用同一个 `silentCacheWarmJobs`，保证同一时刻
+   不会有两次整库解密抢 `decryptLock`。
+3. 手动分支在 `refreshVaultListSnapshot()` 之前调用
+   `scheduleManualOfflineCacheWarm(vault.id)`；`warmedCount` 的 else 分支改为
+   直接取 `result.availableOfflineCount`（等价且不再解密）。
+4. `BiometricUnlockRegressionGuardTest` 增补两条守卫：
+   - 正向：源码必须含 `MANUAL_SYNC_CACHE_WARM_DELAY_MS` 与
+     `scheduleManualOfflineCacheWarm(vault.id)`；
+   - 反向：源码**不得**再出现 `warmBitwardenOfflineSecretCacheForVault(vault.id)`
+     （防止有人把同步预热加回回调里）。
+
+### 验证方式
+
+- 本地 `:app:compileDebugKotlin` 通过，无新增警告；
+- 跑 `BiometricUnlockRegressionGuardTest`（源码文本守卫）确认无回归；
+- **真机**：手动下拉同步，观察同步完成提示是否即时出现、完成后列表滚动是否
+  不再掉帧；同步完成约 1.5s 后后台预热会跑一次（logcat 无异常即可）。
+  离线兜底行为不变 —— 未预热到的条目仍由 `recall()` 从磁盘解密。

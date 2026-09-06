@@ -74,6 +74,15 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
         private const val COLD_START_AUTO_SYNC_GRACE_MS = 8_000L
         private const val SILENT_SYNC_UI_REFRESH_DELAY_MS = 1_500L
         private const val SILENT_SYNC_CACHE_WARM_DELAY_MS = 12_000L
+
+        /**
+         * 手动同步完成后的离线预热延迟。
+         *
+         * 手动同步是用户主动触发、且就盯着看的操作，不像静默同步那样可以等 12s；
+         * 但仍要给列表渲染留一点时间（与 [SILENT_SYNC_UI_REFRESH_DELAY_MS] 同量级），
+         * 让「同步完成 → 列表刷新」先落地，再把整库预热丢到 IO 线程跑。
+         */
+        private const val MANUAL_SYNC_CACHE_WARM_DELAY_MS = 1_500L
     }
     
     // 仓库
@@ -1478,10 +1487,20 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
 
             is BitwardenCoordinatedSyncResult.Completed -> when (val result = coordinatedResult.result) {
             is BitwardenRepository.SyncResult.Success -> {
+                // 整库离线预热（N 条 × 最多 3 轮解密 + 加密 + SharedPreferences 写盘）
+                // 不再在同步完成回调里同步执行：库越大，回调被阻塞越久，表现出来就是
+                //「手动点同步比自动同步还卡」。静默路径早已异步化
+                //（scheduleSilentOfflineCacheWarm），这里把手动路径也改成后台调度，
+                // 两条路径对称，调度点见下方 silent 分支附近。
+                //
+                // 摘要里的 offlineReadyCount 本来就等于 DAO 计数：warmedCount 只统计
+                //「已绑定 cipher 且解密成功」的条目，必然 ≤ result.availableOfflineCount
+                //（getAvailableOfflineSecretCount() = 未删除未归档的条目总数），
+                // maxOf 恒取后者。所以后台化不改变任何显示数字。
                 val warmedCount = if (silent) {
                     0
                 } else {
-                    warmBitwardenOfflineSecretCacheForVault(vault.id)
+                    result.availableOfflineCount
                 }
                 val offlineReadyCount = maxOf(result.availableOfflineCount, warmedCount)
                 val syncSummary = BitwardenSyncSummary(
@@ -1522,6 +1541,9 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
                     scheduleSilentPostSyncRefresh(vault.id)
                     scheduleSilentOfflineCacheWarm(vault.id)
                 } else {
+                    // 手动同步：用户就在看着，预热只做短延迟（让列表先渲染完），
+                    // 再丢到 IO 线程跑，不占用同步完成回调。
+                    scheduleManualOfflineCacheWarm(vault.id)
                     refreshVaultListSnapshot()
                     if (_activeVault.value?.id == vault.id) {
                         loadVaultData(vault.id)
@@ -1618,10 +1640,32 @@ class BitwardenViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun scheduleSilentOfflineCacheWarm(vaultId: Long) {
+        scheduleOfflineCacheWarm(vaultId, SILENT_SYNC_CACHE_WARM_DELAY_MS)
+    }
+
+    /**
+     * 手动同步完成后的整库离线预热。
+     *
+     * 以前这一步是在 BitwardenRepository.SyncResult.Success 分支里**同步**调用的
+     *（warmBitwardenOfflineSecretCacheForVault）：N 条 × 最多 3 轮解密 + 每条一次
+     * 加密 + 一次 SharedPreferences apply()，全部压在同步完成回调上，库越大越卡，
+     * 于是出现「自动同步很顺、手动点同步反而卡」的不对称。现在与静默路径共用
+     * 一套可取消的延迟后台任务，只是延迟短得多（用户在等，不能等 12s）。
+     */
+    private fun scheduleManualOfflineCacheWarm(vaultId: Long) {
+        scheduleOfflineCacheWarm(vaultId, MANUAL_SYNC_CACHE_WARM_DELAY_MS)
+    }
+
+    /**
+     * 调度一次整库离线预热。同一 Vault 只保留一个待执行/执行中的任务：
+     * 后到的调度会取消先到的，代价是先到的那次可能白跑，换来的是
+     *「同一时刻绝不会有两次整库解密在抢 [decryptLock]」。
+     */
+    private fun scheduleOfflineCacheWarm(vaultId: Long, delayMs: Long) {
         viewModelScope.launch {
             silentCacheWarmJobs.remove(vaultId)?.cancel()
             val job = launch {
-                delay(SILENT_SYNC_CACHE_WARM_DELAY_MS)
+                delay(delayMs)
                 withContext(Dispatchers.IO) {
                     warmBitwardenOfflineSecretCacheForVault(vaultId)
                 }

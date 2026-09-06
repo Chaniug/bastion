@@ -632,6 +632,15 @@ class BiometricUnlockRegressionGuardTest {
                 bitwardenViewModelSource.contains("scheduleSilentOfflineCacheWarm(vault.id)")
         )
         assertTrue(
+            "Manual sync completion must also schedule the whole-vault offline cache warm in the background instead of running it inline.",
+            bitwardenViewModelSource.contains("private const val MANUAL_SYNC_CACHE_WARM_DELAY_MS") &&
+                bitwardenViewModelSource.contains("scheduleManualOfflineCacheWarm(vault.id)")
+        )
+        assertFalse(
+            "The sync-completion callback must not warm the whole offline secret cache inline; N entries × up to 3 decryptions block it.",
+            bitwardenViewModelSource.contains("warmBitwardenOfflineSecretCacheForVault(vault.id)")
+        )
+        assertTrue(
             "Page-visible auto sync triggers should wait for a short stable visibility window so fast bottom-tab switches cancel them.",
                 cardWalletScreenSource.contains("delay(1_200L)") &&
                 cardWalletScreenSource.contains("SyncTaskRunner.request(") &&
