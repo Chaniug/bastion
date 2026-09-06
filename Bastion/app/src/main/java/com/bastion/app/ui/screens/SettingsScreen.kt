@@ -165,7 +165,6 @@ fun SettingsScreen(
     var updateCheckResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
     var updateCheckError by remember { mutableStateOf<String?>(null) }
     var lastUpdateCheckAt by remember { mutableStateOf<Long?>(null) }
-    var hasAutoCheckedUpdate by remember { mutableStateOf(false) }
     var showDeveloperVerifyDialog by remember { mutableStateOf(false) }
     var previewFeaturesExpanded by remember { mutableStateOf(false) }
     var developerPasswordInput by remember { mutableStateOf("") }
@@ -201,14 +200,6 @@ fun SettingsScreen(
                 lastUpdateCheckAt = System.currentTimeMillis()
                 isCheckingUpdate = false
             }
-        }
-    }
-
-    // 打开「版本与更新」对话框时自动检查一次，免去手动点击；每个对话框生命周期只自动查一次
-    LaunchedEffect(showUpdateCheckDialog) {
-        if (showUpdateCheckDialog && !hasAutoCheckedUpdate) {
-            hasAutoCheckedUpdate = true
-            startUpdateCheck()
         }
     }
 
