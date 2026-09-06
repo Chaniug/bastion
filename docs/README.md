@@ -25,25 +25,23 @@ Passkey / Credential Manager、TOTP 验证器、自动填充。Jetpack Compose +
 
 | 分支 | 提交 | 说明 |
 |---|---|---|
-| `dev` | `08ae731a` | **默认开发分支**，所有开发/修复/测试都在这里 |
-| `main` | `399e733e` | 落后 dev **4 个提交**，**尚未合并**（等 dev 真机验证通过后再合） |
+| `dev` | `fb8dc12` | **默认开发分支**，所有开发/修复/测试都在这里 |
+| `main` | `28eb875` | 落后 dev **2 个提交**，**尚未合并**（等 dev 真机验证通过后再合） |
 
-dev 领先 main 的 4 个提交：
+dev 领先 main 的 2 个提交：
 
 ```
-08ae731a docs: 全量性能排查报告（内存/耗电/卡顿），新增 5 项待办
-1ed2e8c0 docs: 落盘性能优化待办清单，第 1 项已修并标注判据
-63f5bbc7 perf(同步): 手动同步完成后的整库离线预热改为后台调度
-f0ee3c77 docs: 落盘外部项目借鉴分析与 passkey origin 校验对齐方案
+fb8dc12 revert(设置): 撤销版本与更新对话框自动检查，改回手动触发
+b344151 feat(设置): 版本与更新对话框信息增强（版本卡片 / 发布日期 / APK 大小 / 更新日志卡片）
 ```
 
-> 按仓库准则：**dev 验证没问题后才合 main**。合并前请确认这 4 个提交都已真机验证。
+> 按仓库准则：**dev 验证没问题后才合 main**。合并前请确认这 2 个提交都已真机验证。
 
 ### CI
 
-最近一次 `Android CI debug`（run `34015803788`，对应 `63f5bbc7`）：
+最近一次 `Android CI debug`（run `34025520525`，对应 `fb8dc12`）：
 
-- ✅ 全绿，约 8.5 分钟
+- ✅ 全绿，约 5.7 分钟
 - 单测：`total=680 failed=0 baseline=0 verdict=PASS`
 - `build_failed=false`
 
@@ -57,8 +55,8 @@ gh -R Chaniug/bastion run view <run-id> --log | grep -aoE "total=[0-9]+ failed=[
 
 | 类型 | 版本 |
 |---|---|
-| 预览版（debug，可装真机） | `Development Preview (build.202609060617)` — 含 `63f5bbc7` 的同步预热修复 |
-| 稳定版 | `Bastion v1.0.1600` |
+| 预览版（debug，可装真机） | `Development Preview (build.202609060949)` |
+| 稳定版 | `Bastion v1.0.1601`（2026-09-06 发布，含手动同步预热后台化等修复） |
 
 ### 进行中的工作
 

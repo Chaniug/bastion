@@ -122,7 +122,7 @@ bastion 在 [Monica](https://github.com/Monica-Pass/Monica) 基础上独立维�
 | 同步生态 | 单一 | Bitwarden + WebDAV + KeePass 双生态 |
 | 构建发布 | 需自行配置签名 | CI 内置签名 + Preview / Stable 自动发布 |
 | Android 版本 | targetSdk 35 | targetSdk 37 |
-| 视觉品牌 | 原品牌图标 | 玻璃堡垒 + 金色锁孔统一视觉体系 |
+| 视觉品牌 | 原品牌图标 | 青蓝盾牌玻璃堡垒统一视觉体系（自适应图标 + 单色通知剪影） |
 
 ## 路线图
 
