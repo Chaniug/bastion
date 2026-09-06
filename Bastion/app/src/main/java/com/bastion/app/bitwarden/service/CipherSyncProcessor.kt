@@ -129,7 +129,12 @@ class CipherSyncProcessor(
             existing.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true) &&
             existing.sshKeyData.isNotBlank()
         ) {
-            return false
+            // SSH 降级存储（Type 1 + 自定义字段）条目：仅当服务端自定义字段全空
+            // （SSH 数据可能被官方端弄丢）时才需要重处理以触发重新上传
+            // （见 syncPasswordCipher 的 serverLostSshData 判定，其前提同样是 customFields 为空）。
+            // 字段还在就按未变更跳过，否则每轮同步都会把该条目重写并计成一条「变更」，
+            // 表现为通知栏永远显示「已同步 1 条变更」。fields 是否为空无需解密即可判断。
+            if (cipher.fields.isNullOrEmpty()) return false
         }
         return true
     }
