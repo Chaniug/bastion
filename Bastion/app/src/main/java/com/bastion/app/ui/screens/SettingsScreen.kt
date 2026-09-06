@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -163,6 +164,8 @@ fun SettingsScreen(
     var updateDownloadProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
     var updateCheckResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
     var updateCheckError by remember { mutableStateOf<String?>(null) }
+    var lastUpdateCheckAt by remember { mutableStateOf<Long?>(null) }
+    var hasAutoCheckedUpdate by remember { mutableStateOf(false) }
     var showDeveloperVerifyDialog by remember { mutableStateOf(false) }
     var previewFeaturesExpanded by remember { mutableStateOf(false) }
     var developerPasswordInput by remember { mutableStateOf("") }
@@ -195,8 +198,17 @@ fun SettingsScreen(
                             ?: context.getString(R.string.update_check_failed_unknown)
                         showUpdateCheckDialog = true
                     }
+                lastUpdateCheckAt = System.currentTimeMillis()
                 isCheckingUpdate = false
             }
+        }
+    }
+
+    // 打开「版本与更新」对话框时自动检查一次，免去手动点击；每个对话框生命周期只自动查一次
+    LaunchedEffect(showUpdateCheckDialog) {
+        if (showUpdateCheckDialog && !hasAutoCheckedUpdate) {
+            hasAutoCheckedUpdate = true
+            startUpdateCheck()
         }
     }
 
@@ -1214,21 +1226,55 @@ fun SettingsScreen(
                             .weight(1f, fill = false)
                             .verticalScroll(updateDialogScrollState)
                     ) {
-                        // === 当前版本 ===
+                        // === 当前版本卡片 ===
                         val fullVersion = BuildConfig.FULL_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
-                        Text(
-                            text = stringResource(R.string.update_current_version_label),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = fullVersion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        androidx.compose.material3.Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = fullVersion,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    androidx.compose.material3.Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = MaterialTheme.colorScheme.secondaryContainer
+                                    ) {
+                                        Text(
+                                            text = if (updateChannel == UpdateChannel.STABLE) {
+                                                stringResource(R.string.update_channel_stable)
+                                            } else {
+                                                stringResource(R.string.update_channel_preview)
+                                            },
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = stringResource(R.string.update_version_code_fmt, currentVersionCode),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // === 更新渠道选择 ===
+                        Text(
+                            text = stringResource(R.string.update_channel_label),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             androidx.compose.material3.FilterChip(
                                 selected = updateChannel == UpdateChannel.STABLE,
@@ -1252,11 +1298,26 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // === 检查更新按钮 ===
-                        androidx.compose.material3.FilledTonalButton(
-                            onClick = startUpdateCheck,
-                            enabled = !isCheckingUpdate
-                        ) {
-                            Text(stringResource(R.string.update_check_title))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.FilledTonalButton(
+                                onClick = startUpdateCheck,
+                                enabled = !isCheckingUpdate
+                            ) {
+                                Text(stringResource(R.string.update_check_title))
+                            }
+                            lastUpdateCheckAt?.let { checkedAt ->
+                                Spacer(modifier = Modifier.width(10.dp))
+                                val checkedTimeText = remember(checkedAt) {
+                                    java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+                                        .format(java.time.Instant.ofEpochMilli(checkedAt)
+                                            .atZone(java.time.ZoneId.systemDefault()))
+                                }
+                                Text(
+                                    text = stringResource(R.string.update_last_checked, checkedTimeText),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         if (isCheckingUpdate) {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -1281,31 +1342,75 @@ fun SettingsScreen(
                                 )
                             }
                             result != null -> {
-                                Text(
-                                    text = if (result.isUpdateAvailable) {
-                                        stringResource(R.string.update_check_update_available_message)
-                                    } else {
-                                        stringResource(R.string.update_check_no_update_message)
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = stringResource(
-                                        R.string.update_check_current_version,
-                                        result.currentVersion
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = stringResource(
-                                        R.string.update_check_latest_version,
-                                        result.latestVersion
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (result.isUpdateAvailable) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(50),
+                                            color = MaterialTheme.colorScheme.primaryContainer
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.update_new_version_badge),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = result.latestVersion,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                } else {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF4CAF50),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.update_check_no_update_title),
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                    }
+                                }
+                                result.publishedAtEpochSeconds?.let { publishedAt ->
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = stringResource(
+                                            R.string.update_published_at,
+                                            UpdateChecker.formatPublishedDate(publishedAt)
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if (result.isUpdateAvailable) {
+                                    result.apkSizeBytes?.let { apkSize ->
+                                        Text(
+                                            text = stringResource(
+                                                R.string.update_apk_size,
+                                                UpdateChecker.formatApkSize(apkSize)
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = stringResource(
+                                            R.string.update_check_latest_version,
+                                            result.latestVersion
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                                 result.releaseName?.let { releaseName ->
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
@@ -1316,17 +1421,25 @@ fun SettingsScreen(
                                 val notes = result.releaseNotes?.takeIf { it.isNotBlank() }
                                     ?: stringResource(R.string.update_whats_new)
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = stringResource(R.string.update_content_label),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                MarkdownPreviewText(
-                                    markdown = notes,
-                                    imageBitmaps = emptyMap(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
+                                androidx.compose.material3.Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                                        Text(
+                                            text = stringResource(R.string.update_content_label),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        MarkdownPreviewText(
+                                            markdown = notes,
+                                            imageBitmaps = emptyMap(),
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                    }
+                                }
                             }
                         }
 

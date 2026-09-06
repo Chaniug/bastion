@@ -2802,6 +2802,12 @@
     <string name="update_channel_stable">正式版</string>
     <string name="update_channel_preview">预览版 (Debug)</string>
     <string name="update_current_version_label">当前版本</string>
+    <string name="update_channel_label">更新渠道</string>
+    <string name="update_version_code_fmt">内部版本号：%1$d</string>
+    <string name="update_last_checked">上次检查：%1$s</string>
+    <string name="update_published_at">发布日期：%1$s</string>
+    <string name="update_apk_size">安装包大小：%1$s</string>
+    <string name="update_new_version_badge">新版本</string>
     <string name="cd_back">返回</string>
     <string name="data_type_notes">Notes</string>
     <string name="filter_title">Filter</string>

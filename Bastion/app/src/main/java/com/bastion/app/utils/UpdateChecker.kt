@@ -33,7 +33,11 @@ data class UpdateCheckResult(
     val apkDownloadUrl: String?,
     val mirrorDownloadUrls: List<String> = emptyList(),
     val releaseNotes: String?,
-    val isUpdateAvailable: Boolean
+    val isUpdateAvailable: Boolean,
+    /** Release 发布时间（epoch 秒）；预览渠道为构建时间 */
+    val publishedAtEpochSeconds: Long? = null,
+    /** APK 附件大小（字节）；未知时为 null */
+    val apkSizeBytes: Long? = null
 )
 
 data class UpdateDownloadProgress(
@@ -138,7 +142,9 @@ object UpdateChecker {
                         apkDownloadUrl = apkAsset?.downloadUrl,
                         mirrorDownloadUrls = buildMirrorUrls(apkAsset?.downloadUrl),
                         releaseNotes = release.body?.takeIf { it.isNotBlank() },
-                        isUpdateAvailable = compareVersionTags(latestVersion, currentVersion) > 0
+                        isUpdateAvailable = compareVersionTags(latestVersion, currentVersion) > 0,
+                        publishedAtEpochSeconds = parseIsoEpochSeconds(release.publishedAt),
+                        apkSizeBytes = apkAsset?.size?.takeIf { it > 0L }
                     )
                 }
             }
@@ -172,7 +178,7 @@ object UpdateChecker {
 
                     val apkAsset = preview.debugApkAsset()
                         ?: throw IOException("Preview release has no APK asset")
-                    val buildEpochSeconds = previewBuildEpochSeconds(apkAsset.updatedAt)
+                    val buildEpochSeconds = parseIsoEpochSeconds(apkAsset.updatedAt)
                     val isUpdateAvailable = buildEpochSeconds == null || buildEpochSeconds > currentVersionCode
                     val buildLabel = buildEpochSeconds?.let { formatBuildEpoch(it) }
 
@@ -185,17 +191,32 @@ object UpdateChecker {
                         apkDownloadUrl = apkAsset.downloadUrl,
                         mirrorDownloadUrls = buildMirrorUrls(apkAsset.downloadUrl),
                         releaseNotes = buildLabel?.let { "预览构建时间：$it" },
-                        isUpdateAvailable = isUpdateAvailable
+                        isUpdateAvailable = isUpdateAvailable,
+                        publishedAtEpochSeconds = buildEpochSeconds,
+                        apkSizeBytes = apkAsset.size.takeIf { it > 0L }
                     )
                 }
             }
         }
 
-    /** GitHub 附件的 updated_at 为 ISO-8601 UTC 时间，解析为 epoch 秒。 */
-    private fun previewBuildEpochSeconds(assetUpdatedAt: String?): Long? =
-        assetUpdatedAt?.takeIf { it.isNotBlank() }?.let { value ->
+    /** GitHub 附件/Release 的 ISO-8601 UTC 时间解析为 epoch 秒。 */
+    private fun parseIsoEpochSeconds(isoTimestamp: String?): Long? =
+        isoTimestamp?.takeIf { it.isNotBlank() }?.let { value ->
             runCatching { java.time.Instant.parse(value).epochSecond }.getOrNull()
         }
+
+    /** 发布日期展示：epoch 秒 → 本地时区 "yyyy-MM-dd"。 */
+    fun formatPublishedDate(epochSeconds: Long): String =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            .withZone(java.time.ZoneId.systemDefault())
+            .format(java.time.Instant.ofEpochSecond(epochSeconds))
+
+    /** 安装包大小展示：字节 → 人类可读（KB/MB/GB）。 */
+    fun formatApkSize(bytes: Long): String = when {
+        bytes >= 1L shl 30 -> String.format(java.util.Locale.ROOT, "%.2f GB", bytes / 1073741824.0)
+        bytes >= 1L shl 20 -> String.format(java.util.Locale.ROOT, "%.1f MB", bytes / 1048576.0)
+        else -> String.format(java.util.Locale.ROOT, "%.0f KB", bytes / 1024.0)
+    }
 
     private fun formatBuildEpoch(epochSeconds: Long): String =
         java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -398,5 +419,6 @@ private data class GitHubReleaseAsset(
     val name: String,
     @SerialName("browser_download_url") val downloadUrl: String,
     @SerialName("content_type") val contentType: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
+    @SerialName("updated_at") val updatedAt: String? = null,
+    val size: Long = 0L
 )
