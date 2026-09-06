@@ -466,7 +466,12 @@ class CipherSyncProcessor(
         } else {
             // BUG-5 修复：本地存在未上传改动、且服务器软删除（非本地删除待决）时，视为并发冲突，
             // 保留本地编辑并交给冲突流程处理，避免服务器删除静默丢弃本地未上传数据。
-            if (existing.bitwardenLocalModified && isServerDeleted && !hasPendingDelete) {
+            // 但本地删除墓碑（isDeleted=true）不算"未上传改动"：本地删除经 pending DELETE op
+            // 上传成功后服务器才软删（deletedDate 置位、revision 变新），此时 op 已 COMPLETED、
+            // 墓碑的 bitwardenLocalModified 尚未清除——双方对删除已达成一致，若不排除会在这里
+            // 误报冲突（实证：每删一条密码，下轮同步就报一条冲突）。真冲突仍要求本地条目
+            // 未被删除（!isDeleted），即"本地编辑未上传 + 服务器被删"才成立。
+            if (!existing.isDeleted && existing.bitwardenLocalModified && isServerDeleted && !hasPendingDelete) {
                 return CipherSyncResult.Conflict
             }
             if (isServerDeleted) {
