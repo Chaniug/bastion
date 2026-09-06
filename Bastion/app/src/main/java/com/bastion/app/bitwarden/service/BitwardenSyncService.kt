@@ -1136,17 +1136,37 @@ class BitwardenSyncService(
             return UploadAttemptResult(success = true)
         }
 
-        // 构建加密的 Cipher 请求
-        val createRequest = passwordEntryToCipherRequest(latestEntry, symmetricKey)
-        val requestPayload = runCatchingObserved { json.encodeToString(createRequest) }.getOrNull()
+        // 构建加密的 Cipher 请求（SSH 条目优先原生 Type 5，失败自动回落降级格式）
+        var createRequest = passwordEntryToCipherRequest(latestEntry, symmetricKey, vault.id)
+        var requestPayload = runCatchingObserved { json.encodeToString(createRequest) }.getOrNull()
 
         try {
             val vaultApi = apiManager.getVaultApi(vault)
             val postStart = System.currentTimeMillis()
-            val response = vaultApi.createCipher(
+            var response = vaultApi.createCipher(
                 authorization = "Bearer $accessToken",
                 cipher = createRequest
             )
+            // SSH 原生 Type 5 被服务端校验拒绝（400/422）→ 记入冷却期并回落 Type 1 + 自定义字段重试一次
+            if (createRequest.type == 5 && !response.isSuccessful &&
+                (response.code() == 400 || response.code() == 422)
+            ) {
+                SshNativeUploadPolicy.markNativeUploadFailed(context, vault.id)
+                BitwardenDiagLogger.append(
+                    "SSH native type5 create rejected (code=${response.code()}), fallback to type1+fields, vaultId=${vault.id}"
+                )
+                createRequest = passwordEntryToCipherRequest(latestEntry, symmetricKey, vault.id)
+                requestPayload = runCatchingObserved { json.encodeToString(createRequest) }.getOrNull()
+                response = vaultApi.createCipher(
+                    authorization = "Bearer $accessToken",
+                    cipher = createRequest
+                )
+            }
+            if (response.isSuccessful && createRequest.type == 5) {
+                // 仅当最终成功的请求确实是 Type 5 才清零失败记录，
+                // 回落成功的场景保持冷却期，避免每轮同步反复被拒。
+                SshNativeUploadPolicy.markNativeUploadSucceeded(context, vault.id)
+            }
             val postMs = System.currentTimeMillis() - postStart
             BitwardenDiagLogger.append(
                 "BitwardenSyncService.uploadLocalEntry POST: entryId=${entry.id}, took ${postMs}ms, " +
@@ -1284,20 +1304,48 @@ class BitwardenSyncService(
             }
         }.getOrNull()
 
-        val updateRequest = passwordEntryToCipherUpdateRequest(
+        var updateRequest = passwordEntryToCipherUpdateRequest(
             entry = entry,
             symmetricKey = symmetricKey,
+            vaultId = vault.id,
             mergedFields = mergedFields,
             baselineCipher = baselineCipher
         )
-        val requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
+        var requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
 
         try {
-            val response = vaultApi.updateCipher(
+            var response = vaultApi.updateCipher(
                 authorization = "Bearer $accessToken",
                 cipherId = cipherId,
                 cipher = updateRequest
             )
+            // SSH 原生 Type 5 被服务端校验拒绝（400/422）→ 记入冷却期并回落 Type 1 + 自定义字段重试一次
+            if (updateRequest.type == 5 && !response.isSuccessful &&
+                (response.code() == 400 || response.code() == 422)
+            ) {
+                SshNativeUploadPolicy.markNativeUploadFailed(context, vault.id)
+                BitwardenDiagLogger.append(
+                    "SSH native type5 update rejected (code=${response.code()}), fallback to type1+fields, vaultId=${vault.id}"
+                )
+                updateRequest = passwordEntryToCipherUpdateRequest(
+                    entry = entry,
+                    symmetricKey = symmetricKey,
+                    vaultId = vault.id,
+                    mergedFields = mergedFields,
+                    baselineCipher = baselineCipher
+                )
+                requestPayload = runCatchingObserved { json.encodeToString(updateRequest) }.getOrNull()
+                response = vaultApi.updateCipher(
+                    authorization = "Bearer $accessToken",
+                    cipherId = cipherId,
+                    cipher = updateRequest
+                )
+            }
+            if (response.isSuccessful && updateRequest.type == 5) {
+                // 仅当最终成功的请求确实是 Type 5 才清零失败记录，
+                // 回落成功的场景保持冷却期，避免每轮同步反复被拒。
+                SshNativeUploadPolicy.markNativeUploadSucceeded(context, vault.id)
+            }
 
             if (!response.isSuccessful) {
                 val errorPayload = runCatchingObserved { response.errorBody()?.string() }.getOrNull()
@@ -1695,22 +1743,42 @@ class BitwardenSyncService(
     /**
      * 将 PasswordEntry 转换为加密的 CipherCreateRequest
      *
-     * SSH 密钥使用 Type 1 (Login) + 自定义字段上传，而非 Type 5。
-     * 原因：Vaultwarden 等兼容服务端不支持 Type 5，会在 /sync 时将其
-     * 降级为 Type 1 并丢弃 sshKey 数据，导致同步回来后 SSH 密钥丢失。
-     * 使用 Type 1 + 自定义字段可确保数据在服务端完整保留并正确往返。
+     * SSH 密钥优先使用原生 Type 5（sshKey 字段），与 Bitwarden 官方条目结构完全同构，
+     * 官方客户端会显示为真正的「SSH 密钥」条目。历史上曾因 Vaultwarden 等兼容服务端
+     * 不支持 Type 5（/sync 时降级并丢弃 sshKey 数据）而一律降级为 Type 1 + 自定义字段；
+     * 如今主流自建服务端已原生支持 Type 5，故改为：默认原生上传，被服务端 4xx 拒绝时
+     * 由 [SshNativeUploadPolicy] 记入冷却期并自动回落降级格式（见 uploadLocalEntry）。
+     * 下载侧两种形态都识别（原生 Type 5 + 降级 Type 1 字段），双向无缝。
      */
     private suspend fun passwordEntryToCipherRequest(
         entry: PasswordEntry,
-        symmetricKey: SymmetricCryptoKey
+        symmetricKey: SymmetricCryptoKey,
+        vaultId: Long
     ): CipherCreateRequest {
         val crypto = com.bastion.app.bitwarden.crypto.BitwardenCrypto
         if (entry.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true)) {
-            // 使用 Type 1 + 自定义字段，兼容不支持 Type 5 的服务端
             val encryptedName = crypto.encryptString(entry.title, symmetricKey)
             val encryptedNotes = entry.notes.takeIf { it.isNotBlank() }?.let {
                 crypto.encryptString(it, symmetricKey)
             }
+            val ssh = SshKeyDataCodec.decode(entry.sshKeyData)
+            if (ssh != null && SshNativeUploadPolicy.isNativeUploadAllowed(context, vaultId)) {
+                // 原生 Type 5：与 Bitwarden 官方同构
+                return CipherCreateRequest(
+                    type = 5,
+                    folderId = entry.bitwardenFolderId,
+                    name = encryptedName,
+                    notes = encryptedNotes,
+                    sshKey = CipherSshKeyApiData(
+                        privateKey = crypto.encryptString(ssh.privateKeyOpenSsh, symmetricKey),
+                        publicKey = crypto.encryptString(ssh.publicKeyOpenSsh, symmetricKey),
+                        keyFingerprint = crypto.encryptString(ssh.fingerprintSha256, symmetricKey)
+                    ),
+                    favorite = entry.isFavorite,
+                    archivedDate = toBitwardenArchivedDate(entry)
+                )
+            }
+            // 降级：Type 1 + 自定义字段（服务端不支持 Type 5 或处于探测冷却期）
             val sshFields = buildEncryptedSshKeyCustomFields(entry, symmetricKey)
             return CipherCreateRequest(
                 type = 1,
@@ -1771,16 +1839,47 @@ class BitwardenSyncService(
     private suspend fun passwordEntryToCipherUpdateRequest(
         entry: PasswordEntry,
         symmetricKey: SymmetricCryptoKey,
+        vaultId: Long,
         mergedFields: List<CipherFieldApiData>? = null,
         baselineCipher: CipherApiResponse? = null
     ): CipherUpdateRequest {
         val crypto = com.bastion.app.bitwarden.crypto.BitwardenCrypto
         if (entry.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true)) {
-            // 使用 Type 1 + 自定义字段，兼容不支持 Type 5 的服务端
             val encryptedName = crypto.encryptString(entry.title, symmetricKey)
             val encryptedNotes = entry.notes.takeIf { it.isNotBlank() }?.let {
                 crypto.encryptString(it, symmetricKey)
             }
+            val ssh = SshKeyDataCodec.decode(entry.sshKeyData)
+            if (ssh != null && SshNativeUploadPolicy.isNativeUploadAllowed(context, vaultId)) {
+                // 原生 Type 5：与 Bitwarden 官方同构
+                return CipherUpdateRequest(
+                    type = 5,
+                    folderId = entry.bitwardenFolderId,
+                    name = encryptedName,
+                    notes = encryptedNotes,
+                    sshKey = CipherSshKeyApiData(
+                        privateKey = crypto.encryptString(ssh.privateKeyOpenSsh, symmetricKey),
+                        publicKey = crypto.encryptString(ssh.publicKeyOpenSsh, symmetricKey),
+                        keyFingerprint = crypto.encryptString(ssh.fingerprintSha256, symmetricKey)
+                    ),
+                    favorite = entry.isFavorite,
+                    archivedDate = toBitwardenArchivedDate(entry)
+                )
+            }
+            if (ssh == null && baselineCipher?.sshKey != null) {
+                // 本地 SSH 数据无法解析但服务端已是原生 Type 5：原样回传，
+                // 避免整体 PUT 把服务端 sshKey 清空。
+                return CipherUpdateRequest(
+                    type = 5,
+                    folderId = entry.bitwardenFolderId,
+                    name = encryptedName,
+                    notes = encryptedNotes,
+                    sshKey = baselineCipher.sshKey,
+                    favorite = entry.isFavorite,
+                    archivedDate = toBitwardenArchivedDate(entry)
+                )
+            }
+            // 降级：Type 1 + 自定义字段（服务端不支持 Type 5 或处于探测冷却期）
             val sshFields = buildEncryptedSshKeyCustomFields(entry, symmetricKey)
             return CipherUpdateRequest(
                 type = 1,

@@ -118,7 +118,8 @@ class CipherSyncProcessor(
         cipher: CipherApiResponse,
         serverDeletedAt: Date?,
         serverArchivedAt: Date?,
-        allowSshKeySkip: Boolean = false
+        allowSshKeySkip: Boolean = false,
+        sshNativeMigrationDue: Boolean = false
     ): Boolean {
         if (!hasSameRemoteRevision(existing.bitwardenRevisionDate, cipher.revisionDate)) return false
         if (existing.bitwardenLocalModified) return false
@@ -135,6 +136,10 @@ class CipherSyncProcessor(
             // 字段还在就按未变更跳过，否则每轮同步都会把该条目重写并计成一条「变更」，
             // 表现为通知栏永远显示「已同步 1 条变更」。fields 是否为空无需解密即可判断。
             if (cipher.fields.isNullOrEmpty()) return false
+            // 服务端支持原生 Type 5 且该条目仍是降级形态：重处理一次，
+            // 由 syncPasswordCipher 打脏标记推动「降级 → 原生 Type 5」迁移重传。
+            // 迁移上传若被服务端拒绝会自动进入冷却期，此处随之停摆，不会循环。
+            if (sshNativeMigrationDue) return false
         }
         return true
     }
@@ -318,7 +323,16 @@ class CipherSyncProcessor(
         if (existing != null && hasPendingDelete && !isServerDeleted) {
             return CipherSyncResult.Skipped("Local delete wins")
         }
-        if (existing != null && shouldSkipPasswordRemoteSync(existing, cipher, serverDeletedAt, serverArchivedAt)) {
+        if (existing != null && shouldSkipPasswordRemoteSync(
+                existing = existing,
+                cipher = cipher,
+                serverDeletedAt = serverDeletedAt,
+                serverArchivedAt = serverArchivedAt,
+                sshNativeMigrationDue = existing.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true) &&
+                    existing.sshKeyData.isNotBlank() &&
+                    SshNativeUploadPolicy.isNativeUploadAllowed(context, vault.id)
+            )
+        ) {
             return CipherSyncResult.Skipped(SKIP_REMOTE_UNCHANGED)
         }
         
@@ -489,11 +503,16 @@ class CipherSyncProcessor(
             }
             
             // 如果本地是 SSH 密钥但服务端返回空数据（Type 5 被降级），
-            // 标记为本地已修改，触发下次同步时以 Type 1 + 自定义字段重新上传。
+            // 标记为本地已修改，触发重新上传（上传侧现在优先原生 Type 5，被拒才回落降级格式）。
             val localIsSshKey = existing.loginType.equals(LOGIN_TYPE_SSH_KEY, ignoreCase = true) &&
                 existing.sshKeyData.isNotBlank()
             val serverLostSshData = localIsSshKey && remoteSshKeyData.isBlank() &&
                 customFields.isEmpty()
+            // 降级 → 原生迁移：服务端支持原生 Type 5 且该 cipher 仍是「Type 1 + 自定义字段」
+            //（远端 SSH 数据来自字段解密）时，打脏标记推动下轮 push 以原生 Type 5 重传，
+            // 与 Bitwarden 官方条目结构统一。迁移上传被拒会自动进入冷却期，此处随之停摆，不循环。
+            val migrateSshToNative = localIsSshKey && remoteSshKeyData.isNotBlank() &&
+                SshNativeUploadPolicy.isNativeUploadAllowed(context, vault.id)
             
             val updated = existing.copy(
                 title = name,
@@ -525,8 +544,9 @@ class CipherSyncProcessor(
                 bitwardenVaultId = vault.id,
                 bitwardenFolderId = cipher.folderId,
                 bitwardenRevisionDate = cipher.revisionDate,
-                // 如果服务端丢失了 SSH 数据，标记为本地修改以触发重新上传
-                bitwardenLocalModified = serverLostSshData
+                // 如果服务端丢失了 SSH 数据，标记为本地修改以触发重新上传；
+                // 降级形态条目在服务端支持原生 Type 5 时同样打脏标记以触发迁移重传。
+                bitwardenLocalModified = serverLostSshData || migrateSshToNative
             )
             passwordEntryDao.update(updated)
             // 远端有自定义字段时，以远端为准整体替换本地 custom_fields（本地未上传改动已被上方
