@@ -123,7 +123,19 @@ class CipherSyncProcessor(
     ): Boolean {
         if (!hasSameRemoteRevision(existing.bitwardenRevisionDate, cipher.revisionDate)) return false
         if (existing.bitwardenLocalModified) return false
-        if (existing.isDeleted || serverDeletedAt != null) return false
+        if (existing.isDeleted || serverDeletedAt != null) {
+            // 删除态幂等：本地已是软删除、删除时间与 revision 都和服务器一致时，直接按
+            // 未变更跳过。否则服务端回收站里的 cipher 每轮同步都会被重写一遍并恒定计入
+            // 一条「变更」（真机实证：每轮 overallSyncResult ciphersUpdated=1 的真凶）。
+            // 仅当删除态真实变化（新删除 / 服务器侧恢复 / 删除时间变动）时才继续走更新分支。
+            if (existing.isDeleted &&
+                existing.deletedAt == serverDeletedAt &&
+                hasSameRemoteRevision(existing.bitwardenRevisionDate, cipher.revisionDate)
+            ) {
+                return true
+            }
+            return false
+        }
         if (existing.bitwardenFolderId != cipher.folderId) return false
         if (existing.isArchived != (serverArchivedAt != null)) return false
         if (!allowSshKeySkip &&
@@ -151,7 +163,16 @@ class CipherSyncProcessor(
     ): Boolean {
         if (!hasSameRemoteRevision(existing.bitwardenRevisionDate, cipher.revisionDate)) return false
         if (existing.bitwardenLocalModified == true) return false
-        if (existing.isDeleted || serverDeletedAt != null) return false
+        if (existing.isDeleted || serverDeletedAt != null) {
+            // 与 password 路径同款删除态幂等：回收站里的 secure item 稳定后不再重复计变更。
+            if (existing.isDeleted &&
+                existing.deletedAt == serverDeletedAt &&
+                hasSameRemoteRevision(existing.bitwardenRevisionDate, cipher.revisionDate)
+            ) {
+                return true
+            }
+            return false
+        }
         if (existing.bitwardenFolderId != cipher.folderId) return false
         if (!existing.syncStatus.equals("SYNCED", ignoreCase = true)) return false
         return true
