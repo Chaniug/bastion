@@ -1,6 +1,7 @@
 package com.bastion.app.receiver
 
 import com.bastion.app.logging.runCatchingObserved
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -23,6 +24,11 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
         if (intent?.action != Intent.ACTION_MY_PACKAGE_REPLACED) {
             return
         }
+
+        // 升级后清掉上一版本残留的旧通知（如旧版 smallIcon 的通知）。
+        // Android 更新 app 时不会重渲已弹出的通知，会一直沿用旧图标直到被 dismiss/重发，
+        // 表现为「装了新包、通知栏图标还是旧的」。这里在升级完成时一次性 cancelAll 根治。
+        clearStaleNotificationsOnUpgrade(context)
 
         // 使用 goAsync() 避免主线程阻塞；升级后事件只触发一次，但 DataStore 读取
         // 仍可能慢，用 withTimeout 兜底防止 ANR。
@@ -57,5 +63,18 @@ class LauncherEntryRepairReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "LauncherEntryRepair"
+
+        /**
+         * 升级完成后清空上一版本残留的本地通知。
+         * 仅 cancel 本应用自己发出的通知，不影响其他 app；升级瞬间本应用不会发出新通知，
+         * 故这里 cancelAll 只会清掉旧版本残留，不会误伤。
+         */
+        private fun clearStaleNotificationsOnUpgrade(context: Context) {
+            runCatchingObserved {
+                val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                manager?.cancelAll()
+                Log.i(TAG, "Cleared stale notifications after package replace")
+            }
+        }
     }
 }
