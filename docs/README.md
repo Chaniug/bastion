@@ -90,7 +90,8 @@ gh -R Chaniug/bastion run view <run-id> --log | grep -aoE "total=[0-9]+ failed=[
 | [`vault冷启动加载-对标调研.md`](./vault冷启动加载-对标调研.md) | 冷启动对标官方 Bitwarden |
 | [`解锁后加载耗时-排查记录.md`](./解锁后加载耗时-排查记录.md) | 解锁耗时排查 |
 | [`解锁后加载耗时-对标落地设计.md`](./解锁后加载耗时-对标落地设计.md) | 解锁耗时落地设计 |
-| [`passwordlistcontent-拆分计划-2026-09.md`](./passwordlistcontent-拆分计划-2026-09.md) | ART JIT 方法指令拆分（**已收官**），§10.5 有 2 个待测动画项 |
+| [`passwordlistcontent-拆分计划-2026-09.md`](./archive/passwordlistcontent-拆分计划-2026-09.md) | ART JIT 方法指令拆分（**已收官，已归档**），§10.5 有 2 个待测动画项 |
+| [`解锁后加载耗时-排查记录.md`](./archive/解锁后加载耗时-排查记录.md) · [`对标落地设计.md`](./archive/解锁后加载耗时-对标落地设计.md) | 解锁后加载耗时（**已收官，已归档**） |
 
 ### 外部对标与专项设计
 
